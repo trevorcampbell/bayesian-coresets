@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class FrankWolfe(object):
   def __init__(self):
     self.reset()
@@ -44,39 +43,7 @@ class FrankWolfe(object):
     self.M = 0
     self.wts = None
 
-class SketchedFrankWolfe(FrankWolfe):
-  
-  def __init__(self, data, gradlogp, dim, sketch_dim, weighting_dist):
-    self.norms = np.sqrt((v**2).sum(axis=1))
-    self.sig = norms.sum()
-    self.N = self.x.shape[0]
-    self.dim = 0
-
-  def get_weighting_dist(self):
-    pass
-
-  def update_sketch_dimension(self, sketch_dim):
-    if sketch_dim < self.x.shape[1]:
-      self.x = self.x[:, :sketch_dim]
-
-    if sketch_dim > self.x.shape[1]:
-       old_dim = self.x.shape[1]
-       w = np.zeros((self.N, sketch_dim))
-       w[:, :old_dim] = self.x
-       w *= np.sqrt(old_dim)
-       for j in range(sketch_dim-old_dim):
-         w[:, j+old_dim] = np.sqrt(self.dim)*self.sample_sketch_component(XXX)
-       w /= np.sqrt(sketch_dim)
-       self.x = w.copy()
-
-    return
-
-  def sample_sketch_component(self):
-    pass
- 
-
 class ImportanceSampling(object):
-
   def __init__(self):
     self.reset()
 
@@ -97,9 +64,56 @@ class ImportanceSampling(object):
     self.cts = None
     self.ps = None
 
+class Sketch(object):
+  def __init__(self, data, gradlogp, dim, sketch_dim, sample_approx_posterior, init_prm):
+    self.N = data.shape[0]
+    self.dim = dim
+    self.gradlogp = gradlogp
+    self.data = data
+    self.x = np.zeros((self.N, 0))
+    if sample_approx_posterior:
+      self.sample_approx_posterior = sample_approx_posterior
+    else:
+      self.sample_approx_posterior = self.get_approx_posterior(init_param)
 
-class SketchedImportanceSampling(ImportanceSampling):
+    self.update_sketch_dimension(sketch_dim)
+    return
 
-  def __init__(self, gradlogp, weighting_dist):
-    pass
+  def get_approx_posterior(self, init_prm):
+    #run SGD to get laplace posterior approx
+    prm = init_prm[:]
+    for i in range(N_itr):
+      grd = self.gradlogp(prm, self.data[np.random.randint(self.data.shape[0]), :])
+      prm += 1.0/(1.0+i)*grd
+    return lambda : np.multivariate_normal(prm, hess)
+
+  def update_sketch_dimension(self, sketch_dim):
+    if sketch_dim < self.x.shape[1]:
+      self.x = self.x[:, :sketch_dim]
+
+    if sketch_dim > self.x.shape[1]:
+       old_dim = self.x.shape[1]
+       w = np.zeros((self.N, sketch_dim))
+       w[:, :old_dim] = self.x
+       w *= np.sqrt(old_dim)
+       for j in range(sketch_dim-old_dim):
+         w[:, j+old_dim] = np.sqrt(self.dim)*self.sample_sketch_component()
+       w /= np.sqrt(sketch_dim)
+       self.x = w
+   
+    self.norms = np.sqrt((self.x**2).sum(axis=1))
+    self.sig = self.norms.sum()
+    return
+
+  def sample_sketch_component(self):
+    return self.gradlogp(self.sample_approx_posterior(), self.data, np.random.randint(self.dim))
+
+ 
+class SketchedFrankWolfe(Sketch, FrankWolfe):
+  def __init__(self, data, gradlogp, dim, sketch_dim, sample_approx_posterior, init_prm):
+    Sketch.__init__(self, data, gradlogp, dim, sketch_dim, sample_approx_posterior)
+
+class SketchedImportanceSampling(Sketch, ImportanceSampling):
+  def __init__(self, data, gradlogp, dim, sketch_dim, sample_approx_posterior, init_prm):
+    Sketch.__init__(self, data, gradlogp, dim, sketch_dim, sample_approx_posterior, init_prm)
 
