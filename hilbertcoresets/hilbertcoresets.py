@@ -85,6 +85,7 @@ class Sketch(object):
     for i in range(N_itr):
       grd = self.gradlogp(prm, self.data[np.random.randint(self.data.shape[0]), :])
       prm += 1.0/(1.0+i)*grd
+    #TODO get hess
     return lambda : np.multivariate_normal(prm, hess)
 
   def update_sketch_dimension(self, sketch_dim):
