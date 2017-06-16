@@ -9,9 +9,9 @@ setup(
     author_email='tdjc@mit.edu',
     url='https://github.com/trevorcampbell/hilbert-coresets/',
     packages=['hilbertcoresets'],
-    package_data={'python' : ['*.so']},
+    #package_data={'python' : ['*.so']},
     install_requires=['numpy'],
     keywords = ['coreset', 'hilbert', 'frank-wolfe'],
     platforms='ALL',
-    scripts=['compile.sh'],
+    #scripts=['compile.sh'],
 )

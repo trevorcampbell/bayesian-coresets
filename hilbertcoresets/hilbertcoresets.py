@@ -1,6 +1,6 @@
 import numpy as np
 
-class FrankWolfe(object):
+class _FrankWolfe(object):
   def __init__(self):
     self.reset()
 
@@ -43,7 +43,7 @@ class FrankWolfe(object):
     self.M = 0
     self.wts = None
 
-class ImportanceSampling(object):
+class _ImportanceSampling(object):
   def __init__(self):
     self.reset()
 
@@ -64,7 +64,7 @@ class ImportanceSampling(object):
     self.cts = None
     self.ps = None
 
-class Sketch(object):
+class _Sketch(object):
   def __init__(self, data, gradlogp, dim, sketch_dim, sample_approx_posterior, init_prm):
     self.N = data.shape[0]
     self.dim = dim
@@ -81,7 +81,7 @@ class Sketch(object):
 
   def get_approx_posterior(self, init_prm):
     #run SGD to get laplace posterior approx
-    prm = init_prm[:]
+    prm = init_prm.copy()
     for i in range(N_itr):
       grd = self.gradlogp(prm, self.data[np.random.randint(self.data.shape[0]), :])
       prm += 1.0/(1.0+i)*grd
@@ -109,12 +109,40 @@ class Sketch(object):
   def sample_sketch_component(self):
     return self.gradlogp(self.sample_approx_posterior(), self.data, np.random.randint(self.dim))
 
- 
-class SketchedFrankWolfe(Sketch, FrankWolfe):
+class SketchedFrankWolfe(_Sketch, _FrankWolfe):
   def __init__(self, data, gradlogp, dim, sketch_dim, sample_approx_posterior, init_prm):
     Sketch.__init__(self, data, gradlogp, dim, sketch_dim, sample_approx_posterior)
 
-class SketchedImportanceSampling(Sketch, ImportanceSampling):
+class SketchedImportanceSampling(_Sketch, _ImportanceSampling):
   def __init__(self, data, gradlogp, dim, sketch_dim, sample_approx_posterior, init_prm):
     Sketch.__init__(self, data, gradlogp, dim, sketch_dim, sample_approx_posterior, init_prm)
+
+class FullDataset:
+  def __init__(self, N):
+    self.wts = np.ones(N)
+
+  def run(self, M):
+    return
+
+  def reset(self):
+    return
+
+class RandomSubsample:
+  def __init__(self, N):
+    self.ps = 1.0/float(N) * np.ones(N)
+    self.N = N
+    self.reset()
+
+  def run(self, M):
+    self.cts += np.random.multinomial(M - self.M, ps)
+    self.wts = self.cts/self.ps/M
+    self.M = M
+    return
+
+  def reset(self):
+    self.M = 0
+    self.wts = np.zeros(self.N)
+    self.cts = np.zeros(self.N)
+
+
 
