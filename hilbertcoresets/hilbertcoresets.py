@@ -13,7 +13,7 @@ class _FrankWolfe(object):
       xs = self.x.sum(axis=0)
       scores = (xs*self.x).sum(axis=1)/self.norms
       f = scores.argmax()
-      wts[f] = self.sig/self.norms[f]
+      self.wts[f] = self.sig/self.norms[f]
       self.M = 1
 
     for m in range(self.M, M):
@@ -48,11 +48,11 @@ class _ImportanceSampling(object):
     self.reset()
 
   def run(self, M):
-    if not self.ps:
+    if self.ps is None:
       self.ps = self.norms/self.norms.sum()
       self.cts = np.zeros(self.N)
       
-    self.cts += np.random.multinomial(M - self.M, ps)
+    self.cts += np.random.multinomial(M - self.M, self.ps)
     self.wts = self.cts/self.ps/M
     
     self.M = M
@@ -65,7 +65,7 @@ class _ImportanceSampling(object):
     self.ps = None
 
 class _Sketch(object):
-  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm):
+  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm, N_SGD_itr):
     self.N = data.shape[0]
     self.dim = init_prm.shape[0]
     self.grad_log_likelihood = grad_log_likelihood
@@ -76,19 +76,19 @@ class _Sketch(object):
     if sample_approx_posterior:
       self.sample_approx_posterior = sample_approx_posterior
     else:
-      self.sample_approx_posterior = self.get_approx_posterior(init_param)
+      self.sample_approx_posterior = self.get_approx_posterior(init_prm, N_SGD_itr)
 
     self.update_sketch_dimension(sketch_dim)
     return
 
-  def get_approx_posterior(self, init_prm):
+  def get_approx_posterior(self, init_prm, n_itr):
     #run SGD to get laplace posterior approx
     prm = init_prm.copy()
-    for i in range(N_itr):
+    for i in range(n_itr):
       grd = self.grad_log_likelihood(self.data[np.random.randint(self.data.shape[0]), :], prm) + 1.0/self.N * self.grad_log_prior(prm)
       prm += 1.0/(1.0+i)*grd
     hess = self.hess_log_joint(self.data, prm)
-    return lambda : np.multivariate_normal(prm, -np.linalg.inv(hess))
+    return lambda : np.random.multivariate_normal(prm, -np.linalg.inv(hess))
 
   def update_sketch_dimension(self, sketch_dim):
     if sketch_dim < self.x.shape[1]:
@@ -110,22 +110,22 @@ class _Sketch(object):
 
   def reset_sketch(self, sketch_dim=None):
     if not sketch_dim:
-      sketch_dim = x.shape[1]
+      sketch_dim = self.x.shape[1]
 
     self.update_sketch_dimension(0)
     self.update_sketch_dimension(sketch_dim)
     return
 
   def sample_sketch_component(self):
-    return self.grad_log_likelihood(self.sample_approx_posterior(), self.data)[:, np.random.randint(self.dim)]
+    return self.grad_log_likelihood(self.data, self.sample_approx_posterior())[:, np.random.randint(self.dim)]
 
 class SketchedFrankWolfe(_Sketch, _FrankWolfe):
-  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm):
-    Sketch.__init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm)
+  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior = None, init_prm = None, N_SGD_itr = 0):
+    _Sketch.__init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm, N_SGD_itr)
 
 class SketchedImportanceSampling(_Sketch, _ImportanceSampling):
-  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm):
-    Sketch.__init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm)
+  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior = None, init_prm = None, N_SGD_itr = 0):
+    _Sketch.__init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm, N_SGD_itr)
 
 class FullDataset(object):
   def __init__(self, N):
@@ -148,7 +148,7 @@ class RandomSubsample(object):
     self.reset()
 
   def run(self, M):
-    self.cts += np.random.multinomial(M - self.M, ps)
+    self.cts += np.random.multinomial(M - self.M, self.ps)
     self.wts = self.cts/self.ps/M
     self.M = M
     return
