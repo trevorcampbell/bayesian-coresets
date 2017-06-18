@@ -65,13 +65,12 @@ class _ImportanceSampling(object):
     self.ps = None
 
 class _Sketch(object):
-  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_likelihood, hess_log_prior, sketch_dim, sample_approx_posterior, init_prm):
+  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm):
     self.N = data.shape[0]
     self.dim = init_prm.shape[0]
     self.grad_log_likelihood = grad_log_likelihood
     self.grad_log_prior = grad_log_prior
-    self.hess_log_likelihood = hess_log_likelihood
-    self.hess_log_prior = hess_log_prior
+    self.hess_log_joint = hess_log_joint
     self.data = data
     self.x = np.zeros((self.N, 0))
     if sample_approx_posterior:
@@ -88,8 +87,8 @@ class _Sketch(object):
     for i in range(N_itr):
       grd = self.grad_log_likelihood(self.data[np.random.randint(self.data.shape[0]), :], prm) + 1.0/self.N * self.grad_log_prior(prm)
       prm += 1.0/(1.0+i)*grd
-    hess = self.hess_log_likelihood(self.data, prm).sum(axis=0) + self.hess_log_prior(prm)
-    return lambda : np.multivariate_normal(prm, np.linalg.inv(hess))
+    hess = self.hess_log_joint(self.data, prm)
+    return lambda : np.multivariate_normal(prm, -np.linalg.inv(hess))
 
   def update_sketch_dimension(self, sketch_dim):
     if sketch_dim < self.x.shape[1]:
@@ -109,18 +108,26 @@ class _Sketch(object):
     self.sig = self.norms.sum()
     return
 
+  def reset_sketch(self, sketch_dim=None):
+    if not sketch_dim:
+      sketch_dim = x.shape[1]
+
+    self.update_sketch_dimension(0)
+    self.update_sketch_dimension(sketch_dim)
+    return
+
   def sample_sketch_component(self):
     return self.grad_log_likelihood(self.sample_approx_posterior(), self.data)[:, np.random.randint(self.dim)]
 
 class SketchedFrankWolfe(_Sketch, _FrankWolfe):
-  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_likelihood, hess_log_prior, sketch_dim, sample_approx_posterior, init_prm):
-    Sketch.__init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_likelihood, hess_log_prior, sketch_dim, sample_approx_posterior, init_prm)
+  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm):
+    Sketch.__init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm)
 
 class SketchedImportanceSampling(_Sketch, _ImportanceSampling):
-  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_likelihood, hess_log_prior, sketch_dim, sample_approx_posterior, init_prm):
-    Sketch.__init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_likelihood, hess_log_prior, sketch_dim, sample_approx_posterior, init_prm)
+  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm):
+    Sketch.__init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm)
 
-class FullDataset:
+class FullDataset(object):
   def __init__(self, N):
     self.wts = np.ones(N)
 
@@ -130,7 +137,11 @@ class FullDataset:
   def reset(self):
     return
 
-class RandomSubsample:
+  def reset_sketch(self):
+    return
+
+
+class RandomSubsample(object):
   def __init__(self, N):
     self.ps = 1.0/float(N) * np.ones(N)
     self.N = N
@@ -146,6 +157,9 @@ class RandomSubsample:
     self.M = 0
     self.wts = np.zeros(self.N)
     self.cts = np.zeros(self.N)
+  
+  def reset_sketch(self):
+    return
 
 
 
