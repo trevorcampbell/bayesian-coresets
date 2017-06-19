@@ -67,7 +67,10 @@ class _ImportanceSampling(object):
 class _Sketch(object):
   def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm, N_SGD_itr):
     self.N = data.shape[0]
-    self.dim = init_prm.shape[0]
+    if init_prm is not None:
+      self.dim = init_prm.shape[0]
+    else:
+      self.dim = sample_approx_posterior().shape[0]
     self.grad_log_likelihood = grad_log_likelihood
     self.grad_log_prior = grad_log_prior
     self.hess_log_joint = hess_log_joint
@@ -86,7 +89,7 @@ class _Sketch(object):
     prm = init_prm.copy()
     for i in range(n_itr):
       grd = self.grad_log_likelihood(self.data[np.random.randint(self.data.shape[0]), :], prm) + 1.0/self.N * self.grad_log_prior(prm)
-      prm += 1.0/(1.0+i)*grd
+      prm += np.sqrt(1.0/(1.0+i))*grd
     hess = self.hess_log_joint(self.data, prm)
     return lambda : np.random.multivariate_normal(prm, -np.linalg.inv(hess))
 
