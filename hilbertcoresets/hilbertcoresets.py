@@ -64,24 +64,27 @@ class _ImportanceSampling(object):
     self.cts = None
     self.ps = None
 
-class _Sketch(object):
-  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm, N_SGD_itr):
+class _Projection(object):
+  def __init__(self, data, log_likelihood, log_prior, grad_log_likelihood, grad_log_prior, hess_log_joint, projection_dim, sample_approx_posterior, init_prm, N_SGD_itr, projection_type):
     self.N = data.shape[0]
     if init_prm is not None:
       self.dim = init_prm.shape[0]
     else:
       self.dim = sample_approx_posterior().shape[0]
+    self.log_likelihood = log_likelihood
+    self.log_prior = log_prior
     self.grad_log_likelihood = grad_log_likelihood
     self.grad_log_prior = grad_log_prior
     self.hess_log_joint = hess_log_joint
     self.data = data
+    self.projection_type = projection_type
     self.x = np.zeros((self.N, 0))
     if sample_approx_posterior:
       self.sample_approx_posterior = sample_approx_posterior
     else:
       self.sample_approx_posterior = self.get_approx_posterior(init_prm, N_SGD_itr)
 
-    self.update_sketch_dimension(sketch_dim)
+    self.update_projection_dimension(projection_dim)
     return
 
   def get_approx_posterior(self, init_prm, n_itr):
@@ -93,42 +96,49 @@ class _Sketch(object):
     hess = self.hess_log_joint(self.data, prm)
     return lambda : np.random.multivariate_normal(prm, -np.linalg.inv(hess))
 
-  def update_sketch_dimension(self, sketch_dim):
-    if sketch_dim < self.x.shape[1]:
-      self.x = self.x[:, :sketch_dim]
+  def update_projection_dimension(self, projection_dim):
+    if projection_dim < self.x.shape[1]:
+      self.x = self.x[:, :projection_dim]
 
-    if sketch_dim > self.x.shape[1]:
-       old_dim = self.x.shape[1]
-       w = np.zeros((self.N, sketch_dim))
-       w[:, :old_dim] = self.x
-       w *= np.sqrt(old_dim)
-       for j in range(sketch_dim-old_dim):
-         w[:, j+old_dim] = np.sqrt(self.dim)*self.sample_sketch_component()
-       w /= np.sqrt(sketch_dim)
-       self.x = w
+    if projection_dim > self.x.shape[1]:
+      old_dim = self.x.shape[1]
+      w = np.zeros((self.N, projection_dim))
+      w[:, :old_dim] = self.x
+      w *= np.sqrt(old_dim)
+      if self.projection_type == 'F':
+        for j in range(projection_dim-old_dim):
+          w[:, j+old_dim] = np.sqrt(self.dim)*self.sample_projection_component()
+      else:
+        for j in range(projection_dim-old_dim):
+          w[:, j+old_dim] = self.sample_projection_component()
+      w /= np.sqrt(projection_dim)
+      self.x = w
    
     self.norms = np.sqrt((self.x**2).sum(axis=1))
     self.sig = self.norms.sum()
     return
 
-  def reset_sketch(self, sketch_dim=None):
-    if not sketch_dim:
-      sketch_dim = self.x.shape[1]
+  def reset_projection(self, projection_dim=None):
+    if not projection_dim:
+      projection_dim = self.x.shape[1]
 
-    self.update_sketch_dimension(0)
-    self.update_sketch_dimension(sketch_dim)
+    self.update_projection_dimension(0)
+    self.update_projection_dimension(projection_dim)
     return
 
-  def sample_sketch_component(self):
-    return self.grad_log_likelihood(self.data, self.sample_approx_posterior())[:, np.random.randint(self.dim)]
+  def sample_projection_component(self):
+    if self.projection_type == 'F':
+      return self.grad_log_likelihood(self.data, self.sample_approx_posterior())[:, np.random.randint(self.dim)]
+    else:
+      return self.log_likelihood(self.data, self.sample_approx_posterior())
 
-class SketchedFrankWolfe(_Sketch, _FrankWolfe):
-  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior = None, init_prm = None, N_SGD_itr = 0):
-    _Sketch.__init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm, N_SGD_itr)
+class ProjectedFrankWolfe(_Projection, _FrankWolfe):
+  def __init__(self, data, log_likelihood, log_prior, grad_log_likelihood, grad_log_prior, hess_log_joint, projection_dim, sample_approx_posterior = None, init_prm = None, N_SGD_itr = 0, projection_type = 'F'):
+    _Projection.__init__(self, data, log_likelihood, log_prior, grad_log_likelihood, grad_log_prior, hess_log_joint, projection_dim, sample_approx_posterior, init_prm, N_SGD_itr, projection_type)
 
-class SketchedImportanceSampling(_Sketch, _ImportanceSampling):
-  def __init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior = None, init_prm = None, N_SGD_itr = 0):
-    _Sketch.__init__(self, data, grad_log_likelihood, grad_log_prior, hess_log_joint, sketch_dim, sample_approx_posterior, init_prm, N_SGD_itr)
+class ProjectedImportanceSampling(_Projection, _ImportanceSampling):
+  def __init__(self, data, log_likelihood, log_prior, grad_log_likelihood, grad_log_prior, hess_log_joint, projection_dim, sample_approx_posterior = None, init_prm = None, N_SGD_itr = 0, projection_type = 'F'):
+    _Projection.__init__(self, data, log_likelihood, log_prior, grad_log_likelihood, grad_log_prior, hess_log_joint, projection_dim, sample_approx_posterior, init_prm, N_SGD_itr, projection_type)
 
 class FullDataset(object):
   def __init__(self, N):
@@ -140,7 +150,7 @@ class FullDataset(object):
   def reset(self):
     return
 
-  def reset_sketch(self):
+  def reset_projection(self):
     return
 
 
@@ -161,7 +171,7 @@ class RandomSubsample(object):
     self.wts = np.zeros(self.N)
     self.cts = np.zeros(self.N)
   
-  def reset_sketch(self):
+  def reset_projection(self):
     return
 
 
