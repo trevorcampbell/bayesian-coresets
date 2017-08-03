@@ -1,1 +1,1 @@
-from hilbertcoresets import SketchedFrankWolfe, SketchedImportanceSampling, FullDataset, RandomSubsample
+from hilbertcoresets import ProjectedFrankWolfe, ProjectedImportanceSampling, FullDataset, RandomSubsample
