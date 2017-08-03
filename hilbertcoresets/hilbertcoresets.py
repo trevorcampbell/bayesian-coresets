@@ -134,10 +134,12 @@ class _Projection(object):
 
 class ProjectedFrankWolfe(_Projection, _FrankWolfe):
   def __init__(self, data, log_likelihood, log_prior, grad_log_likelihood, grad_log_prior, hess_log_joint, projection_dim, sample_approx_posterior = None, init_prm = None, N_SGD_itr = 0, projection_type = 'F'):
+    _FrankWolfe.__init__(self)
     _Projection.__init__(self, data, log_likelihood, log_prior, grad_log_likelihood, grad_log_prior, hess_log_joint, projection_dim, sample_approx_posterior, init_prm, N_SGD_itr, projection_type)
 
 class ProjectedImportanceSampling(_Projection, _ImportanceSampling):
   def __init__(self, data, log_likelihood, log_prior, grad_log_likelihood, grad_log_prior, hess_log_joint, projection_dim, sample_approx_posterior = None, init_prm = None, N_SGD_itr = 0, projection_type = 'F'):
+    _ImportanceSampling.__init__(self)
     _Projection.__init__(self, data, log_likelihood, log_prior, grad_log_likelihood, grad_log_prior, hess_log_joint, projection_dim, sample_approx_posterior, init_prm, N_SGD_itr, projection_type)
 
 class FullDataset(object):
