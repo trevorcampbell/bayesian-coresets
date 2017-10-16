@@ -1,5 +1,26 @@
 import numpy as np
 
+class _ImportanceSampling(object):
+  def __init__(self):
+    self.reset()
+
+  def run(self, M):
+    if self.ps is None:
+      self.ps = self.norms/self.norms.sum()
+      self.cts = np.zeros(self.N)
+      
+    self.cts += np.random.multinomial(M - self.M, self.ps)
+    self.wts = self.cts/self.ps/M
+    
+    self.M = M
+    return
+
+  def reset(self):
+    self.M = 0
+    self.wts = None
+    self.cts = None
+    self.ps = None
+
 class _FrankWolfe(object):
   def __init__(self):
     self.reset()
@@ -42,27 +63,6 @@ class _FrankWolfe(object):
   def reset(self):
     self.M = 0
     self.wts = None
-
-class _ImportanceSampling(object):
-  def __init__(self):
-    self.reset()
-
-  def run(self, M):
-    if self.ps is None:
-      self.ps = self.norms/self.norms.sum()
-      self.cts = np.zeros(self.N)
-      
-    self.cts += np.random.multinomial(M - self.M, self.ps)
-    self.wts = self.cts/self.ps/M
-    
-    self.M = M
-    return
-
-  def reset(self):
-    self.M = 0
-    self.wts = None
-    self.cts = None
-    self.ps = None
 
 class _Projection(object):
   def __init__(self, data, log_likelihood, log_prior, grad_log_likelihood, grad_log_prior, hess_log_joint, projection_dim, sample_approx_posterior, init_prm, N_SGD_itr, projection_type):
