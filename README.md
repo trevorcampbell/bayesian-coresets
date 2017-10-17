@@ -1,1 +1,4 @@
-# hilbert-coresets
+# Hilbert Coresets
+## Automated, Scalable Bayesian Inference
+
+
