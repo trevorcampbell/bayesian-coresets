@@ -1,4 +1,4 @@
 # Hilbert Coresets
-## Automated, Scalable Bayesian Inference
+### Automated, Scalable Bayesian Inference
 
 
