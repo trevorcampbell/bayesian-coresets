@@ -133,7 +133,7 @@ def mh(x0, p, q, sample_q, steps=1, warmup=None, thin=1,
         if proposal_param is not None and step < warmup:
                 proposal_param = _adapt_param(proposal_param, step,
                                               min(0, odds), target_rate)
-        if np.log(npr.rand()) < odds:
+        if np.log(np.random.rand()) < odds:
             x = xf
             if step >= warmup:
                 accepts += 1

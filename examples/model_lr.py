@@ -5,9 +5,9 @@ def gen_synthetic(n):
   cov = np.eye(2)
   th = np.array([3, 3])
   X = np.random.multivariate_normal(mu, cov, n)
-  ps = 1.0/(1.0+np.exp(-(x*th).sum(axis=1)))
+  ps = 1.0/(1.0+np.exp(-(X*th).sum(axis=1)))
   y =(np.random.rand(n) <= ps).astype(int)
-  return y[:, np.newaxis]*X
+  return y[:, np.newaxis]*X, (y[:, np.newaxis]*X).mean(axis=0)
 
 def log_joint(z, th, wts):
   return (wts*(-np.log1p(np.exp(-(z*th).sum(axis=1))))).sum() -(th**2).sum()/2.
