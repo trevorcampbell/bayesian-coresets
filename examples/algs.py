@@ -20,6 +20,11 @@ def wasserstein1(sample1, sample2):
   cst, col_ind, row_ind = lapjv(np.floor(c/c.max()*1000000.).astype(int))
   return c[row_ind, range(c.shape[0])].sum()/z1.shape[0]
 
+
+
+## The below code is by Jonathan Huggins
+## https://bitbucket.org/jhhuggins/lrcoresets
+
 def _ensure_positive_int(val, name):
     if not isinstance(val, int) or val <= 0:
         raise ValueError("'%s' must be a positive integer")
