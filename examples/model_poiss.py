@@ -5,7 +5,7 @@ def gen_synthetic(n):
   X = np.random.randn(n)
   X = np.hstack((X[:, np.newaxis], np.ones(X.shape[0])[:, np.newaxis]))
   y = np.random.poisson(np.log1p(np.exp(X.dot(np.array([1., 0.])))))
-  return np.hstack((X, y[:, np.newaxis]))
+  return np.hstack((X, y[:, np.newaxis])), np.linalg.inv((X.T).dot(X)).dot((X.T).dot(y))
 
 def log_joint(Z, th, wts):
   return (wts*log_likelihood(Z, th)).sum() + log_prior(th)
