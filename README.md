@@ -4,7 +4,7 @@ This repository contains the main package used to run the experiments for [Hilbe
 
 ### Installation and Dependencies
 
-To install, run 
+To install with pip, download the repository and run the following command in the repository's root folder:
 
     pip install . 
     
