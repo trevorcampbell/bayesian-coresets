@@ -15,7 +15,7 @@ mh_target = 0.234 #target acceptance rate
 mh_step_var_init = 0.1 #initial step variance
 n_samples = mh_steps / 2 / mh_thin #number of output samples (burn of 1/2)
 projection_dim = 500 #random projection dimension
-Ms = [10, 50, 100, 500, 1000, 5000, 10000] #values of M to sweep over
+Ms = [10, 100] #values of M to sweep over
 
 print 'Generating synthetic data'
 Z, th0 = gen_synthetic(n)
