@@ -17,4 +17,4 @@ The main package code is tested, but the examples have not yet been tested. More
 
 ### License Info
 
-This project is offered under the [MIT License](https://opensource.org/licenses/MIT).
+This code is offered under the [MIT License](https://opensource.org/licenses/MIT).
