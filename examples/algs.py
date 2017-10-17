@@ -1,5 +1,5 @@
 import numpy as np
-from lapjv import lapjv
+from lap import lapjv
 
 
 def wasserstein1(sample1, sample2):
