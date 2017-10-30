@@ -2,24 +2,23 @@ import numpy as np
 
 def cap_tree_search(root, yw, y_yw):
   #each UB/LB computation is 2 O(d) operations
-  nfun = 0
   pq = []
   L = -2.
   nopt = -1
-  heapq.heappush(pq, (-root.upper_bound(u, v), root))
-  nfun = 2
+  heapq.heappush(pq, (-root.upper_bound(y_yw, yw), root))
+  nfun = 2.
   while pq:
     negub, cap = heapq.heappop(pq)
     if -negub > L:
-      ell = cap.lower_bound(u, v)
-      nfun += 2
+      ell = cap.lower_bound(y_yw, yw)
+      nfun += 2.
       if ell > L:
         L = ell
         nopt = cap.ny
       if cap.cR:
-        heapq.heappush(pq, (-cap.cR.upper_bound(u, v), cap.cR))
-        heapq.heappush(pq, (-cap.cL.upper_bound(u, v), cap.cL))
-        nfun += 4
+        heapq.heappush(pq, (-cap.cR.upper_bound(y_yw, yw), cap.cR))
+        heapq.heappush(pq, (-cap.cL.upper_bound(y_yw, yw), cap.cL))
+        nfun += 4.
   return nopt, nfun
 
 class CapNode(object):
@@ -64,7 +63,7 @@ class CapNode(object):
       #   N+1 to compute argmin / argmax datapoint to xi + save argmax
       #   N to compute argmin (R child) from L child
       #   N to split based on dots from L and R
-      self.n_fun_construction = self.cR.nfun_construction + self.cL.nfun_construction + data.shape[0]*(4*N+3)
+      self.n_fun_construction = self.cR.nfun_construction + self.cL.nfun_construction + 4.*idcs.shape[0]+3.
 
   def upper_bound(self, u, v):
     #compute upper bound
