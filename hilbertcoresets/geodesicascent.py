@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class GIGA(object):
   def __init__(self, x):
     self.norms = np.sqrt((x**2).sum(axis=1))
