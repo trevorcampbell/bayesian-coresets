@@ -18,8 +18,8 @@ class GIGA(object):
     self.s_tree = 0.
     self.n_tree = 0.
     self.f_lin = 0.
-    self.m_lin = 0.
-    self.s_lin = 0.
+    #self.m_lin = 0.
+    #self.s_lin = 0.
     self.n_lin = 0.
     self.reset()
 
@@ -47,8 +47,8 @@ class GIGA(object):
       else:
         GIGA.search = GIGA.search_linear
 
-    #TODO ensure this is true for the tree method as well
     #this is commented out since initialization step is exactly the same as the main iteration if y(w) = 0
+    #this is true for both tree and linear search
     #if self.M == 0:
     #  scores = self.y.dot(self.ys)
     #  f = scores.argmax()
@@ -97,8 +97,8 @@ class GIGA(object):
     #dirs /= dirnrms[:, np.newaxis]
     #scores = dirs.dot(cdir)
     self.f_lin += 2.*N+2.
-    self.m_lin += np.log(2.*N+2.)
-    self.s_lin += np.log((2.*N+2.)**2)
+    #self.s_lin += np.log(2.*N+2.)**2
+    #self.m_lin += np.log(2.*N+2.)
     self.n_lin += 1
     return scores.argmax()
   
@@ -114,18 +114,18 @@ class GIGA(object):
   
   def search_adaptive(self):
     #this uses UCB1-Normal from Auer et al ``Finite-time Analysis of the Multiarmed Bandit Problem'' (2002)
+    #modification: since we know linear search is 2N+2 ops, dont need confidence bounds for that
     n = self.n_tree+self.n_lin + 1
-    if self.n_lin < 2 or self.n_lin < np.ceil(8.*np.log(n)):
-      return self.search_tree()
+    #if self.n_lin < 2 or self.n_lin < np.ceil(8.*np.log(n)):
+    #  return self.search_linear()
     if self.n_tree < 2 or self.n_tree < np.ceil(8.*np.log(n)):
-      return self.search_linear()
-    lin_idx = self.m_lin/self.n_lin + np.sqrt(16.*((self.s_lin - self.m_lin**2/self.n_lin)/(self.n_lin-1))*(np.log(n-1.)/self.n_lin))
-    tree_idx = self.m_tree/self.n_tree + np.sqrt(16.*((self.s_tree - self.m_tree**2/self.n_tree)/(self.n_tree-1))*(np.log(n-1.)/self.n_tree))
-    if lin_idx > tree_idx:
-      return self.search_linear()
-    else:
       return self.search_tree()
-
+    #lin_idx = self.m_lin/self.n_lin + np.sqrt(16.*((self.s_lin - self.m_lin**2/self.n_lin)/(self.n_lin-1))*(np.log(n-1.)/self.n_lin))
+    tree_idx = self.m_tree/self.n_tree - np.sqrt(16.*((self.s_tree - self.m_tree**2/self.n_tree)/(self.n_tree-1))*(np.log(n-1.)/self.n_tree))
+    if tree_idx < np.log(2.*N+2):
+      return self.search_tree()
+    else:
+      return self.search_linear()
 
   def build_tree(self):
     self.tree = ct.CapNode(self.y)
