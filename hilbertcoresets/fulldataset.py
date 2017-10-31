@@ -1,8 +1,8 @@
 import numpy as np
 
 class FullDataset(object):
-  def __init__(self, N):
-    self.wts = np.ones(N)
+  def __init__(self, x):
+    self.wts = np.ones(x.shape[0])
 
   def run(self, M):
     return
