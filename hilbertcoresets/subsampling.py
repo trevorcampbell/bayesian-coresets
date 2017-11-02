@@ -51,13 +51,20 @@ class ImportanceSampling(object):
   def sqrt_bound(self, delta, M=None):
     if self.x.size == 0:
       return 0.
+    if delta == 0.:
+      return np.inf
     if not self.diam:
       self._compute_diam()
     if not self.normratio:
       self._compute_normratio()
     M = M if M else self.M
-    v = np.sqrt(2.*M*self.normratio**2/(self.diam**2*np.log(1./delta)))
-    nm = min(self.diam, self.normratio*v*self._hinv(1./v**2))
+    if self.diam == 0. or self.normratio == 0.:
+      nm = 0.
+    else:
+      v = np.sqrt(2.*M*self.normratio**2/(self.diam**2*np.log(1./delta)))
+      if np.isnan(v):
+        assert False, str(self.normratio) + " " + str(self.diam) + " " + str(delta) + " " + str(v) + " " + str(self.sig)
+      nm = min(self.diam, self.normratio*v*self._hinv(1./v**2))
     return self.sig/np.sqrt(M)*(self.normratio + nm*np.sqrt(2.*np.log(1./delta)))
 
   def _hinv(self, v):
@@ -77,32 +84,42 @@ class ImportanceSampling(object):
   def _compute_diam(self):
     normed_x = self.x/self.norms[:, np.newaxis] 
     distsqs = 2. - 2.*normed_x.dot(normed_x.T)
-    self.diam = np.sqrt(distsqs.max())
+    self.diam = np.sqrt(max(0., distsqs.max()))
     return
 
   def _compute_normratio(self):
-    self.normratio = np.sqrt(1. - (self.xs**2).sum()/self.sig**2)
+    self.normratio = np.sqrt(max(0., 1. - (self.xs**2).sum()/self.sig**2))
     return
 
 class RandomSubsampling(ImportanceSampling):
   def __init__(self, x):
     ImportanceSampling.__init__(self, x)
-    self.ps = 1.0/float(self.N) * np.ones(self.N)
+    if self.N > 0:
+      self.ps = 1.0/float(self.N) * np.ones(self.N)
+    else:
+      self.ps = None
     self.xi = None
     self.tau = None
 
   def sqrt_bound(self, delta, M=None):
+    if self.x.size == 0:
+      return 0.
+    if delta == 0.:
+      return np.inf
     if not self.xi or not self.tau:
       self._compute_xi_tau()
     M = M if M else self.M
-    v = self.tau*np.sqrt(M)/self.xi/np.sqrt(np.log(1./delta))
-    nm = min(np.sqrt(2)*self.xi/self.tau, v*self._hinv(1./v**2))
+    if self.xi == 0. or self.tau == 0.:
+      nm = 0.
+    else:
+      v = self.tau*np.sqrt(M)/self.xi/np.sqrt(np.log(1./delta))
+      nm = min(np.sqrt(2)*self.xi/self.tau, v*self._hinv(1./v**2))
     return np.sqrt(self.tau/float(M))*( np.sqrt(1./2.) + nm*np.sqrt(self.tau*np.log(1./delta)))
 
   def _compute_xi_tau(self):
     xnrmsqs = (self.x**2).sum(axis=1)
     distsqs = xnrmsqs[:, np.newaxis] + xnrmsqs - 2.*self.x.dot(self.x.T)
-    self.xi = self.x.shape[0]*np.sqrt(distsqs.max())
-    self.tau = distsqs.sum()
+    self.xi = self.x.shape[0]*np.sqrt(max(0., distsqs.max()))
+    self.tau = max(0., distsqs.sum())
     return
 
