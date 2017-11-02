@@ -1,25 +1,30 @@
 import numpy as np
 
-#TODO: remove any zero weight obs and change weights() to remap
-
 class ImportanceSampling(object):
-  def __init__(self, x):
-    self.N = x.shape[0]
-    self.norms = np.sqrt((x**2).sum(axis=1))
+  def __init__(self, _x):
+    x = np.asarray(_x)
+    if len(x.shape) != 2:
+      raise ValueError('ImportanceSampling: input is not a 2d ndarray')
+    nrms = np.sqrt((x**2).sum(axis=1))
+    self.nzidcs = nrms > 0.
+    self.full_N = x.shape[0]
+    self.x = x[self.nzidcs, :]
+
+    self.N = self.x.shape[0]
+    self.norms = nrms[self.nzidcs]
     self.sig = self.norms.sum()
     if self.sig > 0.:
       self.ps = self.norms/self.sig
     else:
-      print 'Warning: sum of norms is 0; falling back to random subsampling' 
       self.ps = 1.0/float(self.N) * np.ones(self.N) 
-    self.ps = self.norms/self.sig
-    self.x = x
     self.xs = x.sum(axis=0)
     self.diam = None
     self.normratio = None
     self.reset()
 
   def run(self, M):
+    if self.x.size == 0:
+      return
     if M <= self.M:
       print 'Warning: requested M <= self.M, returning without modifying weights'
       return
@@ -34,7 +39,9 @@ class ImportanceSampling(object):
     self.cts = np.zeros(self.N)
 
   def weights(self):
-    return self.wts
+    full_wts = np.zeros(self.full_N)
+    full_wts[self.nzidcs] = self.wts
+    return full_wts
 
   def error(self):
     return np.sqrt((((self.wts[:, np.newaxis]*self.x).sum(axis=0) - self.xs)**2).sum())
@@ -46,7 +53,7 @@ class ImportanceSampling(object):
       self._compute_normratio()
     M = M if M else self.M
     v = np.sqrt(2.*M*self.normratio**2/(self.diam**2*np.log(1./delta)))
-    nm = min(self.diam, self.normratio*v*self._hinv(1./v))
+    nm = min(self.diam, self.normratio*v*self._hinv(1./v**2))
     return self.sig/np.sqrt(M)*(self.normratio + nm*np.sqrt(2.*np.log(1./delta)))
 
   def _hinv(v):
@@ -77,7 +84,21 @@ class RandomSubsampling(ImportanceSampling):
   def __init__(self, x):
     ImportanceSampling.__init__(self, x)
     self.ps = 1.0/float(self.N) * np.ones(self.N)
+    self.xi = None
+    self.tau = None
 
   def sqrt_bound(self, delta, M=None):
-    print 'Error: requested sqrt_bound of RandomSubsample. Not implemented, returning NaN.'
-    return np.nan
+    if not self.xi or not self.tau:
+      self._compute_xi_tau()
+    M = M if M else self.M
+    v = self.tau*np.sqrt(M)/self.xi/np.sqrt(np.log(1./delta))
+    nm = min(np.sqrt(2)*self.xi/self.tau, v*self._hinv(1./v**2))
+    return np.sqrt(self.tau/float(M))*( np.sqrt(1./2.) + nm*np.sqrt(self.tau*np.log(1./delta)))
+
+  def _compute_xi_tau(self):
+    xnrmsqs = (self.x**2).sum(axis=1)
+    distsqs = xnrmsqs[:, np.newaxis] + xnrmsqs - 2.*self.x.dot(self.x.T)
+    self.xi = self.x.shape[0]*np.sqrt(distsqs.max())
+    self.tau = distsqs.sum()
+    return
+

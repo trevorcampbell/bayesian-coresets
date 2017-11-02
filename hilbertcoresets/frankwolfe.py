@@ -2,23 +2,29 @@ import numpy as np
 
 #TODO: split _compute_diam, _compute_normratio out?
 #TODO: _compute_nu assumes full rank data Gram matrix; fix that by projection of some sort
-#TODO: remove any zero weight obs and change weights() to remap
 
 class FrankWolfe(object):
-  def __init__(self, x):
-    self.norms = np.sqrt((x**2).sum(axis=1))
-    if np.any(self.norms==0):
-      print 'Error: No vectors in x can have 0 norm'
+  def __init__(self, _x):
+    x = np.asarray(_x)
+    if len(x.shape) != 2:
+      raise ValueError('FrankWolfe: input is not a 2d ndarray')
+    nrms = np.sqrt((x**2).sum(axis=1))
+    self.nzidcs = nrms > 0.
+    self.full_N = x.shape[0]
+    self.x = x[self.nzidcs, :]
+
+    self.norms = nrms[self.nzidcs]
     self.sig = self.norms.sum()
-    self.x = x
-    self.xs = x.sum(axis=0)
-    self.N = x.shape[0]
+    self.xs = self.x.sum(axis=0)
+    self.N = self.x.shape[0]
     self.normratio = None
     self.diam = None
     self.nu = None
     self.reset()
 
   def run(self, M, update_method='fast'):
+    if self.x.size == 0:
+      return
     if M <= self.M:
       print 'Warning: requested M <= self.M, returning without modifying weights'
       return
@@ -56,7 +62,9 @@ class FrankWolfe(object):
     self.xw = np.zeros(self.x.shape[1])
 
   def weights(self):
-    return self.wts
+    full_wts = np.zeros(self.full_N)
+    full_wts[self.nzidcs] = self.wts
+    return full_wts
 
   def error(self):
     return np.sqrt(((self.xw - self.xs)**2).sum())
