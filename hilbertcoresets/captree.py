@@ -37,7 +37,11 @@ class CapTree(object):
     else:
       #compute manifold mean
       self.xi = data[idcs].sum(axis=0)
-      self.xi /= np.sqrt((self.xi**2).sum())
+      xinrm = np.sqrt((self.xi**2).sum())
+      if xinrm == 0.:
+        self.xi = data[0, :]
+      else:
+        self.xi /= xinrm
       #get dists to all points
       dots = data[idcs].dot(self.xi)
       #get the closest point to the mean (for LB)
@@ -46,13 +50,16 @@ class CapTree(object):
       self.ny = idcs[nY]
       #get the furthest point (for r + children)
       nL = dots.argmin()
-      self.r = dots[nL]
+      self.r = max(-1., min(1., dots[nL])) #to take care of numerical > 1 or < -1
       #get the dists to the L anchor + furthest point
       dotsL = data[idcs].dot(data[idcs[nL], :])
       nR = dotsL.argmin()
       dotsR = data[idcs].dot(data[idcs[nR], :])
       #split based on L/R anchors
       idcsR = dotsR > dotsL
+      #if all data are colinear, idcsR/idcsL can be empty, so just split in half
+      if np.all(idcsR) or np.all(np.logical_not(idcsR)):
+        idcsR = np.arange(idcs.shape[0]) < idcs.shape[0]/2
       self.cR = CapTree(data, idcs[idcsR])
       self.cL = CapTree(data, idcs[np.logical_not(idcsR)])
      
@@ -70,10 +77,10 @@ class CapTree(object):
     #compute upper bound
     bu = self.xi.dot(u)
     bv = self.xi.dot(v)
-    b = np.sqrt(1.-bu**2-bv**2)
+    b = np.sqrt(max(0., 1.-bu**2-bv**2))
     U = -1.
     rv = np.sqrt(max(0., self.r**2 - bv**2))
-    r1 = np.sqrt(max(0, 1.-self.r**2))
+    r1 = np.sqrt(max(0., 1.-self.r**2))
     if np.fabs(bv) > self.r or bu >= rv:
       U = 1.
     else:
