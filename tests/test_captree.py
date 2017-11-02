@@ -2,7 +2,7 @@ import hilbertcoresets as hc
 import numpy as np
 
 n_trials = 50
-tol = 1e-16
+tol = 1e-9
 n_bound_samples = 1000
 
 ####################################################
