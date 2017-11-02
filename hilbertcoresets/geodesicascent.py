@@ -2,16 +2,21 @@ import numpy as np
 import captree as ct
 
 class GIGA(object):
-  def __init__(self, x):
-    self.norms = np.sqrt((x**2).sum(axis=1))
+  def __init__(self, _x):
+    x = np.asarray(_x)
+    if len(x.shape) != 2:
+      raise ValueError('GIGA: input is not a 2d ndarray')
+    nrms = np.sqrt((x**2).sum(axis=1))
+    self.nzidcs = nrms > 0.
+    self.full_N = x.shape[0]
+    self.x = x[self.nzidcs, :]
+
+    self.norms = nrms[self.nzidcs]
     self.sig = self.norms.sum()
-    if np.any(self.norms==0):
-      print 'Error: No vectors in x can have 0 norm'
-    self.x = x
-    self.xs = x.sum(axis=0)
-    self.y = x/self.norms[:, np.newaxis]
+    self.xs = self.x.sum(axis=0)
+    self.y = self.x/self.norms[:, np.newaxis]
     self.ys = self.xs/np.sqrt(((self.xs)**2).sum())
-    self.N = x.shape[0]
+    self.N = self.x.shape[0]
     self.tree = None
     self.f_tree = 0.
     self.m_tree = 0.
@@ -26,6 +31,8 @@ class GIGA(object):
   #update_method can be 'fast' or 'stable'
   #search_method can be 'adaptive', 'linear', or 'tree'
   def run(self, M, update_method='fast', search_method='adaptive', M_max = None):
+    if self.x.size == 0:
+      return
     if M <= self.M:
       print 'Warning: requested M <= self.M, returning without modifying weights'
       return
@@ -139,7 +146,9 @@ class GIGA(object):
     return np.sqrt((self.xs**2).sum())*np.sqrt(((self.yw-self.ys)**2).sum())
 
   def weights(self):
-    return (self.wts/self.norms)*np.sqrt((self.xs**2).sum())*self.yw.dot(self.ys)
+    full_wts = np.zeros(self.full_N)
+    full_wts[self.nzidcs] = (self.wts/self.norms)*np.sqrt((self.xs**2).sum())*self.yw.dot(self.ys)
+    return full_wts
 
   #def exp_bound(self, M=None):
   #  if not self._diam:
