@@ -3,7 +3,7 @@ import numpy as np
 
 setup(
     name = 'hilbert-coresets',
-    version='0.2',
+    version='0.3',
     description="Hilbert coresets for approximate Bayesian inference",
     author='Trevor Campbell',
     author_email='tdjc@mit.edu',

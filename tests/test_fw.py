@@ -56,7 +56,7 @@ def fw_single(N, D, dist="gauss"):
     assert fw.exp_bound(1e100) < tol, "FW failed: exp bound doesn't approach 0"
 
     #incremental M tests
-    prev_err = np.sqrt(x**2.sum(axis=1)).sum()*np.sqrt(((x - xs)**2).sum(axis=1)).max()
+    prev_err = np.inf
     for m in range(1, N+1):
       fw.run(m)
       if x.shape[0] == 1:
@@ -88,16 +88,16 @@ def fw_single(N, D, dist="gauss"):
 def test_fw_random():
   tests = [(N, D, dist) for N in [0, 1, 1000] for D in [0, 1, 10] for dist in ['gauss', 'bin']]
   for N, D, dist in tests:
-    yield fw_single(N, D, dist)
+    yield fw_single, N, D, dist
  
 def test_fw_colinear():
   tests = [(N, D, dist) for N in [0, 1, 1000] for D in [0, 1, 10] for dist in ['gauss_colinear', 'bin_colinear']]
   for N, D, dist in tests:
-    yield fw_single(N, D, dist)
+    yield fw_single, N, D, dist
 
 def test_fw_axis_aligned():
   for N in [0, 1, 10, 1000]:
-    yield fw_single(N, 0, 'axis_aligned')
+    yield fw_single, N, 0, 'axis_aligned'
 
 
 ####################################################

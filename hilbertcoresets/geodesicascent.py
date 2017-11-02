@@ -4,8 +4,8 @@ import captree as ct
 class GIGA(object):
   def __init__(self, _x):
     x = np.asarray(_x)
-    if len(x.shape) != 2 or not np.issubtype(x.dtype, np.number):
-      raise ValueError('GIGA: input is not a 2d numeric ndarray')
+    if len(x.shape) != 2 or not np.issubdtype(x.dtype, np.number):
+      raise ValueError('GIGA: input must be a 2d numeric ndarray')
     nrms = np.sqrt((x**2).sum(axis=1))
     self.nzidcs = nrms > 0.
     self.full_N = x.shape[0]
@@ -31,11 +31,22 @@ class GIGA(object):
   #update_method can be 'fast' or 'stable'
   #search_method can be 'adaptive', 'linear', or 'tree'
   def run(self, M, update_method='fast', search_method='adaptive', M_max = None):
-    if self.x.size == 0:
+    if self.x.size == 0 or (self.xs**2).sum() == 0.:
       return
     if M <= self.M:
       print 'Warning: requested M <= self.M, returning without modifying weights'
       return
+    if self.y.shape[0] == 1:
+      self.yw = self.y[0, :]
+      self.wts[0] = 1.
+      self.M = M
+      return
+    if self.y.shape[1] == 1:
+      self.yw = self.ys.copy()
+      self.wts[np.argmax(self.ys.dot(self.y))] = 1.0
+      self.M = M
+      return
+      
 
     if search_method == 'linear':
       GIGA.search = GIGA.search_linear
@@ -135,7 +146,7 @@ class GIGA(object):
       return self.search_linear()
 
   def build_tree(self):
-    self.tree = ct.CapNode(self.y)
+    self.tree = ct.CapTree(self.y)
 
   def reset(self):
     self.M = 0
@@ -158,12 +169,16 @@ class GIGA(object):
   ########
 
   def exp_bound(self, M=None):
+    if self.x.size == 0:
+      return 0.
     M = M if M else self.M
     if M > 1e99:
       return 0.
     return np.iinfo(np.int64).max - M #TODO
 
   def sqrt_bound(self, M=None):
+    if self.x.size == 0:
+      return 0.
     M = M if M else self.M
     if M > 1e99:
       return 0.
