@@ -4,8 +4,8 @@ import captree as ct
 class GIGA(object):
   def __init__(self, _x):
     x = np.asarray(_x)
-    if len(x.shape) != 2:
-      raise ValueError('GIGA: input is not a 2d ndarray')
+    if len(x.shape) != 2 or not np.issubtype(x.dtype, np.number):
+      raise ValueError('GIGA: input is not a 2d numeric ndarray')
     nrms = np.sqrt((x**2).sum(axis=1))
     self.nzidcs = nrms > 0.
     self.full_N = x.shape[0]
@@ -150,32 +150,22 @@ class GIGA(object):
     full_wts[self.nzidcs] = (self.wts/self.norms)*np.sqrt((self.xs**2).sum())*self.yw.dot(self.ys)
     return full_wts
 
-  #def exp_bound(self, M=None):
-  #  if not self._diam:
-  #    self._compute_diam()
-  #  if not self._nu:
-  #    self._compute_nu()
-  #  normratio = np.sqrt(1. - (self.xs**2).sum()/self.sig**2)
-  #  return self.sig*self._diam/np.sqrt(M if M else self.M)
-  #
-  #def sqrt_bound(self, M=None):
-  #  if not self._diam:
-  #    self._compute_diam()
-  #  return self.sig*self._diam/np.sqrt(M if M else self.M)
 
-  #def _compute_nu(self):
-  #  #from scipy.spatial import ConvexHull
-  #  #from xx import linear programming
-  #  #hull = ConvexHull(self.x)
-  #  #hull.equations[:, :-1]
-  #  #hull.equations[:, -1]
-  #  #self.xs
-  #  self._nu = 1.
-  #  return
+  ########
+  ########
+  #THE BELOW ARE PLACEHOLDERS DESIGNED TO PASS TESTS; THESE NEED TO BE IMPLEMENTED
+  ########
+  ########
 
-  #def _compute_diam(self):
-  #  normed_x = self.x/self.norms[:, np.newaxis] 
-  #  distsqs = 2. - 2.*normed_x.dot(normed_x.T)
-  #  self._diam = np.sqrt(distsqs.max())
-  #  return
+  def exp_bound(self, M=None):
+    M = M if M else self.M
+    if M > 1e99:
+      return 0.
+    return np.iinfo(np.int64).max - M #TODO
+
+  def sqrt_bound(self, M=None):
+    M = M if M else self.M
+    if M > 1e99:
+      return 0.
+    return np.iinfo(np.int64).max - M #TODO
 

@@ -7,6 +7,8 @@ tol = 1e-16
 ####################################################
 #verifies that 
 #-coreset size <= M at iteration M
+#-bound is positive and decreasing -> 0
+#-
 #-error() vs output y(weights) are close to each other
 #-error is decreasing
 #-reset() resets the alg properly
@@ -18,7 +20,7 @@ tol = 1e-16
 #-fw outputs expected weights and error for axis_aligned data 
 ####################################################
 def is_single(N, D, dist="gauss"):
-  print 'fw single: N = ' +str(N) + ' D = ' +str(D) + ' dist = ' + dist
+  print 'IS single: N = ' +str(N) + ' D = ' +str(D) + ' dist = ' + dist
   for n in range(n_trials):
     if dist == "gauss":
       x = np.random.normal(0., 1., (N, D))
@@ -36,58 +38,63 @@ def is_single(N, D, dist="gauss"):
       x = np.zeros((N, N))
       for i in range(N):
         x[i, i] = 1./float(N)
+
     xs = x.sum(axis=0)
-    fw = hc.FrankWolfe(x)
-    #incremental M tests
-    prev_err = np.sqrt(x**2.sum(axis=1)).sum()*np.sqrt(((x - xs)**2).sum(axis=1)).max()
+    IS = hc.ImportanceSampling(x)
+
+    #bound tests
+    delta = 0.05
+    prev_bd = np.inf
     for m in range(1, N+1):
-      fw.run(m)
-      if x.shape[0] == 1:
-        assert np.fabs(fw.weights() - np.array([1])) < tol, "fw failed: coreset not immediately optimal with N = 1"
-      assert (fw.weights() > 0.).sum() <= m, "fw failed: coreset size > m"
-      xw = (fw.weights()[:, np.newaxis]*x).sum(axis=0)
-      assert np.sqrt(((xw-xs)**2).sum()) < prev_err, "fw failed: error is not monotone decreasing"
-      assert np.fabs(fw.error() - np.sqrt(((xw-xs)**2).sum())) < tol, "fw failed: x(w) est is not close to true x(w)"
-      assert fw.sqrt_bound() - np.sqrt(((xw-xs)**2).sum()) >= tol, "fw failed: sqrt bound invalid"
-      assert fw.exp_bound() - np.sqrt(((xw-xs)**2).sum()) >= tol, "fw failed: exp bound invalid"
-      if 'colinear' in dist and m >= 2:
-        assert np.sqrt(((xw-xs)**2).sum()) < tol, "fw failed: for M>=2, coreset with colinear data not optimal"
-      if 'axis' in dist:
-        assert np.all( np.fabs(fw.weights()[ fw.weights() > 0. ] - 1./np.sqrt(m) ) < tol ), "fw failed: on axis-aligned data, weights are not 1/sqrt(M)"
-        assert np.fabs(np.sqrt(((xw-xs)**2).sum()) - np.sqrt(1./float(m) - 1./float(N))) < tol, "fw failed: on axis-aligned data, error is not sqrt(1/M - 1_N)"
-      prev_err = np.sqrt(((xw-xs)**2).sum())
-    #save incremental M result
-    w_inc = fw.weights()
-    xw_inc = (fw.weights()[:, np.newaxis]*x).sum(axis=0) 
+      bd = IS.sqrt_bound(delta, m)
+      assert bd >= 0., "IS failed: sqrt bound < 0"
+      assert bd - prev_bd < tol, "IS failed: sqrt bound is not decreasing"
+      prev_bd = bd
+    assert IS.sqrt_bound(delta, 1e100) < tol, "IS failed: sqrt bound doesn't approach 0"
     
-    #check reset
-    fw.reset()
-    assert fw.M == 0 and np.all(np.fabs(fw.weights()) < tol) and np.fabs(fw.error() - np.sqrt((xs**2).sum())) < tol, "fw failed: fw.reset() did not properly reset"
-    #check reset
-    fw.run(N)
-    xw = (fw.weights()[:, np.newaxis]*x).sum(axis=0) 
-    assert np.all(np.fabs(fw.weights() - w_inc) < tol) and np.sqrt(((xw-xw_inc)**2).sum()) < tol, "fw failed: incremental run up to N doesn't produce same result as one run at N"
+    for m in range(1, N+1):
+      IS.run(m)
+      assert (IS.weights()>0).sum() <= m, "IS failed: coreset size > m"
+      xw = (IS.weights()[:, np.newaxis]*x).sum(axis=0)
+      assert np.fabs(IS.error() - np.sqrt(((xw-xs)**2).sum())) < tol, "IS failed: x(w) est is not close to true x(w)"
+
+    IS.reset()
+    assert IS.M == 0 and np.all(np.fabs(IS.weights()) < tol) and np.fabs(IS.error() - np.sqrt((xs**2).sum())) < tol, "IS failed: IS.reset() did not properly reset"
+
+    #run for max int number of iterations (fast since it just uses np.random.multinomial)
+    IS.run(np.iinfo(np.int64).max)
+    xw = (IS.weights()[:, np.newaxis]*x).sum(axis=0)
+    assert IS.error() < tol and np.sqrt(((xw-xs)**2).sum()) < tol, "IS failed: IS did not converge to optimum after int64.max iterations"
+
 
 def test_fw_random():
   tests = [(N, D, dist) for N in [0, 1, 1000] for D in [0, 1, 10] for dist in ['gauss', 'bin']]
   for N, D, dist in tests:
-    yield fw_single(N, D, dist)
+    yield is_single(N, D, dist)
  
 def test_fw_colinear():
   tests = [(N, D, dist) for N in [0, 1, 1000] for D in [0, 1, 10] for dist in ['gauss_colinear', 'bin_colinear']]
   for N, D, dist in tests:
-    yield fw_single(N, D, dist)
+    yield is_single(N, D, dist)
 
 def test_fw_axis_aligned():
   for N in [0, 1, 10, 1000]:
-    yield fw_single(N, 0, 'axis_aligned')
+    yield is_single(N, 0, 'axis_aligned')
+
+def test_is_hinv():
+  x = np.random.rand(10, 3)
+  alg = hc.ImportanceSampling(x)
+  y = np.random.rand(10000)*10000
+  h = lambda y : (1.+y)*np.log(1.+y)-y
+  for i in range(10000):
+    assert np.fabs(h(alg._hinv(y)) - y) < tol and np.fabs(alg._hinv(h(y)) - y) < tol, "IS failed: h is not inv of _hinv"
 
 
 ####################################################
-#verifies that FW correctly responds to bad input
+#verifies that IS correctly responds to bad input
 ####################################################
    
-def test_tree_input_validation():
+def test_is_input_validation():
   #empty
   #non array
   #non number

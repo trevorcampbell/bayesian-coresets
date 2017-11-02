@@ -6,8 +6,8 @@ import numpy as np
 class FrankWolfe(object):
   def __init__(self, _x):
     x = np.asarray(_x)
-    if len(x.shape) != 2:
-      raise ValueError('FrankWolfe: input is not a 2d ndarray')
+    if len(x.shape) != 2 or not np.issubtype(x.dtype, np.number):
+      raise ValueError('FrankWolfe: input is not a 2d numeric ndarray')
     nrms = np.sqrt((x**2).sum(axis=1))
     self.nzidcs = nrms > 0.
     self.full_N = x.shape[0]
