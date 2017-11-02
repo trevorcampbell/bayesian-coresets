@@ -70,16 +70,16 @@ def is_single(N, D, dist="gauss"):
 def test_fw_random():
   tests = [(N, D, dist) for N in [0, 1, 1000] for D in [0, 1, 10] for dist in ['gauss', 'bin']]
   for N, D, dist in tests:
-    yield is_single(N, D, dist)
+    yield is_single, N, D, dist
  
 def test_fw_colinear():
   tests = [(N, D, dist) for N in [0, 1, 1000] for D in [0, 1, 10] for dist in ['gauss_colinear', 'bin_colinear']]
   for N, D, dist in tests:
-    yield is_single(N, D, dist)
+    yield is_single, N, D, dist
 
 def test_fw_axis_aligned():
   for N in [0, 1, 10, 1000]:
-    yield is_single(N, 0, 'axis_aligned')
+    yield is_single, N, 0, 'axis_aligned'
 
 def test_is_hinv():
   x = np.random.rand(10, 3)
@@ -87,7 +87,7 @@ def test_is_hinv():
   y = np.random.rand(10000)*10000
   h = lambda y : (1.+y)*np.log(1.+y)-y
   for i in range(10000):
-    assert np.fabs(h(alg._hinv(y)) - y) < tol and np.fabs(alg._hinv(h(y)) - y) < tol, "IS failed: h is not inv of _hinv"
+    assert np.fabs(h(alg._hinv(y[i])) - y[i]) < tol*y[i] and np.fabs(alg._hinv(h(y[i])) - y[i]) < tol*y[i], "IS failed: h is not inv of _hinv"
 
 
 ####################################################

@@ -6,8 +6,8 @@ import numpy as np
 class FrankWolfe(object):
   def __init__(self, _x):
     x = np.asarray(_x)
-    if len(x.shape) != 2 or not np.issubtype(x.dtype, np.number):
-      raise ValueError('FrankWolfe: input is not a 2d numeric ndarray')
+    if len(x.shape) != 2 or not np.issubdtype(x.dtype, np.number):
+      raise ValueError('FrankWolfe: input must be a 2d numeric ndarray')
     nrms = np.sqrt((x**2).sum(axis=1))
     self.nzidcs = nrms > 0.
     self.full_N = x.shape[0]
@@ -70,6 +70,8 @@ class FrankWolfe(object):
     return np.sqrt(((self.xw - self.xs)**2).sum())
 
   def exp_bound(self, M=None):
+    if self.x.size == 0:
+      return 0.
     if not self.diam:
       self._compute_diam()
     if not self.nu:
@@ -80,6 +82,8 @@ class FrankWolfe(object):
     return self.sig*normratio*self.diam*self.nu/np.sqrt(self.diam**2*np.power(self.nu, -2.*(M-2.)) + normratio**2*(M-1))
   
   def sqrt_bound(self, M=None):
+    if self.x.size == 0:
+      return 0.
     if not self.diam:
       self._compute_diam()
     return self.sig*self.diam/np.sqrt(M if M else self.M)

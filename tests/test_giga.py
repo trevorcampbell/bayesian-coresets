@@ -56,7 +56,7 @@ def giga_single(N, D, dist="gauss"):
     assert giga.exp_bound(1e100) < tol, "GIGA failed: exp bound doesn't approach 0"
 
     #incremental M tests
-    prev_err = np.sqrt(x**2.sum(axis=1)).sum()*np.sqrt(((x - xs)**2).sum(axis=1)).max()
+    prev_err = np.inf
     for m in range(1, N+1):
       giga.run(m)
       if x.shape[0] == 1:
@@ -88,16 +88,16 @@ def giga_single(N, D, dist="gauss"):
 def test_giga_random():
   tests = [(N, D, dist) for N in [0, 1, 1000] for D in [0, 1, 10] for dist in ['gauss', 'bin']]
   for N, D, dist in tests:
-    yield giga_single(N, D, dist)
+    yield giga_single, N, D, dist
  
 def test_giga_colinear():
   tests = [(N, D, dist) for N in [0, 1, 1000] for D in [0, 1, 10] for dist in ['gauss_colinear', 'bin_colinear']]
   for N, D, dist in tests:
-    yield giga_single(N, D, dist)
+    yield giga_single, N, D, dist
 
 def test_giga_axis_aligned():
   for N in [0, 1, 10, 1000]:
-    yield giga_single(N, 0, 'axis_aligned')
+    yield giga_single, N, 0, 'axis_aligned'
 
 
 ####################################################

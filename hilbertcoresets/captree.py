@@ -1,4 +1,5 @@
 import numpy as np
+import heapq
 
 def cap_tree_search(root, yw, y_yw):
   #each UB/LB computation is 2 O(d) operations
@@ -21,11 +22,11 @@ def cap_tree_search(root, yw, y_yw):
         nfun += 4.
   return nopt, nfun
 
-class CapNode(object):
+class CapTree(object):
   def __init__(self, data, idcs=None):
-    if not idcs:
+    if idcs is None:
       idcs = np.arange(data.shape[0])
-    if idcs.shape[0] <= 1:
+    if idcs.shape[0] == 1:
       self.y = data[idcs[0], :]
       self.xi = data[idcs[0], :]
       self.r = 1.
@@ -52,8 +53,8 @@ class CapNode(object):
       dotsR = data[idcs].dot(data[idcs[nR], :])
       #split based on L/R anchors
       idcsR = dotsR > dotsL
-      self.cR = CapNode(data, idcs[idcsR])
-      self.cL = CapNode(data, idcs[np.logical_not(idcsR)])
+      self.cR = CapTree(data, idcs[idcsR])
+      self.cL = CapTree(data, idcs[np.logical_not(idcsR)])
      
       #a better implementation of the above in c++ would do this many O(d) operations:
       # if leaf
@@ -63,7 +64,7 @@ class CapNode(object):
       #   N+1 to compute argmin / argmax datapoint to xi + save argmax
       #   N to compute argmin (R child) from L child
       #   N to split based on dots from L and R
-      self.n_fun_construction = self.cR.nfun_construction + self.cL.nfun_construction + 4.*idcs.shape[0]+3.
+      self.nfun_construction = self.cR.nfun_construction + self.cL.nfun_construction + 4.*idcs.shape[0]+3.
 
   def upper_bound(self, u, v):
     #compute upper bound

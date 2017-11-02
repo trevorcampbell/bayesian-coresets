@@ -3,8 +3,8 @@ import numpy as np
 class ImportanceSampling(object):
   def __init__(self, _x):
     x = np.asarray(_x)
-    if len(x.shape) != 2 or not np.issubtype(x.dtype, np.number):
-      raise ValueError('ImportanceSampling: input is not a 2d numeric ndarray')
+    if len(x.shape) != 2 or not np.issubdtype(x.dtype, np.number):
+      raise ValueError('ImportanceSampling: input must be a 2d numeric ndarray')
     nrms = np.sqrt((x**2).sum(axis=1))
     self.nzidcs = nrms > 0.
     self.full_N = x.shape[0]
@@ -15,8 +15,10 @@ class ImportanceSampling(object):
     self.sig = self.norms.sum()
     if self.sig > 0.:
       self.ps = self.norms/self.sig
-    else:
+    elif self.N > 0:
       self.ps = 1.0/float(self.N) * np.ones(self.N) 
+    else:
+      self.ps = None
     self.xs = x.sum(axis=0)
     self.diam = None
     self.normratio = None
@@ -47,6 +49,8 @@ class ImportanceSampling(object):
     return np.sqrt((((self.wts[:, np.newaxis]*self.x).sum(axis=0) - self.xs)**2).sum())
 
   def sqrt_bound(self, delta, M=None):
+    if self.x.size == 0:
+      return 0.
     if not self.diam:
       self._compute_diam()
     if not self.normratio:
@@ -56,12 +60,12 @@ class ImportanceSampling(object):
     nm = min(self.diam, self.normratio*v*self._hinv(1./v**2))
     return self.sig/np.sqrt(M)*(self.normratio + nm*np.sqrt(2.*np.log(1./delta)))
 
-  def _hinv(v):
+  def _hinv(self, v):
     yL = 0.
     yR = 1.
     while (1.+yR)*np.log(1.+yR)-yR < v:
       yR *= 2
-    while (yR-yL)/yR > 1e-6:
+    while (yR-yL)/yR > 1e-12:
       yC = (yL+yR)/2.
       vC = (1.+yC)*np.log(1.+yC)-yC
       if vC > v:
