@@ -95,12 +95,18 @@ def test_is_hinv():
 ####################################################
    
 def test_is_input_validation():
-  #empty
-  #non array
-  #non number
-  #integer vs real
-  #m = 0
-  pass #TODO
+  try:
+    hc.ImportanceSampling('fdas')
+  except ValueError:
+    pass
+  except:
+    assert False, "Unrecognized error type"
+  try:
+    hc.ImportanceSampling(np.array(['fdsa', 'asdf']))
+  except ValueError:
+    pass
+  except:
+    assert False, "Unrecognized error type"
  
   
  

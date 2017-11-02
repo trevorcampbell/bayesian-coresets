@@ -103,15 +103,19 @@ def test_fw_axis_aligned():
 ####################################################
 #verifies that FW correctly responds to bad input
 ####################################################
-   
+    
 def test_fw_input_validation():
-  #empty
-  #non array
-  #non number
-  #integer vs real
-  #m = 0
-  pass #TODO
- 
-  
- 
+  try:
+    hc.FrankWolfe('fdas')
+  except ValueError:
+    pass
+  except:
+    assert False, "Unrecognized error type"
+  try:
+    hc.FrankWolfe(np.array(['fdsa', 'asdf']))
+  except ValueError:
+    pass
+  except:
+    assert False, "Unrecognized error type"
+   
 
