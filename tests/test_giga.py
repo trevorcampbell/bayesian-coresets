@@ -103,6 +103,20 @@ def test_giga_axis_aligned():
 ####################################################
 #verifies that GIGA correctly responds to bad input
 ####################################################
+    
+def test_giga_input_validation():
+  try:
+    hc.GIGA('fdas')
+  except ValueError:
+    pass
+  except:
+    assert False, "Unrecognized error type"
+  try:
+    hc.GIGA(np.array(['fdsa', 'asdf']))
+  except ValueError:
+    pass
+  except:
+    assert False, "Unrecognized error type"
    
 def test_giga_input_validation():
   #empty
