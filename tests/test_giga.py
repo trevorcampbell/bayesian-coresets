@@ -2,10 +2,10 @@ import hilbertcoresets as hc
 import numpy as np
 
 n_trials = 1
-tol = 1e-9
+tol = 1e-4
 #tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
 #tests = [(N, D, dist) for N in [10] for D in [3] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
-tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['gauss']]
+tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['gauss_colinear'] for search_method in ['linear', 'tree', 'adaptive']]
 
 def gendata(N, D, dist="gauss"):
   if dist == "gauss":
@@ -40,7 +40,7 @@ def gendata(N, D, dist="gauss"):
 #-bound is positive, decreasing -> 0 
 #-giga outputs expected weights and error for axis_aligned data 
 ####################################################
-def giga_single(N, D, dist="gauss"):
+def giga_single(N, D, dist="gauss", search_method="linear"):
   x = gendata(N, D, dist)
   xs = x.sum(axis=0)
   giga = hc.GIGA(x)
@@ -63,16 +63,18 @@ def giga_single(N, D, dist="gauss"):
   #incremental M tests
   prev_err = np.inf
   for m in range(1, N+1):
-    giga.run(m, update_method='stable', search_method='tree')
+    giga.run(m, search_method=search_method)
     if x.shape[0] == 1:
-      assert np.fabs(giga.weights() - np.array([1])) < tol, "GIGA failed: coreset not immediately optimal with N = 1"
+      assert np.fabs(giga.weights() - np.array([1])) < tol or (np.fabs(giga.weights() - np.array([0])) < tol and (x**2).sum() == 0.), "GIGA failed: coreset not immediately optimal with N = 1"
     assert (giga.weights() > 0.).sum() <= m, "GIGA failed: coreset size > m"
     xw = (giga.weights()[:, np.newaxis]*x).sum(axis=0)
     assert np.sqrt(((xw-xs)**2).sum()) - prev_err < tol, "GIGA failed: error is not monotone decreasing"
     assert np.fabs(giga.error() - np.sqrt(((xw-xs)**2).sum())) < tol, "GIGA failed: x(w) est is not close to true x(w)"
     assert giga.sqrt_bound() - np.sqrt(((xw-xs)**2).sum()) >= -tol, "GIGA failed: sqrt bound invalid"
     assert giga.exp_bound() - np.sqrt(((xw-xs)**2).sum()) >= -tol, "GIGA failed: exp bound invalid"
-    if 'colinear' in dist and m >= 2:
+    if 'colinear' in dist and m >= 1:
+      if not np.sqrt(((xw-xs)**2).sum()) < tol:
+        assert False, "colinear m>= 1 problem nrm = " +str(np.sqrt(((xw-xs)**2).sum())) + " tol = " + str(tol) + " m = " + str(m)
       assert np.sqrt(((xw-xs)**2).sum()) < tol, "GIGA failed: for M>=2, coreset with colinear data not optimal"
     if 'axis' in dist:
       assert np.all( np.fabs(giga.weights()[ giga.weights() > 0. ] - 1. ) < tol ), "GIGA failed: on axis-aligned data, weights are not 1"
@@ -88,12 +90,16 @@ def giga_single(N, D, dist="gauss"):
   #check reset
   giga.run(N)
   xw = (giga.weights()[:, np.newaxis]*x).sum(axis=0) 
-  assert np.all(np.fabs(giga.weights() - w_inc) < tol) and np.sqrt(((xw-xw_inc)**2).sum()) < tol, "GIGA failed: incremental run up to N doesn't produce same result as one run at N"
+  #only check output xw on adaptive since numerics might change wts
+  if search_method == "linear" or search_method == "tree":
+    assert np.all(np.fabs(giga.weights() - w_inc) < tol) and np.sqrt(((xw-xw_inc)**2).sum()) < tol, "GIGA failed: incremental run up to N doesn't produce same result as one run at N"
+  else:
+    assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, "GIGA failed: incremental run up to N doesn't produce same result as one run at N"
 
 def test_giga():
   for N, D, dist in tests:
     for n in range(n_trials):
-      yield giga_single, N, D, dist
+      yield giga_single, N, D, dist, search_method
 
 ####################################################
 #verifies that GIGA correctly responds to bad input

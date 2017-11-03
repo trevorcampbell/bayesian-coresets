@@ -90,6 +90,8 @@ class CapTree(object):
   def lower_bound(self, u, v):
     bu = self.y.dot(u)
     bv = self.y.dot(v)
+    if 1.-bv**2 <= 0.: #only occurs when y = y_w numerically, in which case there is no well-defined dir, so return -1.
+      return -1. 
     return bu/np.sqrt(1.-bv**2)
 
   

@@ -76,34 +76,41 @@ class GIGA(object):
 
     for m in range(self.M, M):
       f = self.search()
+      if f:
+        gA = self.ys.dot(self.yw)
+        gB = self.ys.dot(self.y[f,:])
+        gC = self.yw.dot(self.y[f,:])
+        if (gB-gA*gC) <= 0. or (gB-gA*gC) + (gA-gB*gC) <= 0.:
+          print str(gB-gA*gC) + " " + str(gA-gB*gC)
+          gamma = 0.
+        else:
+          gamma = (gB-gA*gC) / ((gB-gA*gC) + (gA-gB*gC))
+        if gamma < 0 or gamma > 1:
+          print 'Warning: gamma not in [0, 1]: ' + str(gamma)
+          gamma = (0. if gamma < 0 else gamma)
+          gamma = (1. if gamma > 1 else gamma)
 
-      gA = self.ys.dot(self.yw)
-      gB = self.ys.dot(self.y[f,:])
-      gC = self.yw.dot(self.y[f,:])
-      gamma = (gB-gA*gC) / ((gB-gA*gC) + (gA-gB*gC))
+        self.wts *= (1.-gamma)
+        self.wts[f] += gamma
 
-      if gamma < 0 or gamma > 1:
-        print 'Warning: gamma not in [0, 1]: ' + str(gamma)
-        gamma = (0. if gamma < 0 else gamma)
-        gamma = (1. if gamma > 1 else gamma)
+        if update_method == 'fast':
+          self.yw = (1.-gamma)*self.yw + gamma*self.y[f, :]
+        else:
+          self.yw = (self.wts[:, np.newaxis]*self.y).sum(axis=0)
 
-      self.wts *= (1.-gamma)
-      self.wts[f] += gamma
-
-      if update_method == 'fast':
-        self.yw = (1.-gamma)*self.yw + gamma*self.y[f, :]
-      else:
-        self.yw = (self.wts[:, np.newaxis]*self.y).sum(axis=0)
-
-      nrm = np.sqrt((self.yw**2).sum())
-      self.yw /= nrm
-      self.wts /= nrm
+        nrm = np.sqrt((self.yw**2).sum())
+        self.yw /= nrm
+        self.wts /= nrm
 
     self.M = M
     return
 
   def search_linear(self):
     cdir = self.ys - self.ys.dot(self.yw)*self.yw
+    cdirnrm =np.sqrt((cdir**2).sum()) 
+    if cdirnrm == 0.:
+      return None
+    cdir /= cdirnrm
     scorenums = self.y.dot(cdir) 
     scoredenoms = 1.-self.y.dot(self.yw)**2
     scoredenoms[scoredenoms < 1e-16] = np.inf
@@ -122,7 +129,10 @@ class GIGA(object):
   
   def search_tree(self):
     cdir = self.ys - self.ys.dot(self.yw)*self.yw
-    cdir /= np.sqrt((cdir**2).sum())
+    cdirnrm =np.sqrt((cdir**2).sum()) 
+    if cdirnrm == 0.:
+      return None
+    cdir /= cdirnrm
     nopt, nfun = ct.cap_tree_search(self.tree, self.yw, cdir)
     self.f_tree += nfun
     self.m_tree += np.log(nfun)
@@ -139,7 +149,7 @@ class GIGA(object):
     if self.n_tree < 2 or self.n_tree < np.ceil(8.*np.log(n)):
       return self.search_tree()
     #lin_idx = self.m_lin/self.n_lin + np.sqrt(16.*((self.s_lin - self.m_lin**2/self.n_lin)/(self.n_lin-1))*(np.log(n-1.)/self.n_lin))
-    tree_idx = self.m_tree/self.n_tree - np.sqrt(16.*((self.s_tree - self.m_tree**2/self.n_tree)/(self.n_tree-1))*(np.log(n-1.)/self.n_tree))
+    tree_idx = self.m_tree/self.n_tree - np.sqrt(16.*(max(0., self.s_tree - self.m_tree**2/self.n_tree)/(self.n_tree-1))*(np.log(n-1.)/self.n_tree))
     if tree_idx < np.log(2.*self.N+2):
       return self.search_tree()
     else:
