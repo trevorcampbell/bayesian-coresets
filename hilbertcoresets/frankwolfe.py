@@ -107,7 +107,7 @@ class FrankWolfe(object):
       return 0.
     #compute nu if necessary
     if not self.nu:
-      self.nu = compute_nu(self.x, self.diam)
+      self.nu, _ = compute_nu(self.x, self.diam)
     #if nu is 0: if M == 1, we get sig*normratio error bound; if M > 1, we get 0.
     if self.nu == 0.:
       return 0. if M > 1 else self.sig*self.normratio
