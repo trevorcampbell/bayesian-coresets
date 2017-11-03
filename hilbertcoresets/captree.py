@@ -7,23 +7,24 @@ def cap_tree_search(root, yw, y_yw):
   L = -2.
   nopt = -1
   heapq.heappush(pq, (-root.upper_bound(y_yw, yw), root))
-  nfun = 2.
+  nfun_search = 2.
   while pq:
     negub, cap = heapq.heappop(pq)
     if -negub > L:
       ell = cap.lower_bound(y_yw, yw)
-      nfun += 2.
+      nfun_search += 2.
       if ell > L:
         L = ell
         nopt = cap.ny
-      if cap.cR:
+      if not cap.leaf:
         heapq.heappush(pq, (-cap.cR.upper_bound(y_yw, yw), cap.cR))
         heapq.heappush(pq, (-cap.cL.upper_bound(y_yw, yw), cap.cL))
-        nfun += 4.
-  return nopt, nfun
+        nfun_search += 4.
+  return nopt, nfun_search
 
 class CapTree(object):
   def __init__(self, data, idcs=None):
+    self.leaf = False
     if idcs is None:
       idcs = np.arange(data.shape[0])
     if idcs.shape[0] == 1:
@@ -34,10 +35,12 @@ class CapTree(object):
       self.cR = None
       self.cL = None
       self.nfun_construction = 2.
+      self.leaf = True
     else:
       #compute manifold mean
       self.xi = data[idcs].sum(axis=0)
       xinrm = np.sqrt((self.xi**2).sum())
+      #if xinrm is 0, just set it to the first datapoint
       if xinrm == 0.:
         self.xi = data[0, :]
       else:
@@ -63,7 +66,7 @@ class CapTree(object):
       self.cR = CapTree(data, idcs[idcsR])
       self.cL = CapTree(data, idcs[np.logical_not(idcsR)])
      
-      #a better implementation of the above in c++ would do this many O(d) operations:
+      #a better implementation of the above would do this in # O(d) operations:
       # if leaf
       #  2 operations to store xi and y
       # else
@@ -78,20 +81,21 @@ class CapTree(object):
     bu = self.xi.dot(u)
     bv = self.xi.dot(v)
     b = np.sqrt(max(0., 1.-bu**2-bv**2))
-    U = -1.
     rv = np.sqrt(max(0., self.r**2 - bv**2))
     r1 = np.sqrt(max(0., 1.-self.r**2))
     if np.fabs(bv) > self.r or bu >= rv:
-      U = 1.
+      return 1.
     else:
-      U = (bu*rv + b*r1)/(b**2+bu**2)
-    return U
+      return (bu*rv + b*r1)/(b**2+bu**2)
 
   def lower_bound(self, u, v):
+    #compute lower bound; but 
     bu = self.y.dot(u)
     bv = self.y.dot(v)
-    if 1.-bv**2 <= 0.: #only occurs when y = y_w numerically, in which case there is no well-defined dir, so return -1.
-      return -1. 
+    if 1.-bv**2 <= 0.: 
+      #this can occur when y = y_w numerically, in which case there is no well-defined dir, so return -3
+      #to make sure that the default -2 lower bound in cap_tree_search() above doesn't get updated by this
+      return -3. 
     return bu/np.sqrt(1.-bv**2)
 
   
