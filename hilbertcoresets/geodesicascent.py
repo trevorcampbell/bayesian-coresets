@@ -59,7 +59,7 @@ class GIGA(object):
         M_max = M
       if self.tree:
         GIGA.search = GIGA.search_adaptive
-      elif not self.tree and Mmax - self.M >= (4*self.N+3)*np.log2(self.N)/(2.*(self.N+1-np.log2(self.N))):
+      elif not self.tree and M_max - self.M >= (4*self.N+3)*np.log2(self.N)/(2.*(self.N+1-np.log2(self.N))):
         GIGA.search = GIGA.search_adaptive
         self.build_tree()
       else:
@@ -114,9 +114,9 @@ class GIGA(object):
     #dirnrms[dirnrms < 1e-16] = np.inf #this is only really used in iteration M=2, where yw = the initial vector
     #dirs /= dirnrms[:, np.newaxis]
     #scores = dirs.dot(cdir)
-    self.f_lin += 2.*N+2.
-    #self.s_lin += np.log(2.*N+2.)**2
-    #self.m_lin += np.log(2.*N+2.)
+    self.f_lin += 2.*self.N+2.
+    #self.s_lin += np.log(2.*self.N+2.)**2
+    #self.m_lin += np.log(2.*self.N+2.)
     self.n_lin += 1
     return scores.argmax()
   
@@ -140,7 +140,7 @@ class GIGA(object):
       return self.search_tree()
     #lin_idx = self.m_lin/self.n_lin + np.sqrt(16.*((self.s_lin - self.m_lin**2/self.n_lin)/(self.n_lin-1))*(np.log(n-1.)/self.n_lin))
     tree_idx = self.m_tree/self.n_tree - np.sqrt(16.*((self.s_tree - self.m_tree**2/self.n_tree)/(self.n_tree-1))*(np.log(n-1.)/self.n_tree))
-    if tree_idx < np.log(2.*N+2):
+    if tree_idx < np.log(2.*self.N+2):
       return self.search_tree()
     else:
       return self.search_linear()
@@ -154,7 +154,7 @@ class GIGA(object):
     self.yw = np.zeros(self.y.shape[1])
 
   def error(self):
-    return np.sqrt((self.xs**2).sum())*np.sqrt(((self.yw-self.ys)**2).sum())
+    return np.sqrt((self.xs**2).sum())*np.sqrt(max(0., 1. - self.yw.dot(self.ys)**2))
 
   def weights(self):
     full_wts = np.zeros(self.full_N)
