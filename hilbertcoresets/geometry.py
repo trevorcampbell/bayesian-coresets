@@ -9,7 +9,7 @@ def compute_nu(x, diam):
 
   #compute scaled data and sum
   mu = x.sum(axis=0)
-  nrms = np.sqrt((x**2).sum(axis=1))[:, np.newaxis]
+  nrms = np.sqrt((x**2).sum(axis=1))
   v = nrms.sum()*x/nrms[:, np.newaxis]
 
   #shift data by the mean
@@ -19,7 +19,7 @@ def compute_nu(x, diam):
   #scale all vectors down to have unit norm (for scaling cov numerical tolerance properly)
   vnrm = np.sqrt((v**2).sum(axis=1))
   vu = v.copy()
-  vu[vnrm >0.] /= vnrm[vnrm>0.]
+  vu[vnrm >0., :] /= vnrm[vnrm>0.][:, np.newaxis]
   vu -= vu.mean(axis=0)
 
   #get affine subspace the data lie in
@@ -44,18 +44,18 @@ def compute_nu(x, diam):
       r = min(-rmin, rmax)
   else:
     #compute the half-space equations of the convex hull
-    hull = ConvexHull(vecs2)
+    hull = ConvexHull(vP)
     b = hull.equations[:, -1]
     a = hull.equations[:, :-1]
     #for each half space constraint a^Tx <= b, the ball that touches it has radius (b -(aTx))/||a|| where x is the center
     #so take the minimum over all these radii
     #but ConvexHull is not guaranteed to output a particular normal for the hull, so we just take the fabs to automatically orient
-    r = (np.fabs(b - a.dot(xs2))/np.sqrt((a**2).sum(axis=1))).min()
+    r = (np.fabs(b - a.dot(muP))/np.sqrt((a**2).sum(axis=1))).min()
   #output nu
-  return np.sqrt(max(0., 1. - r**2/(nrms.sum()**2*diam**2))) 
+  return np.sqrt(max(0., 1. - r**2/(nrms.sum()**2*diam**2))), r
 
 def compute_diam(x):
-  nrms = np.sqrt((x**2).sum(axis=1))[:, np.newaxis]
+  nrms = np.sqrt((x**2).sum(axis=1))
   #first normalize data
   v = x/nrms[:, np.newaxis] 
   #use dot product matrix to compute distsqs
