@@ -68,7 +68,8 @@ def fw_single(N, D, dist="gauss"):
     assert (fw.weights() > 0.).sum() <= m, "FW failed: coreset size > m"
     xw = (fw.weights()[:, np.newaxis]*x).sum(axis=0)
     assert np.sqrt(((xw-xs)**2).sum()) - prev_err < tol, "FW failed: error is not monotone decreasing"
-    assert np.fabs(fw.error() - np.sqrt(((xw-xs)**2).sum())) < tol, "FW failed: x(w) est is not close to true x(w)"
+    assert np.fabs(fw.error('accurate') - np.sqrt(((xw-xs)**2).sum())) < tol, "FW failed: x(w) est is not close to true x(w)"
+    assert np.fabs(fw.error('accurate') - fw.error()) < tol*1000, "FW failed: fw.error(accurate/fast) do not return similar results"
     assert fw.sqrt_bound() - np.sqrt(((xw-xs)**2).sum()) >= -tol, "FW failed: sqrt bound invalid"
     assert fw.exp_bound() - np.sqrt(((xw-xs)**2).sum()) >= -tol, "FW failed: exp bound invalid"
     if 'colinear' in dist and m >= 2:
@@ -83,11 +84,11 @@ def fw_single(N, D, dist="gauss"):
   
   #check reset
   fw.reset()
-  assert fw.M == 0 and np.all(np.fabs(fw.weights()) < tol) and np.fabs(fw.error() - np.sqrt((xs**2).sum())) < tol, "FW failed: fw.reset() did not properly reset"
-  #check reset
+  assert fw.M == 0 and np.all(np.fabs(fw.weights()) < tol) and np.fabs(fw.error() - np.sqrt((xs**2).sum())) < tol and not fw.reached_numeric_limit, "FW failed: fw.reset() did not properly reset"
+  #check run up to N all at once vs incremental
   fw.run(N)
   xw = (fw.weights()[:, np.newaxis]*x).sum(axis=0) 
-  assert np.all(np.fabs(fw.weights() - w_inc) < tol) and np.sqrt(((xw-xw_inc)**2).sum()) < tol, "FW failed: incremental run up to N doesn't produce same result as one run at N"
+  assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, "FW failed: incremental run up to N doesn't produce same result as one run at N"
 
 def test_fw():
   for N, D, dist in tests:

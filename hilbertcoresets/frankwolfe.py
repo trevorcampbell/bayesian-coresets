@@ -22,7 +22,7 @@ class FrankWolfe(object):
     self.reached_numeric_limit = False
     self.reset()
 
-  #options are fast, stable (fast tracks xw and wts separately, stable updates xw from wts at each iter)
+  #options are fast, accurate (fast tracks xw and wts separately, accurate updates xw from wts at each iter)
   def run(self, M, update_method='fast'):
     #if M is not greater than self.M, just return 
     if M <= self.M:
@@ -75,6 +75,7 @@ class FrankWolfe(object):
     self.M = 0
     self.wts = np.zeros(self.N)
     self.xw = np.zeros(self.x.shape[1])
+    self.reached_numeric_limit = False
 
   def weights(self):
     #remap self.wts to the full original data size using nzidcs
@@ -82,7 +83,7 @@ class FrankWolfe(object):
     full_wts[self.nzidcs] = self.wts
     return full_wts
 
-  #options are fast, stable (either use xw or recompute xw from wts)
+  #options are fast, accurate (either use xw or recompute xw from wts)
   def error(self, method="fast"):
     if method == "fast":
       return np.sqrt(((self.xw - self.xs)**2).sum())

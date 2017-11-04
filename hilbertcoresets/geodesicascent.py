@@ -1,6 +1,7 @@
 import numpy as np
 import captree as ct
 import warnings
+import sys
 
 class GIGA(object):
   def __init__(self, _x):
@@ -30,15 +31,15 @@ class GIGA(object):
     self.reached_numeric_limit = False
     self.reset()
 
-  #update_method can be 'fast' or 'stable'
+  #update_method can be 'fast' or 'accurate'
   #search_method can be 'adaptive', 'linear', or 'tree'
   def run(self, M, update_method='fast', search_method='adaptive', M_max = None):
     #if M is not greater than self.M, just return 
     if M <= self.M:
       raise ValueError('GIGA.run(): M must be increasing. self.M = '+str(self.M) + ' M = '+str(M))
     if self.x.size == 0 or (self.xs**2).sum() == 0. or self.reached_numeric_limit:
-      warnings.warn('GIGA.run(): either data has no nonzero vectors, the sum has norm 0, or the numeric limit has \ 
-                     been reached. No more iterations will be run. M = ' + str(self.M) + ', error = ' +str(self.error()))
+      warnings.warn(
+       'GIGA.run(): either data has no nonzero vectors, the sum has norm 0, or the numeric limit has been reached. No more iterations will be run. M = ' + str(self.M) + ', error = ' +str(self.error()))
       return
 
     if self.y.shape[0] == 1:
@@ -85,7 +86,7 @@ class GIGA(object):
       f = self.search()
       gA = -1.
       gB = -1.
-      if f:
+      if f >= 0:
         gA = self.ys.dot(self.y[f,:]) - self.ys.dot(self.yw) * self.yw.dot(self.y[f,:])
         gB = self.ys.dot(self.yw) - self.ys.dot(self.y[f,:]) * self.yw.dot(self.y[f,:])
    
@@ -98,7 +99,7 @@ class GIGA(object):
         self.wts /= nrm
 
         f = self.search()
-        if f:
+        if f >= 0:
           gA = self.ys.dot(self.y[f,:]) - self.ys.dot(self.yw) * self.yw.dot(self.y[f,:])
           gB = self.ys.dot(self.yw) - self.ys.dot(self.y[f,:]) * self.yw.dot(self.y[f,:])
         #if it still didn't work, we've reached the numeric limit
@@ -125,19 +126,20 @@ class GIGA(object):
   def search_linear(self):
     cdir = self.ys - self.ys.dot(self.yw)*self.yw
     cdirnrm =np.sqrt((cdir**2).sum()) 
-    if cdirnrm == 0.:
-      return None
+    sys.stderr.write('cdirnrm: ' + str(cdirnrm) +'\n')
+    if cdirnrm < 1e-14:
+      return -1
     cdir /= cdirnrm
     scorenums = self.y.dot(cdir) 
-    scoredenoms = 1.-self.y.dot(self.yw)**2
-    scoredenoms[scoredenoms < 1e-12] = np.inf
-    scores = scorenums/np.sqrt(scoredenoms)
-    #cdir /= np.sqrt((cdir**2).sum())
-    #dirs = self.y - self.y.dot(self.yw)[:,np.newaxis]*self.yw
-    #dirnrms = np.sqrt((dirs**2).sum(axis=1))
-    #dirnrms[dirnrms < 1e-16] = np.inf #this is only really used in iteration M=2, where yw = the initial vector
-    #dirs /= dirnrms[:, np.newaxis]
-    #scores = dirs.dot(cdir)
+    scoredenoms = self.y.dot(self.yw)
+    #extract points for which the geodesic direction is stable (1st condition) and well defined (2nd)
+    idcs = np.logical_and(scoredenoms > -1.+1e-14,  1.-scoredenoms**2 > 0.)
+    #compute the norm 
+    scoredenoms[idcs] = np.sqrt(1.-scoredenoms[idcs]**2)
+    scoredenoms[np.logical_not(idcs)] = np.inf
+    #compute the scores
+    scores = scorenums/scoredenoms
+
     self.f_lin += 2.*self.N+2.
     #self.s_lin += np.log(2.*self.N+2.)**2
     #self.m_lin += np.log(2.*self.N+2.)
@@ -147,8 +149,8 @@ class GIGA(object):
   def search_tree(self):
     cdir = self.ys - self.ys.dot(self.yw)*self.yw
     cdirnrm =np.sqrt((cdir**2).sum()) 
-    if cdirnrm == 0.:
-      return None
+    if cdirnrm < 1e-14:
+      return -1
     cdir /= cdirnrm
     nopt, nfun = ct.cap_tree_search(self.tree, self.yw, cdir)
     self.f_tree += nfun
@@ -174,19 +176,39 @@ class GIGA(object):
 
   def build_tree(self):
     self.tree = ct.CapTree(self.y)
-    self.f_tree = ct.nfun_construction
+    self.f_tree = self.tree.nfun_construction
 
   def reset(self):
     self.M = 0
     self.wts = np.zeros(self.N)
     self.yw = np.zeros(self.y.shape[1])
+    self.reached_numeric_limit = False
 
-  def error(self):
-    return np.sqrt((self.xs**2).sum())*np.sqrt(max(0., 1. - self.yw.dot(self.ys)**2))
+  #options are fast, accurate (either use yw or recompute yw from wts)
+  def error(self, method="fast"):
+    if method == "fast":
+      return np.sqrt((self.xs**2).sum())*np.sqrt(max(0., 1. - self.yw.dot(self.ys)**2))
+    else:
+      ywt = (self.wts[:, np.newaxis]*self.y).sum(axis=0)
+      ywtn = np.sqrt((ywt**2).sum())
+      ywt /= ywtn
+      w = ((self.wts/ywtn)/self.norms)*np.sqrt((self.xs**2).sum())*ywt.dot(self.ys)
+      return np.sqrt((((w[:, np.newaxis]*self.x).sum(axis=0) - self.xs)**2).sum())
 
-  def weights(self):
+  #options are accurate and fast (either use yw or recompute)
+  #by default use accurate computation for weights (since this will be actual output)
+  def weights(self, method="accurate"):
+    #if M = 0, just output zeros using the fast method
+    if self.M == 0:
+      method = "fast"
     full_wts = np.zeros(self.full_N)
-    full_wts[self.nzidcs] = (self.wts/self.norms)*np.sqrt((self.xs**2).sum())*self.yw.dot(self.ys)
+    if method == "fast":
+      full_wts[self.nzidcs] = (self.wts/self.norms)*np.sqrt((self.xs**2).sum())*self.yw.dot(self.ys)
+    else:
+      ywt = (self.wts[:, np.newaxis]*self.y).sum(axis=0)
+      ywtn = np.sqrt((ywt**2).sum())
+      ywt /= ywtn
+      full_wts[self.nzidcs] = ((self.wts/ywtn)/self.norms)*np.sqrt((self.xs**2).sum())*ywt.dot(self.ys)
     return full_wts
 
 
