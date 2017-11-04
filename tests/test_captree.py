@@ -1,7 +1,7 @@
 import numpy as np
 from hilbertcoresets import captree as ct
 
-n_trials = 50
+n_trials = 20
 tol = 1e-9
 n_bound_samples = 1000
 tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear']]
