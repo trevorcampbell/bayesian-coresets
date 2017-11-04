@@ -1,6 +1,7 @@
 import numpy as np
 import heapq
 from collections import deque
+import sys
 
 #def cap_tree_search(root, yw, y_yw):
 #  #each UB/LB computation is 2 O(d) operations
@@ -30,11 +31,12 @@ class CapTree(object):
       self.nfun_constr = 0
       build_queue = deque([])
       build_queue.append( (self, np.arange(data.shape[0])) )
-      while not build_queue.empty():
+      while build_queue:
         cap, idcs = build_queue.popleft()
         idcsR, idcsL, nf = cap.build(data, idcs)
         self.nfun_constr += nf
         if not cap.leaf:
+          assert set(idcsR).union(set(idcsL)) == set(idcs)
           cap.cR = CapTree(None)
           cap.cL = CapTree(None)
           build_queue.append( (cap.cR, idcsR) )

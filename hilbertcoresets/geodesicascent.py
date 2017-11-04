@@ -1,7 +1,6 @@
 import numpy as np
 import captree as ct
 import warnings
-import sys
 
 class GIGA(object):
   def __init__(self, _x):
