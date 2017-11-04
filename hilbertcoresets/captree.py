@@ -1,5 +1,6 @@
 import numpy as np
 import heapq
+from collections import deque
 
 #def cap_tree_search(root, yw, y_yw):
 #  #each UB/LB computation is 2 O(d) operations
@@ -23,20 +24,34 @@ import heapq
 #  return nopt, nfun_search
 
 class CapTree(object):
-  def __init__(self, data, idcs=None):
-    self.leaf = False
-    if idcs is None:
-      idcs = np.arange(data.shape[0])
+  def __init__(self, data):
+    #if data is not None, this is the root, so set up the build queue and iterate construction
+    if data is not None:
+      self.nfun_constr = 0
+      build_queue = deque([])
+      build_queue.append( (self, np.arange(data.shape[0])) )
+      while not build_queue.empty():
+        cap, idcs = build_queue.popleft()
+        idcsR, idcsL, nf = cap.build(data, idcs)
+        self.nfun_constr += nf
+        if not cap.leaf:
+          cap.cR = CapTree(None)
+          cap.cL = CapTree(None)
+          build_queue.append( (cap.cR, idcsR) )
+          build_queue.append( (cap.cL, idcsL) )
+
+  def build(self, data, idcs):
+    self.leaf = True
+    self.cR = None
+    self.cL = None
     if idcs.shape[0] == 1:
       self.y = data[idcs[0], :]
       self.xi = data[idcs[0], :]
       self.r = 1.
       self.ny = idcs[0]
-      self.cR = None
-      self.cL = None
-      self.nfun_construction = 2.
-      self.leaf = True
+      return None, None, 2. #nfun_constr
     else:
+      self.leaf = False
       #compute manifold mean
       self.xi = data[idcs].sum(axis=0)
       xinrm = np.sqrt((self.xi**2).sum())
@@ -63,9 +78,6 @@ class CapTree(object):
       #if all data are colinear, idcsR/idcsL can be empty, so just split in half
       if np.all(idcsR) or np.all(np.logical_not(idcsR)):
         idcsR = np.arange(idcs.shape[0]) < idcs.shape[0]/2
-      self.cR = CapTree(data, idcs[idcsR])
-      self.cL = CapTree(data, idcs[np.logical_not(idcsR)])
-     
       #a better implementation of the above would do this in # O(d) operations:
       # if leaf
       #  2 operations to store xi and y
@@ -74,7 +86,9 @@ class CapTree(object):
       #   N+1 to compute argmin / argmax datapoint to xi + save argmax
       #   N to compute argmin (R child) from L child
       #   N to split based on dots from L and R
-      self.nfun_construction = self.cR.nfun_construction + self.cL.nfun_construction + 4.*idcs.shape[0]+3.
+      nfun_constr = 4.*idcs.shape[0]+3.
+      return idcs[idcsR], np.logical_not(idcsR), nfun_constr
+      
 
   def search(self, yw, y_yw):
     #each UB/LB computation is 2 O(d) operations
