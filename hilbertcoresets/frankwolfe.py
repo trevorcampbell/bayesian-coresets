@@ -97,6 +97,9 @@ class FrankWolfe(object):
     #if no nonzero data, always return 0 since we output wts = 0
     if self.x.size == 0:
       return 0.
+    #if the dimension is large, qhull may take a long time or fail
+    if self.x.shape[1] > 3:
+      warnings.warn('FrankWolfe.exp_bound(): this code uses scipy.spatial.ConvexHull (QHull) which may fail or run slowly for high dimensional data.')
     #compute diam and normratio if we need to 
     if not self.diam:
       self.diam = compute_diam(self.x)
