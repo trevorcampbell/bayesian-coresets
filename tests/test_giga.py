@@ -1,12 +1,9 @@
 import hilbertcoresets as hc
 import numpy as np
 
-n_trials = 1
+n_trials = 20
 tol = 1e-6
-#tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
-#tests = [(N, D, dist) for N in [10] for D in [3] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
-#tests = [(N, D, dist, search_method) for N in [10] for D in [3] for dist in ['gauss_colinear'] for search_method in ['linear', 'tree', 'adaptive']]
-tests = [(N, D, dist, search_method) for N in [1, 10, 1000] for D in [1, 3] for dist in ['axis_aligned'] for search_method in ['linear', 'tree', 'adaptive']]
+tests = [(N, D, dist, search_method) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
 
 def gendata(N, D, dist="gauss"):
   if dist == "gauss":

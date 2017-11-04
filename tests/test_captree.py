@@ -1,12 +1,10 @@
 import numpy as np
 from hilbertcoresets import captree as ct
 
-n_trials = 10
+n_trials = 20
 tol = 1e-9
-n_bound_samples = 1000
-#tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
-#tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['axis_aligned']]
-tests = [(N, D, dist) for N in [1000] for D in [3] for dist in ['gauss']]
+n_bound_samples = 100
+tests = [(N, D, dist) for N in [1, 10, 100] for D in [3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
 
 def gendata(N, D, dist="gauss"):
   if dist == "gauss":
@@ -75,9 +73,9 @@ def tree_search_single(N, D, dist="gauss"):
   x = gendata(N, D, dist)
   tree = ct.CapTree(x)
   for m in range(n_trials):
-    yw = np.random.normal(0., 1., D)
+    yw = np.random.normal(0., 1., x.shape[1])
     yw /= np.sqrt((yw**2).sum())
-    y_yw = np.random.normal(0., 1., D)
+    y_yw = np.random.normal(0., 1., x.shape[1])
     y_yw -= y_yw.dot(yw)*yw
     y_yw /= np.sqrt((y_yw**2).sum())
     n_ot, _ = tree.search(yw, y_yw)
@@ -127,9 +125,9 @@ def check_tree_bounds(node, yw, y_yw):
 def tree_bounds_single(N, D, dist="gauss"):
   x = gendata(N, D, dist)
   root = ct.CapTree(x)
-  yw = np.random.normal(0., 1., (n_bound_samples, D))
+  yw = np.random.normal(0., 1., (n_bound_samples, x.shape[1]))
   yw /= np.sqrt((yw**2).sum(axis=1))[:, np.newaxis]
-  y_yw = np.random.normal(0., 1., (n_bound_samples, D))
+  y_yw = np.random.normal(0., 1., (n_bound_samples, x.shape[1]))
   y_yw -= (y_yw*yw).sum(axis=1)[:, np.newaxis]*yw
   y_yw /= np.sqrt((y_yw**2).sum(axis=1))[:, np.newaxis]
   check_tree_bounds(root, yw, y_yw)
