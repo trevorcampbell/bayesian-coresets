@@ -2,7 +2,6 @@ import numpy as np
 from hilbertcoresets.geometry import *
 
 tol = 1e-9
-n_trials = 50
 Ds = range(1, 10)
 
 def check_box_data(D):
@@ -77,7 +76,7 @@ def check_affine_data(D, Da):
   assert np.fabs(r - N) < tol, "r = " + str(r) + "N = " + str(N)
   
 def test_affine():
-  for D in range(2, 10):
+  for D in Ds[1:]:
     for Da in range(1, D): 
       yield check_affine_data, D, Da
 
