@@ -5,7 +5,8 @@ n_trials = 10
 tol = 1e-9
 n_bound_samples = 1000
 #tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
-tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['axis_aligned']]
+#tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['axis_aligned']]
+tests = [(N, D, dist) for N in [1000] for D in [3] for dist in ['gauss']]
 
 def gendata(N, D, dist="gauss"):
   if dist == "gauss":
