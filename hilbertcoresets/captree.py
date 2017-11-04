@@ -1,7 +1,6 @@
 import numpy as np
 import heapq
 from collections import deque
-import sys
 
 #def cap_tree_search(root, yw, y_yw):
 #  #each UB/LB computation is 2 O(d) operations
@@ -36,7 +35,6 @@ class CapTree(object):
         idcsR, idcsL, nf = cap.build(data, idcs)
         self.nfun_constr += nf
         if not cap.leaf:
-          assert set(idcsR).union(set(idcsL)) == set(idcs)
           cap.cR = CapTree(None)
           cap.cL = CapTree(None)
           build_queue.append( (cap.cR, idcsR) )
@@ -89,7 +87,7 @@ class CapTree(object):
       #   N to compute argmin (R child) from L child
       #   N to split based on dots from L and R
       nfun_constr = 4.*idcs.shape[0]+3.
-      return idcs[idcsR], np.logical_not(idcsR), nfun_constr
+      return idcs[idcsR], idcs[np.logical_not(idcsR)], nfun_constr
       
 
   def search(self, yw, y_yw):
