@@ -55,7 +55,7 @@ class FrankWolfe(object):
         if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:  
           self.reached_numeric_limit = True
           break
-      #update xw and wts
+      #update xw, wts, M
       gamma = gammanum/gammadenom
       self.wts *= (1.-gamma)
       self.wts[f] += gamma*self.sig/self.norms[f] 
@@ -63,8 +63,8 @@ class FrankWolfe(object):
         self.xw = (1.-gamma)*self.xw + gamma*self.sig/self.norms[f]*self.x[f, :]
       else:
         self.xw = (self.wts[:, np.newaxis]*self.x).sum(axis=0)
+      self.M = m+1
 
-    self.M = M
     return
 
   def search(self):
@@ -90,13 +90,13 @@ class FrankWolfe(object):
       return np.sqrt((((self.wts[:, np.newaxis]*self.x).sum(axis=0) - self.xs)**2).sum())
 
   def exp_bound(self, M=None):
+    #if no nonzero data, always return 0 since we output wts = 0
+    if self.x.size == 0:
+      return 0.
     #check M validity
     M = np.floor(M) if M else self.M
     if M <= 0:
       raise ValueError('FrankWolfe.exp_bound(): M must be >= 1. Requested M: '+str(M))
-    #if no nonzero data, always return 0 since we output wts = 0
-    if self.x.size == 0:
-      return 0.
     #if the dimension is large, qhull may take a long time or fail
     if self.x.shape[1] > 3:
       warnings.warn('FrankWolfe.exp_bound(): this code uses scipy.spatial.ConvexHull (QHull) which may fail or run slowly for high dimensional data.')
@@ -124,13 +124,13 @@ class FrankWolfe(object):
     return np.exp(lognum - logdenom)
   
   def sqrt_bound(self, M=None):
+    #if no nonzero data, error always 0 since we output wts = 0
+    if self.x.size == 0:
+      return 0.
     #check M validity
     M = np.floor(M) if M else self.M
     if M <= 0:
       raise ValueError('FrankWolfe.exp_bound(): M must be >= 1. Requested M: '+str(M))
-    #if no nonzero data, error always 0 since we output wts = 0
-    if self.x.size == 0:
-      return 0.
     #if diam not yet computed, compute it
     if not self.diam:
       self.diam = compute_diam(self.x)

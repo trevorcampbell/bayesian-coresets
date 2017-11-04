@@ -51,13 +51,13 @@ class ImportanceSampling(object):
     return np.sqrt((((self.wts[:, np.newaxis]*self.x).sum(axis=0) - self.xs)**2).sum())
 
   def sqrt_bound(self, delta, M=None):
+    #if no nonzero vecs, just output 0
+    if self.x.size == 0:
+      return 0.
     #check validity of M
     M = np.floor(M) if M else self.M
     if M <= 0:
       raise ValueError('ImportanceSampling.sqrt_bound(): M must be >= 1. Requested M: '+str(M))
-    #if no nonzero vecs, just output 0
-    if self.x.size == 0:
-      return 0.
     #if the probability of error requested is 0, output a bound of inf
     if delta == 0.:
       return np.inf
