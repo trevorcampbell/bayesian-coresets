@@ -1,5 +1,6 @@
 import numpy as np
 import captree as ct
+import warnings
 
 class GIGA(object):
   def __init__(self, _x):
@@ -26,25 +27,31 @@ class GIGA(object):
     #self.m_lin = 0.
     #self.s_lin = 0.
     self.n_lin = 0.
+    self.reached_numeric_limit = False
     self.reset()
 
   #update_method can be 'fast' or 'stable'
   #search_method can be 'adaptive', 'linear', or 'tree'
   def run(self, M, update_method='fast', search_method='adaptive', M_max = None):
-    if self.x.size == 0 or (self.xs**2).sum() == 0.:
-      return
+    #if M is not greater than self.M, just return 
     if M <= self.M:
-      print 'Warning: requested M <= self.M, returning without modifying weights'
+      raise ValueError('GIGA.run(): M must be increasing. self.M = '+str(self.M) + ' M = '+str(M))
+    if self.x.size == 0 or (self.xs**2).sum() == 0. or self.reached_numeric_limit:
+      warnings.warn('GIGA.run(): either data has no nonzero vectors, the sum has norm 0, or the numeric limit has \ 
+                     been reached. No more iterations will be run. M = ' + str(self.M) + ', error = ' +str(self.error()))
       return
+
     if self.y.shape[0] == 1:
       self.yw = self.y[0, :]
       self.wts[0] = 1.
-      self.M = M
+      self.M = 1
+      self.reached_numeric_limit = True
       return
     if self.y.shape[1] == 1:
       self.yw = self.ys.copy()
       self.wts[np.argmax(self.ys.dot(self.y))] = 1.0
-      self.M = M
+      self.M = 1
+      self.reached_numeric_limit = True
       return
       
 
@@ -76,33 +83,43 @@ class GIGA(object):
 
     for m in range(self.M, M):
       f = self.search()
+      gA = -1.
+      gB = -1.
       if f:
-        gA = self.ys.dot(self.yw)
-        gB = self.ys.dot(self.y[f,:])
-        gC = self.yw.dot(self.y[f,:])
-        if (gB-gA*gC) <= 0. or (gB-gA*gC) + (gA-gB*gC) <= 0.:
-          print str(gB-gA*gC) + " " + str(gA-gB*gC)
-          gamma = 0.
-        else:
-          gamma = (gB-gA*gC) / ((gB-gA*gC) + (gA-gB*gC))
-        if gamma < 0 or gamma > 1:
-          print 'Warning: gamma not in [0, 1]: ' + str(gamma)
-          gamma = (0. if gamma < 0 else gamma)
-          gamma = (1. if gamma > 1 else gamma)
-
-        self.wts *= (1.-gamma)
-        self.wts[f] += gamma
-
-        if update_method == 'fast':
-          self.yw = (1.-gamma)*self.yw + gamma*self.y[f, :]
-        else:
-          self.yw = (self.wts[:, np.newaxis]*self.y).sum(axis=0)
-
+        gA = self.ys.dot(self.y[f,:]) - self.ys.dot(self.yw) * self.yw.dot(self.y[f,:])
+        gB = self.ys.dot(self.yw) - self.ys.dot(self.y[f,:]) * self.yw.dot(self.y[f,:])
+   
+      #if the direction and/or line search failed
+      if gA <= 0. or gB < 0:
+        #try recomputing yw from scratch and rerunning search
+        self.yw = (self.wts[:, np.newaxis]*self.y).sum(axis=0)
         nrm = np.sqrt((self.yw**2).sum())
         self.yw /= nrm
         self.wts /= nrm
 
-    self.M = M
+        f = self.search()
+        if f:
+          gA = self.ys.dot(self.y[f,:]) - self.ys.dot(self.yw) * self.yw.dot(self.y[f,:])
+          gB = self.ys.dot(self.yw) - self.ys.dot(self.y[f,:]) * self.yw.dot(self.y[f,:])
+        #if it still didn't work, we've reached the numeric limit
+        if gA <= 0. or gB < 0:
+          self.reached_numeric_limit = True
+          break
+      #direction+line search worked, update weights + yw
+      gamma = gA/(gA+gB)
+      self.wts *= (1.-gamma)
+      self.wts[f] += gamma
+
+      if update_method == 'fast':
+        self.yw = (1.-gamma)*self.yw + gamma*self.y[f, :]
+      else:
+        self.yw = (self.wts[:, np.newaxis]*self.y).sum(axis=0)
+
+      nrm = np.sqrt((self.yw**2).sum())
+      self.yw /= nrm
+      self.wts /= nrm
+      self.M = m+1
+
     return
 
   def search_linear(self):
@@ -113,7 +130,7 @@ class GIGA(object):
     cdir /= cdirnrm
     scorenums = self.y.dot(cdir) 
     scoredenoms = 1.-self.y.dot(self.yw)**2
-    scoredenoms[scoredenoms < 1e-16] = np.inf
+    scoredenoms[scoredenoms < 1e-12] = np.inf
     scores = scorenums/np.sqrt(scoredenoms)
     #cdir /= np.sqrt((cdir**2).sum())
     #dirs = self.y - self.y.dot(self.yw)[:,np.newaxis]*self.yw
@@ -181,7 +198,9 @@ class GIGA(object):
   def exp_bound(self, M=None):
     if self.x.size == 0:
       return 0.
-    M = M if M else self.M
+    M = np.floor(M) if M else self.M
+    if M <= 0:
+      raise ValueError('GIGA.exp_bound(): M must be >= 1. Requested M: '+str(M))
     if M > 1e99:
       return 0.
     return np.iinfo(np.int64).max - M #TODO
@@ -189,7 +208,9 @@ class GIGA(object):
   def sqrt_bound(self, M=None):
     if self.x.size == 0:
       return 0.
-    M = M if M else self.M
+    M = np.floor(M) if M else self.M
+    if M <= 0:
+      raise ValueError('GIGA.exp_bound(): M must be >= 1. Requested M: '+str(M))
     if M > 1e99:
       return 0.
     return np.iinfo(np.int64).max - M #TODO
