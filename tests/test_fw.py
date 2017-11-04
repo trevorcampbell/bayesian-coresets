@@ -1,7 +1,10 @@
 import hilbertcoresets as hc
 import numpy as np
+import warnings
 
-n_trials = 20
+warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
+
+n_trials = 10
 tol = 1e-9
 tests = [(N, D, dist) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
 

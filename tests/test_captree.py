@@ -1,10 +1,10 @@
 import numpy as np
 from hilbertcoresets import captree as ct
 
-n_trials = 20
+n_trials = 10
 tol = 1e-9
 n_bound_samples = 100
-tests = [(N, D, dist) for N in [1, 10, 100] for D in [3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
+tests = [(N, D, dist) for N in [10, 100] for D in [3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
 
 def gendata(N, D, dist="gauss"):
   if dist == "gauss":
