@@ -16,8 +16,9 @@ class GIGA(object):
     self.norms = nrms[self.nzidcs] #norms of nonzero vecs
     self.sig = self.norms.sum() #norm sum
     self.xs = self.x.sum(axis=0) #sum of nonzero vecs (target vector)
+    xsnrm = np.sqrt(((self.xs)**2).sum())
     self.y = self.x/self.norms[:, np.newaxis] #normalized nonzero data
-    self.ys = self.xs/np.sqrt(((self.xs)**2).sum()) #normalized sum vec
+    self.ys = self.xs/(xsnrm if xsnrm > 0. else 1.) #normalized sum vec
     self.N = self.x.shape[0] #number of nonzero vecs
     self.tree = None
     self.f_tree = 0. #number of O(<,>) operations in tree construction + searches
@@ -50,7 +51,7 @@ class GIGA(object):
       return
     if self.y.shape[1] == 1:
       self.yw = self.ys.copy()
-      self.wts[np.argmax(self.ys.dot(self.y))] = 1.0
+      self.wts[np.argmax(self.y.dot(self.ys))] = 1.0
       self.M = 1
       self.reached_numeric_limit = True
       return
@@ -126,7 +127,6 @@ class GIGA(object):
   def search_linear(self):
     cdir = self.ys - self.ys.dot(self.yw)*self.yw
     cdirnrm =np.sqrt((cdir**2).sum()) 
-    sys.stderr.write('cdirnrm: ' + str(cdirnrm) +'\n')
     if cdirnrm < 1e-14:
       return -1
     cdir /= cdirnrm
@@ -152,7 +152,7 @@ class GIGA(object):
     if cdirnrm < 1e-14:
       return -1
     cdir /= cdirnrm
-    nopt, nfun = ct.cap_tree_search(self.tree, self.yw, cdir)
+    nopt, nfun = self.tree.search(self.yw, cdir)
     self.f_tree += nfun
     self.m_tree += np.log(nfun)
     self.s_tree += np.log(nfun)**2
@@ -186,6 +186,9 @@ class GIGA(object):
 
   #options are fast, accurate (either use yw or recompute yw from wts)
   def error(self, method="fast"):
+    #if M = 0, just output zeros using the fast method
+    if self.M == 0:
+      method = "fast"
     if method == "fast":
       return np.sqrt((self.xs**2).sum())*np.sqrt(max(0., 1. - self.yw.dot(self.ys)**2))
     else:

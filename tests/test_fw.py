@@ -3,7 +3,7 @@ import numpy as np
 
 n_trials = 20
 tol = 1e-9
-tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 5] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
+tests = [(N, D, dist) for N in [1, 10, 1000] for D in [1, 3] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
 #tests = [(N, D, dist) for N in [10] for D in [3] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
 
 def gendata(N, D, dist="gauss"):

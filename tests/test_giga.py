@@ -6,7 +6,7 @@ tol = 1e-6
 #tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
 #tests = [(N, D, dist) for N in [10] for D in [3] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
 #tests = [(N, D, dist, search_method) for N in [10] for D in [3] for dist in ['gauss_colinear'] for search_method in ['linear', 'tree', 'adaptive']]
-tests = [(N, D, dist, search_method) for N in [10] for D in [3] for dist in ['gauss_colinear'] for search_method in ['linear']]
+tests = [(N, D, dist, search_method) for N in [1, 10, 1000] for D in [1, 3] for dist in ['gauss'] for search_method in ['linear', 'tree', 'adaptive']]
 
 def gendata(N, D, dist="gauss"):
   if dist == "gauss":
@@ -92,7 +92,7 @@ def giga_single(N, D, dist="gauss", search_method="linear"):
   #check run up to N all at once vs incremental
   giga.run(N)
   xw = (giga.weights()[:, np.newaxis]*x).sum(axis=0) 
-  assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, "GIGA failed: incremental run up to N doesn't produce same result as one run at N"
+  assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, "GIGA failed: incremental run up to N doesn't produce same result as one run at N : xw = " + str(xw) + " xw_inc = " + str(xw_inc)
 
 def test_giga():
   for N, D, dist, search_method in tests:

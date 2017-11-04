@@ -1,10 +1,11 @@
 import numpy as np
 from hilbertcoresets import captree as ct
 
-n_trials = 20
+n_trials = 10
 tol = 1e-9
 n_bound_samples = 1000
-tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear']]
+#tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
+tests = [(N, D, dist) for N in [1, 10, 1000] for D in [3, 10] for dist in ['axis_aligned']]
 
 def gendata(N, D, dist="gauss"):
   if dist == "gauss":
@@ -19,12 +20,16 @@ def gendata(N, D, dist="gauss"):
     x = np.random.normal(0., 1., D)
     y = np.random.rand(N)*2.-1.
     x = y[:, np.newaxis]*x
-  else:
+  elif dist == "bin_colinear":
     x = (np.random.rand(D) > 0.5).astype(float)
     while (x**2).sum() == 0:
       x = (np.random.rand(D) > 0.5).astype(float)
     y = np.random.rand(N)*2.-1.
     x = y[:, np.newaxis]*x
+  else:
+    x = np.zeros((N, N))
+    for i in range(N):
+      x[i, i] = 1./float(N)
   return x/np.sqrt((x**2).sum(axis=1))[:, np.newaxis]
 
 ####################################################
@@ -67,14 +72,14 @@ def test_tree_correctness():
 ####################################################
 def tree_search_single(N, D, dist="gauss"):
   x = gendata(N, D, dist)
-  root = ct.CapTree(x)
+  tree = ct.CapTree(x)
   for m in range(n_trials):
     yw = np.random.normal(0., 1., D)
     yw /= np.sqrt((yw**2).sum())
     y_yw = np.random.normal(0., 1., D)
     y_yw -= y_yw.dot(yw)*yw
     y_yw /= np.sqrt((y_yw**2).sum())
-    n_ot, _ = ct.cap_tree_search(root, yw, y_yw)
+    n_ot, _ = tree.search(yw, y_yw)
     f_ot = x[n_ot, :].dot(y_yw)/np.sqrt(1.-x[n_ot, :].dot(yw)**2)
     n_ol = (x.dot(y_yw)/np.sqrt(1.-x.dot(yw)**2)).argmax()
     f_ol = x[n_ol, :].dot(y_yw)/np.sqrt(1.-x[n_ol, :].dot(yw)**2)
