@@ -5,7 +5,7 @@ def compute_nu(x, diam):
   from scipy.spatial import ConvexHull
   #if the diameter of the point set is 0, just return 0
   if diam == 0.:
-    return 0.
+    return 1., 0.
 
   #compute scaled data and sum
   mu = x.sum(axis=0)
