@@ -9,24 +9,24 @@ class GIGA(object):
       raise ValueError('GIGA: input must be a 2d numeric ndarray')
     nrms = np.sqrt((x**2).sum(axis=1))
     self.nzidcs = nrms > 0.
-    self.full_N = x.shape[0]
-    self.x = x[self.nzidcs, :]
+    self.full_N = x.shape[0] #number of vecs (incl zero vecs)
+    self.x = x[self.nzidcs, :] #nonzero vectors
 
-    self.norms = nrms[self.nzidcs]
-    self.sig = self.norms.sum()
-    self.xs = self.x.sum(axis=0)
-    self.y = self.x/self.norms[:, np.newaxis]
-    self.ys = self.xs/np.sqrt(((self.xs)**2).sum())
-    self.N = self.x.shape[0]
+    self.norms = nrms[self.nzidcs] #norms of nonzero vecs
+    self.sig = self.norms.sum() #norm sum
+    self.xs = self.x.sum(axis=0) #sum of nonzero vecs (target vector)
+    self.y = self.x/self.norms[:, np.newaxis] #normalized nonzero data
+    self.ys = self.xs/np.sqrt(((self.xs)**2).sum()) #normalized sum vec
+    self.N = self.x.shape[0] #number of nonzero vecs
     self.tree = None
-    self.f_tree = 0.
-    self.m_tree = 0.
-    self.s_tree = 0.
-    self.n_tree = 0.
-    self.f_lin = 0.
-    #self.m_lin = 0.
-    #self.s_lin = 0.
-    self.n_lin = 0.
+    self.f_tree = 0. #number of O(<,>) operations in tree construction + searches
+    self.m_tree = 0. #sum of (log # O(<,>) ops); used for UCB-Normal
+    self.s_tree = 0. #sum of (log # O(<,>) ops)^2; used for UCB-Normal
+    self.n_tree = 0. #number of tree searches performed
+    self.f_lin = 0. #number of O(<,>) ops in linear search
+    #self.m_lin = 0. #not needed since linear search has fixed # ops
+    #self.s_lin = 0. #not needed since linear search has fixed # ops
+    self.n_lin = 0. #number of linear searches performed
     self.reached_numeric_limit = False
     self.reset()
 
@@ -174,6 +174,7 @@ class GIGA(object):
 
   def build_tree(self):
     self.tree = ct.CapTree(self.y)
+    self.f_tree = ct.nfun_construction
 
   def reset(self):
     self.M = 0
