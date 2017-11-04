@@ -20,7 +20,7 @@ def cap_tree_search(root, yw, y_yw):
         heapq.heappush(pq, (-cap.cR.upper_bound(y_yw, yw), cap.cR))
         heapq.heappush(pq, (-cap.cL.upper_bound(y_yw, yw), cap.cL))
         nfun_search += 4.
-  return nopt if nopt >= 0 else None, nfun_search
+  return nopt, nfun_search
 
 class CapTree(object):
   def __init__(self, data, idcs=None):
@@ -92,9 +92,10 @@ class CapTree(object):
     #compute lower bound; but 
     bu = self.y.dot(u)
     bv = self.y.dot(v)
-    if 1.-bv**2 <= 0.: 
-      #this can occur when y = y_w numerically, in which case there is no well-defined dir, so return -3
-      #to make sure that the default -2 lower bound in cap_tree_search() above doesn't get updated by this
+    if 1.-bv**2 <= 0. or bv <= -1.+1e-14: 
+      #the first condition can occur when y = +/- y_w, and here the direction is not well defined 
+      #the second can happen when y is roughly =  -y_w, and here the direction is not numerically stable
+      #in either case, we want to return a failure - output = -3 indicates this
       return -3. 
     return bu/np.sqrt(1.-bv**2)
 
