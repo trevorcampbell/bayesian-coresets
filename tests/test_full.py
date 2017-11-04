@@ -1,6 +1,7 @@
 import hilbertcoresets as hc
 import numpy as np
 
+
 def test_empty():
   x = np.zeros((0, 0))
   fd = hc.FullDataset(x)

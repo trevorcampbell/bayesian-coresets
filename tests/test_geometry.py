@@ -1,6 +1,7 @@
 import numpy as np
 from hilbertcoresets.geometry import *
 
+
 tol = 1e-9
 Ds = range(1, 10)
 
