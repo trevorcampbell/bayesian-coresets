@@ -2,6 +2,9 @@ import hilbertcoresets as hc
 import numpy as np
 
 
+np.random.seed(1)
+
+
 def test_empty():
   x = np.zeros((0, 0))
   fd = hc.FullDataset(x)

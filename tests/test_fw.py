@@ -2,6 +2,9 @@ import hilbertcoresets as hc
 import numpy as np
 import warnings
 
+
+np.random.seed(1)
+
 warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
 
 n_trials = 10

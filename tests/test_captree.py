@@ -1,6 +1,8 @@
 import numpy as np
 from hilbertcoresets import captree as ct
 
+np.random.seed(1)
+
 n_trials = 10
 tol = 1e-9
 n_bound_samples = 100
