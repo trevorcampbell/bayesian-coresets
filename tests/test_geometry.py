@@ -2,6 +2,9 @@ import numpy as np
 from hilbertcoresets.geometry import *
 
 
+np.random.seed(1)
+
+
 tol = 1e-9
 Ds = range(1, 10)
 
