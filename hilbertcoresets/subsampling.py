@@ -99,7 +99,7 @@ class RandomSubsampling(ImportanceSampling):
     #self.tau = None
 
   def sqrt_bound(self, delta, M=None):
-    raise NotImplementedError("RandomSubsampling: error bound not implemented")
+    raise NotImplementedError("RandomSubsampling.sqrt_bound():  not implemented")
     #if self.x.size == 0:
     #  return 0.
     #if delta == 0.:

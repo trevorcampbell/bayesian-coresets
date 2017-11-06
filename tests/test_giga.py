@@ -46,20 +46,21 @@ def giga_single(N, D, dist="gauss", search_method="linear"):
   xs = x.sum(axis=0)
   giga = hc.GIGA(x)
 
-  #bound tests
-  prev_sqrt_bd = np.inf
-  prev_exp_bd = np.inf
-  for m in range(1, N+1):
-    sqrt_bd = giga.sqrt_bound(m)
-    exp_bd = giga.exp_bound(m)
-    assert sqrt_bd >= 0., "GIGA failed: sqrt bound < 0"
-    assert sqrt_bd - prev_sqrt_bd < tol, "GIGA failed: sqrt bound is not decreasing"
-    assert exp_bd >= 0., "GIGA failed: exp bound < 0"
-    assert exp_bd - prev_exp_bd < tol, "GIGA failed: exp bound is not decreasing"
-    prev_sqrt_bd = sqrt_bd
-    prev_exp_bd = exp_bd
-  assert giga.sqrt_bound(1e100) < tol, "GIGA failed: sqrt bound doesn't approach 0"
-  assert giga.exp_bound(1e100) < tol, "GIGA failed: exp bound doesn't approach 0"
+  #TODO uncomment once giga bds implemented
+  ##bound tests
+  #prev_sqrt_bd = np.inf
+  #prev_exp_bd = np.inf
+  #for m in range(1, N+1):
+  #  sqrt_bd = giga.sqrt_bound(m)
+  #  exp_bd = giga.exp_bound(m)
+  #  assert sqrt_bd >= 0., "GIGA failed: sqrt bound < 0"
+  #  assert sqrt_bd - prev_sqrt_bd < tol, "GIGA failed: sqrt bound is not decreasing"
+  #  assert exp_bd >= 0., "GIGA failed: exp bound < 0"
+  #  assert exp_bd - prev_exp_bd < tol, "GIGA failed: exp bound is not decreasing"
+  #  prev_sqrt_bd = sqrt_bd
+  #  prev_exp_bd = exp_bd
+  #assert giga.sqrt_bound(1e100) < tol, "GIGA failed: sqrt bound doesn't approach 0"
+  #assert giga.exp_bound(1e100) < tol, "GIGA failed: exp bound doesn't approach 0"
 
   #incremental M tests
   prev_err = np.inf
@@ -72,8 +73,9 @@ def giga_single(N, D, dist="gauss", search_method="linear"):
     assert np.sqrt(((xw-xs)**2).sum()) - prev_err < tol, "GIGA failed: error is not monotone decreasing, err = " + str(np.sqrt(((xw-xs)**2).sum())) + " prev_err = " +str(prev_err) + " M = " + str(giga.M)
     assert np.fabs(giga.error('accurate') - np.sqrt(((xw-xs)**2).sum())) < tol, "GIGA failed: x(w) est is not close to true x(w): est err = " + str(giga.error('accurate')) + ' true err = ' + str(np.sqrt(((xw-xs)**2).sum()))
     assert np.fabs(giga.error('accurate') - giga.error()) < tol*1000, "GIGA failed: giga.error(accurate/fast) do not return similar results: fast err = " + str(giga.error()) + ' acc err = ' + str(giga.error('accurate'))
-    assert giga.sqrt_bound() - np.sqrt(((xw-xs)**2).sum()) >= -tol, "GIGA failed: sqrt bound invalid"
-    assert giga.exp_bound() - np.sqrt(((xw-xs)**2).sum()) >= -tol, "GIGA failed: exp bound invalid"
+    #TODO uncomment once giga bound implemented
+    #assert giga.sqrt_bound() - np.sqrt(((xw-xs)**2).sum()) >= -tol, "GIGA failed: sqrt bound invalid"
+    #assert giga.exp_bound() - np.sqrt(((xw-xs)**2).sum()) >= -tol, "GIGA failed: exp bound invalid"
     if 'colinear' in dist and m >= 1:
       if not np.sqrt(((xw-xs)**2).sum()) < tol:
         assert False, "colinear m>= 1 problem nrm = " +str(np.sqrt(((xw-xs)**2).sum())) + " tol = " + str(tol) + " m = " + str(m)
@@ -90,9 +92,10 @@ def giga_single(N, D, dist="gauss", search_method="linear"):
   giga.reset()
   assert giga.M == 0 and np.all(np.fabs(giga.weights()) < tol) and np.fabs(giga.error() - np.sqrt((xs**2).sum())) < tol and not giga.reached_numeric_limit, "GIGA failed: giga.reset() did not properly reset"
   #check run up to N all at once vs incremental
-  giga.run(N)
-  xw = (giga.weights()[:, np.newaxis]*x).sum(axis=0) 
-  assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, "GIGA failed: incremental run up to N doesn't produce same result as one run at N : xw = " + str(xw) + " xw_inc = " + str(xw_inc)
+  if search_method == 'tree' or search_method == 'linear':
+    giga.run(N, search_method=search_method)
+    xw = (giga.weights()[:, np.newaxis]*x).sum(axis=0) 
+    assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, "GIGA failed: incremental run up to N doesn't produce same result as one run at N : \n xw = " + str(xw) + " error = " +str(np.sqrt(((xw-xs)**2).sum())) + " \n xw_inc = " + str(xw_inc) + " error = " +  str(np.sqrt(((xw_inc-xs)**2).sum())) + " \n xs = " +str(xs)
 
 def test_giga():
   for N, D, dist, search_method in tests:
