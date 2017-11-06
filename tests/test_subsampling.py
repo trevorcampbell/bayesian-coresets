@@ -43,15 +43,17 @@ def is_single(N, D, dist="gauss", use_rnd=False):
   else:
     IS = hc.ImportanceSampling(x)
 
-  #bound tests
-  delta = 0.05
-  prev_bd = np.inf
-  for m in range(1, N+1):
-    bd = IS.sqrt_bound(delta, m)
-    assert bd >= 0., "IS failed: sqrt bound < 0, " + str(bd)
-    assert bd - prev_bd < tol, "IS failed: sqrt bound is not decreasing"
-    prev_bd = bd
-  assert IS.sqrt_bound(delta, 1e100) < tol, "IS failed: sqrt bound doesn't approach 0"
+  #TODO remove if statement once randomsubsampling bound implemented
+  if not use_rnd:
+    #bound tests
+    delta = 0.05
+    prev_bd = np.inf
+    for m in range(1, N+1):
+      bd = IS.sqrt_bound(delta, m)
+      assert bd >= 0., "IS failed: sqrt bound < 0, " + str(bd)
+      assert bd - prev_bd < tol, "IS failed: sqrt bound is not decreasing"
+      prev_bd = bd
+    assert IS.sqrt_bound(delta, 1e100) < tol, "IS failed: sqrt bound doesn't approach 0"
   
   for m in range(1, N+1):
     IS.run(m)

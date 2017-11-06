@@ -213,30 +213,9 @@ class GIGA(object):
       full_wts[self.nzidcs] = ((self.wts/ywtn)/self.norms)*np.sqrt((self.xs**2).sum())*ywt.dot(self.ys)
     return full_wts
 
-
-  ########
-  ########
-  #THE BELOW ARE PLACEHOLDERS DESIGNED TO PASS TESTS; THESE NEED TO BE IMPLEMENTED
-  ########
-  ########
-
   def exp_bound(self, M=None):
-    if self.x.size == 0:
-      return 0.
-    M = np.floor(M) if M else self.M
-    if M <= 0:
-      raise ValueError('GIGA.exp_bound(): M must be >= 1. Requested M: '+str(M))
-    if M > 1e99:
-      return 0.
-    return np.iinfo(np.int64).max - M #TODO
+    raise NotImplementedError("GIGA.exp_bound(): not implemented")
 
   def sqrt_bound(self, M=None):
-    if self.x.size == 0:
-      return 0.
-    M = np.floor(M) if M else self.M
-    if M <= 0:
-      raise ValueError('GIGA.exp_bound(): M must be >= 1. Requested M: '+str(M))
-    if M > 1e99:
-      return 0.
-    return np.iinfo(np.int64).max - M #TODO
-
+    raise NotImplementedError("GIGA.sqrt_bound(): not implemented")
+    

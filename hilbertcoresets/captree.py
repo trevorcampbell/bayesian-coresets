@@ -27,13 +27,13 @@ class CapTree(object):
   def __init__(self, data):
     #if data is not None, this is the root, so set up the build queue and iterate construction
     if data is not None:
-      self.nfun_constr = 0
+      self.nfun_construction = 0
       build_queue = deque([])
       build_queue.append( (self, np.arange(data.shape[0])) )
       while build_queue:
         cap, idcs = build_queue.popleft()
         idcsR, idcsL, nf = cap.build(data, idcs)
-        self.nfun_constr += nf
+        self.nfun_construction += nf
         if not cap.leaf:
           cap.cR = CapTree(None)
           cap.cL = CapTree(None)
