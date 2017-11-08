@@ -1,27 +1,7 @@
 import numpy as np
 import heapq
 from collections import deque
-
-#def cap_tree_search(root, yw, y_yw):
-#  #each UB/LB computation is 2 O(d) operations
-#  pq = []
-#  L = -2.
-#  nopt = -1
-#  heapq.heappush(pq, (-root.upper_bound(y_yw, yw), root))
-#  nfun_search = 2.
-#  while pq:
-#    negub, cap = heapq.heappop(pq)
-#    if -negub > L:
-#      ell = cap.lower_bound(y_yw, yw)
-#      nfun_search += 2.
-#      if ell > L:
-#        L = ell
-#        nopt = cap.ny
-#      if not cap.leaf:
-#        heapq.heappush(pq, (-cap.cR.upper_bound(y_yw, yw), cap.cR))
-#        heapq.heappush(pq, (-cap.cL.upper_bound(y_yw, yw), cap.cL))
-#        nfun_search += 4.
-#  return nopt, nfun_search
+import ctypes
 
 class CapTree(object):
   def __init__(self, data):
@@ -133,5 +113,37 @@ class CapTree(object):
       #in either case, we want to return a failure - output = -3 indicates this
       return -3. 
     return bu/np.sqrt(1.-bv**2)
+
+class CapTreeC(object):
+  def __init__(self, data):
+    libct = ctypes.cdll.LoadLibrary('./library_here.so')
+ 
+    #spawns a thread to build a new tree and returns immediately
+    libct.CapTree_new.argtypes = [ctypes.c_int]
+    libct.CapTree_new.restype = ctypes.c_void_p
+
+    #spawns a thread to build a new tree and returns immediately
+    libct.CapTree_del.argtypes = [ctypes.c_int]
+    libct.CapTree_del.restype = ctypes.c_void_p
+    
+    #check whether the tree is done building
+    libct.CapTree_check_build.argtypes = []
+    libct.CapTree_check_build.restype = ctypes.c_bool
+
+    #perform a search (if tree not done building yet, waits on it)
+    libct.CapTree_search.argtypes = []
+    libct.CapTree_search.restype = []
+  
+    self.ptr = libct.CapTree_new(data)
+
+  def check_build(self):
+    return libct.CapTree_check_build(self.ptr)
+
+  def search(self, yw, y_yw):
+    return libct.CapTree_search(self.ptr, yw, y_yw)
+
+  #implement an explicit del operator to free the tree memory
+  def __del__(self):
+    libct.CapTree_del(self.ptr)
 
   
