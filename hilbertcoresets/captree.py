@@ -2,6 +2,8 @@ import numpy as np
 import heapq
 from collections import deque
 import ctypes
+import pkgutil
+import os
 
 class CapTree(object):
   def __init__(self, data):
@@ -121,30 +123,31 @@ class CapTreeC(object):
     if not data.ndim == 2:
       raise ValueError('CapTreeC: data must be 2d')
 
-    libct = ctypes.cdll.LoadLibrary('libcaptreec.so')
+    hcfn = pkgutil.get_loader('hilbertcoresets').filename
+    self.libct = ctypes.cdll.LoadLibrary(os.path.join(hcfn, 'libcaptreec.so'))
  
     #spawns a thread to build a new tree and returns immediately
-    libct.CapTree_new.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_uint, ctypes.c_uint]
-    libct.CapTree_new.restype = ctypes.c_void_p
+    self.libct.CapTree_new.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_uint, ctypes.c_uint]
+    self.libct.CapTree_new.restype = ctypes.c_void_p
     #spawns a thread to build a new tree and returns immediately
-    libct.CapTree_del.argtypes = [ctypes.c_void_p]
-    libct.CapTree_del.restype = None
+    self.libct.CapTree_del.argtypes = [ctypes.c_void_p]
+    self.libct.CapTree_del.restype = None
     #check whether the tree is done building
-    libct.CapTree_check_build.argtypes = [ctypes.c_void_p]
-    libct.CapTree_check_build.restype = ctypes.c_bool
+    self.libct.CapTree_check_build.argtypes = [ctypes.c_void_p]
+    self.libct.CapTree_check_build.restype = ctypes.c_bool
     #perform a search (if tree not done building yet, waits on it)
-    libct.CapTree_search.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)]
-    libct.CapTree_search.restype = [ctypes.c_uint]
+    self.libct.CapTree_search.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)]
+    self.libct.CapTree_search.restype = ctypes.c_uint
   
-    self.ptr = libct.CapTree_new(data.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), data.shape[0], data.shape[1])
+    self.ptr = self.libct.CapTree_new(data.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), data.shape[0], data.shape[1])
 
   def check_build(self):
-    return libct.CapTree_check_build(self.ptr)
+    return self.libct.CapTree_check_build(self.ptr)
 
   def search(self, yw, y_yw):
-    return libct.CapTree_search(self.ptr, yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), y_yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
+    return self.libct.CapTree_search(self.ptr, yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), y_yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
 
   def __del__(self):
-    libct.CapTree_del(self.ptr)
+    self.libct.CapTree_del(self.ptr)
 
   
