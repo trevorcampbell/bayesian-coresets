@@ -116,33 +116,34 @@ class CapTree(object):
 
 class CapTreeC(object):
   def __init__(self, data):
-    libct = ctypes.cdll.LoadLibrary('./library_here.so')
+    if not data.flags['C_CONTIGUOUS']:
+      raise ValueError('CapTreeC: data must be c_contiguous')
+    if not data.ndim == 2:
+      raise ValueError('CapTreeC: data must be 2d')
+
+    libct = ctypes.cdll.LoadLibrary('libcaptreec.so')
  
     #spawns a thread to build a new tree and returns immediately
-    libct.CapTree_new.argtypes = [ctypes.c_int]
+    libct.CapTree_new.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_uint, ctypes.c_uint]
     libct.CapTree_new.restype = ctypes.c_void_p
-
     #spawns a thread to build a new tree and returns immediately
-    libct.CapTree_del.argtypes = [ctypes.c_int]
-    libct.CapTree_del.restype = ctypes.c_void_p
-    
+    libct.CapTree_del.argtypes = [ctypes.c_void_p]
+    libct.CapTree_del.restype = None
     #check whether the tree is done building
-    libct.CapTree_check_build.argtypes = []
+    libct.CapTree_check_build.argtypes = [ctypes.c_void_p]
     libct.CapTree_check_build.restype = ctypes.c_bool
-
     #perform a search (if tree not done building yet, waits on it)
-    libct.CapTree_search.argtypes = []
-    libct.CapTree_search.restype = []
+    libct.CapTree_search.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)]
+    libct.CapTree_search.restype = [ctypes.c_uint]
   
-    self.ptr = libct.CapTree_new(data)
+    self.ptr = libct.CapTree_new(data.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), data.shape[0], data.shape[1])
 
   def check_build(self):
     return libct.CapTree_check_build(self.ptr)
 
   def search(self, yw, y_yw):
-    return libct.CapTree_search(self.ptr, yw, y_yw)
+    return libct.CapTree_search(self.ptr, yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), y_yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
 
-  #implement an explicit del operator to free the tree memory
   def __del__(self):
     libct.CapTree_del(self.ptr)
 
