@@ -1,4 +1,5 @@
 #include<thread>
+#include<vector>
 
 
 extern "C" {
@@ -11,10 +12,40 @@ extern "C" {
 class CapTree {
   public:
     CapTree();
+    ~CapTree();
     build();
+    check_build();
     search();
   private:
-    double r, *y, *xi;
-    CapTree *cR, *cL;
-    
+    double *ys, *xis;
+    double *rs;
+    int *cRs, *cLs;
+    bool build_done;
 };
+
+CapTree::CapTree(){
+  this->build_done = false;
+  this->cR = this->cL = this->y = this->xi = NULL;
+  this->r  = -2.
+}
+
+CapTree::~CapTree(){ 
+  for (auto blah){
+    delete blah
+  }
+}
+
+CapTree::build(){
+}
+
+
+int CapTree::search(){
+  // if build not done yet, wait on build mutex
+  //do search
+}
+
+bool CapTree::check_build(){
+  //check whether build_done is true
+}
+
+

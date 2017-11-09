@@ -38,29 +38,33 @@ def gendata(N, D, dist="gauss"):
 #-all data contained in xi.z >= r
 #-there exists at least one vec = y
 #-the index ny corresponds to the correct vector in x
+#-there are 2*N-1 total nodes in the tree
 ####################################################
 def check_tree_contents(node, x):
   if node.cR:
-    xR = check_tree_contents(node.cR, x)
+    xR, subtree_size_R = check_tree_contents(node.cR, x)
   if node.cL:
-    xL = check_tree_contents(node.cL, x)
+    xL, subtree_size_L = check_tree_contents(node.cL, x)
   assert (not node.cR and not node.cL) or (node.cR and node.cL), "cap tree validity test failed; cR xor cL is 1"
   if node.cR:
     nodex = np.vstack((xR, xL))
   else:
     nodex = np.atleast_2d(node.y)
+    subtree_size_R = 0
+    subtree_size_L = 0
   assert np.fabs(np.sqrt((node.xi**2).sum()) - 1.) < tol, "cap tree validity test failed; norm of xi is not 1"
   assert np.fabs(np.sqrt((node.y**2).sum()) - 1.) < tol, "cap tree validity test failed; norm of y is not 1"
   assert node.ny < x.shape[0] and node.ny >= 0, "cap tree validity test failed; ny index is not in [0, number of data points)"
   assert np.all(nodex.dot(node.xi) >= node.r-tol), "cap tree validity test failed; there is data that violates xi.y >= r"
   assert np.any(np.sqrt(((nodex - node.y)**2).sum(axis=1)) < tol), "cap tree validity test failed; y is not in the node data"
   assert np.sqrt(((x[node.ny, :] - node.y)**2).sum()) < tol, "cap tree validity test failed; the index ny is incorrect, x[node.ny, :] is not equal to node.y"
-  return nodex
+  return nodex, subtree_size_R+subtree_size_L+1
   
 def tree_correctness_single(N, D, dist="gauss"):
   x = gendata(N, D, dist)
   root = ct.CapTree(x)
-  check_tree_contents(root, x)
+  _, tree_size = check_tree_contents(root, x)
+  assert tree_size == 2*x.shape[0]-1, "cap tree validity test failed; tree is not a complete binary tree since # nodes is not 2*N-1"
 
 def test_tree_correctness():
   for N, D, dist in tests:
