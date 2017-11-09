@@ -3,6 +3,8 @@
 #include<iostream>
 #include<mutex>
 #include<condition_variable>
+#include<queue>
+#include<algorithm>
 
 
 class CapTree {
@@ -16,7 +18,7 @@ class CapTree {
     void build(double*, unsigned int, unsigned int);
     double *ys, *xis; 
     double *rs;
-    unsigned int *cRs, *cLs;
+    int *cRs, *cLs, *nys;
     bool build_done, build_cancelled;
     std::mutex build_mutex;
     std::condition_variable build_cv;
@@ -43,6 +45,7 @@ CapTree::~CapTree(){
   if (this->ys != NULL){ delete this->ys; this->ys = NULL; }
   if (this->xis != NULL){ delete this->xis; this->xis = NULL; }
   if (this->rs != NULL){ delete this->rs; this->rs = NULL; }
+  if (this->nys != NULL){ delete this->nys; this->nys = NULL; }
   if (this->cRs != NULL){ delete this->cRs; this->cRs = NULL; }
   if (this->cLs != NULL){ delete this->cLs; this->cLs = NULL; }
   if (this->build_thread != NULL){ 
@@ -67,9 +70,37 @@ int CapTree::search(double *yw, double *y_yw){
     //otherwise, build is done and we can search
   }
 
-  //TODO search
-  
-  return 0;
+  //search
+  double LB = -2.;
+  int nopt = -1;
+  auto cmp = [](std::tuple<unsigned int, double> left, std::tuple<unsigned int, double> right){ return std::get<1>(left) < std::get<1>(right); };
+  std::priority_queue<std::tuple<unsigned int, double>, std::vector< std::tuple<unsigned int, double> >, decltype(cmp)> search_queue;
+  search_queue.push(std::make_tuple(0, this->upper_bound(0, yw, y_yw) ));
+  while (!search_queue.empty()){
+    //get the next cap node to search
+    auto tpl = search_queue.top();
+    search_queue.pop();
+    auto idx = std::get<0>(tpl);
+    auto u = std::get<1>(tpl);
+
+    //if its upper bound is greater than the current maximum LB
+    if (u > LB){
+      //compute the LB
+      ell = this->lower_bound(idx, yw, y_yw);
+      //if its lb is greater than the current best
+      if (ell > LB){
+        //update the max LB and store data idx that achieved it
+        LB = ell;
+        nopt = this->nys[idx];
+      }
+      //if this node has children, push them onto the search pq
+      if (this->cRs[idx] > -0.5){ 
+        search_queue.push(std::make_tuple(this->cRs[idx], this->upper_bound(this->cRs[idx], yw, y_yw)));
+        search_queue.push(std::make_tuple(this->cLs[idx], this->upper_bound(this->cLs[idx], yw, y_yw)));
+      }
+    }
+  }
+  return nopt;
 }
 
 bool CapTree::check_build(){
@@ -88,22 +119,179 @@ void CapTree::cancel_build(){
 }
 
 void CapTree::build(double *data, unsigned int N, unsigned int D){
+  //initialize memory -- since tree is full/complete, it must have 2*N-1 nodes
   this->ys = new double[(2*N-1)*D];
   this->xis = new double[(2*N-1)*D];
   this->rs = new double[2*N-1];
-  this->cRs = new unsigned int[2*N-1];
-  this->cLs = new unsigned int[2*N-1];
+  this->nys = new int[2*N-1];
+  this->cRs = new int[2*N-1];
+  this->cLs = new int[2*N-1];
+  
+  //top node has all the data in it; initialize index list with all idcs from 1 to N
+  std::vector< unsigned int > full_idcs(N);
+  std::iota(full_idcs.begin(), full_idcs.end(), 0);
 
-  //if build gets cancelled, quit early and clean up
-  { 
-    std::lock_guard<std::mutex> lk(this->build_mutex);
-    if (this->build_cancelled){
-      delete this->ys; this->ys = NULL;
-      delete this->xis; this->xis = NULL;
-      delete this->rs; this->rs = NULL;
-      delete this->cRs; this->cLs = NULL;
-      delete this->cRs; this->cLs = NULL;
-      return;
+  //initialize queues for node construction
+  unsigned int cur_idx = 0;
+  std::queue< std::vector<unsigned int> > data_idcs_queue;
+  std::queue< unsigned int > node_idx_queue;
+  data_idcs_queue.push(full_idcs);
+  node_idx_queue.push(cur_idx++);
+
+  while (!data_idcs_queue.empty()){
+    //get next node construction job
+    auto data_idcs = data_idcs_queue.front();
+    data_idcs_queue.pop();
+    auto node_idx = node_idx_queue.front();
+    node_idx_queue.pop();
+
+    /////////////////////////
+    //node construction code
+    /////////////////////////
+
+
+    /////////////////////////////////////
+    //if only one idx, just store and quit
+    //////////////////////////////////////
+    if (data_idcs.size() == 1){
+      auto didx = data_idcs[0];
+      for (int d = 0; d < D; d++){
+        this->xis[node_idx*D+d] = this->ys[node_idx*D+d] = data[didx*D+d];
+      }
+      this->rs[node_idx] = 1.;
+      this->nys[node_idx] = didx;
+      this->cRs[node_idx] = this->cLs[node_idx] = -1;
+      continue;
+    }
+    
+    ////////////////////////////////
+    //first get mean and store in xi
+    ////////////////////////////////
+    for (int d = 0; d < D; d++){
+      this->xis[node_idx*D+d] = 0.
+    }
+    for (auto& didx: data_idcs){
+      for (int d = 0; d < D; d++){
+        this->xis[node_idx*D+d] += data[didx*D+d]; 
+      } 
+    }
+    double xinrmsq = 0.
+    for (int d = 0; d < D; d++){
+      xinrmsq += this->xis[node_idx*D+d]*this->xis[node_idx*D+d];
+    }
+    //if xi has 0 norm, just set to 1st datapoint in list
+    if (xinrmsq == 0.){
+      auto& didx = data_idcs[0];
+      for (int d = 0; d < D; d++){
+        this->xis[node_idx*D+d] = data[didx*D+d]; 
+      }
+    } else {
+      //otherwise, normalize the sum
+      for (int d = 0; d < D; d++){
+        this->xis[node_idx*D+d] /= sqrt(xinrmsq);
+      }
+    }
+
+    //////////////////////////////////
+    //find vec of min/max angle to xi, set r and y
+    //////////////////////////////////
+    double dotmin = 2.;
+    double dotmax = -2.;
+    unsigned int cR = 0, cY = 0;
+    for (auto& didx: data_idcs){
+      double dot = 0.;
+      for (int d = 0; d < D; d++){
+        dot += this->xis[node_idx*D+d]*data[didx*D+d];
+      }
+      if (dot < dotmin){
+        dotmin = dot;
+        cR = didx;
+      }
+      if (dot > dotmax){
+        dotmax = dot; 
+        cY = didx;
+      }
+    }
+    //threshold the dotmin between -1 and 1 to avoid numerical issues
+    dotmin = dotmin > 1. ? 1. : dotmin; dotmin = dotmin < -1. ? -1. : dotmin;
+    this->rs[node_idx] = dotmin;
+    this->nys[node_idx] = cY;
+    for (int d = 0; d < D; d++){
+      this->ys[node_idx*D+d] = data[cY*D+d];
+    }
+    
+    ////////////////////////////////////////
+    //find vec of max angle to cR
+    ////////////////////////////////////////
+    dotmin = 2.;
+    unsigned int cL = 0;
+    for (auto& didx: data_idcs){
+      double dot = 0.;
+      for (int d = 0; d < D; d++){
+        dot += data[cR*D+d]*data[didx*D+d];
+      }
+      if (dot < dotmin){
+        dotmin = dot;
+        cL = didx;
+      }
+    }
+
+    ////////////////////////////////////////
+    //for each vector, allocate to either cL or cR
+    ////////////////////////////////////////
+    std::vector<unsigned int> r_idcs, l_idcs;
+    for (auto& didx: data_idcs){
+      double dotL = 0., dotR = 0.;
+      for (int d = 0; d < D; d++){
+        dotL += data[cL*D+d]*data[didx*D+d];
+        dotR += data[cR*D+d]*data[didx*D+d];
+      }
+      if (dotL > dotR){
+        l_idcs.push_back(didx);
+      } else {
+        r_idcs.push_back(didx);
+      }
+    }
+    
+    ///////////////////////////////////////////
+    //in pathological cases, one might be empty; here just allocate evenly
+    ///////////////////////////////////////////
+    if (r_idcs.empty() || l_idcs.empty()){
+      r_idcs.clear(); l_idcs.clear();
+      for (int i = 0; i < data_idcs.size()/2; i++){
+        r_idcs.push_back(data_idcs[i]);
+      }
+      for (int i = data_idcs.size()/2; i < data_idcs.size(); i++){
+        l_idcs.push_back(data_idcs[i]);
+      }
+    }
+
+    ///////////////////////////////////////////
+    //add the two child construction jobs to the queue
+    ///////////////////////////////////////////
+    data_idcs_queue.push(r_idcs);
+    this->cRs[node_idx] = cur_idx;
+    node_idx_queue.push(cur_idx++);
+
+    data_idcs_queue.push(l_idcs);
+    this->cLs[node_idx] = cur_idx;
+    node_idx_queue.push(cur_idx++);
+    
+
+    /////////////////////////////////////////////////
+    //if build gets cancelled, clean up & quit early
+    /////////////////////////////////////////////////
+    { 
+      std::lock_guard<std::mutex> lk(this->build_mutex);
+      if (this->build_cancelled){
+        delete this->ys; this->ys = NULL;
+        delete this->xis; this->xis = NULL;
+        delete this->rs; this->rs = NULL;
+        delete this->nys; this->nys = NULL;
+        delete this->cRs; this->cLs = NULL;
+        delete this->cRs; this->cLs = NULL;
+        return;
+      }
     }
   }
 
