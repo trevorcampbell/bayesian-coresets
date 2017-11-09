@@ -135,14 +135,20 @@ class CapTreeC(object):
     #check whether the tree is done building
     self.libct.CapTree_check_build.argtypes = [ctypes.c_void_p]
     self.libct.CapTree_check_build.restype = ctypes.c_bool
+    #cancel the build process
+    self.libct.CapTree_cancel_build.argtypes = [ctypes.c_void_p]
+    self.libct.CapTree_cancel_build.restype = None
     #perform a search (if tree not done building yet, waits on it)
     self.libct.CapTree_search.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)]
-    self.libct.CapTree_search.restype = ctypes.c_uint
+    self.libct.CapTree_search.restype = ctypes.c_int
   
     self.ptr = self.libct.CapTree_new(data.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), data.shape[0], data.shape[1])
 
-  def check_build(self):
+  def is_build_done(self):
     return self.libct.CapTree_check_build(self.ptr)
+
+  def cancel_build(self):
+    self.libct.CapTree_cancel_build(self.ptr)
 
   def search(self, yw, y_yw):
     return self.libct.CapTree_search(self.ptr, yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), y_yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
