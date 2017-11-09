@@ -43,7 +43,7 @@ class build_so(build_clib):
 libcaptreec = ('libcaptreec', {'sources': ['hilbertcoresets/captree.cpp'], 'compile_flags': ['-O3', '--std=c++17']})
 
 setup(
-    name = 'hilbert-coresets',
+    name = 'hilbertcoresets',
     version='0.3',
     description="Hilbert coresets for approximate Bayesian inference",
     author='Trevor Campbell',
