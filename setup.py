@@ -1,6 +1,12 @@
 from distutils.core import setup
 from distutils.command.build_clib import build_clib
+from distutils.command.install import install
 from distutils import log
+
+class build_so_first(install):
+  def run(self):
+    self.run_command("build_clib")
+    return install.run(self)
 
 class build_so(build_clib):
   def build_libraries(self, libraries):
@@ -54,6 +60,6 @@ setup(
     keywords = ['Bayesian', 'inference', 'coreset', 'Hilbert', 'Frank-Wolfe', 'greedy', 'geodesic'],
     platforms='ALL',
     libraries=[libcaptreec],
-    cmdclass={'build_clib':build_so},
+    cmdclass={'install':build_so_first, 'build_clib':build_so},
     package_data={'hilbertcoresets': ['libcaptreec.so']}
 )
