@@ -106,7 +106,7 @@ class CapTree(object):
       return (bu*rv + b*r1)/(b**2+bu**2)
 
   def lower_bound(self, u, v):
-    #compute lower bound; but 
+    #compute lower bound
     bu = self.y.dot(u)
     bv = self.y.dot(v)
     if 1.-bv**2 <= 0. or bv <= -1.+1e-14: 
