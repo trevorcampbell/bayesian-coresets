@@ -6,7 +6,7 @@ import subprocess
 
 class build_so(install):
   def run(self):
-    retcode = subprocess.call(['g++', '-std=c++17', '-pthread', '-DNDEBUG', '-fwrapv', '-O3', '-Wall', '-fno-strict-aliasing', '-Wdate-time', '-D_FORTIFY_SOURCE=2', '-fstack-protector-strong', '-Wformat', '-Werror=format-security', '-fPIC', 'hilbertcoresets/captree.cpp', '-shared', '-o', 'hilbertcoresets/libcaptreec.so']) 
+    retcode = subprocess.call(['g++', '-std=c++17', '-pthread', '-DNDEBUG', '-fwrapv', '-O3', '-Werror', '-Wall', '-fno-strict-aliasing', '-Wdate-time', '-D_FORTIFY_SOURCE=2', '-fstack-protector-strong', '-Wformat', '-Werror=format-security', '-fPIC', 'hilbertcoresets/captree.cpp', '-shared', '-o', 'hilbertcoresets/libcaptreec.so']) 
     if retcode != 0:
       raise Exception('g++: Compile of captreec.cpp failed')
     return install.run(self)

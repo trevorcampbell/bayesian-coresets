@@ -144,8 +144,48 @@ def test_tree_bounds():
       yield tree_bounds_single, N, D, dist
 
 def test_tree_c():
-  data = np.random.rand(10, 5)
-  ct.CapTreeC(data)
+  X = np.random.rand(10, 5)
 
+  #test stability with immediate garbage collection
+  for i in range(100):
+    ct.CapTreeC(X) 
+  
+  #test stability with cancellation
+  for i in range(100):
+    tr = ct.CapTreeC(X)
+    tr.cancel_build()
+  
+  #test stability with search then cancellation
+  for i in range(100):
+    yw = np.random.normal(0., 1., 5)
+    yw /= np.sqrt((yw**2).sum())
+    y_yw = np.random.normal(0., 1., 5)
+    y_yw -= y_yw.dot(yw)*yw
+    y_yw /= np.sqrt((y_yw**2).sum())
+    tr = ct.CapTreeC(X)
+    tr.search(yw, y_yw)
+    tr.cancel_build()
+  
+  #test stability with cancellation then search
+  for i in range(100):
+    yw = np.random.normal(0., 1., 5)
+    yw /= np.sqrt((yw**2).sum())
+    y_yw = np.random.normal(0., 1., 5)
+    y_yw -= y_yw.dot(yw)*yw
+    y_yw /= np.sqrt((y_yw**2).sum())
+    tr = ct.CapTreeC(X)
+    tr.cancel_build()
+    tr.search(yw, y_yw)
+  
+  #test stability with lots of searches
+  tr = ct.CapTreeC(X)
+  for i in range(100):
+    yw = np.random.normal(0., 1., 5)
+    yw /= np.sqrt((yw**2).sum())
+    y_yw = np.random.normal(0., 1., 5)
+    y_yw -= y_yw.dot(yw)*yw
+    y_yw /= np.sqrt((y_yw**2).sum())
+    tr.search(yw, y_yw)
+    assert tr.is_build_done()
 
 
