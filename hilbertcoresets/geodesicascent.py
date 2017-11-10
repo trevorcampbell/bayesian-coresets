@@ -22,6 +22,7 @@ class GIGA(object):
     self.N = self.x.shape[0] #number of nonzero vecs
     self.tree = None
     self.tree_type = tree_type
+    self.f_preproc = x.shape[0] + 3*self.x.shape[0] + 2
     self.f_lin = 0.
     self.f_update = 0.
     self.f_tree_search_prev = 0.
@@ -194,7 +195,7 @@ class GIGA(object):
       self.tree = ct.CapTreeC(self.y)
 
   def get_num_ops(self):
-    ftot = self.f_lin + self.f_update
+    ftot = self.f_preproc+self.f_lin + self.f_update
     if self.tree:
       ftot += self.tree.num_build_ops() + self.tree.num_search_ops() - self.f_tree_search_prev
     return ftot
