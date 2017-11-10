@@ -13,7 +13,7 @@ class build_so(install):
 
 setup(
     name = 'hilbertcoresets',
-    version='0.3',
+    version='0.4',
     description="Hilbert coresets for approximate Bayesian inference",
     author='Trevor Campbell',
     author_email='tdjc@mit.edu',
