@@ -86,7 +86,7 @@ def tree_search_single(N, D, dist="gauss"):
     y_yw = np.random.normal(0., 1., x.shape[1])
     y_yw -= y_yw.dot(yw)*yw
     y_yw /= np.sqrt((y_yw**2).sum())
-    n_ot, _ = tree.search(yw, y_yw)
+    n_ot = tree.search(yw, y_yw)
     n_ot_c = tree_c.search(yw, y_yw)
     print n_ot_c
     f_ot = x[n_ot, :].dot(y_yw)/np.sqrt(1.-x[n_ot, :].dot(yw)**2)

@@ -20,7 +20,8 @@ class ImportanceSampling(object):
       self.ps = self.norms/self.sig
     else:
       self.ps = None
-    self.xs = x.sum(axis=0)
+    self.xs = self.x.sum(axis=0)
+    self.f_preproc = x.shape[0] + 2*self.x.shape[0] 
     self.diam = None
     self.normratio = None
     self.reset()
@@ -36,6 +37,9 @@ class ImportanceSampling(object):
     self.wts = self.cts/self.ps/M
     self.M = M
     return
+
+  def get_num_ops(self):
+    return self.f_preproc
 
   def reset(self):
     self.M = 0

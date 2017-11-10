@@ -19,6 +19,7 @@ class FrankWolfe(object):
     self.normratio = None
     self.diam = None
     self.nu = None
+    self.f_preproc = x.shape[0] + 2*self.x.shape[0] 
     self.f_search = 0.
     self.f_update = 0.
     self.reached_numeric_limit = False
@@ -80,7 +81,7 @@ class FrankWolfe(object):
     return scores.argmax()
 
   def get_num_ops(self):
-    return self.f_search + self.f_update
+    return self.f_preproc+self.f_search + self.f_update
 
   def reset(self):
     self.M = 0
