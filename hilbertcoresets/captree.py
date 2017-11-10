@@ -8,8 +8,9 @@ import os
 class CapTree(object):
   def __init__(self, data):
     #if data is not None, this is the root, so set up the build queue and iterate construction
+    self.nfun_search = 0.
     if data is not None:
-      self.nfun_construction = 0
+      self.nfun_construction = 0.
       build_queue = deque([])
       build_queue.append( (self, np.arange(data.shape[0])) )
       while build_queue:
@@ -21,6 +22,15 @@ class CapTree(object):
           cap.cL = CapTree(None)
           build_queue.append( (cap.cR, idcsR) )
           build_queue.append( (cap.cL, idcsL) )
+  
+  def is_build_done(self):
+    return True
+
+  def num_build_ops(self):
+    return self.nfun_construction
+
+  def num_search_ops(self):
+    return self.nfun_search
 
   def build(self, data, idcs):
     self.leaf = True
@@ -78,20 +88,21 @@ class CapTree(object):
     L = -2.
     nopt = -1
     heapq.heappush(pq, (-self.upper_bound(y_yw, yw), self))
-    nfun_search = 2.
+    nf = 2.
     while pq:
       negub, cap = heapq.heappop(pq)
       if -negub > L:
         ell = cap.lower_bound(y_yw, yw)
-        nfun_search += 2.
+        nf += 2.
         if ell > L:
           L = ell
           nopt = cap.ny
         if not cap.leaf:
           heapq.heappush(pq, (-cap.cR.upper_bound(y_yw, yw), cap.cR))
           heapq.heappush(pq, (-cap.cL.upper_bound(y_yw, yw), cap.cL))
-          nfun_search += 4.
-    return nopt, nfun_search
+          nf += 4.
+    self.nfun_search += nf
+    return nopt
 
   def upper_bound(self, u, v):
     #compute upper bound
@@ -138,11 +149,23 @@ class CapTreeC(object):
     #cancel the build process
     self.libct.CapTree_cancel_build.argtypes = [ctypes.c_void_p]
     self.libct.CapTree_cancel_build.restype = None
+    #get the number of build O(<,>) ops
+    self.libct.CapTree_num_build_ops.argtypes = [ctypes.c_void_p]
+    self.libct.CapTree_num_build_ops.restype = ctypes.c_double
+    #get the number of search O(<,>) ops
+    self.libct.CapTree_num_search_ops.argtypes = [ctypes.c_void_p]
+    self.libct.CapTree_num_search_ops.restype = ctypes.c_double
     #perform a search (if tree not done building yet, waits on it)
     self.libct.CapTree_search.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_uint]
     self.libct.CapTree_search.restype = ctypes.c_int
 
     self.ptr = self.libct.CapTree_new(data.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), data.shape[0], data.shape[1])
+
+  def num_search_ops(self):
+    return self.libct.CapTree_num_search_ops(self.ptr)
+  
+  def num_build_ops(self):
+    return self.libct.CapTree_num_build_ops(self.ptr)
 
   def is_build_done(self):
     return self.libct.CapTree_check_build(self.ptr)
