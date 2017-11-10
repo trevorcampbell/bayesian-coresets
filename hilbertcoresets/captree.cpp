@@ -52,7 +52,7 @@ CapTree::~CapTree(){
   if (this->cLs != NULL){ delete this->cLs; this->cLs = NULL; }
   if (this->build_thread != NULL){ 
    this->cancel_build(); //if the build is already done, does nothing; if the build is in progress, cancels it
-   this->build_thread.join(); //wait for the thread to terminate 
+   this->build_thread->join(); //wait for the thread to terminate 
    delete this->build_thread;  //delete it
    this->build_thread = NULL; //set ptr to null
   }
@@ -76,7 +76,7 @@ int CapTree::search(double *yw, double *y_yw, unsigned int D){
   double LB = -2.;
   int nopt = -1;
   auto cmp = [](std::tuple<unsigned int, double> left, std::tuple<unsigned int, double> right){ return std::get<1>(left) < std::get<1>(right); };
-  std::priority_queue<std::tuple<unsigned int, double>, std::vector< std::tuple<unsigned int, double> >, decltype(cmp)> search_queue;
+  std::priority_queue<std::tuple<unsigned int, double>, std::vector< std::tuple<unsigned int, double> >, decltype(cmp)> search_queue(cmp);
   search_queue.push(std::make_tuple(0, this->upper_bound(0, yw, y_yw, D) ));
   while (!search_queue.empty()){
     //get the next cap node to search
@@ -88,7 +88,7 @@ int CapTree::search(double *yw, double *y_yw, unsigned int D){
     //if its upper bound is greater than the current maximum LB
     if (u > LB){
       //compute the LB
-      ell = this->lower_bound(idx, yw, y_yw, D);
+      double ell = this->lower_bound(idx, yw, y_yw, D);
       //if its lb is greater than the current best
       if (ell > LB){
         //update the max LB and store data idx that achieved it
@@ -108,13 +108,13 @@ int CapTree::search(double *yw, double *y_yw, unsigned int D){
 double CapTree::upper_bound(unsigned int node_idx, double *yw, double *y_yw, unsigned int D){
     double bu, bv, b, rv, r1;
     bu = bv = b = rv = r1 = 0.;
-    for (int d = 0; d < D; d++){
+    for (unsigned int d = 0; d < D; d++){
       bu += this->xis[node_idx*D+d]*y_yw[d];
       bv += this->xis[node_idx*D+d]*yw[d];
     }
-    b = sqrt(max(0., 1. - bu*bu - bv*bv));
-    rv = sqrt(max(0., this->rs[node_idx]*this->rs[node_idx] - bv*bv));
-    r1 = sqrt(max(0., 1. - this->rs[node_idx]*this->rs[node_idx]));
+    b = sqrt(std::max(0., 1. - bu*bu - bv*bv));
+    rv = sqrt(std::max(0., this->rs[node_idx]*this->rs[node_idx] - bv*bv));
+    r1 = sqrt(std::max(0., 1. - this->rs[node_idx]*this->rs[node_idx]));
     if (fabs(bv) > this->rs[node_idx] || bu >= rv){
       return 1.;
     } else {
@@ -125,7 +125,7 @@ double CapTree::upper_bound(unsigned int node_idx, double *yw, double *y_yw, uns
 double CapTree::lower_bound(unsigned int node_idx, double *yw, double *y_yw, unsigned int D){
     double bu, bv;
     bu = bv = 0.;
-    for (int d = 0; d < D; d++){ 
+    for (unsigned int d = 0; d < D; d++){ 
       bu += this->ys[this->nys[node_idx]*D+d]*y_yw[d];
       bv += this->ys[this->nys[node_idx]*D+d]*yw[d];
     }
@@ -165,7 +165,7 @@ void CapTree::build(double *data, unsigned int N, unsigned int D){
   this->cRs = new int[2*N-1];
   this->cLs = new int[2*N-1];
 
-  for (int d = 0; d < N*D; d++){
+  for (unsigned int d = 0; d < N*D; d++){
     this->ys[d] = data[d];
   }
   
@@ -197,7 +197,7 @@ void CapTree::build(double *data, unsigned int N, unsigned int D){
     //////////////////////////////////////
     if (data_idcs.size() == 1){
       auto didx = data_idcs[0];
-      for (int d = 0; d < D; d++){
+      for (unsigned int d = 0; d < D; d++){
         this->xis[node_idx*D+d] = data[didx*D+d];
       }
       this->rs[node_idx] = 1.;
@@ -209,27 +209,27 @@ void CapTree::build(double *data, unsigned int N, unsigned int D){
     ////////////////////////////////
     //first get mean and store in xi
     ////////////////////////////////
-    for (int d = 0; d < D; d++){
-      this->xis[node_idx*D+d] = 0.
+    for (unsigned int d = 0; d < D; d++){
+      this->xis[node_idx*D+d] = 0.;
     }
     for (auto& didx: data_idcs){
-      for (int d = 0; d < D; d++){
+      for (unsigned int d = 0; d < D; d++){
         this->xis[node_idx*D+d] += data[didx*D+d]; 
       } 
     }
-    double xinrmsq = 0.
-    for (int d = 0; d < D; d++){
+    double xinrmsq = 0.;
+    for (unsigned int d = 0; d < D; d++){
       xinrmsq += this->xis[node_idx*D+d]*this->xis[node_idx*D+d];
     }
     //if xi has 0 norm, just set to 1st datapoint in list
     if (xinrmsq == 0.){
       auto& didx = data_idcs[0];
-      for (int d = 0; d < D; d++){
+      for (unsigned int d = 0; d < D; d++){
         this->xis[node_idx*D+d] = data[didx*D+d]; 
       }
     } else {
       //otherwise, normalize the sum
-      for (int d = 0; d < D; d++){
+      for (unsigned int d = 0; d < D; d++){
         this->xis[node_idx*D+d] /= sqrt(xinrmsq);
       }
     }
@@ -242,7 +242,7 @@ void CapTree::build(double *data, unsigned int N, unsigned int D){
     unsigned int cR = 0, cY = 0;
     for (auto& didx: data_idcs){
       double dot = 0.;
-      for (int d = 0; d < D; d++){
+      for (unsigned int d = 0; d < D; d++){
         dot += this->xis[node_idx*D+d]*data[didx*D+d];
       }
       if (dot < dotmin){
@@ -266,7 +266,7 @@ void CapTree::build(double *data, unsigned int N, unsigned int D){
     unsigned int cL = 0;
     for (auto& didx: data_idcs){
       double dot = 0.;
-      for (int d = 0; d < D; d++){
+      for (unsigned int d = 0; d < D; d++){
         dot += data[cR*D+d]*data[didx*D+d];
       }
       if (dot < dotmin){
@@ -281,7 +281,7 @@ void CapTree::build(double *data, unsigned int N, unsigned int D){
     std::vector<unsigned int> r_idcs, l_idcs;
     for (auto& didx: data_idcs){
       double dotL = 0., dotR = 0.;
-      for (int d = 0; d < D; d++){
+      for (unsigned int d = 0; d < D; d++){
         dotL += data[cL*D+d]*data[didx*D+d];
         dotR += data[cR*D+d]*data[didx*D+d];
       }
@@ -297,10 +297,10 @@ void CapTree::build(double *data, unsigned int N, unsigned int D){
     ///////////////////////////////////////////
     if (r_idcs.empty() || l_idcs.empty()){
       r_idcs.clear(); l_idcs.clear();
-      for (int i = 0; i < data_idcs.size()/2; i++){
+      for (unsigned int i = 0; i < data_idcs.size()/2; i++){
         r_idcs.push_back(data_idcs[i]);
       }
-      for (int i = data_idcs.size()/2; i < data_idcs.size(); i++){
+      for (unsigned int i = data_idcs.size()/2; i < data_idcs.size(); i++){
         l_idcs.push_back(data_idcs[i]);
       }
     }
