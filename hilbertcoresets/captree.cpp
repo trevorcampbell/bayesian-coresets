@@ -66,12 +66,12 @@ CapTree::~CapTree(){
   if (this->cLs != NULL){ delete this->cLs; this->cLs = NULL; }
 }
 
-double CapTree::num_build_ops(){
+double CapTree::get_num_build_ops(){
   std::lock_guard<std::mutex> lk(this->build_mutex);
   return this->num_build_ops;
 }
 
-double CapTree::num_search_ops(){
+double CapTree::get_num_search_ops(){
   return this->num_search_ops;  
 }
 
