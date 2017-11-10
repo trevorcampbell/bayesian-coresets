@@ -14,6 +14,8 @@ class CapTree {
     bool check_build();
     void cancel_build();
     int search(double*, double*, unsigned int D);
+    double get_num_search_ops();
+    double get_num_build_ops();
   private:
     void build(double*, unsigned int, unsigned int);
     double upper_bound(unsigned int, double*, double*, unsigned int);
@@ -21,6 +23,7 @@ class CapTree {
     double *ys, *xis; // ys = copy of data (less memory than storing ys for each node), xis = node centers 
     double *rs; //node dot min
     int *cRs, *cLs, *nys; //cR/cL are child idcs, nys = idx of lowr bound vector in the node
+    double num_build_ops, num_search_ops;
     bool build_done, build_cancelled;
     std::mutex build_mutex;
     std::condition_variable build_cv;
@@ -33,10 +36,13 @@ extern "C" {
   int CapTree_search(CapTree *ptr, double *yw, double *y_yw, unsigned int D) { return ptr->search(yw, y_yw, D); }
   bool CapTree_check_build(CapTree *ptr) { return ptr->check_build(); }
   void CapTree_cancel_build(CapTree *ptr) { return ptr->cancel_build(); }
+  double CapTree_num_search_ops(CapTree *ptr) { return ptr->get_num_build_ops(); }
+  double CapTree_num_build_ops(CapTree *ptr) { return ptr->get_num_search_ops(); }
 }
 
 CapTree::CapTree(double *data, unsigned int N, unsigned int D){
   //start a thread for building the tree
+  this->num_build_ops = this->num_search_ops = 0.;
   this->ys = this->xis = this->rs = NULL;
   this->cRs = this->cLs = this->nys = NULL;
   this->build_done = this->build_cancelled = false;
@@ -60,6 +66,15 @@ CapTree::~CapTree(){
   if (this->cLs != NULL){ delete this->cLs; this->cLs = NULL; }
 }
 
+int CapTree::num_build_ops(){
+  std::lock_guard<std::mutex> lk(this->build_mutex);
+  return this->num_build_ops;
+}
+
+int CapTree::num_search_ops(){
+  return this->num_search_ops;  
+}
+
 int CapTree::search(double *yw, double *y_yw, unsigned int D){
   {
     // if build not done yet & has not been cancelled already, wait on build mutex
@@ -75,6 +90,7 @@ int CapTree::search(double *yw, double *y_yw, unsigned int D){
   }
 
   //search
+  double nf = 2.;
   double LB = -2.;
   int nopt = -1;
   auto cmp = [](std::tuple<unsigned int, double> left, std::tuple<unsigned int, double> right){ return std::get<1>(left) < std::get<1>(right); };
@@ -91,6 +107,7 @@ int CapTree::search(double *yw, double *y_yw, unsigned int D){
     if (u > LB){
       //compute the LB
       double ell = this->lower_bound(idx, yw, y_yw, D);
+      nf += 2.;
       //if its lb is greater than the current best
       if (ell > LB){
         //update the max LB and store data idx that achieved it
@@ -101,9 +118,11 @@ int CapTree::search(double *yw, double *y_yw, unsigned int D){
       if (this->cRs[idx] > -0.5){ 
         search_queue.push(std::make_tuple(this->cRs[idx], this->upper_bound(this->cRs[idx], yw, y_yw, D)));
         search_queue.push(std::make_tuple(this->cLs[idx], this->upper_bound(this->cLs[idx], yw, y_yw, D)));
+        nf += 4.;
       }
     }
   }
+  this->num_search_ops += nf;
   return nopt;
 }
 
@@ -167,9 +186,12 @@ void CapTree::build(double *data, unsigned int N, unsigned int D){
   this->cRs = new int[2*N-1];
   this->cLs = new int[2*N-1];
 
+
   for (unsigned int d = 0; d < N*D; d++){
     this->ys[d] = data[d];
   }
+
+  double nbo = (double)N;
   
   //top node has all the data in it; initialize index list with all idcs from 1 to N
   std::vector< unsigned int > full_idcs(N);
@@ -205,6 +227,7 @@ void CapTree::build(double *data, unsigned int N, unsigned int D){
       this->rs[node_idx] = 1.;
       this->nys[node_idx] = didx;
       this->cRs[node_idx] = this->cLs[node_idx] = -1;
+      nbo += 1.;
       continue;
     }
     
@@ -334,11 +357,13 @@ void CapTree::build(double *data, unsigned int N, unsigned int D){
         return;
       }
     }
+    nbo += 3. + 4.*data_idcs.size();
   }
 
   //acquire the lock on the build mutex, set build_done to true, unlock, and notify all waiting threads (possibly ::search)
   std::unique_lock<std::mutex> lk(this->build_mutex);
   this->build_done = true;
+  this->num_build_ops = nbo;
   lk.unlock();
   this->build_cv.notify_all();
   return;

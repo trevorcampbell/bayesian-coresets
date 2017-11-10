@@ -19,6 +19,8 @@ class FrankWolfe(object):
     self.normratio = None
     self.diam = None
     self.nu = None
+    self.f_search = 0.
+    self.f_update = 0.
     self.reached_numeric_limit = False
     self.reset()
 
@@ -37,12 +39,14 @@ class FrankWolfe(object):
       self.wts[f] = self.sig/self.norms[f]
       self.xw = self.sig/self.norms[f]*self.x[f, :]
       self.M = 1
+      self.f_update += 1.
 
     for m in range(self.M, M):
       #search for FW vertex and compute line search
       f = self.search()
       gammanum = (self.sig/self.norms[f]*self.x[f, :] - self.xw).dot(self.xs - self.xw)
       gammadenom = ((self.sig/self.norms[f]*self.x[f, :] - self.xw)**2).sum()
+      self.f_update += 4.
       
       #if the line search is invalid, possibly reached numeric limit
       #try recomputing xw from scratch and rerunning search
@@ -51,6 +55,7 @@ class FrankWolfe(object):
         f = self.search()
         gammanum = (self.sig/self.norms[f]*self.x[f, :] - self.xw).dot(self.xs - self.xw)
         gammadenom = ((self.sig/self.norms[f]*self.x[f, :] - self.xw)**2).sum()
+        self.f_update += 4. + (self.wts > 0).sum()
         #if it's still no good, we've reached the numeric limit
         if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:  
           self.reached_numeric_limit = True
@@ -61,21 +66,29 @@ class FrankWolfe(object):
       self.wts[f] += gamma*self.sig/self.norms[f] 
       if update_method == 'fast':
         self.xw = (1.-gamma)*self.xw + gamma*self.sig/self.norms[f]*self.x[f, :]
+        self.f_update += 1.
       else:
         self.xw = (self.wts[:, np.newaxis]*self.x).sum(axis=0)
+        self.f_update += (self.wts > 0).sum()
       self.M = m+1
 
     return
 
   def search(self):
     scores = ((self.xs - self.xw)*self.x).sum(axis=1)/self.norms
+    self.f_search += 2. + self.x.shape[0]
     return scores.argmax()
+
+  def get_num_ops(self):
+    return self.f_search + self.f_update
 
   def reset(self):
     self.M = 0
     self.wts = np.zeros(self.N)
     self.xw = np.zeros(self.x.shape[1])
     self.reached_numeric_limit = False
+    self.f_search = 0.
+    self.f_update = 0.
 
   def weights(self):
     #remap self.wts to the full original data size using nzidcs
