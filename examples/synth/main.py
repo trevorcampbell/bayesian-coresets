@@ -43,7 +43,7 @@ for anm, clr in zip(anms, pal):
     alg = None
     if anm == 'GIGA(A)' or anm == 'GIGA(L)':
       alg = hc.GIGA(X)
-    elif anm == 'FW'#initialize algorithms
+    elif anm == 'FW':
       alg = hc.FrankWolfe(X)
     else:
       alg = hc.RandomSubsampling(X) 
