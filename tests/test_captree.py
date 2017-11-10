@@ -74,10 +74,12 @@ def test_tree_correctness():
 ####################################################
 #verifies that the tree search produces correct results
 #compared with linear search
+#also verifies C tree
 ####################################################
 def tree_search_single(N, D, dist="gauss"):
   x = gendata(N, D, dist)
   tree = ct.CapTree(x)
+  tree_c = ct.CapTreeC(x)
   for m in range(n_trials):
     yw = np.random.normal(0., 1., x.shape[1])
     yw /= np.sqrt((yw**2).sum())
@@ -85,10 +87,13 @@ def tree_search_single(N, D, dist="gauss"):
     y_yw -= y_yw.dot(yw)*yw
     y_yw /= np.sqrt((y_yw**2).sum())
     n_ot, _ = tree.search(yw, y_yw)
+    n_ot_c = tree.search(yw, y_yw)
     f_ot = x[n_ot, :].dot(y_yw)/np.sqrt(1.-x[n_ot, :].dot(yw)**2)
+    f_ot_c = x[n_ot_c, :].dot(y_yw)/np.sqrt(1.-x[n_ot_c, :].dot(yw)**2)
     n_ol = (x.dot(y_yw)/np.sqrt(1.-x.dot(yw)**2)).argmax()
     f_ol = x[n_ol, :].dot(y_yw)/np.sqrt(1.-x[n_ol, :].dot(yw)**2)
     assert f_ol - f_ot < tol, "cap tree search failed; linear obj = " + str(f_ol) + " tree obj = " + str(f_ot)
+    assert f_ot - f_ot_c < tol, "cap tree search failed; C tree obj = " + str(f_ot_c) + " py tree obj = " + str(f_ot)
       
 def test_tree_search():
   for N, D, dist in tests:
@@ -143,7 +148,7 @@ def test_tree_bounds():
     for n in range(n_trials):
       yield tree_bounds_single, N, D, dist
 
-def test_tree_c():
+def test_c_tree_stability():
   X = np.random.rand(10, 5)
 
   #test stability with immediate garbage collection
