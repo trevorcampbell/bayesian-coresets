@@ -37,6 +37,8 @@ extern "C" {
 
 CapTree::CapTree(double *data, unsigned int N, unsigned int D){
   //start a thread for building the tree
+  this->ys = this->xis = this->rs = NULL;
+  this->cRs = this->cLs = this->nys = NULL;
   this->build_done = this->build_cancelled = false;
   this->build_thread = new std::thread(&CapTree::build, this, data, N, D);
   return;
@@ -44,18 +46,18 @@ CapTree::CapTree(double *data, unsigned int N, unsigned int D){
 
 CapTree::~CapTree(){ 
   //clean up data ptrs if the build thread didn't already do it (if the build was cancelled early)
-  if (this->ys != NULL){ delete this->ys; this->ys = NULL; }
-  if (this->xis != NULL){ delete this->xis; this->xis = NULL; }
-  if (this->rs != NULL){ delete this->rs; this->rs = NULL; }
-  if (this->nys != NULL){ delete this->nys; this->nys = NULL; }
-  if (this->cRs != NULL){ delete this->cRs; this->cRs = NULL; }
-  if (this->cLs != NULL){ delete this->cLs; this->cLs = NULL; }
   if (this->build_thread != NULL){ 
    this->cancel_build(); //if the build is already done, does nothing; if the build is in progress, cancels it
    this->build_thread->join(); //wait for the thread to terminate 
    delete this->build_thread;  //delete it
    this->build_thread = NULL; //set ptr to null
   }
+  if (this->ys != NULL){ delete this->ys; this->ys = NULL; }
+  if (this->xis != NULL){ delete this->xis; this->xis = NULL; }
+  if (this->rs != NULL){ delete this->rs; this->rs = NULL; }
+  if (this->nys != NULL){ delete this->nys; this->nys = NULL; }
+  if (this->cRs != NULL){ delete this->cRs; this->cRs = NULL; }
+  if (this->cLs != NULL){ delete this->cLs; this->cLs = NULL; }
 }
 
 int CapTree::search(double *yw, double *y_yw, unsigned int D){
@@ -327,8 +329,8 @@ void CapTree::build(double *data, unsigned int N, unsigned int D){
         delete this->xis; this->xis = NULL;
         delete this->rs; this->rs = NULL;
         delete this->nys; this->nys = NULL;
-        delete this->cRs; this->cLs = NULL;
-        delete this->cRs; this->cLs = NULL;
+        delete this->cRs; this->cRs = NULL;
+        delete this->cLs; this->cLs = NULL;
         return;
       }
     }
