@@ -13,12 +13,14 @@ class CapTree {
     ~CapTree();
     bool check_build();
     void cancel_build();
-    int search(double*, double*);
+    int search(double*, double*, unsigned int D);
   private:
     void build(double*, unsigned int, unsigned int);
-    double *ys, *xis; 
-    double *rs;
-    int *cRs, *cLs, *nys;
+    double upper_bound(unsigned int, double*, double*, unsigned int);
+    double lower_bound(unsigned int, double*, double*, unsigned int);
+    double *ys, *xis; // ys = copy of data (less memory than storing ys for each node), xis = node centers 
+    double *rs; //node dot min
+    int *cRs, *cLs, *nys; //cR/cL are child idcs, nys = idx of lowr bound vector in the node
     bool build_done, build_cancelled;
     std::mutex build_mutex;
     std::condition_variable build_cv;
@@ -28,7 +30,7 @@ class CapTree {
 extern "C" {
   CapTree* CapTree_new(double *data, unsigned int N, unsigned int D) { return new CapTree(data, N, D); }
   void CapTree_del(CapTree *ptr) { if (ptr != NULL){delete ptr;} }
-  int CapTree_search(CapTree *ptr, double *yw, double *y_yw) { return ptr->search(yw, y_yw); }
+  int CapTree_search(CapTree *ptr, double *yw, double *y_yw, unsigned int D) { return ptr->search(yw, y_yw, D); }
   bool CapTree_check_build(CapTree *ptr) { return ptr->check_build(); }
   void CapTree_cancel_build(CapTree *ptr) { return ptr->cancel_build(); }
 }
@@ -56,7 +58,7 @@ CapTree::~CapTree(){
   }
 }
 
-int CapTree::search(double *yw, double *y_yw){
+int CapTree::search(double *yw, double *y_yw, unsigned int D){
   {
     // if build not done yet & has not been cancelled already, wait on build mutex
     std::unique_lock<std::mutex> lk(this->build_mutex);
@@ -75,7 +77,7 @@ int CapTree::search(double *yw, double *y_yw){
   int nopt = -1;
   auto cmp = [](std::tuple<unsigned int, double> left, std::tuple<unsigned int, double> right){ return std::get<1>(left) < std::get<1>(right); };
   std::priority_queue<std::tuple<unsigned int, double>, std::vector< std::tuple<unsigned int, double> >, decltype(cmp)> search_queue;
-  search_queue.push(std::make_tuple(0, this->upper_bound(0, yw, y_yw) ));
+  search_queue.push(std::make_tuple(0, this->upper_bound(0, yw, y_yw, D) ));
   while (!search_queue.empty()){
     //get the next cap node to search
     auto tpl = search_queue.top();
@@ -86,7 +88,7 @@ int CapTree::search(double *yw, double *y_yw){
     //if its upper bound is greater than the current maximum LB
     if (u > LB){
       //compute the LB
-      ell = this->lower_bound(idx, yw, y_yw);
+      ell = this->lower_bound(idx, yw, y_yw, D);
       //if its lb is greater than the current best
       if (ell > LB){
         //update the max LB and store data idx that achieved it
@@ -95,13 +97,49 @@ int CapTree::search(double *yw, double *y_yw){
       }
       //if this node has children, push them onto the search pq
       if (this->cRs[idx] > -0.5){ 
-        search_queue.push(std::make_tuple(this->cRs[idx], this->upper_bound(this->cRs[idx], yw, y_yw)));
-        search_queue.push(std::make_tuple(this->cLs[idx], this->upper_bound(this->cLs[idx], yw, y_yw)));
+        search_queue.push(std::make_tuple(this->cRs[idx], this->upper_bound(this->cRs[idx], yw, y_yw, D)));
+        search_queue.push(std::make_tuple(this->cLs[idx], this->upper_bound(this->cLs[idx], yw, y_yw, D)));
       }
     }
   }
   return nopt;
 }
+
+double CapTree::upper_bound(unsigned int node_idx, double *yw, double *y_yw, unsigned int D){
+    double bu, bv, b, rv, r1;
+    bu = bv = b = rv = r1 = 0.;
+    for (int d = 0; d < D; d++){
+      bu += this->xis[node_idx*D+d]*y_yw[d];
+      bv += this->xis[node_idx*D+d]*yw[d];
+    }
+    b = sqrt(max(0., 1. - bu*bu - bv*bv));
+    rv = sqrt(max(0., this->rs[node_idx]*this->rs[node_idx] - bv*bv));
+    r1 = sqrt(max(0., 1. - this->rs[node_idx]*this->rs[node_idx]));
+    if (fabs(bv) > this->rs[node_idx] || bu >= rv){
+      return 1.;
+    } else {
+      return (bu*rv+b*r1)/(b*b+bu*bu);
+    }
+}
+
+double CapTree::lower_bound(unsigned int node_idx, double *yw, double *y_yw, unsigned int D){
+    double bu, bv;
+    bu = bv = 0.;
+    for (int d = 0; d < D; d++){ 
+      bu += this->ys[this->nys[node_idx]*D+d]*y_yw[d];
+      bv += this->ys[this->nys[node_idx]*D+d]*yw[d];
+    }
+    if (1.-bv*bv <= 0. || bv <= -1.+1e-14){
+      //the first condition can occur when y = +/- y_w, and here the direction is not well defined 
+      //the second can happen when y is roughly =  -y_w, and here the direction is not numerically stable
+      //in either case, we want to return a failure - output = -3 indicates this
+      return -3.;
+    } else {
+      return bu/sqrt(1.-bv*bv);
+    }
+}
+
+    
 
 bool CapTree::check_build(){
   //check whether build_done is true
@@ -120,12 +158,16 @@ void CapTree::cancel_build(){
 
 void CapTree::build(double *data, unsigned int N, unsigned int D){
   //initialize memory -- since tree is full/complete, it must have 2*N-1 nodes
-  this->ys = new double[(2*N-1)*D];
+  this->ys = new double[N*D];
   this->xis = new double[(2*N-1)*D];
   this->rs = new double[2*N-1];
   this->nys = new int[2*N-1];
   this->cRs = new int[2*N-1];
   this->cLs = new int[2*N-1];
+
+  for (int d = 0; d < N*D; d++){
+    this->ys[d] = data[d];
+  }
   
   //top node has all the data in it; initialize index list with all idcs from 1 to N
   std::vector< unsigned int > full_idcs(N);
@@ -156,7 +198,7 @@ void CapTree::build(double *data, unsigned int N, unsigned int D){
     if (data_idcs.size() == 1){
       auto didx = data_idcs[0];
       for (int d = 0; d < D; d++){
-        this->xis[node_idx*D+d] = this->ys[node_idx*D+d] = data[didx*D+d];
+        this->xis[node_idx*D+d] = data[didx*D+d];
       }
       this->rs[node_idx] = 1.;
       this->nys[node_idx] = didx;
@@ -216,9 +258,6 @@ void CapTree::build(double *data, unsigned int N, unsigned int D){
     dotmin = dotmin > 1. ? 1. : dotmin; dotmin = dotmin < -1. ? -1. : dotmin;
     this->rs[node_idx] = dotmin;
     this->nys[node_idx] = cY;
-    for (int d = 0; d < D; d++){
-      this->ys[node_idx*D+d] = data[cY*D+d];
-    }
     
     ////////////////////////////////////////
     //find vec of max angle to cR
