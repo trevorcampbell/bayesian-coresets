@@ -179,7 +179,7 @@ class GIGA(object):
     n = self.n_tr+self.n_lin + 1
     if self.n_lin < 2 or self.n_lin < np.ceil(8.*np.log(n)):
       return self.search_linear()
-    if self.n_tree < 2 or self.n_tree < np.ceil(8.*np.log(n)):
+    if self.n_tr < 2 or self.n_tr < np.ceil(8.*np.log(n)):
       return self.search_tree()
     lin_idx = self.logt_lin/self.n_lin - np.sqrt(16.*(max(0., self.logtsq_lin - self.logt_lin**2/self.n_lin)/(self.n_lin-1))*(np.log(n-1.)/self.n_lin))
     tree_idx = self.logt_tr/self.n_tr - np.sqrt(16.*(max(0., self.logtsq_tr - self.logt_tr**2/self.n_tr)/(self.n_tr-1))*(np.log(n-1.)/self.n_tr))
