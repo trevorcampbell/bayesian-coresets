@@ -2,7 +2,7 @@ import numpy as np
 from scipy.special import gammaln
 
 def load_data(dnm):
-  data = np.load(folder+'/'+dnm+'.npz')
+  data = np.load(dnm)
   Z = np.hstack((data['X'], data['y'][:, np.newaxis]))
   Zt = np.hstack((data['Xt'], data['yt'][:, np.newaxis]))
   data.close()

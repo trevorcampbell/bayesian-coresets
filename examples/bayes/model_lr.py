@@ -1,9 +1,9 @@
 import numpy as np
 
 def load_data(dnm):
-  data = np.load(folder+'/'+dnm+'.npz')
+  data = np.load(dnm)
   Z = data['y'][:, np.newaxis]*data['X']
-  Zt = data['yt'][:, np.newaxis]*data['X']
+  Zt = data['yt'][:, np.newaxis]*data['Xt']
   data.close()
   return Z, Zt
 
