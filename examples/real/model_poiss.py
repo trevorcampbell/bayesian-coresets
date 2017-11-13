@@ -1,6 +1,13 @@
 import numpy as np
 from scipy.special import gammaln
 
+def load_data(dnm):
+  data = np.load(folder+'/'+dnm+'.npz')
+  Z = np.hstack((data['X'], data['y'][:, np.newaxis]))
+  Zt = np.hstack((data['Xt'], data['yt'][:, np.newaxis]))
+  data.close()
+  return Z, Zt
+
 def gen_synthetic(n):
   X = np.random.randn(n)
   X = np.hstack((X[:, np.newaxis], np.ones(X.shape[0])[:, np.newaxis]))

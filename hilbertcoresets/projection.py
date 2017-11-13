@@ -26,7 +26,6 @@ class _Projection(object):
           w[:, j+old_dim] = self.sample_projection_component()
       w /= np.sqrt(projection_dim)
       self.x = w
-   
     return
 
   def reset_projection(self, projection_dim=None):
@@ -36,6 +35,9 @@ class _Projection(object):
     self.update_projection_dimension(0)
     self.update_projection_dimension(projection_dim)
     return
+
+  def get(self):
+    return self.x.copy()
   
 class Projection2(_Projection):
   def __init__(self, data, log_likelihood, projection_dim, sample_approx_posterior):
