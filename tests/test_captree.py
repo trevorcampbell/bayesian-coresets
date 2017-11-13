@@ -194,4 +194,3 @@ def test_c_tree_stability():
     tr.search(yw, y_yw)
     assert tr.is_build_done()
 
-

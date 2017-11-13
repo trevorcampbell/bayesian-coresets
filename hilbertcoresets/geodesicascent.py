@@ -42,8 +42,7 @@ class GIGA(object):
     if M <= self.M:
       raise ValueError('GIGA.run(): M must be increasing. self.M = '+str(self.M) + ' M = '+str(M))
     if self.x.size == 0 or (self.xs**2).sum() == 0. or self.reached_numeric_limit:
-      warnings.warn(
-       'GIGA.run(): either data has no nonzero vectors, the sum has norm 0, or the numeric limit has been reached. No more iterations will be run. M = ' + str(self.M) + ', error = ' +str(self.error()))
+      warnings.warn('GIGA.run(): either data has no nonzero vectors, the sum has norm 0, or the numeric limit has been reached. No more iterations will be run. M = ' + str(self.M) + ', error = ' +str(self.error()))
       return
 
     if self.y.shape[0] == 1:
@@ -155,10 +154,6 @@ class GIGA(object):
     return scores.argmax()
   
   def search_tree(self):
-
-    if not self.tree.is_build_done():
-      return self.search_linear() 
-
     t0 = time.clock()
 
     cdir = self.ys - self.ys.dot(self.yw)*self.yw
@@ -183,7 +178,7 @@ class GIGA(object):
       return self.search_tree()
     lin_idx = self.logt_lin/self.n_lin - np.sqrt(16.*(max(0., self.logtsq_lin - self.logt_lin**2/self.n_lin)/(self.n_lin-1))*(np.log(n-1.)/self.n_lin))
     tree_idx = self.logt_tr/self.n_tr - np.sqrt(16.*(max(0., self.logtsq_tr - self.logt_tr**2/self.n_tr)/(self.n_tr-1))*(np.log(n-1.)/self.n_tr))
-    if tree_idx < lin_idx:
+    if tree_idx < lin_idx and self.tree.is_build_done():
       return self.search_tree()
     else:
       return self.search_linear()

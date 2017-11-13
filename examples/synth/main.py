@@ -1,47 +1,27 @@
 import numpy as np
 import hilbertcoresets as hc
-import bokeh.plotting as bkp
-import bokeh.io as bki
-import bokeh.layouts as bkl
-from bokeh.models import FuncTickFormatter
-import bokeh.palettes 
 import time
 
+n_trials = 3
+anms = ['GIGA(A)', 'GIGA(L)', 'GIGA(T)', 'FW', 'RND']
 
 ##########################################
-## Test 1: 1M 100-dimensional gaussian data
+## Test 1: 1M 50-dimensional gaussian data
 ##########################################
-N = 10000
-D = 10
+N = 1000000
+D = 50
 Ms = np.linspace(1, 10000, 10000, dtype=np.int32)
-n_trials = 50
-axis_font_size='30pt'
 
-fig_err = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Err', x_axis_label='M', plot_width=1250, plot_height=1250)
-fig_err.xaxis.axis_label_text_font_size= axis_font_size
-fig_err.xaxis.major_label_text_font_size= axis_font_size
-fig_err.yaxis.axis_label_text_font_size= axis_font_size
-fig_err.yaxis.major_label_text_font_size= axis_font_size
-
-fig_cost = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Time (ms) & #Ops', x_axis_label='M', plot_width=1250, plot_height=1250)
-fig_cost.xaxis.axis_label_text_font_size= axis_font_size
-fig_cost.xaxis.major_label_text_font_size= axis_font_size
-fig_cost.yaxis.axis_label_text_font_size= axis_font_size
-fig_cost.yaxis.major_label_text_font_size= axis_font_size
-
-
-
-anms = ['GIGA(A)', 'GIGA(L)', 'FW', 'RND']
-pal = bokeh.palettes.colorblind['Colorblind'][4]
-for anm, clr in zip(anms, pal):
-  err = np.zeros((n_trials, Ms.shape[0]))
-  nfunc = np.zeros((n_trials, Ms.shape[0]))
-  cput = np.zeros((n_trials, Ms.shape[0]))
-  for tr in range(n_trials):
-    X = np.random.randn(N, D)
-    XS = X.sum(axis=0)
+err = np.zeros((len(anms), n_trials, Ms.shape[0]))
+nfunc = np.zeros((len(anms), n_trials, Ms.shape[0]))
+cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
+for tr in range(n_trials):
+  X = np.random.randn(N, D)
+  XS = X.sum(axis=0)
+  for aidx, anm in enumerate(anms):
+    print 'data: gauss, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm
     alg = None
-    if anm == 'GIGA(A)' or anm == 'GIGA(L)':
+    if 'GIGA' in anm:
       alg = hc.GIGA(X)
     elif anm == 'FW':
       alg = hc.FrankWolfe(X)
@@ -49,29 +29,65 @@ for anm, clr in zip(anms, pal):
       alg = hc.RandomSubsampling(X) 
 
     for m, M in enumerate(Ms):
-      t0 = time.clock()
-      alg.run(M)
-      tf = time.clock()
-      cput[tr, m] = tf-t0 + cput[tr, m-1] if m > 0 else tf-t0
+      if anm == 'GIGA(L)':
+        t0 = time.clock()
+        alg.run(M, search_method='linear')
+        tf = time.clock()
+      elif anm == 'GIGA(T)':
+        t0 = time.clock()
+        alg.run(M, search_method='tree')
+        tf = time.clock()
+      else:
+        t0 = time.clock()
+        alg.run(M)
+        tf = time.clock()
+      cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts = alg.weights()
-      err[tr, m] = np.sqrt((((wts[:, np.newaxis]*X).sum(axis=0) - XS)**2).sum())
-      nfunc[tr, m] = alg.get_num_ops()
+      err[aidx, tr, m] = np.sqrt((((wts[:, np.newaxis]*X).sum(axis=0) - XS)**2).sum())
+      nfunc[aidx, tr, m] = alg.get_num_ops()
+
+np.savez_compressed('gauss_results.npz', err=err, nfunc=nfunc, cput=cput, Ms = Ms, anms=anms)
+
+##########################################
+## Test 2: 5K axis-aligned data
+##########################################
  
-  fig_err.line(Ms, np.percentile(err, 50, axis=0), line_color=clr, line_width=4, legend=anm)
-  fig_cost.line(Ms, np.percentile(nfunc, 50, axis=0), line_color=clr, line_width=4, legend=anm)
-  fig_cost.line(Ms, np.percentile(cput, 50, axis=0), line_color=clr, line_width=4, line_dash='dashed')
+N = 5000
+Ms = np.linspace(1, 10000, 10000, dtype=np.int32)
+X = np.eye(N)
+XS = np.ones(N)
 
-fig_err.legend.label_text_font_size= '16pt'
-fig_err.legend.glyph_width=40
-fig_err.legend.glyph_height=40
-fig_err.legend.spacing=20
+err = np.zeros((len(anms), n_trials, Ms.shape[0]))
+nfunc = np.zeros((len(anms), n_trials, Ms.shape[0]))
+cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
+for tr in range(n_trials):
+  for aidx, anm in enumerate(anms):
+    print 'data: axis, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm
+    alg = None
+    if 'GIGA' in anm:
+      alg = hc.GIGA(X)
+    elif anm == 'FW':
+      alg = hc.FrankWolfe(X)
+    else:
+      alg = hc.RandomSubsampling(X) 
 
-fig_cost.legend.label_text_font_size= '16pt'
-fig_cost.legend.glyph_width=40
-fig_cost.legend.glyph_height=40
-fig_cost.legend.spacing=20
+    for m, M in enumerate(Ms):
+      if anm == 'GIGA(L)':
+        t0 = time.clock()
+        alg.run(M, search_method='linear')
+        tf = time.clock()
+      elif anm == 'GIGA(T)':
+        t0 = time.clock()
+        alg.run(M, search_method='tree')
+        tf = time.clock()
+      else:
+        t0 = time.clock()
+        alg.run(M)
+        tf = time.clock()
+      cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
+      wts = alg.weights()
+      err[aidx, tr, m] = np.sqrt((((wts[:, np.newaxis]*X).sum(axis=0) - XS)**2).sum())
+      nfunc[aidx, tr, m] = alg.get_num_ops()
 
- 
-bkp.show(bkl.gridplot([[fig_err, fig_cost]]))
-
+np.savez_compressed('axis_results.npz', err=err, nfunc=nfunc, cput=cput, Ms = Ms, anms=anms)
 
