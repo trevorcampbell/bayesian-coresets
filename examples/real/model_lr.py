@@ -1,5 +1,12 @@
 import numpy as np
 
+def load_data(dnm):
+  data = np.load(folder+'/'+dnm+'.npz')
+  Z = data['y'][:, np.newaxis]*data['X']
+  Zt = data['yt'][:, np.newaxis]*data['X']
+  data.close()
+  return Z, Zt
+
 def gen_synthetic(n):
   mu = np.array([0, 0])
   cov = np.eye(2)
