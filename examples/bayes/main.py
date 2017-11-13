@@ -15,15 +15,29 @@ folder = 'lr'
 #folder = 'poiss'
 
 
-mh_steps = 100000 #total number of MH steps
+#mh_steps = 100000 #total number of MH steps
+#mh_thin = 5 #thinning factor
+#mh_target = 0.234 #target acceptance rate
+#mh_step_var_init = 0.1 #initial step variance
+#n_samples = mh_steps / 2 / mh_thin #number of output samples (burn of 1/2)
+#projection_dim = 500 #random projection dimension
+#Ms = np.array([10, 50, 100, 500, 1000, 5000, 10000]) #values of M to sweep over
+#anms = ['GIGA', 'FW', 'RND']
+#n_trials = 10
+
+
+#Fast test params
+mh_steps = 1000 #total number of MH steps
 mh_thin = 5 #thinning factor
 mh_target = 0.234 #target acceptance rate
 mh_step_var_init = 0.1 #initial step variance
 n_samples = mh_steps / 2 / mh_thin #number of output samples (burn of 1/2)
-projection_dim = 500 #random projection dimension
-Ms = np.array([10, 50, 100, 500, 1000, 5000, 10000]) #values of M to sweep over
+projection_dim = 200 #random projection dimension
+Ms = np.array([10, 100, 1000]) #values of M to sweep over
 anms = ['GIGA', 'FW', 'RND']
-n_trials = 10
+n_trials = 2
+
+
 
 for dnm in dnames:
   print 'Loading dataset '+dnm
