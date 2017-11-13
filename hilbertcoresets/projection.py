@@ -43,6 +43,7 @@ class Projection2(_Projection):
   def __init__(self, data, log_likelihood, projection_dim, sample_approx_posterior):
     self.data = data
     self.log_likelihood = log_likelihood
+    self.projection_type = '2'
     _Projection.__init__(self, projection_dim, sample_approx_posterior)
 
   def sample_projection_component(self):
@@ -52,6 +53,7 @@ class ProjectionF(_Projection):
   def __init__(self, data, grad_log_likelihood, projection_dim, sample_approx_posterior):
     self.data = data
     self.grad_log_likelihood = grad_log_likelihood
+    self.projection_type = 'F'
     _Projection.__init__(self, projection_dim, sample_approx_posterior)
   
   def sample_projection_component(self):
