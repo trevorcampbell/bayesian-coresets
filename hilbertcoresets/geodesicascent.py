@@ -4,7 +4,8 @@ import warnings
 import time
 
 class GIGA(object):
-  def __init__(self, _x, tree_type='c++'): #options are 'python', 'c++'
+  #tree_type can be 'python' or 'c++'
+  def __init__(self, _x, tree_type='c++'): 
     x = np.asarray(_x)
     if len(x.shape) != 2 or not np.issubdtype(x.dtype, np.number):
       raise ValueError('GIGA: input must be a 2d numeric ndarray')
@@ -26,18 +27,14 @@ class GIGA(object):
     self.f_lin = 0.
     self.f_update = 0.
     self.f_tree_search_prev = 0.
-    self.n_lin = 0
-    self.logt_lin = 0.
-    self.logtsq_lin = 0.
-    self.n_tr = 0
-    self.logt_tr = 0.
-    self.logtsq_tr = 0.
     self.reached_numeric_limit = False
     self.reset()
 
   #update_method can be 'fast' or 'accurate'
-  #search_method can be 'adaptive', 'linear', or 'tree'
-  def run(self, M, update_method='fast', search_method='linear'):
+  #search_method can be 'exact', 'approximate'
+  #if search_method is 'approximate', max_approx_search_evals should be set to some number << N
+  #increasing the number improves the search but is more expensive
+  def run(self, M, update_method='fast', search_method='exact', max_approx_search_evals = -1):
     #if M is not greater than self.M, just return 
     if M <= self.M:
       raise ValueError('GIGA.run(): M must be increasing. self.M = '+str(self.M) + ' M = '+str(M))
@@ -60,14 +57,12 @@ class GIGA(object):
       self.f_update += 1.
       return
       
-    if search_method == 'linear':
+    if search_method == 'exact':
       GIGA.search = GIGA.search_linear
-    elif search_method == 'tree':
-      GIGA.search = GIGA.search_tree
-      if not self.tree:
-        self.build_tree()
     else:
-      GIGA.search = GIGA.search_adaptive
+      GIGA.search = lambda slf : GIGA.search_tree(slf, max_approx_search_evals)
+      if max_approx_search_evals <= 0:
+        raise ValueError('GIGA.run(): if search_method is "approximate", must set max_approx_search_evals to an integer > 0. If it is >= 2*N-1, the algorithm is exact tree search; if < 2*N-1, the search quits early. Here, N = the number of data with nonzero norm.')
       if not self.tree:
         self.build_tree()
 
@@ -81,7 +76,7 @@ class GIGA(object):
     #  self.M = 1
 
     for m in range(self.M, M):
-      f = self.search()
+      f = self.search(max_approx_search_evals)
       gA = -1.
       gB = -1.
       if f >= 0:
@@ -98,7 +93,8 @@ class GIGA(object):
         self.wts /= nrm
         self.f_update += (self.wts > 0).sum() + 3.
 
-        f = self.search()
+        #run an exact linear search here
+        f = self.search_linear(max_approx_search_evals)
         if f >= 0:
           gA = self.ys.dot(self.y[f,:]) - self.ys.dot(self.yw) * self.yw.dot(self.y[f,:])
           gB = self.ys.dot(self.yw) - self.ys.dot(self.y[f,:]) * self.yw.dot(self.y[f,:])
@@ -128,8 +124,6 @@ class GIGA(object):
     return
 
   def search_linear(self):
-    t0 = time.clock()
-
     cdir = self.ys - self.ys.dot(self.yw)*self.yw
     cdirnrm =np.sqrt((cdir**2).sum()) 
     if cdirnrm < 1e-14:
@@ -144,45 +138,22 @@ class GIGA(object):
     scoredenoms[np.logical_not(idcs)] = np.inf
     #compute the scores
     scores = scorenums/scoredenoms
-    amscore = scores.argmax()
-
-    tf = time.clock()
     self.f_lin += 2.*self.N+2.
-    self.n_lin += 1
-    self.logt_lin += np.log(tf-t0)
-    self.logtsq_lin += np.log(tf-t0)**2
-    return amscore
+    return scores.argmax()
   
-  def search_tree(self):
-    t0 = time.clock()
+  def search_tree(self, max_evals):
+
+    if not self.tree.is_build_done():
+      return self.search_linear(max_evals)
 
     cdir = self.ys - self.ys.dot(self.yw)*self.yw
     cdirnrm =np.sqrt((cdir**2).sum()) 
     if cdirnrm < 1e-14:
       return -1
     cdir /= cdirnrm
-    nopt = self.tree.search(self.yw, cdir)
-
-    tf = time.clock()
-    self.n_tr += 1
-    self.logt_tr += np.log(tf-t0)
-    self.logtsq_tr += np.log(tf-t0)**2
+    nopt = self.tree.search(self.yw, cdir, max_evals)
     return nopt
   
-  def search_adaptive(self):
-    #this uses UCB1-Normal from Auer et al ``Finite-time Analysis of the Multiarmed Bandit Problem'' (2002)
-    n = self.n_tr+self.n_lin + 1
-    if self.n_lin < 2 or self.n_lin < np.ceil(8.*np.log(n)):
-      return self.search_linear()
-    if self.n_tr < 2 or self.n_tr < np.ceil(8.*np.log(n)):
-      return self.search_tree()
-    lin_idx = self.logt_lin/self.n_lin - np.sqrt(16.*(max(0., self.logtsq_lin - self.logt_lin**2/self.n_lin)/(self.n_lin-1))*(np.log(n-1.)/self.n_lin))
-    tree_idx = self.logt_tr/self.n_tr - np.sqrt(16.*(max(0., self.logtsq_tr - self.logt_tr**2/self.n_tr)/(self.n_tr-1))*(np.log(n-1.)/self.n_tr))
-    if tree_idx < lin_idx and self.tree.is_build_done():
-      return self.search_tree()
-    else:
-      return self.search_linear()
-
   def build_tree(self):
     if self.tree_type == 'python':
       self.tree = ct.CapTree(self.y)
@@ -190,9 +161,10 @@ class GIGA(object):
       self.tree = ct.CapTreeC(self.y)
 
   def get_num_ops(self):
-    ftot = self.f_preproc+self.f_lin + self.f_update
+    ftot = self.f_preproc + self.f_lin + self.f_update
     if self.tree:
-      ftot += self.tree.num_build_ops() + self.tree.num_search_ops() - self.f_tree_search_prev
+      #don't count tree build ops since it happens in parallel 
+      ftot += self.tree.num_search_ops() - self.f_tree_search_prev
     return ftot
 
   def reset(self):
