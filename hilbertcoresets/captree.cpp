@@ -13,7 +13,7 @@ class CapTree {
     ~CapTree();
     bool check_build();
     void cancel_build();
-    int search(double*, double*, unsigned int D);
+    int search(double*, double*, unsigned int, unsigned int);
     double get_num_search_ops();
     double get_num_build_ops();
   private:
@@ -33,7 +33,7 @@ class CapTree {
 extern "C" {
   CapTree* CapTree_new(double *data, unsigned int N, unsigned int D) { return new CapTree(data, N, D); }
   void CapTree_del(CapTree *ptr) { if (ptr != NULL){delete ptr;} }
-  int CapTree_search(CapTree *ptr, double *yw, double *y_yw, unsigned int D) { return ptr->search(yw, y_yw, D); }
+  int CapTree_search(CapTree *ptr, double *yw, double *y_yw, unsigned int D, unsigned int max_eval) { return ptr->search(yw, y_yw, D, max_eval); }
   bool CapTree_check_build(CapTree *ptr) { return ptr->check_build(); }
   void CapTree_cancel_build(CapTree *ptr) { return ptr->cancel_build(); }
   double CapTree_num_search_ops(CapTree *ptr) { return ptr->get_num_build_ops(); }
@@ -75,7 +75,7 @@ double CapTree::get_num_search_ops(){
   return this->num_search_ops;  
 }
 
-int CapTree::search(double *yw, double *y_yw, unsigned int D){
+int CapTree::search(double *yw, double *y_yw, unsigned int D, unsigned int max_eval){
   {
     // if build not done yet & has not been cancelled already, wait on build mutex
     std::unique_lock<std::mutex> lk(this->build_mutex);
@@ -93,33 +93,51 @@ int CapTree::search(double *yw, double *y_yw, unsigned int D){
   double nf = 2.;
   double LB = -2.;
   int nopt = -1;
+  int cur = -1;
+  unsigned int neval = 0;
   auto cmp = [](std::tuple<unsigned int, double> left, std::tuple<unsigned int, double> right){ return std::get<1>(left) < std::get<1>(right); };
   std::priority_queue<std::tuple<unsigned int, double>, std::vector< std::tuple<unsigned int, double> >, decltype(cmp)> search_queue(cmp);
   search_queue.push(std::make_tuple(0, this->upper_bound(0, yw, y_yw, D) ));
-  while (!search_queue.empty()){
-    //get the next cap node to search
-    auto tpl = search_queue.top();
-    search_queue.pop();
-    auto idx = std::get<0>(tpl);
-    auto u = std::get<1>(tpl);
-
-    //if its upper bound is greater than the current maximum LB
-    if (u > LB){
-      //compute the LB
-      double ell = this->lower_bound(idx, yw, y_yw, D);
-      nf += 2.;
-      //if its lb is greater than the current best
-      if (ell > LB){
-        //update the max LB and store data idx that achieved it
-        LB = ell;
-        nopt = this->nys[idx];
+  while (!search_queue.empty() || cur >= 0){
+    //if we've completed our last traversal down the tree, pop a new node from the queue
+    if (cur < 0){
+      auto tpl = search_queue.top();
+      search_queue.pop();
+      if (std::get<1>(tpl) < LB){ //if upper bound is less than current best LB just toss this node out
+        continue;
       }
-      //if this node has children, push them onto the search pq
-      if (this->cRs[idx] > -0.5){ 
-        search_queue.push(std::make_tuple(this->cRs[idx], this->upper_bound(this->cRs[idx], yw, y_yw, D)));
-        search_queue.push(std::make_tuple(this->cLs[idx], this->upper_bound(this->cLs[idx], yw, y_yw, D)));
-        nf += 4.;
+      cur = std::get<0>(tpl); //otherwise start a new traversal from the node
+    }
+    //compute the LB
+    double ell = this->lower_bound(cur, yw, y_yw, D);
+    nf += 2.;
+    //if its lb is greater than the current best, update the max LB and store data idx that achieved it
+    if (ell > LB){
+      LB = ell;
+      nopt = this->nys[cur];
+    }
+    //if we have reached our computation limit, quit and return approximate NN result
+    neval += 1;
+    if (neval >= max_eval){
+      break;
+    }
+    //if this node has children, investigate the best next one and push the other onto the queue
+    auto iR = this->cRs[cur];
+    auto iL = this->cLs[cur];
+    if (iR > -1){ 
+      auto uR = this->upper_bound(iR, yw, y_yw, D);
+      auto uL = this->upper_bound(iL, yw, y_yw, D);
+      nf += 4.;
+      if (uR > uL){
+        cur = iR;
+        search_queue.push(std::make_tuple(iL, uL));
+      } else {
+        cur = iL;
+        search_queue.push(std::make_tuple(iR, uR));
       }
+    } else {
+      //otherwise, we're done this depth traversal
+      cur = -1;
     }
   }
   this->num_search_ops += nf;
