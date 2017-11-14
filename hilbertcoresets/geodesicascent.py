@@ -37,7 +37,7 @@ class GIGA(object):
 
   #update_method can be 'fast' or 'accurate'
   #search_method can be 'adaptive', 'linear', or 'tree'
-  def run(self, M, update_method='fast', search_method='adaptive'):
+  def run(self, M, update_method='fast', search_method='linear'):
     #if M is not greater than self.M, just return 
     if M <= self.M:
       raise ValueError('GIGA.run(): M must be increasing. self.M = '+str(self.M) + ' M = '+str(M))
@@ -151,7 +151,7 @@ class GIGA(object):
     self.n_lin += 1
     self.logt_lin += np.log(tf-t0)
     self.logtsq_lin += np.log(tf-t0)**2
-    return scores.argmax()
+    return amscore
   
   def search_tree(self):
     t0 = time.clock()
@@ -220,7 +220,7 @@ class GIGA(object):
       return np.sqrt((((w[:, np.newaxis]*self.x).sum(axis=0) - self.xs)**2).sum())
 
   #options are accurate and fast (either use yw or recompute)
-  #by default use accurate computation for weights (since this will be actual output)
+  #by default use accurate computation for weights
   def weights(self, method="accurate"):
     #if M = 0, just output zeros using the fast method
     if self.M == 0:
