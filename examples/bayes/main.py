@@ -28,15 +28,15 @@ fldr = 'lr'
 
 
 #Fast test params
-mh_steps = 1000 #total number of MH steps
+mh_steps = 10000 #total number of MH steps
 mh_thin = 5 #thinning factor
 mh_target = 0.234 #target acceptance rate
 mh_step_var_init = 0.1 #initial step variance
 n_samples = mh_steps / 2 / mh_thin #number of output samples (burn of 1/2)
 projection_dim = 200 #random projection dimension
-Ms = np.array([10, 100, 1000]) #values of M to sweep over
+Ms = np.array([10, 50, 100, 500, 1000]) #values of M to sweep over
 anms = ['GIGA', 'FW', 'RND']
-n_trials = 2
+n_trials = 10
 
 
 
@@ -137,6 +137,6 @@ for dnm in dnames:
         lls[aidx, tr, m] = ll
         cputs[aidx, tr, m] = t_laplace + t_projection + t_setup + t_alg + t_alg_mh
 
-  np.savez_compressed(fldr+'/'+dnm+'_results.npz', w1s=w1s, lls=lls, cputs=cputs, ll_fulls=ll_fulls, ll_max=ll_max, anms=anms)
+  np.savez_compressed(fldr+'/'+dnm+'_results.npz', w1s=w1s, lls=lls, cputs=cputs, ll_fulls=ll_fulls, ll_max=ll_max, anms=anms, cput_fulls=cput_fulls)
         
 

@@ -8,9 +8,12 @@ anms = ['GIGA(A)', 'GIGA(L)', 'GIGA(T)', 'FW', 'RND']
 ##########################################
 ## Test 1: 1M 50-dimensional gaussian data
 ##########################################
-N = 1000000
-D = 50
-Ms = np.linspace(1, 10000, 10000, dtype=np.int32)
+#N = 1000000
+#D = 50
+#Ms = np.linspace(1, 10000, 10000, dtype=np.int32)
+N = 10000
+D = 10
+Ms = np.linspace(1, 1000, 1000, dtype=np.int32)
 
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 nfunc = np.zeros((len(anms), n_trials, Ms.shape[0]))
@@ -37,6 +40,10 @@ for tr in range(n_trials):
         t0 = time.clock()
         alg.run(M, search_method='tree')
         tf = time.clock()
+      elif anm == 'GIGA(A)':
+        t0 = time.clock()
+        alg.run(M, search_method='adaptive')
+        tf = time.clock()
       else:
         t0 = time.clock()
         alg.run(M)
@@ -52,8 +59,13 @@ np.savez_compressed('gauss_results.npz', err=err, nfunc=nfunc, cput=cput, Ms = M
 ## Test 2: 5K axis-aligned data
 ##########################################
  
-N = 5000
-Ms = np.linspace(1, 10000, 10000, dtype=np.int32)
+#N = 5000
+#Ms = np.linspace(1, 10000, 10000, dtype=np.int32)
+
+N = 500
+Ms = np.linspace(1, 1000, 1000, dtype=np.int32)
+
+
 X = np.eye(N)
 XS = np.ones(N)
 
@@ -79,6 +91,10 @@ for tr in range(n_trials):
       elif anm == 'GIGA(T)':
         t0 = time.clock()
         alg.run(M, search_method='tree')
+        tf = time.clock()
+      elif anm == 'GIGA(A)':
+        t0 = time.clock()
+        alg.run(M, search_method='adaptive')
         tf = time.clock()
       else:
         t0 = time.clock()

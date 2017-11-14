@@ -37,14 +37,15 @@ ret += trns[Math.abs(tick_power)];
 return ret;
 """)
 
+dnames = ['synth', 'ds1', 'phishing']
+fldr = 'lr'
 
-fig_err_g = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Err', x_axis_label='M', plot_width=1250, plot_height=1250)
-fig_cost_g = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Time (ms) & #Ops', x_axis_label='M', plot_width=1250, plot_height=1250)
-fig_err_a = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Err', x_axis_label='M', plot_width=1250, plot_height=1250)
-fig_cost_a = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Time (ms) & #Ops', x_axis_label='M', plot_width=1250, plot_height=1250)
+
+fig_ll = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Negative Test Log-Likelihood', x_axis_label='M', plot_width=1250, plot_height=1250)
+fig_w1 = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='1-Wasserstein', x_axis_label='M', plot_width=1250, plot_height=1250)
 
 axis_font_size='30pt'
-for f in [fig_err_g, fig_cost_g, fig_err_a, fig_cost_a]:
+for f in [fig_ll, fig_w1]:
   #f.xaxis.ticker = bkm.tickers.FixedTicker(ticks=[.1, 1])
   f.xaxis.axis_label_text_font_size= axis_font_size
   f.xaxis.major_label_text_font_size= axis_font_size
@@ -55,39 +56,36 @@ for f in [fig_err_g, fig_cost_g, fig_err_a, fig_cost_a]:
   f.toolbar.logo = None
   f.toolbar_location = None
 
+pal = bokeh.palettes.colorblind['Colorblind'][len(dnames)]
+for didx, dnm in enumerate(dnames):
+  
+  res = np.load(fldr +'/' + dnm  + '_results.npz')
 
-gr = np.load('gauss_results.npz')
-anms = gr['anms']
-Ms = gr['Ms']
-err = gr['err']
-nfunc = gr['nfunc']
-cput = gr['cput']
-pal = bokeh.palettes.colorblind['Colorblind'][len(anms)]
-for aidx, anm in enumerate(anms):
-  fig_err_g.line(Ms, np.percentile(err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=4, legend=anm)
-  fig_cost_g.line(Ms, np.percentile(nfunc[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=4, legend=anm)
-  fig_cost_g.line(Ms, np.percentile(cput[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=4, line_dash='dashed')
+  w1s = res['w1s']
+  lls = res['lls']
+  cputs = res['cputs']
+  ll_fulls = res['ll_fulls']
+  cput_fulls = res['cput_fulls']
+  ll_max = res['ll_max']
+  anms = res['anms']
 
-
-aa = np.load('axis_results.npz')
-anms = aa['anms']
-Ms = aa['Ms']
-err = aa['err']
-nfunc = aa['nfunc']
-cput = aa['cput']
-pal = bokeh.palettes.colorblind['Colorblind'][len(anms)]
-for aidx, anm in enumerate(anms):
-  fig_err_a.line(Ms, np.percentile(err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=4, legend=anm)
-  fig_cost_a.line(Ms, np.percentile(nfunc[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=4, legend=anm)
-  fig_cost_a.line(Ms, np.percentile(cput[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=4, line_dash='dashed')
-
- 
-for f in [fig_err_g, fig_cost_g, fig_err_a, fig_cost_a]:
+  for aidx, anm in enumerate(anms):
+    if anm == 'FW':
+      ld = 'dashed'
+    elif anm == 'RND':
+      ld = 'dotted'
+    else:
+      ld = 'solid'
+    #TODO: make this relative to full vs cput, and relative to RND vs M 
+    fig_w1.line(np.percentile(cputs[aidx,:,:], 50, axis=0), np.percentile(w1s[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=4, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    fig_ll.line(np.percentile(cputs[aidx,:,:], 50, axis=0), np.percentile(ll_max - lls[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=4, line_dash=ld, legend=dnm if ld == 'solid' else None)
+  
+for f in [fig_ll, fig_w1]:
   f.legend.label_text_font_size= '16pt'
   f.legend.glyph_width=40
   f.legend.glyph_height=40
   f.legend.spacing=20
 
-bkp.show(bkl.gridplot([[fig_err_g, fig_cost_g], [fig_err_a, fig_cost_a]]))
+bkp.show(bkl.gridplot([[fig_ll, fig_w1]]))
 
 
