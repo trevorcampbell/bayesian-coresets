@@ -6,7 +6,7 @@ def load_data(dnm):
   Z = np.hstack((data['X'], data['y'][:, np.newaxis]))
   Zt = np.hstack((data['Xt'], data['yt'][:, np.newaxis]))
   data.close()
-  return Z, Zt
+  return Z, Zt, Z.shape[1]-1
 
 def gen_synthetic(n):
   X = np.random.randn(n)

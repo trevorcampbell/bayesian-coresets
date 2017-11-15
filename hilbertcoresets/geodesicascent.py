@@ -76,7 +76,7 @@ class GIGA(object):
     #  self.M = 1
 
     for m in range(self.M, M):
-      f = self.search(max_approx_search_evals)
+      f = self.search()
       gA = -1.
       gB = -1.
       if f >= 0:
@@ -94,7 +94,7 @@ class GIGA(object):
         self.f_update += (self.wts > 0).sum() + 3.
 
         #run an exact linear search here
-        f = self.search_linear(max_approx_search_evals)
+        f = self.search_linear()
         if f >= 0:
           gA = self.ys.dot(self.y[f,:]) - self.ys.dot(self.yw) * self.yw.dot(self.y[f,:])
           gB = self.ys.dot(self.yw) - self.ys.dot(self.y[f,:]) * self.yw.dot(self.y[f,:])
@@ -144,7 +144,7 @@ class GIGA(object):
   def search_tree(self, max_evals):
 
     if not self.tree.is_build_done():
-      return self.search_linear(max_evals)
+      return self.search_linear()
 
     cdir = self.ys - self.ys.dot(self.yw)*self.yw
     cdirnrm =np.sqrt((cdir**2).sum()) 
