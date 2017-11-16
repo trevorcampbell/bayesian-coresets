@@ -1,5 +1,6 @@
 import numpy as np
 from hilbertcoresets import gigasearch as gs
+import sys
 
 np.random.seed(1)
 

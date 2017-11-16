@@ -54,8 +54,11 @@ GIGASearch::GIGASearch(double *data, unsigned int N, unsigned int D){
   num_build_ops = num_search_ops = num_search_nodes = 0.;
   xis = rs = NULL;
   cRs = cLs = nys = NULL;
+  build_thread = NULL;
   build_done = build_cancelled = search_done = false;
-  build_thread = new std::thread(&GIGASearch::build, this);
+  build();
+  //TODO FIX THIS
+  //build_thread = new std::thread(&GIGASearch::build, this);
   return;
 }
 
@@ -90,13 +93,13 @@ double GIGASearch::get_num_search_nodes(){
 
 
 int GIGASearch::search(double *yw, double *y_yw){
+  search_done = false;
   bool bdtmp = false;
   {
     std::lock_guard<std::mutex> lk(build_mutex);
     bdtmp = build_done;
   }
   if (bdtmp){
-    search_done = false;
     auto tret = std::async(&GIGASearch::search_tree, this, yw, y_yw);
     auto lret = std::async(&GIGASearch::search_linear, this, yw, y_yw);
     auto nt = tret.get();
@@ -183,20 +186,20 @@ int GIGASearch::search_tree(double *yw, double *y_yw){
       auto uR = upper_bound(iR, yw, y_yw);
       auto uL = upper_bound(iL, yw, y_yw);
       nf += 4.;
-      //if either of the children is worth exploring (u > LB), set cur to that one and push the other onto the queue if it's worth exploring
-      if (uR > uL && uR > LB){
-        cur = iR;
-        if (uL > LB){
-          search_queue.push(std::make_tuple(iL, uL));
-        }
-      } else if (uL >= uR && uL > LB){
-        cur = iL;
-        if (uR > LB){
-          search_queue.push(std::make_tuple(iR, uR));
-        }
-      } else { //if neither of the children are > LB, just pop a new node off the queue
+
+      if (uL < LB && uR < LB){
         cur = -1;
+        continue;
       }
+
+      if (uR > uL){
+        cur = iR;
+        search_queue.push(std::make_tuple(iL, uL));
+      } else {
+        cur = iL;
+        search_queue.push(std::make_tuple(iR, uR));
+      }
+
     } else {
       //this is a leaf node, pop a new one off the queue
       cur = -1;
