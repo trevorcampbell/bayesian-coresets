@@ -6,14 +6,14 @@ import subprocess
 
 class build_so(install):
   def run(self):
-    retcode = subprocess.call(['g++', '-std=c++17', '-pthread', '-DNDEBUG', '-fwrapv', '-O3', '-Werror', '-Wall', '-fno-strict-aliasing', '-Wdate-time', '-D_FORTIFY_SOURCE=2', '-fstack-protector-strong', '-Wformat', '-Werror=format-security', '-fPIC', 'hilbertcoresets/captree.cpp', '-shared', '-o', 'hilbertcoresets/libcaptreec.so']) 
+    retcode = subprocess.call(['g++', '-std=c++17', '-pthread', '-DNDEBUG', '-fwrapv', '-O3', '-Werror', '-Wall', '-fno-strict-aliasing', '-Wdate-time', '-D_FORTIFY_SOURCE=2', '-fstack-protector-strong', '-Wformat', '-Werror=format-security', '-fPIC', 'hilbertcoresets/gigasearch.cpp', '-shared', '-o', 'hilbertcoresets/libgigasearch.so']) 
     if retcode != 0:
-      raise Exception('g++: Compile of captreec.cpp failed')
+      raise Exception('g++: Compile of gigasearch.cpp failed')
     return install.run(self)
 
 setup(
     name = 'hilbertcoresets',
-    version='0.4',
+    version='0.5',
     description="Hilbert coresets for approximate Bayesian inference",
     author='Trevor Campbell',
     author_email='tdjc@mit.edu',
@@ -22,8 +22,6 @@ setup(
     install_requires=['numpy', 'scipy'],
     keywords = ['Bayesian', 'inference', 'coreset', 'Hilbert', 'Frank-Wolfe', 'greedy', 'geodesic'],
     platforms='ALL',
-    #libraries=[libcaptreec],
-    #cmdclass={'install':build_so_first, 'build_clib':build_so},
     cmdclass={'install':build_so},
-    package_data={'hilbertcoresets': ['libcaptreec.so']}
+    package_data={'hilbertcoresets': ['libgigasearch.so']}
 )

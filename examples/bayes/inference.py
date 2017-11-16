@@ -13,20 +13,6 @@ def gaussian_KL(sample1, sample2):
   t3 = np.linalg.slogdet(Sig1)[1] - np.linalg.slogdet(Sig0)[1]
   return 0.5*(t1+t2+t3-mu0.shape[0])
 
-
-##approximates sample1 with mu0, Sig0, sample2 with mu1, Sig1 and returns KL(N_0 || N_1) 
-#def gaussian_KL(sample1, sample2):
-#  mu0 = sample1.mean(axis=0)
-#  Sig0 = np.cov(sample1.T)
-#  mu1 = sample2.mean(axis=0)
-#  Sig1 = np.cov(sample2.T)
-#  eps = 1e-6*np.eye(mu1.shape[0])
-#  t1 = np.linalg.inv(Sig1+eps).dot(Sig0).trace()
-#  t2 = (mu1-mu0).dot(np.linalg.inv(Sig1+eps).dot(mu1-mu0))
-#  t3 = np.linalg.slogdet(Sig1+eps)[1] - np.linalg.slogdet(Sig0+eps)[1]
-#  return 0.5*(t1+t2+t3-mu0.shape[0])
-
-
 def wasserstein1(sample1, sample2):
   #reshape samples to be of the same size 
   if sample1.shape[0] > sample2.shape[0]:

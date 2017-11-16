@@ -16,27 +16,27 @@ fldr = 'lr'
 #fldr = 'poiss'
 
 
-mh_steps = 100000 #total number of MH steps
+#mh_steps = 100000 #total number of MH steps
+#mh_thin = 5 #thinning factor
+#mh_target = 0.234 #target acceptance rate
+#mh_step_var_init = 0.1 #initial step variance
+#n_samples = mh_steps / 2 / mh_thin #number of output samples (burn of 1/2)
+#projection_dim = 500 #random projection dimension
+#Ms = np.array([10, 50, 100, 500, 1000, 5000, 10000]) #values of M to sweep over
+#anms = ['GIGA', 'FW', 'RND']
+#n_trials = 10
+
+
+#Fast test params
+mh_steps = 10000 #total number of MH steps
 mh_thin = 5 #thinning factor
 mh_target = 0.234 #target acceptance rate
 mh_step_var_init = 0.1 #initial step variance
 n_samples = mh_steps / 2 / mh_thin #number of output samples (burn of 1/2)
 projection_dim = 500 #random projection dimension
-Ms = np.array([10, 50, 100, 500, 1000, 5000, 10000]) #values of M to sweep over
+Ms = np.array([10, 50, 100, 500, 1000]) #values of M to sweep over
 anms = ['GIGA', 'FW', 'RND']
-n_trials = 10
-
-
-##Fast test params
-#mh_steps = 1000 #total number of MH steps
-#mh_thin = 5 #thinning factor
-#mh_target = 0.234 #target acceptance rate
-#mh_step_var_init = 0.1 #initial step variance
-#n_samples = mh_steps / 2 / mh_thin #number of output samples (burn of 1/2)
-#projection_dim = 100 #random projection dimension
-#Ms = np.array([10, 50, 100, 500, 1000]) #values of M to sweep over
-#anms = ['GIGA', 'FW', 'RND']
-#n_trials = 3
+n_trials = 5
 
 
 for dnm in dnames:
@@ -64,15 +64,20 @@ for dnm in dnames:
   kls_full = np.zeros(n_trials)
 
   print 'Running MCMC on the full dataset'
-  mh_param_init = np.random.multivariate_normal(np.zeros(D), np.eye(D))
-  th_samples, accept_rate = mh(mh_param_init,
-         lambda th : log_joint(Z, th, np.ones(Z.shape[0])),
-         None,
-         lambda th, sig : np.random.multivariate_normal(th, sig*np.eye(D)),
-         steps=mh_steps,
-         thin=mh_thin,
-         target_rate=mh_target,
-         proposal_param=mh_step_var_init)
+  accept_rate = 1.
+  mcmc_attempt = 1
+  while (accept_rate < .15 or accept_rate > 0.7):
+    mh_param_init = np.random.multivariate_normal(mu, cov)
+    th_samples, accept_rate = mh(mh_param_init,
+           lambda th : log_joint(Z, th, np.ones(Z.shape[0])),
+           None,
+           lambda th, sig : np.random.multivariate_normal(th, sig*np.eye(D)),
+           steps=mh_steps,
+           thin=mh_thin,
+           target_rate=mh_target,
+           proposal_param=mh_step_var_init)
+    print 'attempt ' + str(mcmc_attempt) + ': accept rate = ' + str(accept_rate) + ', passes if in (.15, .7) '
+    mcmc_attempt += 1
   full_samples = np.array(th_samples)
 
   for tr in range(n_trials):
@@ -85,17 +90,22 @@ for dnm in dnames:
     t_projection = time.clock()-t0
 
     print 'Running MCMC on the full dataset'
-    t0 = time.clock()
-    mh_param_init = np.random.multivariate_normal(np.zeros(D), np.eye(D))
-    th_samples, accept_rate = mh(mh_param_init,
-           lambda th : log_joint(Z, th, np.ones(Z.shape[0])),
-           None,
-           lambda th, sig : np.random.multivariate_normal(th, sig*np.eye(D)),
-           steps=mh_steps,
-           thin=mh_thin,
-           target_rate=mh_target,
-           proposal_param=mh_step_var_init)
-    cputs_full[tr] = time.clock()-t0
+    accept_rate = 1.
+    mcmc_attempt = 1
+    while (accept_rate < .15 or accept_rate > 0.7):
+      t0 = time.clock()
+      mh_param_init = np.random.multivariate_normal(mu, cov)
+      th_samples, accept_rate = mh(mh_param_init,
+             lambda th : log_joint(Z, th, np.ones(Z.shape[0])),
+             None,
+             lambda th, sig : np.random.multivariate_normal(th, sig*np.eye(D)),
+             steps=mh_steps,
+             thin=mh_thin,
+             target_rate=mh_target,
+             proposal_param=mh_step_var_init)
+      cputs_full[tr] = time.clock()-t0
+      print 'attempt ' + str(mcmc_attempt) + ': accept rate = ' + str(accept_rate) + ', passes if in (.15, .7) '
+      mcmc_attempt += 1
     th_samples = np.array(th_samples)
     lls_full[tr] = np.array([ log_likelihood(Zt, th_samples[i, :]).sum()/Zt.shape[0] for i in range(th_samples.shape[0]) ]).sum()/th_samples.shape[0]
     w1s_full[tr] = wasserstein1(th_samples, full_samples)
@@ -127,17 +137,22 @@ for dnm in dnames:
         idcs = wts > 0
       
         print 'M = ' + str(Ms[m]) + ': metropolis hastings'
-        t0 = time.clock()
-        mh_param_init = np.random.multivariate_normal(np.zeros(D), np.eye(D))
-        th_samples, accept_rate = mh(mh_param_init,
-               lambda th : log_joint(Z[idcs, :], th, wts[idcs]),
-               None,
-               lambda th, sig : np.random.multivariate_normal(th, sig*np.eye(D)),
-               steps=mh_steps,
-               thin=mh_thin,
-               target_rate=mh_target,
-               proposal_param=mh_step_var_init)
-        t_alg_mh = time.clock()-t0    
+        accept_rate = 1.
+        mcmc_attempt = 1
+        while (accept_rate < .15 or accept_rate > 0.7):
+          t0 = time.clock()
+          mh_param_init = np.random.multivariate_normal(mu, cov)
+          th_samples, accept_rate = mh(mh_param_init,
+                 lambda th : log_joint(Z[idcs, :], th, wts[idcs]),
+                 None,
+                 lambda th, sig : np.random.multivariate_normal(th, sig*np.eye(D)),
+                 steps=mh_steps,
+                 thin=mh_thin,
+                 target_rate=mh_target,
+                 proposal_param=mh_step_var_init)
+          t_alg_mh = time.clock()-t0    
+          print 'attempt ' + str(mcmc_attempt) + ': accept rate = ' + str(accept_rate) + ', passes if in (.15, .7) '
+          mcmc_attempt += 1
         th_samples = np.array(th_samples)
         print 'M = ' + str(Ms[m]) + ': 1-wasserstein'
         w1s[aidx, tr, m] = wasserstein1(th_samples, full_samples)

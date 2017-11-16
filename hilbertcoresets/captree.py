@@ -1,13 +1,12 @@
 import numpy as np
 import heapq
 from collections import deque
-import ctypes
-import pkgutil
-import os
+
 
 class CapTree(object):
   def __init__(self, data):
     #if data is not None, this is the root, so set up the build queue and iterate construction
+    self.nfun_node = 0.
     self.nfun_search = 0.
     if data is not None:
       self.nfun_construction = 0.
@@ -31,6 +30,9 @@ class CapTree(object):
 
   def num_search_ops(self):
     return self.nfun_search
+
+  def num_search_nodes(self):
+    return self.nfun_node
 
   def build(self, data, idcs):
     self.leaf = True
@@ -89,8 +91,10 @@ class CapTree(object):
     nopt = -1
     heapq.heappush(pq, (-self.upper_bound(y_yw, yw), self))
     nf = 2.
+    nn = 1.
     while pq:
       negub, cap = heapq.heappop(pq)
+      nn += 1.
       if -negub > L:
         ell = cap.lower_bound(y_yw, yw)
         nf += 2.
@@ -98,10 +102,15 @@ class CapTree(object):
           L = ell
           nopt = cap.ny
         if not cap.leaf:
-          heapq.heappush(pq, (-cap.cR.upper_bound(y_yw, yw), cap.cR))
-          heapq.heappush(pq, (-cap.cL.upper_bound(y_yw, yw), cap.cL))
+          uR = cap.cR.upper_bound(y_yw, yw)
+          uL = cap.cL.upper_bound(y_yw, yw)
+          if uR > L:
+            heapq.heappush(pq, (-uR, cap.cR))
+          if uL > L:
+            heapq.heappush(pq, (-uL, cap.cL))
           nf += 4.
     self.nfun_search += nf
+    self.nfun_node += nn
     return nopt
 
   def upper_bound(self, u, v):
@@ -127,56 +136,4 @@ class CapTree(object):
       return -3. 
     return bu/np.sqrt(1.-bv**2)
 
-class CapTreeC(object):
-  def __init__(self, data):
-    if not data.flags['C_CONTIGUOUS']:
-      raise ValueError('CapTreeC: data must be c_contiguous')
-    if not data.ndim == 2:
-      raise ValueError('CapTreeC: data must be 2d')
 
-    hcfn = pkgutil.get_loader('hilbertcoresets').filename
-    self.libct = ctypes.cdll.LoadLibrary(os.path.join(hcfn, 'libcaptreec.so'))
- 
-    #spawns a thread to build a new tree and returns immediately
-    self.libct.CapTree_new.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_uint, ctypes.c_uint]
-    self.libct.CapTree_new.restype = ctypes.c_void_p
-    #spawns a thread to build a new tree and returns immediately
-    self.libct.CapTree_del.argtypes = [ctypes.c_void_p]
-    self.libct.CapTree_del.restype = None
-    #check whether the tree is done building
-    self.libct.CapTree_check_build.argtypes = [ctypes.c_void_p]
-    self.libct.CapTree_check_build.restype = ctypes.c_bool
-    #cancel the build process
-    self.libct.CapTree_cancel_build.argtypes = [ctypes.c_void_p]
-    self.libct.CapTree_cancel_build.restype = None
-    #get the number of build O(<,>) ops
-    self.libct.CapTree_num_build_ops.argtypes = [ctypes.c_void_p]
-    self.libct.CapTree_num_build_ops.restype = ctypes.c_double
-    #get the number of search O(<,>) ops
-    self.libct.CapTree_num_search_ops.argtypes = [ctypes.c_void_p]
-    self.libct.CapTree_num_search_ops.restype = ctypes.c_double
-    #perform a search (if tree not done building yet, waits on it)
-    self.libct.CapTree_search.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_uint, ctypes.c_uint]
-    self.libct.CapTree_search.restype = ctypes.c_int
-
-    self.ptr = self.libct.CapTree_new(data.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), data.shape[0], data.shape[1])
-
-  def num_search_ops(self):
-    return self.libct.CapTree_num_search_ops(self.ptr)
-  
-  def num_build_ops(self):
-    return self.libct.CapTree_num_build_ops(self.ptr)
-
-  def is_build_done(self):
-    return self.libct.CapTree_check_build(self.ptr)
-
-  def cancel_build(self):
-    self.libct.CapTree_cancel_build(self.ptr)
-
-  def search(self, yw, y_yw, max_evals):
-    return self.libct.CapTree_search(self.ptr, yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), y_yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), yw.shape[0], max_evals)
-
-  def __del__(self):
-    self.libct.CapTree_del(self.ptr)
-
-  
