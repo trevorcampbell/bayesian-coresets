@@ -56,9 +56,7 @@ GIGASearch::GIGASearch(double *data, unsigned int N, unsigned int D){
   cRs = cLs = nys = NULL;
   build_thread = NULL;
   build_done = build_cancelled = search_done = false;
-  build();
-  //TODO FIX THIS
-  //build_thread = new std::thread(&GIGASearch::build, this);
+  build_thread = new std::thread(&GIGASearch::build, this);
   return;
 }
 

@@ -3,6 +3,7 @@ import captree as ct
 import warnings
 import time
 from gigasearch import GIGASearch
+import sys
 
 class GIGA(object):
   def __init__(self, _x): 
@@ -26,7 +27,10 @@ class GIGA(object):
     self.f_search_prev = 0.
     self.n_search_prev = 0.
     self.reached_numeric_limit = False
-    self.search_module = GIGASearch(self.y)
+    if self.y.shape[0] > 1 and self.y.shape[1] > 1:
+      self.search_module = GIGASearch(self.y)
+    else:
+      self.search_module = None
     self.reset()
 
   #update_method can be 'fast' or 'accurate'
@@ -158,18 +162,25 @@ class GIGA(object):
   #    self.tree = ct.CapTreeC(self.y)
 
   def get_num_ops(self):
-    return self.f_preproc + self.f_update + self.search_module.num_search_ops() - self.f_search_prev 
+    nops = self.f_preproc + self.f_update
+    if self.search_module:
+      nops += self.search_module.num_search_ops() - self.f_search_prev 
+    return nops
  
   def get_num_nodes(self):
-    return self.search_module.num_search_nodes() - self.n_search_prev
+    if self.search_module:
+      return self.search_module.num_search_nodes() - self.n_search_prev
+    else:
+      return 0
 
   def reset(self):
     self.M = 0
     self.wts = np.zeros(self.N)
     self.yw = np.zeros(self.y.shape[1])
     self.reached_numeric_limit = False
-    self.f_search_prev = self.search_module.num_search_ops()
-    self.n_search_prev = self.search_module.num_search_nodes()
+    if self.search_module:
+      self.f_search_prev = self.search_module.num_search_ops()
+      self.n_search_prev = self.search_module.num_search_nodes()
     self.f_update = 0
 
   #options are fast, accurate (either use yw or recompute yw from wts)
