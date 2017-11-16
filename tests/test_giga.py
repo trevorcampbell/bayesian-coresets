@@ -9,7 +9,7 @@ warnings.filterwarnings('ignore', category=UserWarning) #tests will generate war
 
 n_trials = 10
 tol = 1e-6
-tests = [(N, D, dist, search_method) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned'] for search_method in ['linear', 'tree', 'adaptive'] ]
+tests = [(N, D, dist) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned']]
 
 def gendata(N, D, dist="gauss"):
   if dist == "gauss":
@@ -44,7 +44,7 @@ def gendata(N, D, dist="gauss"):
 #-bound is positive, decreasing -> 0 
 #-giga outputs expected weights and error for axis_aligned data 
 ####################################################
-def giga_single(N, D, dist="gauss", search_method="linear"):
+def giga_single(N, D, dist="gauss"):
   x = gendata(N, D, dist)
   xs = x.sum(axis=0)
   giga = hc.GIGA(x)
@@ -68,7 +68,7 @@ def giga_single(N, D, dist="gauss", search_method="linear"):
   #incremental M tests
   prev_err = np.inf
   for m in range(1, N+1):
-    giga.run(m, search_method=search_method)
+    giga.run(m)
     if x.shape[0] == 1:
       assert np.fabs(giga.weights() - np.array([1])) < tol or (np.fabs(giga.weights() - np.array([0])) < tol and (x**2).sum() == 0.), "GIGA failed: coreset not immediately optimal with N = 1"
     assert (giga.weights() > 0.).sum() <= m, "GIGA failed: coreset size > m"
@@ -95,15 +95,14 @@ def giga_single(N, D, dist="gauss", search_method="linear"):
   giga.reset()
   assert giga.M == 0 and np.all(np.fabs(giga.weights()) < tol) and np.fabs(giga.error() - np.sqrt((xs**2).sum())) < tol and not giga.reached_numeric_limit, "GIGA failed: giga.reset() did not properly reset"
   #check run up to N all at once vs incremental
-  if search_method == 'tree' or search_method == 'linear':
-    giga.run(N, search_method=search_method)
-    xw = (giga.weights()[:, np.newaxis]*x).sum(axis=0) 
-    assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, "GIGA failed: incremental run up to N doesn't produce same result as one run at N : \n xw = " + str(xw) + " error = " +str(np.sqrt(((xw-xs)**2).sum())) + " \n xw_inc = " + str(xw_inc) + " error = " +  str(np.sqrt(((xw_inc-xs)**2).sum())) + " \n xs = " +str(xs)
+  giga.run(N)
+  xw = (giga.weights()[:, np.newaxis]*x).sum(axis=0) 
+  assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, "GIGA failed: incremental run up to N doesn't produce same result as one run at N : \n xw = " + str(xw) + " error = " +str(np.sqrt(((xw-xs)**2).sum())) + " \n xw_inc = " + str(xw_inc) + " error = " +  str(np.sqrt(((xw_inc-xs)**2).sum())) + " \n xs = " +str(xs)
 
 def test_giga():
-  for N, D, dist, search_method in tests:
+  for N, D, dist in tests:
     for n in range(n_trials):
-      yield giga_single, N, D, dist, search_method
+      yield giga_single, N, D, dist
 
 ####################################################
 #verifies that GIGA correctly responds to bad input
