@@ -47,18 +47,18 @@ return ret;
 """)
 
 
-#dnames = ['synth', 'ds1', 'phishing']
-#fldr = 'lr'
+dnames = ['synth', 'ds1', 'phishing']
+fldr = 'lr'
 
-dnames = ['synth', 'biketrips', 'airportdelays']
-fldr = 'poiss'
-
-
+#dnames = ['synth', 'biketrips', 'airportdelays']
+#fldr = 'poiss'
 
 
-fig_ll = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Negative Test Log-Likelihood', x_axis_label='Coreset Construction Iterations', plot_width=1250, plot_height=1250)
-fig_w1 = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='1-Wasserstein', x_axis_label='Coreset Construction Iterations', plot_width=1250, plot_height=1250)
-fig_kl = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Gaussian KL-Divergence', x_axis_label='Coreset Construction Iterations', plot_width=1250, plot_height=1250)
+
+
+fig_ll = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Negative Test Log-Likelihood', x_axis_label='CPU Time (s)', plot_width=1250, plot_height=1250)
+fig_w1 = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='1-Wasserstein', x_axis_label='CPU Time (s)', plot_width=1250, plot_height=1250)
+fig_kl = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Gaussian KL-Divergence', x_axis_label='CPU Time (s)', plot_width=1250, plot_height=1250)
 
 axis_font_size='36pt'
 legend_font_size='36pt'

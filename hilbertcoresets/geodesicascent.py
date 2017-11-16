@@ -2,10 +2,10 @@ import numpy as np
 import captree as ct
 import warnings
 import time
+from gigasearch import GIGASearch
 
 class GIGA(object):
-  #tree_type can be 'python' or 'c++'
-  def __init__(self, _x, tree_type='c++'): 
+  def __init__(self, _x): 
     x = np.asarray(_x)
     if len(x.shape) != 2 or not np.issubdtype(x.dtype, np.number):
       raise ValueError('GIGA: input must be a 2d numeric ndarray')
@@ -21,20 +21,19 @@ class GIGA(object):
     self.y = self.x/self.norms[:, np.newaxis] #normalized nonzero data
     self.ys = self.xs/(xsnrm if xsnrm > 0. else 1.) #normalized sum vec
     self.N = self.x.shape[0] #number of nonzero vecs
-    self.tree = None
-    self.tree_type = tree_type
     self.f_preproc = x.shape[0] + 3*self.x.shape[0] + 2
-    self.f_lin = 0.
     self.f_update = 0.
-    self.f_tree_search_prev = 0.
+    self.f_search_prev = 0.
+    self.n_search_prev = 0.
     self.reached_numeric_limit = False
+    self.search_module = GIGASearch(self.y)
     self.reset()
 
   #update_method can be 'fast' or 'accurate'
   #search_method can be 'exact', 'approximate'
   #if search_method is 'approximate', max_approx_search_evals should be set to some number << N
   #increasing the number improves the search but is more expensive
-  def run(self, M, update_method='fast', search_method='exact', max_approx_search_evals = -1):
+  def run(self, M, update_method='fast'):
     #if M is not greater than self.M, just return 
     if M <= self.M:
       raise ValueError('GIGA.run(): M must be increasing. self.M = '+str(self.M) + ' M = '+str(M))
@@ -57,15 +56,6 @@ class GIGA(object):
       self.f_update += 1.
       return
       
-    if search_method == 'exact':
-      GIGA.search = GIGA.search_linear
-    else:
-      GIGA.search = lambda slf : GIGA.search_tree(slf, max_approx_search_evals)
-      if max_approx_search_evals <= 0:
-        raise ValueError('GIGA.run(): if search_method is "approximate", must set max_approx_search_evals to an integer > 0. If it is >= 2*N-1, the algorithm is exact tree search; if < 2*N-1, the search quits early. Here, N = the number of data with nonzero norm.')
-      if not self.tree:
-        self.build_tree()
-
     #this is commented out since initialization step is exactly the same as the main iteration if y(w) = 0
     #this is true for both tree and linear search
     #if self.M == 0:
@@ -93,8 +83,7 @@ class GIGA(object):
         self.wts /= nrm
         self.f_update += (self.wts > 0).sum() + 3.
 
-        #run an exact linear search here
-        f = self.search_linear()
+        f = self.search()
         if f >= 0:
           gA = self.ys.dot(self.y[f,:]) - self.ys.dot(self.yw) * self.yw.dot(self.y[f,:])
           gB = self.ys.dot(self.yw) - self.ys.dot(self.y[f,:]) * self.yw.dot(self.y[f,:])
@@ -123,58 +112,64 @@ class GIGA(object):
 
     return
 
-  def search_linear(self):
+  def search(self):
     cdir = self.ys - self.ys.dot(self.yw)*self.yw
     cdirnrm =np.sqrt((cdir**2).sum()) 
     if cdirnrm < 1e-14:
       return -1
     cdir /= cdirnrm
-    scorenums = self.y.dot(cdir) 
-    scoredenoms = self.y.dot(self.yw)
-    #extract points for which the geodesic direction is stable (1st condition) and well defined (2nd)
-    idcs = np.logical_and(scoredenoms > -1.+1e-14,  1.-scoredenoms**2 > 0.)
-    #compute the norm 
-    scoredenoms[idcs] = np.sqrt(1.-scoredenoms[idcs]**2)
-    scoredenoms[np.logical_not(idcs)] = np.inf
-    #compute the scores
-    scores = scorenums/scoredenoms
-    self.f_lin += 2.*self.N+2.
-    return scores.argmax()
+    return self.search_module.search(self.yw, cdir)
   
-  def search_tree(self, max_evals):
-
-    if not self.tree.is_build_done():
-      return self.search_linear()
-
-    cdir = self.ys - self.ys.dot(self.yw)*self.yw
-    cdirnrm =np.sqrt((cdir**2).sum()) 
-    if cdirnrm < 1e-14:
-      return -1
-    cdir /= cdirnrm
-    nopt = self.tree.search(self.yw, cdir, max_evals)
-    return nopt
+  #def search_linear(self):
+  #  cdir = self.ys - self.ys.dot(self.yw)*self.yw
+  #  cdirnrm =np.sqrt((cdir**2).sum()) 
+  #  if cdirnrm < 1e-14:
+  #    return -1
+  #  cdir /= cdirnrm
+  #  scorenums = self.y.dot(cdir) 
+  #  scoredenoms = self.y.dot(self.yw)
+  #  #extract points for which the geodesic direction is stable (1st condition) and well defined (2nd)
+  #  idcs = np.logical_and(scoredenoms > -1.+1e-14,  1.-scoredenoms**2 > 0.)
+  #  #compute the norm 
+  #  scoredenoms[idcs] = np.sqrt(1.-scoredenoms[idcs]**2)
+  #  scoredenoms[np.logical_not(idcs)] = np.inf
+  #  #compute the scores
+  #  scores = scorenums/scoredenoms
+  #  self.f_lin += 2.*self.N+2.
+  #  return scores.argmax()
   
-  def build_tree(self):
-    if self.tree_type == 'python':
-      self.tree = ct.CapTree(self.y)
-    else:
-      self.tree = ct.CapTreeC(self.y)
+  #def search_tree(self, max_evals):
+
+  #  if not self.tree.is_build_done():
+  #    return self.search_linear()
+
+  #  cdir = self.ys - self.ys.dot(self.yw)*self.yw
+  #  cdirnrm =np.sqrt((cdir**2).sum()) 
+  #  if cdirnrm < 1e-14:
+  #    return -1
+  #  cdir /= cdirnrm
+  #  nopt = self.tree.search(self.yw, cdir, max_evals)
+  #  return nopt
+  
+  #def build_tree(self):
+  #  if self.tree_type == 'python':
+  #    self.tree = ct.CapTree(self.y)
+  #  else:
+  #    self.tree = ct.CapTreeC(self.y)
 
   def get_num_ops(self):
-    ftot = self.f_preproc + self.f_lin + self.f_update
-    if self.tree:
-      #don't count tree build ops since it happens in parallel 
-      ftot += self.tree.num_search_ops() - self.f_tree_search_prev
-    return ftot
+    return self.f_preproc + self.f_update + self.search_module.num_search_ops() - self.f_search_prev 
+ 
+  def get_num_nodes(self):
+    return self.search_module.num_search_nodes() - self.n_search_prev
 
   def reset(self):
     self.M = 0
     self.wts = np.zeros(self.N)
     self.yw = np.zeros(self.y.shape[1])
     self.reached_numeric_limit = False
-    if self.tree:
-      self.f_tree_search_prev = self.tree.num_search_ops()
-    self.f_lin = 0.
+    self.f_search_prev = self.search_module.num_search_ops()
+    self.n_search_prev = self.search_module.num_search_nodes()
     self.f_update = 0
 
   #options are fast, accurate (either use yw or recompute yw from wts)

@@ -2,7 +2,7 @@ import numpy as np
 import hilbertcoresets as hc
 import time
 
-n_trials = 50
+n_trials = 10
 Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 anms = ['GIGA', 'FW', 'RND']
 

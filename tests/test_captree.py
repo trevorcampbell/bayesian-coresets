@@ -33,164 +33,196 @@ def gendata(N, D, dist="gauss"):
       x[i, i] = 1./float(N)
   return x/np.sqrt((x**2).sum(axis=1))[:, np.newaxis]
 
-####################################################
-#verifies that the construction creates valid trees; checks
-#-all data contained in xi.z >= r
-#-there exists at least one vec = y
-#-the index ny corresponds to the correct vector in x
-#-there are 2*N-1 total nodes in the tree
-####################################################
-def check_tree_contents(node, x):
-  if node.cR:
-    xR, subtree_size_R = check_tree_contents(node.cR, x)
-  if node.cL:
-    xL, subtree_size_L = check_tree_contents(node.cL, x)
-  assert (not node.cR and not node.cL) or (node.cR and node.cL), "cap tree validity test failed; cR xor cL is 1"
-  if node.cR:
-    nodex = np.vstack((xR, xL))
-  else:
-    nodex = np.atleast_2d(node.y)
-    subtree_size_R = 0
-    subtree_size_L = 0
-  assert np.fabs(np.sqrt((node.xi**2).sum()) - 1.) < tol, "cap tree validity test failed; norm of xi is not 1"
-  assert np.fabs(np.sqrt((node.y**2).sum()) - 1.) < tol, "cap tree validity test failed; norm of y is not 1"
-  assert node.ny < x.shape[0] and node.ny >= 0, "cap tree validity test failed; ny index is not in [0, number of data points)"
-  assert np.all(nodex.dot(node.xi) >= node.r-tol), "cap tree validity test failed; there is data that violates xi.y >= r"
-  assert np.any(np.sqrt(((nodex - node.y)**2).sum(axis=1)) < tol), "cap tree validity test failed; y is not in the node data"
-  assert np.sqrt(((x[node.ny, :] - node.y)**2).sum()) < tol, "cap tree validity test failed; the index ny is incorrect, x[node.ny, :] is not equal to node.y"
-  return nodex, subtree_size_R+subtree_size_L+1
-  
-def tree_correctness_single(N, D, dist="gauss"):
-  x = gendata(N, D, dist)
-  root = ct.CapTree(x)
-  _, tree_size = check_tree_contents(root, x)
-  assert tree_size == 2*x.shape[0]-1, "cap tree validity test failed; tree is not a complete binary tree since # nodes is not 2*N-1"
+#####################################################
+##verifies that the construction creates valid trees; checks
+##-all data contained in xi.z >= r
+##-there exists at least one vec = y
+##-the index ny corresponds to the correct vector in x
+##-there are 2*N-1 total nodes in the tree
+#####################################################
+#def check_tree_contents(node, x):
+#  if node.cR:
+#    xR, subtree_size_R = check_tree_contents(node.cR, x)
+#  if node.cL:
+#    xL, subtree_size_L = check_tree_contents(node.cL, x)
+#  assert (not node.cR and not node.cL) or (node.cR and node.cL), "cap tree validity test failed; cR xor cL is 1"
+#  if node.cR:
+#    nodex = np.vstack((xR, xL))
+#  else:
+#    nodex = np.atleast_2d(node.y)
+#    subtree_size_R = 0
+#    subtree_size_L = 0
+#  assert np.fabs(np.sqrt((node.xi**2).sum()) - 1.) < tol, "cap tree validity test failed; norm of xi is not 1"
+#  assert np.fabs(np.sqrt((node.y**2).sum()) - 1.) < tol, "cap tree validity test failed; norm of y is not 1"
+#  assert node.ny < x.shape[0] and node.ny >= 0, "cap tree validity test failed; ny index is not in [0, number of data points)"
+#  assert np.all(nodex.dot(node.xi) >= node.r-tol), "cap tree validity test failed; there is data that violates xi.y >= r"
+#  assert np.any(np.sqrt(((nodex - node.y)**2).sum(axis=1)) < tol), "cap tree validity test failed; y is not in the node data"
+#  assert np.sqrt(((x[node.ny, :] - node.y)**2).sum()) < tol, "cap tree validity test failed; the index ny is incorrect, x[node.ny, :] is not equal to node.y"
+#  return nodex, subtree_size_R+subtree_size_L+1
+#  
+#def tree_correctness_single(N, D, dist="gauss"):
+#  x = gendata(N, D, dist)
+#  root = ct.CapTree(x)
+#  _, tree_size = check_tree_contents(root, x)
+#  assert tree_size == 2*x.shape[0]-1, "cap tree validity test failed; tree is not a complete binary tree since # nodes is not 2*N-1"
+#
+#def test_tree_correctness():
+#  for N, D, dist in tests:
+#    for n in range(n_trials):
+#      yield tree_correctness_single, N, D, dist
+#  
+#####################################################
+##verifies that the tree search produces correct results
+##compared with linear search
+##also verifies C tree
+#####################################################
+#def tree_search_single(N, D, dist="gauss"):
+#  x = gendata(N, D, dist)
+#  tree = ct.CapTree(x)
+#  tree_c = ct.CapTreeC(x)
+#  for m in range(n_trials):
+#    yw = np.random.normal(0., 1., x.shape[1])
+#    yw /= np.sqrt((yw**2).sum())
+#    y_yw = np.random.normal(0., 1., x.shape[1])
+#    y_yw -= y_yw.dot(yw)*yw
+#    y_yw /= np.sqrt((y_yw**2).sum())
+#    n_ot = tree.search(yw, y_yw)
+#    n_ot_c = tree_c.search(yw, y_yw)
+#    f_ot = x[n_ot, :].dot(y_yw)/np.sqrt(1.-x[n_ot, :].dot(yw)**2)
+#    f_ot_c = x[n_ot_c, :].dot(y_yw)/np.sqrt(1.-x[n_ot_c, :].dot(yw)**2)
+#    n_ol = (x.dot(y_yw)/np.sqrt(1.-x.dot(yw)**2)).argmax()
+#    f_ol = x[n_ol, :].dot(y_yw)/np.sqrt(1.-x[n_ol, :].dot(yw)**2)
+#    assert f_ol - f_ot < tol, "cap tree search failed; linear obj = " + str(f_ol) + " tree obj = " + str(f_ot)
+#    assert f_ot - f_ot_c < tol, "cap tree search failed; C tree obj = " + str(f_ot_c) + " py tree obj = " + str(f_ot)
+#      
+#def test_tree_search():
+#  for N, D, dist in tests:
+#    for n in range(n_trials):
+#      yield tree_search_single, N, D, dist
+#
+#####################################################
+##verifies that the upper/lower bounds are valid
+#####################################################
+#
+#def sample_within_r(xi, r, n):
+#  if xi.shape[0] == 1:
+#    if r > -1.:
+#      return xi[0]*np.ones(n)[:, np.newaxis]
+#    else:
+#      a = (np.random.rand(n) > 0.5).astype(float)
+#      a[a<0.5] = -1.
+#      return a[:, np.newaxis]
+#  z = np.random.normal(0., 1., (n, xi.shape[0]))
+#  z -= z.dot(xi)[:, np.newaxis]*xi
+#  z /= np.sqrt((z**2).sum(axis=1))[:, np.newaxis]
+#  th = np.arccos(r)*np.random.rand(n)[:, np.newaxis]
+#  return np.cos(th)*xi + np.sin(th)*z
+#
+#def check_tree_bounds(node, yw, y_yw):
+#  if node.cR:
+#    check_tree_bounds(node.cR, yw, y_yw)
+#  if node.cL:
+#    check_tree_bounds(node.cL, yw, y_yw)
+#  v = sample_within_r(node.xi, node.r, n_bound_samples)
+#  assert v.shape == (n_bound_samples, node.xi.shape[0]), "v shape is wrong: vshape = " + str(v.shape) + " xishape = " + str(node.xi.shape)
+#  assert np.all(np.fabs((v**2).sum(axis=1) - 1.) < tol), "v is not normalized, norms = " + str((v**2).sum(axis=1))
+#  for n in range(yw.shape[0]):
+#    U = node.upper_bound(y_yw[n, :], yw[n, :])
+#    L = node.lower_bound(y_yw[n, :], yw[n, :])
+#    obj = v.dot(y_yw[n,:])/np.sqrt(1. - v.dot(yw[n,:])**2)
+#    assert np.all(obj - U < tol),  "cap tree bounds test failed; the node.upper_bound does not produce a valid upper bound"
+#    assert np.fabs(node.y.dot(y_yw[n,:])/np.sqrt(1. - node.y.dot(yw[n,:])**2) - L) < tol, "cap tree bounds test failed; the objective at node.y is not equal to node.lower_bound"
+#
+#def tree_bounds_single(N, D, dist="gauss"):
+#  x = gendata(N, D, dist)
+#  root = ct.CapTree(x)
+#  yw = np.random.normal(0., 1., (n_bound_samples, x.shape[1]))
+#  yw /= np.sqrt((yw**2).sum(axis=1))[:, np.newaxis]
+#  y_yw = np.random.normal(0., 1., (n_bound_samples, x.shape[1]))
+#  y_yw -= (y_yw*yw).sum(axis=1)[:, np.newaxis]*yw
+#  y_yw /= np.sqrt((y_yw**2).sum(axis=1))[:, np.newaxis]
+#  check_tree_bounds(root, yw, y_yw)
+#
+#def test_tree_bounds():
+#  for N, D, dist in tests:
+#    for n in range(n_trials):
+#      yield tree_bounds_single, N, D, dist
+#
+#def test_c_tree_stability():
+#  X = np.random.rand(10, 5)
+#
+#  #test stability with immediate garbage collection
+#  for i in range(100):
+#    ct.CapTreeC(X) 
+#  
+#  #test stability with cancellation
+#  for i in range(100):
+#    tr = ct.CapTreeC(X)
+#    tr.cancel_build()
+#  
+#  #test stability with search then cancellation
+#  for i in range(100):
+#    yw = np.random.normal(0., 1., 5)
+#    yw /= np.sqrt((yw**2).sum())
+#    y_yw = np.random.normal(0., 1., 5)
+#    y_yw -= y_yw.dot(yw)*yw
+#    y_yw /= np.sqrt((y_yw**2).sum())
+#    tr = ct.CapTreeC(X)
+#    tr.search(yw, y_yw)
+#    tr.cancel_build()
+#  
+#  #test stability with cancellation then search
+#  for i in range(100):
+#    yw = np.random.normal(0., 1., 5)
+#    yw /= np.sqrt((yw**2).sum())
+#    y_yw = np.random.normal(0., 1., 5)
+#    y_yw -= y_yw.dot(yw)*yw
+#    y_yw /= np.sqrt((y_yw**2).sum())
+#    tr = ct.CapTreeC(X)
+#    tr.cancel_build()
+#    tr.search(yw, y_yw)
+#  
+#  #test stability with lots of searches
+#  tr = ct.CapTreeC(X)
+#  for i in range(100):
+#    yw = np.random.normal(0., 1., 5)
+#    yw /= np.sqrt((yw**2).sum())
+#    y_yw = np.random.normal(0., 1., 5)
+#    y_yw -= y_yw.dot(yw)*yw
+#    y_yw /= np.sqrt((y_yw**2).sum())
+#    tr.search(yw, y_yw)
+#    assert tr.is_build_done()
 
-def test_tree_correctness():
-  for N, D, dist in tests:
-    for n in range(n_trials):
-      yield tree_correctness_single, N, D, dist
-  
-####################################################
-#verifies that the tree search produces correct results
-#compared with linear search
-#also verifies C tree
-####################################################
-def tree_search_single(N, D, dist="gauss"):
-  x = gendata(N, D, dist)
+def test_search_single():
+  import time
+  x = gendata(100000, 100, "gauss")
+  t0 = time.clock()
   tree = ct.CapTree(x)
+  t_build_tree = time.clock()-t0
+  t0 = time.clock()
   tree_c = ct.CapTreeC(x)
+  t_build_tree_c = time.clock()-t0
   for m in range(n_trials):
     yw = np.random.normal(0., 1., x.shape[1])
     yw /= np.sqrt((yw**2).sum())
     y_yw = np.random.normal(0., 1., x.shape[1])
     y_yw -= y_yw.dot(yw)*yw
     y_yw /= np.sqrt((y_yw**2).sum())
+    t0 = time.clock()
     n_ot = tree.search(yw, y_yw)
-    n_ot_c = tree_c.search(yw, y_yw)
-    print n_ot_c
+    t_search_tree = time.clock()-t0
+    t0 = time.clock()
+    n_ot_c = tree_c.search(yw, y_yw, 2*10000)
+    t_search_tree_c = time.clock()-t0
     f_ot = x[n_ot, :].dot(y_yw)/np.sqrt(1.-x[n_ot, :].dot(yw)**2)
     f_ot_c = x[n_ot_c, :].dot(y_yw)/np.sqrt(1.-x[n_ot_c, :].dot(yw)**2)
+    t0 = time.clock()
     n_ol = (x.dot(y_yw)/np.sqrt(1.-x.dot(yw)**2)).argmax()
+    t_search_linear = time.clock()-t0
     f_ol = x[n_ol, :].dot(y_yw)/np.sqrt(1.-x[n_ol, :].dot(yw)**2)
+    assert False, str(tree.num_build_ops()) + ' ' + str(tree_c.num_build_ops()) + ' ' + str(tree.num_search_ops()) + ' ' + str(tree_c.num_search_ops()) + ' ' + str(tree.num_search_nodes()) + ' ' + str(tree_c.num_search_nodes()) + ' ' + str(t_build_tree) + ' ' + str(t_build_tree_c) + ' ' + str(t_search_tree) + ' ' + str(t_search_tree_c) + ' ' + str(t_search_linear)
     assert f_ol - f_ot < tol, "cap tree search failed; linear obj = " + str(f_ol) + " tree obj = " + str(f_ot)
     assert f_ot - f_ot_c < tol, "cap tree search failed; C tree obj = " + str(f_ot_c) + " py tree obj = " + str(f_ot)
-      
-def test_tree_search():
-  for N, D, dist in tests:
-    for n in range(n_trials):
-      yield tree_search_single, N, D, dist
+ 
 
-####################################################
-#verifies that the upper/lower bounds are valid
-####################################################
-
-def sample_within_r(xi, r, n):
-  if xi.shape[0] == 1:
-    if r > -1.:
-      return xi[0]*np.ones(n)[:, np.newaxis]
-    else:
-      a = (np.random.rand(n) > 0.5).astype(float)
-      a[a<0.5] = -1.
-      return a[:, np.newaxis]
-  z = np.random.normal(0., 1., (n, xi.shape[0]))
-  z -= z.dot(xi)[:, np.newaxis]*xi
-  z /= np.sqrt((z**2).sum(axis=1))[:, np.newaxis]
-  th = np.arccos(r)*np.random.rand(n)[:, np.newaxis]
-  return np.cos(th)*xi + np.sin(th)*z
-
-def check_tree_bounds(node, yw, y_yw):
-  if node.cR:
-    check_tree_bounds(node.cR, yw, y_yw)
-  if node.cL:
-    check_tree_bounds(node.cL, yw, y_yw)
-  v = sample_within_r(node.xi, node.r, n_bound_samples)
-  assert v.shape == (n_bound_samples, node.xi.shape[0]), "v shape is wrong: vshape = " + str(v.shape) + " xishape = " + str(node.xi.shape)
-  assert np.all(np.fabs((v**2).sum(axis=1) - 1.) < tol), "v is not normalized, norms = " + str((v**2).sum(axis=1))
-  for n in range(yw.shape[0]):
-    U = node.upper_bound(y_yw[n, :], yw[n, :])
-    L = node.lower_bound(y_yw[n, :], yw[n, :])
-    obj = v.dot(y_yw[n,:])/np.sqrt(1. - v.dot(yw[n,:])**2)
-    assert np.all(obj - U < tol),  "cap tree bounds test failed; the node.upper_bound does not produce a valid upper bound"
-    assert np.fabs(node.y.dot(y_yw[n,:])/np.sqrt(1. - node.y.dot(yw[n,:])**2) - L) < tol, "cap tree bounds test failed; the objective at node.y is not equal to node.lower_bound"
-
-def tree_bounds_single(N, D, dist="gauss"):
-  x = gendata(N, D, dist)
-  root = ct.CapTree(x)
-  yw = np.random.normal(0., 1., (n_bound_samples, x.shape[1]))
-  yw /= np.sqrt((yw**2).sum(axis=1))[:, np.newaxis]
-  y_yw = np.random.normal(0., 1., (n_bound_samples, x.shape[1]))
-  y_yw -= (y_yw*yw).sum(axis=1)[:, np.newaxis]*yw
-  y_yw /= np.sqrt((y_yw**2).sum(axis=1))[:, np.newaxis]
-  check_tree_bounds(root, yw, y_yw)
-
-def test_tree_bounds():
-  for N, D, dist in tests:
-    for n in range(n_trials):
-      yield tree_bounds_single, N, D, dist
-
-def test_c_tree_stability():
-  X = np.random.rand(10, 5)
-
-  #test stability with immediate garbage collection
-  for i in range(100):
-    ct.CapTreeC(X) 
-  
-  #test stability with cancellation
-  for i in range(100):
-    tr = ct.CapTreeC(X)
-    tr.cancel_build()
-  
-  #test stability with search then cancellation
-  for i in range(100):
-    yw = np.random.normal(0., 1., 5)
-    yw /= np.sqrt((yw**2).sum())
-    y_yw = np.random.normal(0., 1., 5)
-    y_yw -= y_yw.dot(yw)*yw
-    y_yw /= np.sqrt((y_yw**2).sum())
-    tr = ct.CapTreeC(X)
-    tr.search(yw, y_yw)
-    tr.cancel_build()
-  
-  #test stability with cancellation then search
-  for i in range(100):
-    yw = np.random.normal(0., 1., 5)
-    yw /= np.sqrt((yw**2).sum())
-    y_yw = np.random.normal(0., 1., 5)
-    y_yw -= y_yw.dot(yw)*yw
-    y_yw /= np.sqrt((y_yw**2).sum())
-    tr = ct.CapTreeC(X)
-    tr.cancel_build()
-    tr.search(yw, y_yw)
-  
-  #test stability with lots of searches
-  tr = ct.CapTreeC(X)
-  for i in range(100):
-    yw = np.random.normal(0., 1., 5)
-    yw /= np.sqrt((yw**2).sum())
-    y_yw = np.random.normal(0., 1., 5)
-    y_yw -= y_yw.dot(yw)*yw
-    y_yw /= np.sqrt((y_yw**2).sum())
-    tr.search(yw, y_yw)
-    assert tr.is_build_done()
 
