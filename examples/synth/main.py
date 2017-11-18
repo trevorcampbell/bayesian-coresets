@@ -7,13 +7,15 @@ Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 anms = ['GIGA', 'FW', 'RND']
 
 ##########################################
-## Test 1: 1M 50-dimensional gaussian data
+## Test 1: gaussian data
 ##########################################
 N = 1000000
 D = 50
 
+
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 nfunc = np.zeros((len(anms), n_trials, Ms.shape[0]))
+nnode = np.zeros((len(anms), n_trials, Ms.shape[0]))
 cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   X = np.random.randn(N, D)
@@ -29,18 +31,19 @@ for tr in range(n_trials):
       alg = hc.RandomSubsampling(X) 
 
     for m, M in enumerate(Ms):
-      t0 = time.clock()
+      t0 = time.time()
       alg.run(M)
-      tf = time.clock()
+      tf = time.time()
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts = alg.weights()
       err[aidx, tr, m] = np.sqrt((((wts[:, np.newaxis]*X).sum(axis=0) - XS)**2).sum())
       nfunc[aidx, tr, m] = alg.get_num_ops()
+      nnode[aidx, tr, m] = alg.get_num_nodes()
 
-np.savez_compressed('gauss_results.npz', err=err, nfunc=nfunc, cput=cput, Ms = Ms, anms=anms)
+np.savez_compressed('gauss_results.npz', err=err, nfunc=nfunc, cput=cput, nnode=nnode, Ms = Ms, anms=anms)
 
 ##########################################
-## Test 2: 5K axis-aligned data
+## Test 2: axis-aligned data
 ##########################################
  
 N = 5000
@@ -50,6 +53,7 @@ XS = np.ones(N)
 
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 nfunc = np.zeros((len(anms), n_trials, Ms.shape[0]))
+nnode = np.zeros((len(anms), n_trials, Ms.shape[0]))
 cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   for aidx, anm in enumerate(anms):
@@ -63,13 +67,14 @@ for tr in range(n_trials):
       alg = hc.RandomSubsampling(X) 
 
     for m, M in enumerate(Ms):
-      t0 = time.clock()
+      t0 = time.time()
       alg.run(M)
-      tf = time.clock()
+      tf = time.time()
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts = alg.weights()
       err[aidx, tr, m] = np.sqrt((((wts[:, np.newaxis]*X).sum(axis=0) - XS)**2).sum())
       nfunc[aidx, tr, m] = alg.get_num_ops()
+      nnode[aidx, tr, m] = alg.get_num_nodes()
 
-np.savez_compressed('axis_results.npz', err=err, nfunc=nfunc, cput=cput, Ms = Ms, anms=anms)
+np.savez_compressed('axis_results.npz', err=err, nfunc=nfunc, cput=cput, nnode=nnode, Ms = Ms, anms=anms)
 
