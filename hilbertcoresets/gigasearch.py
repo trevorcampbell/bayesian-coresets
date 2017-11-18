@@ -5,6 +5,7 @@ import os
 
 class GIGASearch(object):
   def __init__(self, data):
+    self.data = data
     if not data.flags['C_CONTIGUOUS']:
       raise ValueError('GIGASearchC: data must be c_contiguous')
     if not data.ndim == 2:
@@ -56,7 +57,8 @@ class GIGASearch(object):
     self.libct.GIGASearch_cancel_build(self.ptr)
 
   def search(self, yw, y_yw):
-    return self.libct.GIGASearch_search(self.ptr, yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), y_yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
+    return self.libct.slin(self.data.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), y_yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), self.data.shape[0], self.data.shape[1])
+    #return self.libct.GIGASearch_search(self.ptr, yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), y_yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
 
   def __del__(self):
     self.libct.GIGASearch_del(self.ptr)

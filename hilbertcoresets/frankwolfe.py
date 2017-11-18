@@ -21,6 +21,7 @@ class FrankWolfe(object):
     self.nu = None
     self.f_preproc = x.shape[0] + 2*self.x.shape[0] 
     self.f_search = 0.
+    self.n_search = 0.
     self.f_update = 0.
     self.reached_numeric_limit = False
     self.reset()
@@ -78,10 +79,14 @@ class FrankWolfe(object):
   def search(self):
     scores = ((self.xs - self.xw)*self.x).sum(axis=1)/self.norms
     self.f_search += 2. + self.x.shape[0]
+    self.n_search += self.x.shape[0]
     return scores.argmax()
 
   def get_num_ops(self):
     return self.f_preproc+self.f_search + self.f_update
+
+  def get_num_nodes(self):
+    return self.n_search
 
   def reset(self):
     self.M = 0
@@ -89,6 +94,7 @@ class FrankWolfe(object):
     self.xw = np.zeros(self.x.shape[1])
     self.reached_numeric_limit = False
     self.f_search = 0.
+    self.n_search = 0.
     self.f_update = 0.
 
   def weights(self):

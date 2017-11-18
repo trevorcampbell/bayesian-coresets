@@ -1,9 +1,8 @@
 import numpy as np
-import captree as ct
 import warnings
-import time
-from gigasearch import GIGASearch
-import sys
+import pkgutil
+import os
+import ctypes
 
 class GIGA(object):
   def __init__(self, _x): 
@@ -23,15 +22,18 @@ class GIGA(object):
     self.ys = self.xs/(xsnrm if xsnrm > 0. else 1.) #normalized sum vec
     self.N = self.x.shape[0] #number of nonzero vecs
     self.f_preproc = x.shape[0] + 3*self.x.shape[0] + 2
-    self.f_update = 0.
-    self.f_search_prev = 0.
-    self.n_search_prev = 0.
+    self.f_update = 0
+    self.f_search = 0
     self.reached_numeric_limit = False
-    if self.y.shape[0] > 1 and self.y.shape[1] > 1:
-      self.search_module = GIGASearch(self.y)
-    else:
-      self.search_module = None
     self.reset()
+
+    if not self.y.flags['C_CONTIGUOUS']:
+      raise ValueError('GIGA: data must be c_contiguous')
+    hcfn = pkgutil.get_loader('hilbertcoresets').filename
+    self.libgs = ctypes.cdll.LoadLibrary(os.path.join(hcfn, 'libgigasearch.so'))
+    self.libgs.search.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_uint, ctypes.c_uint]
+    self.libgs.search.restype = ctypes.c_int
+
 
   #update_method can be 'fast' or 'accurate'
   #search_method can be 'exact', 'approximate'
@@ -50,14 +52,14 @@ class GIGA(object):
       self.wts[0] = 1.
       self.M = 1
       self.reached_numeric_limit = True
-      self.f_update += 1.
+      self.f_update += 1
       return
     if self.y.shape[1] == 1:
       self.yw = self.ys.copy()
       self.wts[np.argmax(self.y.dot(self.ys))] = 1.0
       self.M = 1
       self.reached_numeric_limit = True
-      self.f_update += 1.
+      self.f_update += 1
       return
       
     #this is commented out since initialization step is exactly the same as the main iteration if y(w) = 0
@@ -76,7 +78,7 @@ class GIGA(object):
       if f >= 0:
         gA = self.ys.dot(self.y[f,:]) - self.ys.dot(self.yw) * self.yw.dot(self.y[f,:])
         gB = self.ys.dot(self.yw) - self.ys.dot(self.y[f,:]) * self.yw.dot(self.y[f,:])
-        self.f_update += 3.
+        self.f_update += 3
    
       #if the direction and/or line search failed
       if gA <= 0. or gB < 0:
@@ -85,13 +87,13 @@ class GIGA(object):
         nrm = np.sqrt((self.yw**2).sum())
         self.yw /= nrm
         self.wts /= nrm
-        self.f_update += (self.wts > 0).sum() + 3.
+        self.f_update += (self.wts > 0).sum() + 3
 
         f = self.search()
         if f >= 0:
           gA = self.ys.dot(self.y[f,:]) - self.ys.dot(self.yw) * self.yw.dot(self.y[f,:])
           gB = self.ys.dot(self.yw) - self.ys.dot(self.y[f,:]) * self.yw.dot(self.y[f,:])
-          self.f_update += 3.
+          self.f_update += 3
         #if it still didn't work, we've reached the numeric limit
         if gA <= 0. or gB < 0:
           self.reached_numeric_limit = True
@@ -103,7 +105,7 @@ class GIGA(object):
 
       if update_method == 'fast':
         self.yw = (1.-gamma)*self.yw + gamma*self.y[f, :]
-        self.f_update += 1.
+        self.f_update += 1
       else:
         self.yw = (self.wts[:, np.newaxis]*self.y).sum(axis=0)
         self.f_update += (self.wts > 0).sum()
@@ -111,7 +113,7 @@ class GIGA(object):
       nrm = np.sqrt((self.yw**2).sum())
       self.yw /= nrm
       self.wts /= nrm
-      self.f_update += 3.
+      self.f_update += 3
       self.M = m+1
 
     return
@@ -122,7 +124,8 @@ class GIGA(object):
     if cdirnrm < 1e-14:
       return -1
     cdir /= cdirnrm
-    return self.search_module.search(self.yw, cdir)
+    self.f_search += self.y.shape[0]
+    return self.libgs.search(self.y.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), self.yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), cdir.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), self.y.shape[0], self.y.shape[1])
   
   #def search_linear(self):
   #  cdir = self.ys - self.ys.dot(self.yw)*self.yw
@@ -162,26 +165,19 @@ class GIGA(object):
   #    self.tree = ct.CapTreeC(self.y)
 
   def get_num_ops(self):
-    nops = self.f_preproc + self.f_update
-    if self.search_module:
-      nops += self.search_module.num_search_ops() - self.f_search_prev 
+    nops = self.f_preproc + self.f_update + self.f_search
     return nops
  
   def get_num_nodes(self):
-    if self.search_module:
-      return self.search_module.num_search_nodes() - self.n_search_prev
-    else:
-      return 0
+    return self.f_search
 
   def reset(self):
     self.M = 0
     self.wts = np.zeros(self.N)
     self.yw = np.zeros(self.y.shape[1])
     self.reached_numeric_limit = False
-    if self.search_module:
-      self.f_search_prev = self.search_module.num_search_ops()
-      self.n_search_prev = self.search_module.num_search_nodes()
     self.f_update = 0
+    self.f_search = 0
 
   #options are fast, accurate (either use yw or recompute yw from wts)
   def error(self, method="fast"):

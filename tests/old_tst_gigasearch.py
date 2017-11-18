@@ -1,6 +1,5 @@
 import numpy as np
 from hilbertcoresets import gigasearch as gs
-import sys
 
 np.random.seed(1)
 
@@ -99,3 +98,46 @@ def test_gigasearch_stability():
     y_yw -= y_yw.dot(yw)*yw
     y_yw /= np.sqrt((y_yw**2).sum())
     tr.search(yw, y_yw)
+
+if __name__ == '__main__':
+  import time
+  import sys
+  import ctypes
+  import pkgutil
+  import os
+  N = 10000000
+  D = 20
+  x = gendata(N, D, 'gauss')
+
+  hcfn = pkgutil.get_loader('hilbertcoresets').filename
+  libgs = ctypes.cdll.LoadLibrary(os.path.join(hcfn, 'libgigasearch.so'))
+  libgs.search.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_uint, ctypes.c_uint]
+  libgs.search.restype = ctypes.c_int
+  for i in range(1000):
+    yw = np.random.normal(0., 1., D)
+    yw /= np.sqrt((yw**2).sum())
+    y_yw = np.random.normal(0., 1., D)
+    y_yw -= y_yw.dot(yw)*yw
+    y_yw /= np.sqrt((y_yw**2).sum())
+    t0 = time.time()
+    num = (x*y_yw).sum(axis=1)
+    denom = (x*yw).sum(axis=1)
+    denom = np.sqrt(1.-denom**2)
+    n_ol = (num/denom).argmax()
+    lin_time = time.time()-t0
+    lin_n = N
+    t0 = time.time() 
+    n_og = libgs.search(x.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), y_yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), x.shape[0], x.shape[1])
+    #n_og = giga.search(yw, y_yw)
+    gs_time = time.time()-t0
+    gs_n = N
+    sys.stderr.write(' gs_t: ' + str(gs_time)  + ' lin_t: ' + str(lin_time) + ' gs_n: ' + str(n_og) + ' lin_n: ' + str(n_ol) + ' gs_n: ' + str(gs_n)  + ' lin_n: ' + str(lin_n)+ '\n')
+    sys.stderr.flush()
+    
+    
+    
+
+
+
+
+
