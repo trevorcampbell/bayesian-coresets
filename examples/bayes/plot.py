@@ -4,6 +4,7 @@ import bokeh.plotting as bkp
 import bokeh.io as bki
 import bokeh.layouts as bkl
 from bokeh.models import FuncTickFormatter
+import bokeh.models as bkm
 import bokeh.palettes 
 import time
 
@@ -54,15 +55,19 @@ fldr = 'lr'
 #fldr = 'poiss'
 
 
-
-
-fig_ll = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Negative Test Log-Likelihood', x_axis_label='CPU Time (s)', plot_width=1250, plot_height=1250)
-fig_w1 = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='1-Wasserstein', x_axis_label='CPU Time (s)', plot_width=1250, plot_height=1250)
-fig_kl = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Gaussian KL-Divergence', x_axis_label='CPU Time (s)', plot_width=1250, plot_height=1250)
+fig_ll = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Negative Test Log-Likelihood', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
+fig_w1 = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='1-Wasserstein', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
+fig_kl = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Gaussian KL-Divergence', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
+fig_F = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Relative Fisher Information Distance', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
+fig_md = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='mean diff', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
+fig_vd = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='cov diff', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
+fig_csz = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Coreset Size', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
+fig_cput = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='CPU Time (s)', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
+fig_mmd = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='MMD', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
 
 axis_font_size='36pt'
 legend_font_size='36pt'
-for f in [fig_ll, fig_w1, fig_kl]:
+for f in [fig_ll, fig_w1, fig_kl, fig_F, fig_md, fig_vd, fig_csz, fig_cput, fig_mmd]:
   #f.xaxis.ticker = bkm.tickers.FixedTicker(ticks=[.1, 1])
   f.xaxis.axis_label_text_font_size= axis_font_size
   f.xaxis.major_label_text_font_size= axis_font_size
@@ -79,13 +84,23 @@ for didx, dnm in enumerate(dnames):
   
   res = np.load(fldr +'/' + dnm  + '_results.npz')
 
+  Ms = res['Ms']
   w1s = res['w1s']
   lls = res['lls']
   kls = res['kls']
+  Fs = res['Fs']
+  mds = res['mds']
+  vds = res['vds']
+  mmds = res['mmds']
   cputs = res['cputs']
+  csizes = res['csizes']
   w1s_full = res['w1s_full']
   kls_full = res['kls_full']
   lls_full = res['lls_full']
+  Fs_full = res['Fs_full']
+  mds_full = res['mds_full']
+  vds_full = res['vds_full']
+  mmds_full = res['mmds_full']
   cputs_full = res['cputs_full']
   ll_max = res['ll_max']
   anms = res['anms']
@@ -97,17 +112,40 @@ for didx, dnm in enumerate(dnames):
       ld = 'dotted'
     else:
       ld = 'solid'
-    #TODO: make this relative to full vs cput, and relative to RND vs M 
-    fig_w1.line(np.percentile(cputs[aidx,:,:], 50, axis=0), np.percentile(w1s[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
-    fig_ll.line(np.percentile(cputs[aidx,:,:], 50, axis=0), np.percentile(ll_max - lls[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
-    fig_kl.line(np.percentile(cputs[aidx,:,:], 50, axis=0), np.percentile(kls[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    
+    #fig_w1.line(Ms, np.percentile(w1s[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)             
+    #fig_ll.line(Ms, np.percentile(ll_max - lls[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    #fig_kl.line(Ms, np.percentile(kls[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    #fig_F.line(Ms, np.percentile(Fs[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    #fig_md.line(Ms, np.percentile(mds[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    #fig_vd.line(Ms, np.percentile(vds[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    #fig_csz.line(Ms, np.percentile(csizes[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    #fig_cput.line(Ms, np.percentile(cputs[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    #fig_mmd.line(Ms, np.percentile(mmds[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+
+    fig_w1.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(w1s[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)             
+    fig_ll.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(ll_max - lls[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    fig_kl.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(kls[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    if anm == 'FW' or anm == 'GIGA':
+      fig_F.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(Fs[aidx, :, :], 50, axis=0)/np.percentile(Fs[2, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    fig_md.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(mds[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    fig_vd.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(vds[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    fig_csz.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(csizes[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    fig_cput.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(cputs[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    fig_mmd.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(mmds[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    
+rndlbl = bkm.Label(x=30, y=1.0, y_offset=-50, text='Uniform Subsampling', text_font_size='30pt')
+rndspan = bkm.Span(location = 1.0, dimension='width', line_width=8, line_color='black', line_dash='40 40')
+fig_F.add_layout(rndspan)
+fig_F.add_layout(rndlbl)
   
-for f in [fig_ll, fig_w1, fig_kl]:
+for f in [fig_ll, fig_w1, fig_kl, fig_F, fig_md, fig_vd, fig_csz, fig_cput, fig_mmd]:
   f.legend.label_text_font_size= legend_font_size
   f.legend.glyph_width=40
-  f.legend.glyph_height=40
+  f.legend.glyph_height=80
   f.legend.spacing=20
+  f.legend.orientation='horizontal'
 
-bkp.show(bkl.gridplot([[fig_ll, fig_w1, fig_kl]]))
+bkp.show(bkl.gridplot([[fig_ll, fig_w1, fig_kl, fig_F, fig_md, fig_vd, fig_csz, fig_cput, fig_mmd]]))
 
 

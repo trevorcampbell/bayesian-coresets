@@ -2,6 +2,12 @@ import numpy as np
 from lap import lapjv
 
 
+def cubic_mmd(sample1, sample2):
+ K11 = (1. + sample1.dot(sample1.T))**3
+ K22 = (1. + sample2.dot(sample2.T))**3
+ K12 = (1. + sample1.dot(sample2.T))**3
+ return np.mean(K11) + np.mean(K22) - 2 * np.mean(K12)
+
 #approximates sample1 with mu0, Sig0, sample2 with mu1, Sig1 and returns KL(N_0 || N_1) 
 def gaussian_KL(sample1, sample2):
   mu0 = sample1.mean(axis=0)
