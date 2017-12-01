@@ -2,7 +2,7 @@ import numpy as np
 import hilbertcoresets as hc
 import time
 
-n_trials = 10
+n_trials = 20
 Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 anms = ['GIGA', 'FW', 'RND']
 
@@ -13,9 +13,9 @@ N = 1000000
 D = 50
 
 
+
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
-nfunc = np.zeros((len(anms), n_trials, Ms.shape[0]))
-nnode = np.zeros((len(anms), n_trials, Ms.shape[0]))
+csize = np.zeros((len(anms), n_trials, Ms.shape[0]))
 cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   X = np.random.randn(N, D)
@@ -37,10 +37,9 @@ for tr in range(n_trials):
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts = alg.weights()
       err[aidx, tr, m] = np.sqrt((((wts[:, np.newaxis]*X).sum(axis=0) - XS)**2).sum())
-      nfunc[aidx, tr, m] = alg.get_num_ops()
-      nnode[aidx, tr, m] = alg.get_num_nodes()
+      csize[aidx, tr, m] = (wts > 0).sum()
 
-np.savez_compressed('gauss_results.npz', err=err, nfunc=nfunc, cput=cput, nnode=nnode, Ms = Ms, anms=anms)
+np.savez_compressed('gauss_results.npz', err=err, csize=csize, cput=cput, Ms = Ms, anms=anms)
 
 ##########################################
 ## Test 2: axis-aligned data
@@ -52,8 +51,7 @@ X = np.eye(N)
 XS = np.ones(N)
 
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
-nfunc = np.zeros((len(anms), n_trials, Ms.shape[0]))
-nnode = np.zeros((len(anms), n_trials, Ms.shape[0]))
+csize = np.zeros((len(anms), n_trials, Ms.shape[0]))
 cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   for aidx, anm in enumerate(anms):
@@ -73,8 +71,7 @@ for tr in range(n_trials):
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts = alg.weights()
       err[aidx, tr, m] = np.sqrt((((wts[:, np.newaxis]*X).sum(axis=0) - XS)**2).sum())
-      nfunc[aidx, tr, m] = alg.get_num_ops()
-      nnode[aidx, tr, m] = alg.get_num_nodes()
+      csize[aidx, tr, m] = (wts>0).sum()
 
-np.savez_compressed('axis_results.npz', err=err, nfunc=nfunc, cput=cput, nnode=nnode, Ms = Ms, anms=anms)
+np.savez_compressed('axis_results.npz', err=err, csize=csize, cput=cput, Ms = Ms, anms=anms)
 
