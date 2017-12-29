@@ -48,11 +48,11 @@ return ret;
 """)
 
 
-dnames = ['synth', 'ds1', 'phishing']
-fldr = 'lr'
+#dnames = ['synth', 'ds1', 'phishing']
+#fldr = 'lr'
 
-#dnames = ['synth', 'biketrips', 'airportdelays']
-#fldr = 'poiss'
+dnames = ['synth', 'biketrips', 'airportdelays']
+fldr = 'poiss'
 
 
 fig_ll = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Negative Test Log-Likelihood', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
