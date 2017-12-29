@@ -89,7 +89,7 @@ Ms = aa['Ms']
 err = aa['err']
 cput = aa['cput']
 csize = aa['csize']
-pal = bokeh.palettes.colorblind['Colorblind'][len(anms)]
+#pal = bokeh.palettes.colorblind['Colorblind'][len(anms)]
 for aidx, anm in enumerate(anms):
   fig_err_a.line(Ms, np.percentile(err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm)
   fig_csz_a.line(Ms, np.percentile(csize[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm)

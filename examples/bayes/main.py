@@ -5,19 +5,18 @@ from scipy.optimize import minimize
 import time
 
 
-### FOR LOGISTIC REGRESSION
-#from model_lr import *
-#dnames = ['phishing']
-##dnames = ['synth', 'ds1', 'phishing']
-#fldr = 'lr'
+## FOR LOGISTIC REGRESSION
+from model_lr import *
+dnames = ['synth', 'ds1', 'phishing']
+fldr = 'lr'
 
-# FOR POISSON REGRESSION
-from model_poiss import *
+## FOR POISSON REGRESSION
+#from model_poiss import *
 #dnames = ['synth', 'airportdelays', 'biketrips']
-dnames = ['airportdelays']
-fldr = 'poiss'
+##dnames = ['airportdelays']
+#fldr = 'poiss'
 
-mh_steps = 20000 #total number of MH steps
+mh_steps = 100000 #total number of MH steps
 mh_thin = 5 #thinning factor
 mh_target = 0.234 #target acceptance rate
 mh_step_var_init = 0.1 #initial step variance
@@ -25,7 +24,7 @@ n_samples = mh_steps / 2 / mh_thin #number of output samples (burn of 1/2)
 projection_dim = 500 #random projection dimension
 Ms = np.unique(np.logspace(0, 3, 10, dtype=int))
 anms = ['GIGA', 'FW', 'RND']
-n_trials = 50
+n_trials = 20
 
 
 for dnm in dnames:
