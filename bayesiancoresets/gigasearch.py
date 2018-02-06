@@ -3,6 +3,8 @@ import ctypes
 import pkgutil
 import os
 
+##this code is for tree search; not used for now
+
 class GIGASearch(object):
   def __init__(self, data):
     self.data = data
@@ -17,7 +19,7 @@ class GIGASearch(object):
     #spawns a thread to build a new tree and returns immediately
     self.libct.GIGASearch_new.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.c_uint, ctypes.c_uint]
     self.libct.GIGASearch_new.restype = ctypes.c_void_p
-    #spawns a thread to build a new tree and returns immediately
+    #spawns a thread to delete the tree and returns immediately
     self.libct.GIGASearch_del.argtypes = [ctypes.c_void_p]
     self.libct.GIGASearch_del.restype = None
     #check whether the tree is done building

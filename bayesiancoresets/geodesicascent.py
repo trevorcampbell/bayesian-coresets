@@ -36,9 +36,6 @@ class GIGA(object):
 
 
   #update_method can be 'fast' or 'accurate'
-  #search_method can be 'exact', 'approximate'
-  #if search_method is 'approximate', max_approx_search_evals should be set to some number << N
-  #increasing the number improves the search but is more expensive
   def run(self, M, update_method='fast'):
     #if M is not greater than self.M, just return 
     if M <= self.M:
@@ -127,6 +124,7 @@ class GIGA(object):
     self.f_search += self.y.shape[0]
     return self.libgs.search(self.y.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), self.yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), cdir.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), self.y.shape[0], self.y.shape[1])
   
+  #old tree search code; not used for now
   #def search_linear(self):
   #  cdir = self.ys - self.ys.dot(self.yw)*self.yw
   #  cdirnrm =np.sqrt((cdir**2).sum()) 
