@@ -1,42 +1,4 @@
 import numpy as np
-from lap import lapjv
-
-
-def cubic_mmd(sample1, sample2):
- K11 = (1. + sample1.dot(sample1.T))**3
- K22 = (1. + sample2.dot(sample2.T))**3
- K12 = (1. + sample1.dot(sample2.T))**3
- return np.mean(K11) + np.mean(K22) - 2 * np.mean(K12)
-
-#approximates sample1 with mu0, Sig0, sample2 with mu1, Sig1 and returns KL(N_0 || N_1) 
-def gaussian_KL(sample1, sample2):
-  mu0 = sample1.mean(axis=0)
-  Sig0 = np.cov(sample1.T)
-  mu1 = sample2.mean(axis=0)
-  Sig1 = np.cov(sample2.T)
-  t1 = np.linalg.inv(Sig1).dot(Sig0).trace()
-  t2 = (mu1-mu0).dot(np.linalg.inv(Sig1).dot(mu1-mu0))
-  t3 = np.linalg.slogdet(Sig1)[1] - np.linalg.slogdet(Sig0)[1]
-  return 0.5*(t1+t2+t3-mu0.shape[0])
-
-def wasserstein1(sample1, sample2):
-  #reshape samples to be of the same size 
-  if sample1.shape[0] > sample2.shape[0]:
-    z1 = sample1[np.random.randint(sample1.shape[0], size=sample2.shape[0]), :]
-    z2 = sample2
-  elif sample1.shape[0] < sample2.shape[0]:
-    z1 = sample1
-    z2 = sample2[np.random.randint(sample2.shape[0], size=sample1.shape[0]), :]
-  else:
-    z1 = sample1
-    z2 = sample2
-
-  nrmsq1 = (z1**2).sum(axis=1)
-  nrmsq2 = (z2**2).sum(axis=1)
-  c = np.sqrt(nrmsq1[:, np.newaxis] + nrmsq2 - 2.*(z1.dot(z2.T)))
-  cst, col_ind, row_ind = lapjv(np.floor(c/c.max()*1000000.).astype(int))
-  return c[row_ind, range(c.shape[0])].sum()/z1.shape[0]
-
 ## The below code is by Jonathan Huggins
 ## https://bitbucket.org/jhhuggins/lrcoresets
 

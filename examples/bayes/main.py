@@ -1,5 +1,5 @@
 import numpy as np
-from inference import mh, wasserstein1, gaussian_KL, cubic_mmd
+from inference import mh
 import bayesiancoresets as bc
 from scipy.optimize import minimize
 import time
