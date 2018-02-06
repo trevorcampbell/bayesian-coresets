@@ -1,5 +1,4 @@
 import numpy as np
-import hilbertcoresets as hc
 import bokeh.plotting as bkp
 import bokeh.io as bki
 import bokeh.layouts as bkl
