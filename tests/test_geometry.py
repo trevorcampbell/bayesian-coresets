@@ -1,5 +1,5 @@
 import numpy as np
-from hilbertcoresets.geometry import *
+from bayesiancoresets.geometry import *
 
 
 np.random.seed(1)

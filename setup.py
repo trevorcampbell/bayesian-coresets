@@ -6,22 +6,22 @@ import subprocess
 
 class build_so(install):
   def run(self):
-    retcode = subprocess.call(['g++', '-std=c++17', '-pthread', '-DNDEBUG', '-fwrapv', '-Ofast', '-fopenmp', '-Werror', '-Wall', '-fno-strict-aliasing', '-Wdate-time', '-D_FORTIFY_SOURCE=2', '-fstack-protector-strong', '-Wformat', '-Werror=format-security', '-fPIC', 'hilbertcoresets/gigasearch.cpp', '-shared', '-o', 'hilbertcoresets/libgigasearch.so']) 
+    retcode = subprocess.call(['g++', '-std=c++17', '-pthread', '-DNDEBUG', '-fwrapv', '-Ofast', '-fopenmp', '-Werror', '-Wall', '-fno-strict-aliasing', '-Wdate-time', '-D_FORTIFY_SOURCE=2', '-fstack-protector-strong', '-Wformat', '-Werror=format-security', '-fPIC', 'bayesiancoresets/gigasearch.cpp', '-shared', '-o', 'bayesiancoresets/libgigasearch.so']) 
     if retcode != 0:
       raise Exception('g++: Compile of gigasearch.cpp failed')
     return install.run(self)
 
 setup(
-    name = 'hilbertcoresets',
+    name = 'bayesiancoresets',
     version='0.5',
-    description="Hilbert coresets for approximate Bayesian inference",
+    description="Coresets for approximate Bayesian inference",
     author='Trevor Campbell',
     author_email='tdjc@mit.edu',
-    url='https://github.com/trevorcampbell/hilbert-coresets/',
-    packages=['hilbertcoresets'],
+    url='https://github.com/trevorcampbell/bayesian-coresets/',
+    packages=['bayesiancoresets'],
     install_requires=['numpy', 'scipy'],
     keywords = ['Bayesian', 'inference', 'coreset', 'Hilbert', 'Frank-Wolfe', 'greedy', 'geodesic'],
     platforms='ALL',
     cmdclass={'install':build_so},
-    package_data={'hilbertcoresets': ['libgigasearch.so']}
+    package_data={'bayesiancoresets': ['libgigasearch.so']}
 )

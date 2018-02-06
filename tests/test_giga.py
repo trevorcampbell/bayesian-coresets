@@ -1,4 +1,4 @@
-import hilbertcoresets as hc
+import bayesiancoresets as bc
 import numpy as np
 import warnings
 
@@ -47,7 +47,7 @@ def gendata(N, D, dist="gauss"):
 def giga_single(N, D, dist="gauss"):
   x = gendata(N, D, dist)
   xs = x.sum(axis=0)
-  giga = hc.GIGA(x)
+  giga = bc.GIGA(x)
 
   #TODO uncomment once giga bds implemented
   ##bound tests
@@ -110,13 +110,13 @@ def test_giga():
     
 def test_giga_input_validation():
   try:
-    hc.GIGA('fdas')
+    bc.GIGA('fdas')
   except ValueError:
     pass
   except:
     assert False, "Unrecognized error type"
   try:
-    hc.GIGA(np.array(['fdsa', 'asdf']))
+    bc.GIGA(np.array(['fdsa', 'asdf']))
   except ValueError:
     pass
   except:

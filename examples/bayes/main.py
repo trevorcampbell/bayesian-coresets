@@ -1,6 +1,6 @@
 import numpy as np
 from inference import mh, wasserstein1, gaussian_KL, cubic_mmd
-import hilbertcoresets as hc
+import bayesiancoresets as bc
 from scipy.optimize import minimize
 import time
 
@@ -85,7 +85,7 @@ for dnm in dnames:
 
     print 'Computing random projection'
     t0 = time.time()
-    proj = hc.ProjectionF(Z, grad_log_likelihood, projection_dim, lambda : np.random.multivariate_normal(mu, cov)) 
+    proj = bc.ProjectionF(Z, grad_log_likelihood, projection_dim, lambda : np.random.multivariate_normal(mu, cov)) 
     vecs = proj.get()
     t_projection = time.time()-t0
 
@@ -124,11 +124,11 @@ for dnm in dnames:
       t0 = time.time()
       alg = None
       if 'GIGA' in anm:
-        alg = hc.GIGA(vecs)
+        alg = bc.GIGA(vecs)
       elif anm == 'FW':
-        alg = hc.FrankWolfe(vecs)
+        alg = bc.FrankWolfe(vecs)
       else:
-        alg = hc.RandomSubsampling(vecs) 
+        alg = bc.RandomSubsampling(vecs) 
       t_setup = time.time() - t0
 
       t_alg = 0.

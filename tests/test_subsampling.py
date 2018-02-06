@@ -1,4 +1,4 @@
-import hilbertcoresets as hc
+import bayesiancoresets as bc
 import numpy as np
 import warnings
 
@@ -42,9 +42,9 @@ def is_single(N, D, dist="gauss", use_rnd=False):
   x = gendata(N, D, dist)
   xs = x.sum(axis=0)
   if use_rnd:
-    IS = hc.RandomSubsampling(x)
+    IS = bc.RandomSubsampling(x)
   else:
-    IS = hc.ImportanceSampling(x)
+    IS = bc.ImportanceSampling(x)
 
   #TODO remove if statement once randomsubsampling bound implemented
   if not use_rnd:
@@ -84,7 +84,7 @@ def test_rs():
  
 def test_is_hinv():
   x = np.random.rand(10, 3)
-  alg = hc.ImportanceSampling(x)
+  alg = bc.ImportanceSampling(x)
   y = np.random.rand(10000)*10000
   h = lambda y : (1.+y)*np.log(1.+y)-y
   for i in range(10000):
@@ -96,13 +96,13 @@ def test_is_hinv():
    
 def test_is_input_validation():
   try:
-    hc.ImportanceSampling('fdas')
+    bc.ImportanceSampling('fdas')
   except ValueError:
     pass
   except:
     assert False, "Unrecognized error type"
   try:
-    hc.ImportanceSampling(np.array(['fdsa', 'asdf']))
+    bc.ImportanceSampling(np.array(['fdsa', 'asdf']))
   except ValueError:
     pass
   except:

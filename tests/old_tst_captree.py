@@ -1,5 +1,5 @@
 import numpy as np
-from hilbertcoresets import captree as ct
+from bayesiancoresets import captree as ct
 
 np.random.seed(1)
 

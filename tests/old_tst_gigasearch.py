@@ -1,5 +1,5 @@
 import numpy as np
-from hilbertcoresets import gigasearch as gs
+from bayesiancoresets import gigasearch as gs
 
 np.random.seed(1)
 

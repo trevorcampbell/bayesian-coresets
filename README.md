@@ -1,6 +1,8 @@
-# Hilbert coresets: automated, scalable Bayesian inference
+# Bayesian Coresets: automated, scalable Bayesian inference
 
-This repository contains the main package used to run the experiments for [Hilbert coresets](http://arxiv.org/abs/1710.05053). More details will be added soon.
+This repository contains the main package used to run the experiments for [Automated, Scalable Bayesian Inference with Theoretical Guarantees](http://arxiv.org/abs/1710.05053)
+and [Bayesian Coreset Construction via Greedy Iterative Geodesic Ascent](http://arxiv.org/abs/1710.05053). 
+More details will be added soon.
 
 ### Installation and Dependencies
 

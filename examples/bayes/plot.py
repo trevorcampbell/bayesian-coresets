@@ -1,5 +1,4 @@
 import numpy as np
-import hilbertcoresets as hc
 import bokeh.plotting as bkp
 import bokeh.io as bki
 import bokeh.layouts as bkl
@@ -48,11 +47,11 @@ return ret;
 """)
 
 
-#dnames = ['synth', 'ds1', 'phishing']
-#fldr = 'lr'
+dnames = ['synth', 'ds1', 'phishing']
+fldr = 'lr'
 
-dnames = ['synth', 'biketrips', 'airportdelays']
-fldr = 'poiss'
+#dnames = ['synth', 'biketrips', 'airportdelays']
+#fldr = 'poiss'
 
 
 fig_ll = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Negative Test Log-Likelihood', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
@@ -62,12 +61,12 @@ fig_F = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Relative 
 fig_md = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='mean diff', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
 fig_vd = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='cov diff', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
 fig_csz = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Coreset Size', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
-fig_cput = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='CPU Time (s)', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
+fig_cput = bkp.figure(x_axis_type='log', y_axis_label='Relative CPU Time', x_axis_label='Coreset Size', y_range=(0, 3.7), plot_width=1250, plot_height=1250)
 fig_mmd = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='MMD', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
 
 axis_font_size='36pt'
 legend_font_size='36pt'
-for f in [fig_ll, fig_w1, fig_kl, fig_F, fig_md, fig_vd, fig_csz, fig_cput, fig_mmd]:
+for f in [fig_ll, fig_w1, fig_kl, fig_F, fig_md, fig_vd, fig_csz, fig_mmd]:
   #f.xaxis.ticker = bkm.tickers.FixedTicker(ticks=[.1, 1])
   f.xaxis.axis_label_text_font_size= axis_font_size
   f.xaxis.major_label_text_font_size= axis_font_size
@@ -78,8 +77,16 @@ for f in [fig_ll, fig_w1, fig_kl, fig_F, fig_md, fig_vd, fig_csz, fig_cput, fig_
   f.toolbar.logo = None
   f.toolbar_location = None
 
+fig_cput.xaxis.axis_label_text_font_size= axis_font_size
+fig_cput.xaxis.major_label_text_font_size= axis_font_size
+fig_cput.xaxis.formatter = logFmtr
+fig_cput.yaxis.axis_label_text_font_size= axis_font_size
+fig_cput.yaxis.major_label_text_font_size= axis_font_size
+fig_cput.toolbar.logo = None
+fig_cput.toolbar_location = None
+
 pal = bokeh.palettes.colorblind['Colorblind'][8]
-pal = [pal[0], pal[1], pal[3], pal[4], pal[5], pal[6], pal[7], pal[2]]
+pal = [pal[0], pal[1], '#d62728', pal[3], pal[4], pal[5], pal[6], pal[7], pal[2]]
 for didx, dnm in enumerate(dnames):
   
   res = np.load(fldr +'/' + dnm  + '_results.npz')
@@ -131,13 +138,20 @@ for didx, dnm in enumerate(dnames):
     fig_md.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(mds[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
     fig_vd.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(vds[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
     fig_csz.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(csizes[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
-    fig_cput.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(cputs[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
+    if anm == 'FW' or anm == 'GIGA':
+      fig_cput.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(cputs[aidx, :, :], 50, axis=0)/np.percentile(cputs[2, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
     fig_mmd.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(mmds[aidx, :, :], 50, axis=0), line_color=pal[didx], line_width=8, line_dash=ld, legend=dnm if ld == 'solid' else None)
     
 rndlbl = bkm.Label(x=30, y=1.0, y_offset=-50, text='Uniform Subsampling', text_font_size='30pt')
 rndspan = bkm.Span(location = 1.0, dimension='width', line_width=8, line_color='black', line_dash='40 40')
 fig_F.add_layout(rndspan)
 fig_F.add_layout(rndlbl)
+
+rndlblt = bkm.Label(x=2., y=1.0, y_offset=-65, text='Uniform Subsampling', text_font_size='30pt')
+rndspant = bkm.Span(location = 1.0, dimension='width', line_width=8, line_color='black', line_dash='40 40')
+fig_cput.add_layout(rndspant)
+fig_cput.add_layout(rndlblt)
+
   
 for f in [fig_ll, fig_w1, fig_kl, fig_F, fig_md, fig_vd, fig_csz, fig_cput, fig_mmd]:
   f.legend.label_text_font_size= legend_font_size

@@ -1,4 +1,4 @@
-import hilbertcoresets as hc
+import bayesiancoresets as bc
 import numpy as np
 
 
@@ -7,7 +7,7 @@ np.random.seed(1)
 
 def test_empty():
   x = np.zeros((0, 0))
-  fd = hc.FullDataset(x)
+  fd = bc.FullDataset(x)
   assert fd.error() == 0, "full wts failed: error not 0"
   assert np.all(fd.weights() == np.ones(x.shape[0])), "full wts failed: weights not ones"
   for m in [0, 1, 10]:
@@ -18,7 +18,7 @@ def test_empty():
 
 def test_one():
   x = np.zeros((1, 3))
-  fd = hc.FullDataset(x)
+  fd = bc.FullDataset(x)
   assert fd.error() == 0, "full wts failed: error not 0"
   assert np.all(fd.weights() == np.ones(x.shape[0])), "full wts failed: weights not ones"
   for m in [0, 1, 10]:
@@ -28,7 +28,7 @@ def test_one():
 
 def test_many():
   x = np.zeros((10, 3))
-  fd = hc.FullDataset(x)
+  fd = bc.FullDataset(x)
   assert fd.error() == 0, "full wts failed: error not 0"
   assert np.all(fd.weights() == np.ones(x.shape[0])), "full wts failed: weights not ones"
   for m in [0, 1, 10]:
