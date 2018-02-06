@@ -12,7 +12,7 @@ To install with pip, download the repository and run the following command in th
 
     pip install . 
     
-This package depends on `numpy`. The examples depend additionally on `scipy` and [lap](https://github.com/gatagat/lap). 
+This package depends on `numpy`. The examples depend additionally on `scipy`.
 
 ### Repository Status
 
