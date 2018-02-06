@@ -1,5 +1,5 @@
 import numpy as np
-import hilbertcoresets as hc
+import bayesiancoresets as bc
 import time
 
 n_trials = 20
@@ -24,11 +24,11 @@ for tr in range(n_trials):
     print 'data: gauss, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm
     alg = None
     if anm == 'GIGA':
-      alg = hc.GIGA(X)
+      alg = bc.GIGA(X)
     elif anm == 'FW':
-      alg = hc.FrankWolfe(X)
+      alg = bc.FrankWolfe(X)
     else:
-      alg = hc.RandomSubsampling(X) 
+      alg = bc.RandomSubsampling(X) 
 
     for m, M in enumerate(Ms):
       t0 = time.time()
@@ -58,11 +58,11 @@ for tr in range(n_trials):
     print 'data: axis, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm
     alg = None
     if anm == 'GIGA':
-      alg = hc.GIGA(X)
+      alg = bc.GIGA(X)
     elif anm == 'FW':
-      alg = hc.FrankWolfe(X)
+      alg = bc.FrankWolfe(X)
     else:
-      alg = hc.RandomSubsampling(X) 
+      alg = bc.RandomSubsampling(X) 
 
     for m, M in enumerate(Ms):
       t0 = time.time()

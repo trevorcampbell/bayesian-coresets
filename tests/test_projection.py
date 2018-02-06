@@ -1,4 +1,4 @@
-import hilbertcoresets as hc
+import bayesiancoresets as bc
 import numpy as np
 import warnings
 

@@ -77,7 +77,7 @@ err = gr['err']
 cput = gr['cput']
 csize = gr['csize']
 pal = bokeh.palettes.colorblind['Colorblind'][8]
-pal = [pal[0], pal[1], pal[3], pal[4], pal[5], pal[6], pal[7], pal[2]]
+pal = [pal[0], pal[1], '#d62728', pal[4], pal[6], pal[3], pal[7], pal[2]]
 for aidx, anm in enumerate(anms):
   fig_err_g.line(Ms, np.percentile(err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm)
   fig_csz_g.line(Ms, np.percentile(csize[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm)
@@ -91,14 +91,17 @@ cput = aa['cput']
 csize = aa['csize']
 #pal = bokeh.palettes.colorblind['Colorblind'][len(anms)]
 for aidx, anm in enumerate(anms):
-  fig_err_a.line(Ms, np.percentile(err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm)
-  fig_csz_a.line(Ms, np.percentile(csize[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm)
+  fig_err_a.line(Ms, np.percentile(err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm, line_dash=[20, 30], line_dash_offset=np.random.randint(50))
+  fig_csz_a.line(Ms, np.percentile(csize[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm, line_dash=[20, 30], line_dash_offset=np.random.randint(50))
  
 for f in [fig_err_g, fig_err_a, fig_csz_a, fig_csz_g]:
   f.legend.label_text_font_size= legend_font_size
-  f.legend.glyph_width=40
+  f.legend.glyph_width=100
   f.legend.glyph_height=40
   f.legend.spacing=20
+
+fig_err_a.legend.location = 'bottom_left'
+fig_csz_a.legend.location = 'bottom_right'
 
 bkp.show(bkl.gridplot([[fig_err_g, fig_csz_g], [fig_err_a, fig_csz_a]]))
 

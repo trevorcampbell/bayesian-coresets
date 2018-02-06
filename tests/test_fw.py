@@ -1,4 +1,4 @@
-import hilbertcoresets as hc
+import bayesiancoresets as bc
 import numpy as np
 import warnings
 
@@ -47,7 +47,7 @@ def gendata(N, D, dist="gauss"):
 def fw_single(N, D, dist="gauss"):
   x = gendata(N, D, dist)
   xs = x.sum(axis=0)
-  fw = hc.FrankWolfe(x)
+  fw = bc.FrankWolfe(x)
 
   #bound tests
   prev_sqrt_bd = np.inf
@@ -106,13 +106,13 @@ def test_fw():
     
 def test_fw_input_validation():
   try:
-    hc.FrankWolfe('fdas')
+    bc.FrankWolfe('fdas')
   except ValueError:
     pass
   except:
     assert False, "Unrecognized error type"
   try:
-    hc.FrankWolfe(np.array(['fdsa', 'asdf']))
+    bc.FrankWolfe(np.array(['fdsa', 'asdf']))
   except ValueError:
     pass
   except:
