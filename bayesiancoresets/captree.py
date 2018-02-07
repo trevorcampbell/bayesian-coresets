@@ -2,6 +2,10 @@ import numpy as np
 import heapq
 from collections import deque
 
+####
+##This code is no longer used (linear search for giga works better)
+####
+
 
 class CapTree(object):
   def __init__(self, data):

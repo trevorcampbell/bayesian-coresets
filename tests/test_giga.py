@@ -90,7 +90,7 @@ def giga_single(N, D, dist="gauss"):
   #save incremental M result
   w_inc = giga.weights()
   xw_inc = (giga.weights()[:, np.newaxis]*x).sum(axis=0) 
-  
+
   #check reset
   giga.reset()
   assert giga.M == 0 and np.all(np.fabs(giga.weights()) < tol) and np.fabs(giga.error() - np.sqrt((xs**2).sum())) < tol and not giga.reached_numeric_limit, "GIGA failed: giga.reset() did not properly reset"
