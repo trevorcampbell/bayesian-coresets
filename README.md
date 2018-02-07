@@ -13,9 +13,11 @@ This package depends on `numpy`. The examples depend additionally on `scipy`.
 
 ### Repository Status
 
-The repository is in the middle of a big API-breaking upgrade (active as of Feb 6, 2018). Some unit tests currently fail. This section will be updated as things are fixed.
-
 This package is written for Python2.7, and is untested for Python3. The package will be updated to be Python3 compatible shortly.
+
+Unit tests are written for `nose`. To run the tests, install the package, navigate to the `tests` subfolder, and run `nosetests`.
+
+Unit tests for Frank--Wolfe, GIGA, and subsampling methods all currently pass. Random projections code is not yet tested.
 
 More details about usage, output, status, etc will be updated here shortly.
 
