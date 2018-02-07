@@ -95,19 +95,23 @@ def test_is_hinv():
 ####################################################
    
 def test_is_input_validation():
+  fe1 = False
+  fe2 = False
   try:
     bc.ImportanceSampling('fdas')
   except ValueError:
+    fe1 = True
     pass
   except:
-    assert False, "Unrecognized error type"
+    assert False, "IS failed: Unrecognized error type"
   try:
     bc.ImportanceSampling(np.array(['fdsa', 'asdf']))
   except ValueError:
+    fe2 = True
     pass
   except:
-    assert False, "Unrecognized error type"
- 
-  
- 
+    assert False, "IS failed: Unrecognized error type"
 
+  if not fe1 or not fe2:
+    assert False, "IS failed: did not catch invalid input"
+  

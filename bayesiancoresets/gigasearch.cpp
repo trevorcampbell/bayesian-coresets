@@ -1,10 +1,22 @@
 #include<cmath>
+#include<iostream>
 
 extern "C"{
 int search(double* data, double *yw, double *y_yw, unsigned int N, unsigned int D){
-  double maxscore = -2;
+
+  double outermax = -2;
+  int outernopt = -1;
+
+
+
+  #pragma omp parallel // within each thread, store a maxscore and nopt; 
+  {
+
+  double maxscore = -2; //each thread gets a private copy of these
   int nopt = -1;
-  #pragma omp parallel for
+
+
+  #pragma omp for //the for loop gets parallelized across threads
   for (unsigned int n = 0; n < N; n++){
     double snum = 0., sdenom = 0.;
     for (unsigned int d = 0; d < D; d++){
@@ -14,15 +26,26 @@ int search(double* data, double *yw, double *y_yw, unsigned int N, unsigned int 
     if (sdenom > -1.+1e-14 && 1.-sdenom*sdenom > 0.){
       double score = snum/sqrt(1.-sdenom*sdenom);
       if (score > maxscore){
-        #pragma omp critical
-        {
         maxscore = score;
         nopt = n;
-        }
       }
     }
   }
-  return nopt;
+  
+  //after the loop chunk for this thread is done, update the overall global result
+  //this is only run N_threads times (once per thread)
+  #pragma omp critical 
+  {
+  if (maxscore > outermax){
+    outermax = maxscore;
+    outernopt = nopt;
+  }
+  }
+
+  }
+
+  
+  return outernopt;
 }
 }
 

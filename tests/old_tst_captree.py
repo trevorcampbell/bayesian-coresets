@@ -1,6 +1,11 @@
 import numpy as np
 from bayesiancoresets import captree as ct
 
+####
+###This test is no longer used (tree-based search is not used in the main code)
+####
+
+
 np.random.seed(1)
 
 n_trials = 10
