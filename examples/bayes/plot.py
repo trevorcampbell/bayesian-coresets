@@ -79,6 +79,7 @@ for dnames, fldr in zip(dnames_all, fldrs):
     anms = res['anms']
   
     for aidx, anm in enumerate(anms):
+      anm = anm.decode('utf-8')
       if anm == 'FW':
         ld = 'dashed'
       elif anm == 'RND':
