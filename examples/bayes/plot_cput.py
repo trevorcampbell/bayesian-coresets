@@ -78,6 +78,7 @@ for didx, dnm in enumerate(dnames):
   anms = res['anms']
 
   for aidx, anm in enumerate(anms):
+    anm = anm.decode('utf-8')
     if anm == 'FW':
       clr = pal[1]
     elif anm == 'GIGA':
