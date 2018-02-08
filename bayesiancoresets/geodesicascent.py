@@ -29,7 +29,11 @@ class GIGA(object):
 
     if not self.y.flags['C_CONTIGUOUS']:
       raise ValueError('GIGA: data must be c_contiguous')
-    hcfn = pkgutil.get_loader('bayesiancoresets').filename
+    loader = pkgutil.get_loader('bayesiancoresets')
+    if 'filename' in loader.__dict__: #python2
+      hcfn = loader.filename
+    else: #python3
+      hcfn = os.path.split(loader.path)[0]
     self.libgs = ctypes.cdll.LoadLibrary(os.path.join(hcfn, 'libgigasearch.so'))
     self.libgs.search.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_uint, ctypes.c_uint]
     self.libgs.search.restype = ctypes.c_int
