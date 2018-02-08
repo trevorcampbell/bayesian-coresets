@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import bayesiancoresets as bc
 import time
@@ -21,7 +22,7 @@ for tr in range(n_trials):
   X = np.random.randn(N, D)
   XS = X.sum(axis=0)
   for aidx, anm in enumerate(anms):
-    print 'data: gauss, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm
+    print('data: gauss, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm)
     alg = None
     if anm == 'GIGA':
       alg = bc.GIGA(X)
@@ -55,7 +56,7 @@ csize = np.zeros((len(anms), n_trials, Ms.shape[0]))
 cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   for aidx, anm in enumerate(anms):
-    print 'data: axis, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm
+    print('data: axis, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm)
     alg = None
     if anm == 'GIGA':
       alg = bc.GIGA(X)
