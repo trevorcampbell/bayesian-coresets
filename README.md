@@ -5,15 +5,12 @@ This repository contains the main package used to construct [Bayesian coresets](
 
 ### Installation and Dependencies
 
-To install with pip, download the repository and run the following command in the repository's root folder:
-
-    pip install . 
-    
-This package depends on `numpy`. The examples depend additionally on `scipy`.
+To install with pip, download the repository and run `pip install .` in the repository's root folder.
+If you are using python 3.x, run `pip3 install .` instead. Note: this package depends on `numpy`, and the examples depend additionally on `scipy`.
 
 ### Repository Status
 
-This package is written for Python2.7, and is untested for Python3. The package will be updated to be Python3 compatible shortly.
+The code for this package has been tested and is compatible with both python 2.7 and 3.5.
 
 Unit tests are written for `nose`. To run the tests, install the package, navigate to the `tests` subfolder, and run `nosetests`.
 
