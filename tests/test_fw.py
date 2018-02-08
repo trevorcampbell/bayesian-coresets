@@ -105,17 +105,24 @@ def test_fw():
 ####################################################
     
 def test_fw_input_validation():
+  fe1 = False
+  fe2 = False
   try:
     bc.FrankWolfe('fdas')
   except ValueError:
+    fe1 = True
     pass
   except:
     assert False, "Unrecognized error type"
   try:
     bc.FrankWolfe(np.array(['fdsa', 'asdf']))
   except ValueError:
+    fe2 = True
     pass
   except:
     assert False, "Unrecognized error type"
+  
+  if not fe1 or not fe2:
+    assert False, "FW failed: did not catch invalid input"
    
 
