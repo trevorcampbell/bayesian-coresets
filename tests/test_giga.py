@@ -95,9 +95,11 @@ def giga_single(N, D, dist="gauss"):
   giga.reset()
   assert giga.M == 0 and np.all(np.fabs(giga.weights()) < tol) and np.fabs(giga.error() - np.sqrt((xs**2).sum())) < tol and not giga.reached_numeric_limit, "GIGA failed: giga.reset() did not properly reset"
   #check run up to N all at once vs incremental
-  giga.run(N)
-  xw = (giga.weights()[:, np.newaxis]*x).sum(axis=0) 
-  assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, "GIGA failed: incremental run up to N doesn't produce same result as one run at N : \n xw = " + str(xw) + " error = " +str(np.sqrt(((xw-xs)**2).sum())) + " \n xw_inc = " + str(xw_inc) + " error = " +  str(np.sqrt(((xw_inc-xs)**2).sum())) + " \n xs = " +str(xs)
+  #do this test for all except bin, where symmetries can cause instabilities in the choice of vector (and then different weights if the original vector norms were different)
+  if dist != 'bin':
+    giga.run(N)
+    xw = (giga.weights()[:, np.newaxis]*x).sum(axis=0) 
+    assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, "GIGA failed: incremental run up to N doesn't produce same result as one run at N : \n xw = " + str(xw) + " error = " +str(np.sqrt(((xw-xs)**2).sum())) + " \n xw_inc = " + str(xw_inc) + " error = " +  str(np.sqrt(((xw_inc-xs)**2).sum())) + " \n xs = " +str(xs)
 
 def test_giga():
   for N, D, dist in tests:
@@ -109,16 +111,23 @@ def test_giga():
 ####################################################
     
 def test_giga_input_validation():
+  fe1 = False
+  fe2 = False
   try:
     bc.GIGA('fdas')
   except ValueError:
+    fe1 = True
     pass
   except:
     assert False, "Unrecognized error type"
   try:
     bc.GIGA(np.array(['fdsa', 'asdf']))
   except ValueError:
+    fe2 = True
     pass
   except:
     assert False, "Unrecognized error type"
+
+  if not fe1 or not fe2:
+    assert False, "GIGA failed: did not catch invalid input"
 
