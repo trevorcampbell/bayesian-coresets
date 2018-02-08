@@ -1,6 +1,6 @@
 import numpy as np
 import warnings
-from geometry import *
+from .geometry import *
 
 class ImportanceSampling(object):
   def __init__(self, _x):

@@ -1,5 +1,5 @@
 import numpy as np
-from geometry import *
+from .geometry import *
 import warnings
 
 class FrankWolfe(object):
