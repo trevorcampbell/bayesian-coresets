@@ -6,7 +6,7 @@ This repository contains the main package used to construct [Bayesian coresets](
 ### Installation and Dependencies
 
 To install with pip, download the repository and run `pip install .` in the repository's root folder.
-If you are using python 3.x, run `pip3 install .` instead. Note: this package depends on `numpy`, and the examples depend additionally on `scipy`.
+If you are using python 3.x, run `pip3 install .` instead. Note: this package depends on [NumPy](http://www.numpy.org), and the examples depend additionally on [SciPy](https://www.scipy.org) and [Bokeh](https://bokeh.pydata.org/en/latest).
 
 ### Repository Status
 
