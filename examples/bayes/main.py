@@ -98,10 +98,10 @@ for dnm in dnames:
         t0 = time.time()
         th_samples = nuts(logp=logpZ, gradlogp=glogpZ, 
                      x0 = mcmc_param_init, sample_steps=mcmc_steps, burn_steps=mcmc_burn, adapt_steps=mcmc_burn, scale=var_scales, progress_bar=pbar, step_size=step_size_init, target_accept=target_a)
-        t_alg_mh = time.time()-t0    
+        t_alg_mcmc = time.time()-t0    
 
         print('M = ' + str(Ms[m]) + ': CPU times')
-        cputs[aidx, tr, m] = t_laplace + t_projection + t_setup + t_alg + t_alg_mh
+        cputs[aidx, tr, m] = t_laplace + t_projection + t_setup + t_alg + t_alg_mcmc
         print('M = ' + str(Ms[m]) + ': coreset sizes')
         csizes[aidx, tr, m] = (wts>0).sum()
         print('M = ' + str(Ms[m]) + ': F norms')
