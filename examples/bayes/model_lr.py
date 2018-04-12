@@ -2,17 +2,17 @@ import numpy as np
 
 def load_data(dnm):
   data = np.load(dnm)
-  Z = data['y'][:, np.newaxis]*data['X']
-  Zt = data['yt'][:, np.newaxis]*data['Xt']
+  X = data['X']
+  Xt = data['Xt']
+  #standardize the covariates; last col is intercept, so no stdization there
+  m = X[:, :-1].mean(axis=0)
+  V = np.cov(X[:, :-1], rowvar=False)+1e-12*np.eye(X.shape[1]-1)
+  X[:, :-1] = np.linalg.solve(np.linalg.cholesky(V), (X[:, :-1] - m).T).T
+  Xt[:, :-1] = np.linalg.solve(np.linalg.cholesky(V), (Xt[:, :-1] - m).T).T
+  Z = data['y'][:, np.newaxis]*X
+  Zt = data['yt'][:, np.newaxis]*Xt
   data.close()
   return Z, Zt, Z.shape[1]
-
-def standardize_data(Z, Zt):
-  m = Z.mean(axis=0)
-  V = np.cov(Z, rowvar=False)+1e-12*np.eye(Z.shape[1])
-  Z[:,:] = np.linalg.solve(np.linalg.cholesky(V), (Z - m).T).T
-  Zt[:,:] = np.linalg.solve(np.linalg.cholesky(V), (Zt - m).T).T
-  return
 
 def gen_synthetic(n):
   mu = np.array([0, 0])

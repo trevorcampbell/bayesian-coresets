@@ -50,7 +50,7 @@ dnames_all  = [['synth', 'ds1', 'phishing'], ['synth', 'biketrips', 'airportdela
 fldrs = ['lr', 'poiss']
 
 dnames_all  = [['synth']]
-fldrs = ['lr']
+fldrs = ['poiss']
 
 
 figs = []
