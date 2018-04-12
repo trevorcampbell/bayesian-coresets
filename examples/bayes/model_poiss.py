@@ -8,6 +8,13 @@ def load_data(dnm):
   data.close()
   return Z, Zt, Z.shape[1]-1
 
+def standardize_data(Z, Zt):
+  m = Z[:, :-1].mean(axis=0)
+  V = np.cov(Z[:, :-1], rowvar=False) + 1e-12*np.eye(Z.shape[1]-1)
+  Z[:, :-1] = np.linalg.solve(np.linalg.cholesky(V), (Z[:, :-1] - m).T).T
+  Zt[:, :-1] = np.linalg.solve(np.linalg.cholesky(V), (Zt[:, :-1] - m).T).T
+  return
+
 def gen_synthetic(n):
   X = np.random.randn(n)
   X = np.hstack((X[:, np.newaxis], np.ones(X.shape[0])[:, np.newaxis]))
@@ -45,6 +52,9 @@ def grad_log_likelihood(Z, th):
 
 def grad_log_prior(th):
   return -th
+
+def grad_log_joint(z, th, wts):
+  return grad_log_prior(th) + (wts[:, np.newaxis]*grad_log_likelihood(z, th)).sum(axis=0)
 
 def hess_log_joint(Z, th):
   x = Z[:, :-1]
