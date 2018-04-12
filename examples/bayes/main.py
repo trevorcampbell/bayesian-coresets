@@ -30,8 +30,6 @@ anms = ['GIGA', 'FW', 'RND']
 for dnm in dnames:
   print('Loading dataset '+dnm)
   Z, Zt, D = load_data(fldr+'/'+dnm+'.npz')
-  standardize_data(Z, Zt)
-  var_scales = np.diag(np.cov(Z, rowvar=False))
 
   print('Computing Laplace approximation')
   t0 = time.time()
@@ -39,6 +37,7 @@ for dnm in dnames:
   mu = res.x
   cov = -np.linalg.inv(hess_log_joint(Z, mu))
   t_laplace = time.time() - t0
+  var_scales = np.diag(cov)
 
   cputs = np.zeros((len(anms), n_trials, Ms.shape[0]))
   csizes = np.zeros((len(anms), n_trials, Ms.shape[0]))
