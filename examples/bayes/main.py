@@ -21,7 +21,7 @@ mcmc_steps = 5000 #total number of MH steps
 mcmc_burn = 1000
 projection_dim = 500 #random projection dimension
 Ms = np.unique(np.logspace(0, 3, 10, dtype=int))
-pbar = True #don't show progress bar when running NUTS
+pbar = True #NUTS progress bar display flag
 step_size_init = 0.01
 target_a = 0.65
 anms = ['GIGA', 'FW', 'RND']
