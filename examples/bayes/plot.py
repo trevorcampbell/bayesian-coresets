@@ -49,6 +49,10 @@ return ret;
 dnames_all  = [['synth', 'ds1', 'phishing'], ['synth', 'biketrips', 'airportdelays']]
 fldrs = ['lr', 'poiss']
 
+dnames_all  = [['synth']]
+fldrs = ['lr']
+
+
 figs = []
 for dnames, fldr in zip(dnames_all, fldrs):
   fig_F = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Relative Fisher Information Distance', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
