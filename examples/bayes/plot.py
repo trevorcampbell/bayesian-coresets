@@ -46,11 +46,13 @@ for (i = power_digits.length-1; i >= 0; i--){
 return ret;
 """)
 
+dnames_all  = [['synth', 'ds1' ], ['biketrips', 'airportdelays']]
+fldrs = ['lr', 'poiss']
 dnames_all  = [['synth', 'ds1', 'phishing'], ['synth', 'biketrips', 'airportdelays']]
 fldrs = ['lr', 'poiss']
 
-dnames_all  = [['synth']]
-fldrs = ['poiss']
+
+
 
 
 figs = []
