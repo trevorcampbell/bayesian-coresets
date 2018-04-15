@@ -48,9 +48,10 @@ return ret;
 
 
 
-#dnames = ['poiss/synth', 'poiss/biketrips', 'poiss/airportdelays', 'lr/synth', 'lr/ds1', 'lr/phishing']
-dnames = ['poiss/synth']
-fig_csz = bkp.figure(y_axis_type='log', y_axis_label='Normalized Fisher Information Distance', x_axis_type='log', x_axis_label='Coreset Size', x_range=(.05, 1.1), plot_width=1250, plot_height=1250)
+dnames = ['poiss/biketrips', 'poiss/airportdelays', 'lr/synth', 'lr/ds1']
+dnames = ['poiss/synth', 'poiss/biketrips', 'poiss/airportdelays', 'lr/synth', 'lr/ds1', 'lr/phishing']
+
+fig_csz = bkp.figure(y_axis_type='log', y_axis_label='Normalized Fisher Information Distance', x_axis_type='log', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
 
 axis_font_size='36pt'
 legend_font_size='36pt'

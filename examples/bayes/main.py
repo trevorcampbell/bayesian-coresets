@@ -2,7 +2,7 @@ from __future__ import print_function
 import numpy as np
 import bayesiancoresets as bc
 from scipy.optimize import minimize
-from nuts import nuts, rhat
+from inference import nuts, rhat, hmc
 import time
 
 
@@ -16,16 +16,17 @@ fldr = 'lr'
 #dnames = ['synth', 'airportdelays', 'biketrips']
 #fldr = 'poiss'
 
-n_trials = 50
+n_trials = 20
 mcmc_steps = 5000 #total number of MH steps
 mcmc_burn = 1000
 projection_dim = 500 #random projection dimension
 Ms = np.unique(np.logspace(0, 3, 10, dtype=int))
-pbar = True #NUTS progress bar display flag
-step_size_init = 0.01
-target_a = 0.65
+pbar = True #progress bar display flag
+step_size_init = 0.001
+n_leap = 15
+target_a = 0.8
 anms = ['GIGA', 'FW', 'RND']
-
+sampler = hmc #nuts
 
 for dnm in dnames:
   print('Loading dataset '+dnm)
@@ -37,7 +38,7 @@ for dnm in dnames:
   mu = res.x
   cov = -np.linalg.inv(hess_log_joint(Z, mu))
   t_laplace = time.time() - t0
-  var_scales = np.diag(cov)
+  var_scales=np.ones(cov.shape[0])
 
   cputs = np.zeros((len(anms), n_trials, Ms.shape[0]))
   csizes = np.zeros((len(anms), n_trials, Ms.shape[0]))
@@ -55,18 +56,19 @@ for dnm in dnames:
     vecs = proj.get()
     t_projection = time.time()-t0
 
-    print('Running NUTS on the full dataset')
+    print('Running MCMC on the full dataset')
     logpZ = lambda th : log_joint(Z, th, np.ones(Z.shape[0]))
     glogpZ = lambda th : grad_log_joint(Z, th, np.ones(Z.shape[0]))
     mcmc_param_init = np.random.multivariate_normal(mu, cov)
     t0 = time.time()
-    full_samples = nuts(logp = logpZ, gradlogp = glogpZ, 
-                     x0 = mcmc_param_init, sample_steps=mcmc_steps, burn_steps=mcmc_burn, adapt_steps=mcmc_burn, scale=var_scales, progress_bar=pbar, step_size=step_size_init, target_accept=target_a) 
+    full_samples = sampler(logp = logpZ, gradlogp = glogpZ, 
+                     x0 = mcmc_param_init, sample_steps=mcmc_steps, burn_steps=mcmc_burn, adapt_steps=mcmc_burn, 
+                     n_leapfrogs = n_leap, scale=var_scales, progress_bar=pbar, step_size=step_size_init, target_accept=target_a) 
     cputs_full[tr] = time.time()-t0
     Fs_full[tr] = 0. #always 0, just doing this to make later code simpler
     chains[tr, :, :] = full_samples
-    
-    print('Running coreset construction / NUTS')
+
+    print('Running coreset construction / MCMC')
     for aidx, anm in enumerate(anms):
       print(anm +':')
 
@@ -93,10 +95,11 @@ for dnm in dnames:
         logpZ = lambda th : log_joint(Z[idcs, :], th, wts[idcs])
         glogpZ = lambda th : grad_log_joint(Z[idcs, :], th, wts[idcs])
         mcmc_param_init = np.random.multivariate_normal(mu, cov)
-        print('M = ' + str(Ms[m]) + ': NUTS')
+        print('M = ' + str(Ms[m]) + ': MCMC')
         t0 = time.time()
-        th_samples = nuts(logp=logpZ, gradlogp=glogpZ, 
-                     x0 = mcmc_param_init, sample_steps=mcmc_steps, burn_steps=mcmc_burn, adapt_steps=mcmc_burn, scale=var_scales, progress_bar=pbar, step_size=step_size_init, target_accept=target_a)
+        th_samples = sampler(logp=logpZ, gradlogp=glogpZ, 
+                     x0 = mcmc_param_init, sample_steps=mcmc_steps, burn_steps=mcmc_burn, adapt_steps=mcmc_burn, 
+                     n_leapfrogs= n_leap, scale=var_scales, progress_bar=pbar, step_size=step_size_init, target_accept=target_a)
         t_alg_mcmc = time.time()-t0    
 
         print('M = ' + str(Ms[m]) + ': CPU times')
@@ -107,5 +110,5 @@ for dnm in dnames:
         gcs = np.array([ grad_log_joint(Z[idcs, :], full_samples[i, :], wts[idcs]) for i in range(full_samples.shape[0]) ])
         gfs = np.array([ grad_log_joint(Z, full_samples[i, :], np.ones(Z.shape[0])) for i in range(full_samples.shape[0]) ])
         Fs[aidx, tr, m] = (((gcs - gfs)**2).sum(axis=1)).mean()
-  print(rhat(chains))
+  #print(rhat(chains))
   np.savez_compressed(fldr+'/'+dnm+'_results.npz', Ms=Ms, Fs=Fs, Fs_full=Fs_full, cputs=cputs, cputs_full=cputs_full, csizes=csizes, anms=anms)

@@ -23,25 +23,47 @@ def gen_synthetic(n):
   y =(np.random.rand(n) <= ps).astype(int)
   return y[:, np.newaxis]*X, (y[:, np.newaxis]*X).mean(axis=0)
 
-def log_joint(z, th, wts):
-  return (wts*(-np.log1p(np.exp(-(z*th).sum(axis=1))))).sum() -(th**2).sum()/2.
+def log_joint(Z, th, wts):
+  return (wts*log_likelihood(Z, th)).sum() + log_prior(th)
 
 def log_likelihood(z, th):
   if len(z.shape) == 1:
-    return -np.log1p(np.exp(-(th*z).sum()))
+    m = -(th*z).sum()
+    if m < 100:
+      m = -np.log1p(np.exp(m))
+    else:
+      m = -m
+    return m 
+    #-np.log1p(np.exp(-(th*z).sum()))
   else:
-    return -np.log1p(np.exp(-(th*z).sum(axis=1)))
+    m = -(th*z).sum(axis=1)
+    idcs = m < 100
+    m[idcs] = -np.log1p(np.exp(m[idcs]))
+    m[np.logical_not(idcs)] = -m[np.logical_not(idcs)]
+    return m
+    #return -np.log1p(np.exp(-(th*z).sum(axis=1)))
 
 def log_prior(th):
   return -0.5*th.shape[0]*np.log(2.*np.pi) - 0.5*(th**2).sum()
 
 def grad_log_likelihood(z, th):
   if len(z.shape) == 1:
-    es = np.exp(-(th*z).sum())
-    return es/(1.+es)*z
+    m = -(th*z).sum()
+    if m < 100:
+      m = np.exp(m)/(1.+np.exp(m))
+    else:
+      m = 1.
+    return m*z
+    #es = np.exp(-(th*z).sum())
+    #return es/(1.+es)*z
   else:
-    es = np.exp(-(th*z).sum(axis=1))
-    return (es/(1.+es))[:, np.newaxis]*z
+    m = -(th*z).sum(axis=1)
+    idcs = m < 100
+    m[idcs] = np.exp(m[idcs])/(1.+np.exp(m[idcs]))
+    m[np.logical_not(idcs)] = 1.
+    return m[:, np.newaxis]*z
+    #es = np.exp(-(th*z).sum(axis=1))
+    #return (es/(1.+es))[:, np.newaxis]*z
 
 def grad_log_prior(th):
   return -th
@@ -50,6 +72,11 @@ def grad_log_joint(z, th, wts):
   return grad_log_prior(th) + (wts[:, np.newaxis]*grad_log_likelihood(z, th)).sum(axis=0)
 
 def hess_log_joint(z, th):
+  #m = -(th*z).sum(axis=1)
+  #idcs = m < 100
+  #m[idcs] = np.exp(m[idcs])/(1.+np.exp(m[idcs]))
+  #m[np.logical_not(idcs)] = 1.
+  #H_log_like = -(z.T).dot((m**2)[:, np.newaxis]*z)
   es = np.exp(-(th*z).sum(axis=1))
   H_log_like = -(z.T).dot((es/(1.+es)**2)[:, np.newaxis]*z)
   H_log_prior = -np.eye(th.shape[0])
