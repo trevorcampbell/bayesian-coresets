@@ -101,22 +101,23 @@ def hmc(logp, gradlogp, x0, sample_steps = 1000, adapt=True, adapt_steps=100, bu
     A = np.min(np.array([0, E_new - E]))
     if (np.log(np.random.rand()) < A):
       x[:] = y
-      if i >= adapt_steps:
+      if i >= burn_steps:
         accepted += 1.
 
     if i >= burn_steps:
       samples[i-burn_steps, :] = x
 
-    if i >= adapt_steps:
-      step_size = ebar
-    else:
-      # Adapt step size
-      w = 1./(i+1. + t0)
-      Hbar = (1 - w)*Hbar + w*(target_accept - np.exp(A))
-      log_e = mu - ((i+1.)**.5/gamma)*Hbar
-      step_size = np.exp(log_e)
-      z = (i+1.)**(-k)
-      ebar = np.exp(z*log_e + (1 - z)*np.log(ebar))
+    if adapt:
+      if i >= adapt_steps:
+        step_size = ebar
+      else:
+        # Adapt step size
+        w = 1./(i+1. + t0)
+        Hbar = (1 - w)*Hbar + w*(target_accept - np.exp(A))
+        log_e = mu - ((i+1.)**.5/gamma)*Hbar
+        step_size = np.exp(log_e)
+        z = (i+1.)**(-k)
+        ebar = np.exp(z*log_e + (1 - z)*np.log(ebar))
 
     if progress_bar and time.time() - start_time > 1:
       update_progress(i+1, sample_steps+burn_steps)
@@ -271,4 +272,5 @@ def rhat(chains):
 #  c = np.sqrt(nrmsq1[:, np.newaxis] + nrmsq2 - 2.*(z1.dot(z2.T)))
 #  cst, col_ind, row_ind = lapjv(np.floor(c/c.max()*1000000.).astype(int))
 #  return c[row_ind, range(c.shape[0])].sum()/z1.shape[0]
+
 
