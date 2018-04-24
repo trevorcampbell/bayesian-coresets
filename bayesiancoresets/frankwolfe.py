@@ -85,9 +85,6 @@ class FrankWolfe(object):
   def get_num_ops(self):
     return self.f_preproc+self.f_search + self.f_update
 
-  def get_num_nodes(self):
-    return self.n_search
-
   def reset(self):
     self.M = 0
     self.wts = np.zeros(self.N)
@@ -97,11 +94,18 @@ class FrankWolfe(object):
     self.n_search = 0.
     self.f_update = 0.
 
-  def weights(self):
+  #options are standard (just output the FW weights), scaled (apply the optimal scaling first)
+  def weights(self, method="standard"):
     #remap self.wts to the full original data size using nzidcs
     full_wts = np.zeros(self.full_N)
     full_wts[self.nzidcs] = self.wts
-    return full_wts
+    if method == "standard":
+      return full_wts
+    else:
+      norm_xs = np.sqrt((self.xs**2).sum())
+      norm_xw = np.sqrt((self.xw**2).sum())
+      dotws = (self.xw*self.xs).sum()
+      return full_wts*(norm_xs/norm_xw)*max(0., dotws/(norm_xs*norm_xw))
 
   #options are fast, accurate (either use xw or recompute xw from wts)
   def error(self, method="fast"):
