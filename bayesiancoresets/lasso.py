@@ -2,7 +2,7 @@ import numpy as np
 from .geometry import *
 import warnings
 
-class FrankWolfe(object):
+class Lasso(object):
   def __init__(self, _x):
     x = np.asarray(_x)
     if len(x.shape) != 2 or not np.issubdtype(x.dtype, np.number):
@@ -12,22 +12,22 @@ class FrankWolfe(object):
     self.full_N = x.shape[0]
     self.x = x[self.nzidcs, :]
 
-    self.norms = nrms[self.nzidcs]
-    self.sig = self.norms.sum()
+    self.norm_sqs = nrms[self.nzidcs]**2
     self.xs = self.x.sum(axis=0)
     self.N = self.x.shape[0]
-    self.normratio = None
-    self.diam = None
-    self.nu = None
     self.f_preproc = x.shape[0] + 2*self.x.shape[0] 
     self.f_search = 0.
     self.n_search = 0.
     self.f_update = 0.
     self.reached_numeric_limit = False
+    self.cached_lambdas = np.zeros((2, 2))
+    self.cached_lambdas[0, 0] = (self.x.dot(self.xs)).max() #max lambda necessary; guarantees M = 0
+    self.cached_lambdas[0, 1] = np.inf
+    self.cached_Ms = np.zeros(2, dtype=np.int64)
+    self.cached_Ms[1] = np.inf
     self.reset()
 
-  #options are fast, accurate (fast tracks xw and wts separately, accurate updates xw from wts at each iter)
-  def run(self, M, update_method='fast'):
+  def run(self, M, tol=1e-9):
     #if M is not greater than self.M, just return 
     if M <= self.M:
       raise ValueError('FrankWolfe.run(): M must be increasing. self.M = '+str(self.M) + ' M = '+str(M))
@@ -35,44 +35,48 @@ class FrankWolfe(object):
       warnings.warn('FrankWolfe.run(): either data has no nonzero vectors or the numeric limit has been reached. No more iterations will be run. M = ' + str(self.M) + ', error = ' +str(self.error()))
       return
 
-    #initialize optimization
-    if self.M == 0:
-      f = self.search()
-      self.wts[f] = self.sig/self.norms[f]
-      self.xw = self.sig/self.norms[f]*self.x[f, :]
-      self.M = 1
-      self.f_update += 1.
+    # run bisection search to find lambda value that yields ||w||_0 = M
+    # ||w||_0 is a decreasing function in lambda, with ||w||_0 = 0 when lambda >= lambda_max
+    
+    #first, get cached lambda bounds / wts for M
+    Midx = np.searchsorted(self.cached_Ms, M, side='right')
+    lmb_l = self.cached_lambdas[Midx, 1]
+    lmb_r = self.cached_lambdas[Midx-1, 0]
+    
+    self.M = self.cached_Ms[Midx-1]
 
-    for m in range(self.M, M):
-      #search for FW vertex and compute line search
-      f = self.search()
-      gammanum = (self.sig/self.norms[f]*self.x[f, :] - self.xw).dot(self.xs - self.xw)
-      gammadenom = ((self.sig/self.norms[f]*self.x[f, :] - self.xw)**2).sum()
-      self.f_update += 4.
+    #bisection search
+    while self.M != M:
+      lmb = 0.5*(lmb_l + lmb_r)
+      #TODO: run cycling descent with lmb until convergence; outputs self.M and self.wts
+      #lasso cycling coordinate descent update
+      #w_j =  max( (r_j^Tx_j - lambda) / ||x_j||^2, 0)
+      #r_j = y - X_{-j}^Tw_{-j}
+      #self.M = ...
+      #self.wts = ...
       
-      #if the line search is invalid, possibly reached numeric limit
-      #try recomputing xw from scratch and rerunning search
-      if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
-        self.xw = (self.wts[:, np.newaxis]*self.x).sum(axis=0)
-        f = self.search()
-        gammanum = (self.sig/self.norms[f]*self.x[f, :] - self.xw).dot(self.xs - self.xw)
-        gammadenom = ((self.sig/self.norms[f]*self.x[f, :] - self.xw)**2).sum()
-        self.f_update += 4. + (self.wts > 0).sum()
-        #if it's still no good, we've reached the numeric limit
-        if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:  
-          self.reached_numeric_limit = True
-          break
-      #update xw, wts, M
-      gamma = gammanum/gammadenom
-      self.wts *= (1.-gamma)
-      self.wts[f] += gamma*self.sig/self.norms[f] 
-      if update_method == 'fast':
-        self.xw = (1.-gamma)*self.xw + gamma*self.sig/self.norms[f]*self.x[f, :]
-        self.f_update += 1.
+      #cache the result if we might need it in the future
+      if self.M >= M:
+        lmb_l = lmb
+        Midx = np.searchsorted(self.cached_Ms, self.M)
+        if self.cached_Ms[Midx] == self.M:
+          self.cached_lambdas[Midx, 0] = min(lmb, self.cached_lambdas[Midx, 0])
+          self.cached_lambdas[Midx, 1] = max(lmb, self.cached_lambdas[Midx, 1])
+        else:
+          np.insert(self.cached_Ms, Midx, self.M)
+          np.insert(self.cached_lambdas, Midx, np.ones(2)*lmb)
       else:
-        self.xw = (self.wts[:, np.newaxis]*self.x).sum(axis=0)
-        self.f_update += (self.wts > 0).sum()
-      self.M = m+1
+        lmb_r = lmb
+      
+    #get rid of all cached values for Ms less than self.M (since M has to always increase)
+    keep_idcs = self.cached_Ms >= self.M
+    self.cached_Ms = self.cached_Ms[keep_idcs]
+    self.cached_lambdas = self.cached_lambdas[keep_idcs, :] 
+
+    #run l-bfgs-b to get optimal weights in support
+    #TODO
+    
+    #set xw and wts
 
     return
 
@@ -85,9 +89,6 @@ class FrankWolfe(object):
   def get_num_ops(self):
     return self.f_preproc+self.f_search + self.f_update
 
-  def get_num_nodes(self):
-    return self.n_search
-
   def reset(self):
     self.M = 0
     self.wts = np.zeros(self.N)
@@ -96,6 +97,10 @@ class FrankWolfe(object):
     self.f_search = 0.
     self.n_search = 0.
     self.f_update = 0.
+    self.cached_lambdas = np.zeros((2, 2))
+    self.cached_lambdas[0, 0] = (self.x.dot(self.xs)).max() #max lambda necessary; guarantees M = 0
+    self.cached_lambdas[0, 1] = np.inf
+    self.cached_Ms = np.zeros(1, dtype=np.int64)
 
   #options are standard (just output the FW weights), scaled (apply the optimal scaling first)
   def weights(self, method="standard"):
@@ -116,52 +121,5 @@ class FrankWolfe(object):
       return np.sqrt(((self.xw - self.xs)**2).sum())
     else:
       return np.sqrt((((self.wts[:, np.newaxis]*self.x).sum(axis=0) - self.xs)**2).sum())
-
-  def exp_bound(self, M=None):
-    #if no nonzero data, always return 0 since we output wts = 0
-    if self.x.size == 0:
-      return 0.
-    #check M validity
-    M = np.floor(M) if M else self.M
-    if M <= 0:
-      raise ValueError('FrankWolfe.exp_bound(): M must be >= 1. Requested M: '+str(M))
-    #if the dimension is large, qhull may take a long time or fail
-    if self.x.shape[1] > 3:
-      warnings.warn('FrankWolfe.exp_bound(): this code uses scipy.spatial.ConvexHull (QHull) which may fail or run slowly for high dimensional data.')
-    #compute diam and normratio if we need to 
-    if not self.diam:
-      self.diam = compute_diam(self.x)
-    if not self.normratio:
-      self.normratio = compute_normratio(self.x)
-    #if the diam or normratio are 0, all points are aligned and err = 0
-    if self.diam == 0. or self.normratio == 0.:
-      return 0.
-    #compute nu if necessary
-    if not self.nu:
-      self.nu, _ = compute_nu(self.x, self.diam)
-    #if nu is 0: if M == 1, we get sig*normratio error bound; if M > 1, we get 0.
-    if self.nu == 0.:
-      return 0. if M > 1 else self.sig*self.normratio
-    lognum = np.log(self.sig) + np.log(self.normratio) + np.log(self.diam) + np.log(self.nu)
-    logdenom_a = 2*np.log(self.diam) - 2.*(M-2.)*np.log(self.nu)
-    if M > 1:
-      logdenom_b = 2*np.log(self.normratio) + np.log(M-1.)
-    else:
-      logdenom_b = -np.inf 
-    logdenom = 0.5*np.logaddexp(logdenom_a, logdenom_b)
-    return np.exp(lognum - logdenom)
-  
-  def sqrt_bound(self, M=None):
-    #if no nonzero data, error always 0 since we output wts = 0
-    if self.x.size == 0:
-      return 0.
-    #check M validity
-    M = np.floor(M) if M else self.M
-    if M <= 0:
-      raise ValueError('FrankWolfe.exp_bound(): M must be >= 1. Requested M: '+str(M))
-    #if diam not yet computed, compute it
-    if not self.diam:
-      self.diam = compute_diam(self.x)
-    return self.sig*self.diam/np.sqrt(M)
 
 
