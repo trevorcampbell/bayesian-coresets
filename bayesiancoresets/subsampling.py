@@ -41,9 +41,6 @@ class ImportanceSampling(object):
   def get_num_ops(self):
     return self.f_preproc
 
-  def get_num_nodes(self):
-    return 0.
-
   def reset(self):
     self.M = 0
     self.wts = np.zeros(self.N)

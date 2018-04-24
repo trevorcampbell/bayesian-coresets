@@ -170,9 +170,6 @@ class GIGA(object):
     nops = self.f_preproc + self.f_update + self.f_search
     return nops
  
-  def get_num_nodes(self):
-    return self.f_search
-
   def reset(self):
     self.M = 0
     self.wts = np.zeros(self.N)
