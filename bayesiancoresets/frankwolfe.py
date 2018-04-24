@@ -46,24 +46,10 @@ class FrankWolfe(object):
     for m in range(self.M, M):
       #search for FW vertex and compute line search
       f = self.search()
-      gammanum = (self.sig/self.norms[f]*self.x[f, :] - self.xw).dot(self.xs - self.xw)
-      gammadenom = ((self.sig/self.norms[f]*self.x[f, :] - self.xw)**2).sum()
-      self.f_update += 4.
-      
-      #if the line search is invalid, possibly reached numeric limit
-      #try recomputing xw from scratch and rerunning search
-      if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
-        self.xw = (self.wts[:, np.newaxis]*self.x).sum(axis=0)
-        f = self.search()
-        gammanum = (self.sig/self.norms[f]*self.x[f, :] - self.xw).dot(self.xs - self.xw)
-        gammadenom = ((self.sig/self.norms[f]*self.x[f, :] - self.xw)**2).sum()
-        self.f_update += 4. + (self.wts > 0).sum()
-        #if it's still no good, we've reached the numeric limit
-        if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:  
-          self.reached_numeric_limit = True
-          break
-      #update xw, wts, M
-      gamma = gammanum/gammadenom
+      gamma = self.step_size(f)
+      if gamma < 0:
+        break
+
       self.wts *= (1.-gamma)
       self.wts[f] += gamma*self.sig/self.norms[f] 
       if update_method == 'fast':
@@ -75,6 +61,30 @@ class FrankWolfe(object):
       self.M = m+1
 
     return
+
+  def step_coeffs(self, f):
+    gammanum = (self.sig/self.norms[f]*self.x[f, :] - self.xw).dot(self.xs - self.xw)
+    gammadenom = ((self.sig/self.norms[f]*self.x[f, :] - self.xw)**2).sum()
+    self.f_update += 4.
+    return gammanum, gammadenom
+
+  def step_size(self, f):
+    gammanum, gammadenom = self.step_coeffs(f) 
+    
+    #if the line search is invalid, possibly reached numeric limit
+    #try recomputing xw from scratch and rerunning search
+    if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
+      self.xw = (self.wts[:, np.newaxis]*self.x).sum(axis=0)
+      self.f_update += (self.wts > 0).sum()
+ 
+      f = self.search()
+      gammanum, gammadenom = self.step_coeffs(f) 
+      #if it's still no good, we've reached the numeric limit
+      if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:  
+        self.reached_numeric_limit = True
+        return -1
+
+    return gammanum/gammadenom
 
   def search(self):
     scores = ((self.xs - self.xw)*self.x).sum(axis=1)/self.norms

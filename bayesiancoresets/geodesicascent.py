@@ -63,44 +63,11 @@ class GIGA(object):
       self.f_update += 1
       return
       
-    #this is commented out since initialization step is exactly the same as the main iteration if y(w) = 0
-    #this is true for both tree and linear search
-    #if self.M == 0:
-    #  scores = self.y.dot(self.ys)
-    #  f = scores.argmax()
-    #  self.wts[f] = 1.
-    #  self.yw = self.y[f, :]
-    #  self.M = 1
-
     for m in range(self.M, M):
       f = self.search()
-      gA = -1.
-      gB = -1.
-      if f >= 0:
-        gA = self.ys.dot(self.y[f,:]) - self.ys.dot(self.yw) * self.yw.dot(self.y[f,:])
-        gB = self.ys.dot(self.yw) - self.ys.dot(self.y[f,:]) * self.yw.dot(self.y[f,:])
-        self.f_update += 3
-   
-      #if the direction and/or line search failed
-      if gA <= 0. or gB < 0:
-        #try recomputing yw from scratch and rerunning search
-        self.yw = (self.wts[:, np.newaxis]*self.y).sum(axis=0)
-        nrm = np.sqrt((self.yw**2).sum())
-        self.yw /= nrm
-        self.wts /= nrm
-        self.f_update += (self.wts > 0).sum() + 3
-
-        f = self.search()
-        if f >= 0:
-          gA = self.ys.dot(self.y[f,:]) - self.ys.dot(self.yw) * self.yw.dot(self.y[f,:])
-          gB = self.ys.dot(self.yw) - self.ys.dot(self.y[f,:]) * self.yw.dot(self.y[f,:])
-          self.f_update += 3
-        #if it still didn't work, we've reached the numeric limit
-        if gA <= 0. or gB < 0:
-          self.reached_numeric_limit = True
-          break
-      #direction+line search worked, update weights + yw
-      gamma = gA/(gA+gB)
+      gamma = self.step_size(f)
+      if gamma < 0:
+        break
       self.wts *= (1.-gamma)
       self.wts[f] += gamma
 
@@ -111,13 +78,45 @@ class GIGA(object):
         self.yw = (self.wts[:, np.newaxis]*self.y).sum(axis=0)
         self.f_update += (self.wts > 0).sum()
 
-      nrm = np.sqrt((self.yw**2).sum())
-      self.yw /= nrm
-      self.wts /= nrm
-      self.f_update += 3
+      self.renormalize_yw()
       self.M = m+1
 
     return
+
+  def renormalize_yw(self):
+    nrm = np.sqrt((self.yw**2).sum())
+    self.yw /= nrm
+    self.wts /= nrm
+    self.f_update += 3
+  
+  def step_coeffs(self, f):
+    gA = self.ys.dot(self.y[f,:]) - self.ys.dot(self.yw) * self.yw.dot(self.y[f,:])
+    gB = self.ys.dot(self.yw) - self.ys.dot(self.y[f,:]) * self.yw.dot(self.y[f,:])
+    self.f_update += 3
+    return gA, gB
+
+  def step_size(self, f):
+    gA = -1.
+    gB = -1.
+    if f >= 0:
+      gA, gB = self.step_coeffs(f)
+
+    #if the direction and/or line search failed
+    if gA <= 0. or gB < 0:
+      #try recomputing yw from scratch and rerunning search
+      self.yw = (self.wts[:, np.newaxis]*self.y).sum(axis=0)
+      self.f_update += (self.wts > 0).sum()
+      self.renormalize_yw()
+
+      f = self.search()
+      if f >= 0:
+        gA, gB = self.step_coeffs(f)
+      #if it still didn't work, we've reached the numeric limit
+      if gA <= 0. or gB < 0:
+        self.reached_numeric_limit = True
+        return -1
+
+    return gA/(gA+gB)
 
   def search(self):
     cdir = self.ys - self.ys.dot(self.yw)*self.yw
@@ -126,7 +125,10 @@ class GIGA(object):
       return -1
     cdir /= cdirnrm
     self.f_search += self.y.shape[0]
-    return self.libgs.search(self.y.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), self.yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), cdir.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), self.y.shape[0], self.y.shape[1])
+    return self.libgs.search(self.y.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+                             self.yw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+                             cdir.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+                             self.y.shape[0], self.y.shape[1])
   
   #old tree search code; not used for now
   #def search_linear(self):
