@@ -1,5 +1,6 @@
 import numpy as np
 from .geometry import *
+from scipy.optimize import minimize
 import warnings
 
 class OrthoPursuit(object):
@@ -13,19 +14,17 @@ class OrthoPursuit(object):
     self.x = x[self.nzidcs, :]
 
     self.norms = nrms[self.nzidcs]
-    self.sig = self.norms.sum()
     self.xs = self.x.sum(axis=0)
     self.N = self.x.shape[0]
-    self.normratio = None
-    self.diam = None
-    self.nu = None
     self.f_preproc = x.shape[0] + 2*self.x.shape[0] 
     self.f_search = 0.
     self.n_search = 0.
     self.f_update = 0.
     self.reached_numeric_limit = False
+    self.prev_cost = np.sqrt((self.xs**2).sum())
     self.reset()
 
+  #options are fast, accurate (fast tracks xw and wts separately, accurate updates xw from wts at each iter)
   def run(self, M):
     #if M is not greater than self.M, just return 
     if M <= self.M:
@@ -34,43 +33,36 @@ class OrthoPursuit(object):
       warnings.warn('OrthoPursuit.run(): either data has no nonzero vectors or the numeric limit has been reached. No more iterations will be run. M = ' + str(self.M) + ', error = ' +str(self.error()))
       return
 
-    #initialize optimization
-    if self.M == 0:
-      f = self.search()
-      self.wts[f] = self.sig/self.norms[f]
-      self.xw = self.sig/self.norms[f]*self.x[f, :]
-      self.M = 1
-      self.f_update += 1.
-
     for m in range(self.M, M):
       #search for FW vertex and compute line search
       f = self.search()
-      gammanum = (self.sig/self.norms[f]*self.x[f, :] - self.xw).dot(self.xs - self.xw)
-      gammadenom = ((self.sig/self.norms[f]*self.x[f, :] - self.xw)**2).sum()
-      self.f_update += 4.
-      
-      #if the line search is invalid, possibly reached numeric limit
-      #try recomputing xw from scratch and rerunning search
-      if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
-        self.xw = (self.wts[:, np.newaxis]*self.x).sum(axis=0)
-        f = self.search()
-        gammanum = (self.sig/self.norms[f]*self.x[f, :] - self.xw).dot(self.xs - self.xw)
-        gammadenom = ((self.sig/self.norms[f]*self.x[f, :] - self.xw)**2).sum()
-        self.f_update += 4. + (self.wts > 0).sum()
-        #if it's still no good, we've reached the numeric limit
-        if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:  
-          self.reached_numeric_limit = True
-          break
-      #update xw, wts, M
-      gamma = gammanum/gammadenom
-      self.wts *= (1.-gamma)
-      self.wts[f] += gamma*self.sig/self.norms[f] 
-      if update_method == 'fast':
-        self.xw = (1.-gamma)*self.xw + gamma*self.sig/self.norms[f]*self.x[f, :]
-        self.f_update += 1.
-      else:
-        self.xw = (self.wts[:, np.newaxis]*self.x).sum(axis=0)
-        self.f_update += (self.wts > 0).sum()
+
+      #check to make sure value to add is not in the current set (error should be ortho to current subspace)
+      if self.wts[f] > 0:
+        warnings.warn('OrthoPursuit.run(): search selected a nonzero weight to update')
+
+      #run L-BFGS-B for optimal weight update
+      self.wts[f] = 1e-6
+      X = self.x[self.wts > 0, :]
+      w0 = self.wts[self.wts > 0]
+      res = minimize(fun = lambda w : ((self.xs - w.dot(X))**2).sum(), 
+               x0 = w0, method='L-BFGS-B', 
+               jac = lambda w : (w.dot(X)).dot(X.T) - 2*self.xs.dot(X.T), 
+               bounds = [(0., None)]*w0.shape[0],
+               options ={'ftol': 1e-12, 'gtol': 1e-9})
+ 
+      #if the optimizer failed or our cost increased, stop
+      if not res.success or np.sqrt(((self.xs - res.x.dot(X))**2).sum()) >= self.prev_cost:
+        self.wts[f] = 0.
+        self.reached_numeric_limit = True
+        break
+
+      #update weights, xw, and prev_cost
+      self.wts[self.wts > 0] = res.x
+      self.xw = (self.wts[:, np.newaxis]*self.x).sum(axis=0)
+      self.prev_cost = self.error()
+      self.f_update += (self.wts > 0).sum()  
+
       self.M = m+1
 
     return
@@ -84,36 +76,23 @@ class OrthoPursuit(object):
   def get_num_ops(self):
     return self.f_preproc+self.f_search + self.f_update
 
-  def get_num_nodes(self):
-    return self.n_search
-
   def reset(self):
     self.M = 0
     self.wts = np.zeros(self.N)
     self.xw = np.zeros(self.x.shape[1])
+    self.prev_cost = self.error()
     self.reached_numeric_limit = False
     self.f_search = 0.
     self.n_search = 0.
     self.f_update = 0.
 
-  #options are standard (just output the FW weights), scaled (apply the optimal scaling first)
   def weights(self):
     #remap self.wts to the full original data size using nzidcs
     full_wts = np.zeros(self.full_N)
     full_wts[self.nzidcs] = self.wts
     return full_wts
 
-  #options are fast, accurate (either use xw or recompute xw from wts)
-  def error(self, method="fast"):
-    if method == "fast":
-      return np.sqrt(((self.xw - self.xs)**2).sum())
-    else:
-      return np.sqrt((((self.wts[:, np.newaxis]*self.x).sum(axis=0) - self.xs)**2).sum())
-
-  def exp_bound(self, M=None):
-    raise NotImplementedError()
-  
-  def sqrt_bound(self, M=None):
-    raise NotImplementedError()
+  def error(self):
+    return np.sqrt(((self.xw - self.xs)**2).sum())
 
 
