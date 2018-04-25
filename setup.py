@@ -6,7 +6,7 @@ import subprocess
 
 class build_so(install):
   def run(self):
-    retcode = subprocess.call(['g++', '-std=c++17', '-pthread', '-DNDEBUG', '-fwrapv', '-Ofast', '-fopenmp', '-Werror', '-Wall', '-fno-strict-aliasing', '-Wdate-time', '-D_FORTIFY_SOURCE=2', '-fstack-protector-strong', '-Wformat', '-Werror=format-security', '-fPIC', 'bayesiancoresets/gigasearch.cpp', '-shared', '-o', 'bayesiancoresets/libgigasearch.so']) 
+    retcode = subprocess.call(['g++', '-std=c++11', '-pthread', '-DNDEBUG', '-fwrapv', '-Ofast', '-fopenmp', '-Werror', '-Wall', '-Wextra', '-fno-strict-aliasing', '-D_FORTIFY_SOURCE=2', '-fstack-protector-strong', '-Werror=format-security', '-fPIC', 'bayesiancoresets/gigasearch.cpp', '-shared', '-o', 'bayesiancoresets/libgigasearch.so']) 
     if retcode != 0:
       raise Exception('g++: Compile of gigasearch.cpp failed')
     return install.run(self)
