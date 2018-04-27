@@ -2,6 +2,7 @@ import numpy as np
 from .geometry import *
 from scipy.optimize import minimize
 import warnings
+from .coreset import CoresetConstruction
 
 class OrthoPursuit(object):
   def __init__(self, _x):
@@ -94,5 +95,46 @@ class OrthoPursuit(object):
 
   def error(self):
     return np.sqrt(((self.xw - self.xs)**2).sum())
+
+
+class OrthoPursuit2(CoresetConstruction):
+
+  def _xw_unscaled(self):
+    return False
+  
+  def _initialize(self):
+    self.prev_cost = np.sqrt((self.xs**2).sum())
+
+  def _step(self, use_cached_xw):
+    #search for FW vertex and compute line search
+    f = self._search()
+
+    #check to make sure value to add is not in the current set (error should be ortho to current subspace)
+    if self.wts[f] > 0:
+      warnings.warn(self.alg_name+'.run(): search selected a nonzero weight to update')
+
+    #run L-BFGS-B for optimal weight update
+    self.wts[f] = 1e-6
+    X = self.x[self.wts > 0, :]
+    w0 = self.wts[self.wts > 0]
+    res = minimize(fun = lambda w : ((self.snorm*self.xs - w.dot(X))**2).sum(), 
+             x0 = w0, method='L-BFGS-B', 
+             jac = lambda w : (w.dot(X)).dot(X.T) - 2*self.snorm*self.xs.dot(X.T), 
+             bounds = [(0., None)]*w0.shape[0],
+             options ={'ftol': 1e-12, 'gtol': 1e-9})
+ 
+    #if the optimizer failed or our cost increased, stop
+    if not res.success or np.sqrt(((self.snorm*self.xs - res.x.dot(X))**2).sum()) >= self.prev_cost:
+      self.wts[f] = 0.
+      self.reached_numeric_limit = True
+      return
+
+    #update weights, xw, and prev_cost
+    self.wts[self.wts > 0] = res.x
+    self.xw = self.wts.dot(self.x)
+    self.prev_cost = self.error()
+
+  def _search(self):
+    return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()
 
 

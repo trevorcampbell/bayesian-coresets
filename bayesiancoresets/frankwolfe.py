@@ -1,6 +1,7 @@
 import numpy as np
 from .geometry import *
 import warnings
+from .coreset import CoresetConstruction
 
 class FrankWolfe(object):
   def __init__(self, _x):
@@ -170,5 +171,4 @@ class FrankWolfe(object):
     if not self.diam:
       self.diam = compute_diam(self.x)
     return self.sig*self.diam/np.sqrt(M)
-
 
