@@ -3,6 +3,7 @@ import warnings
 import pkgutil
 import os
 import ctypes
+from .coreset import CoresetConstruction
 
 class GIGA(object):
   def __init__(self, _x): 
@@ -216,3 +217,116 @@ class GIGA(object):
   def sqrt_bound(self, M=None):
     raise NotImplementedError("GIGA.sqrt_bound(): not implemented")
     
+
+class GIGA2(CoresetConstruction):
+  def __init__(self, _x): 
+    super(GIGA2, self).__init__(_x)
+    if not self.x.flags['C_CONTIGUOUS']:
+      raise ValueError(self.alg_name+': data must be c_contiguous')
+    loader = pkgutil.get_loader('bayesiancoresets')
+    if 'filename' in loader.__dict__: #python2
+      hcfn = loader.filename
+    else: #python3
+      hcfn = os.path.split(loader.path)[0]
+    self.libgs = ctypes.cdll.LoadLibrary(os.path.join(hcfn, 'libgigasearch.so'))
+    self.libgs.search.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_uint, ctypes.c_uint]
+    self.libgs.search.restype = ctypes.c_int
+
+  def _xw_unscaled(self):
+    return True
+
+  def _initialize(self)
+    if self.x.shape[0] == 1:
+      self.xw = self.x[0, :]
+      self.wts[0] = 1.
+      self.M = 1
+      self.reached_numeric_limit = True
+      return
+    if self.y.shape[1] == 1:
+      self.xw = self.xs.copy()
+      self.wts[np.argmax(self.x.dot(self.xs))] = 1.0
+      self.M = 1
+      self.reached_numeric_limit = True
+      return
+ 
+  def _step(self, use_cached_xw):
+      f, gamma = self._get_step()
+      if gamma < 0:
+        break
+
+      self.wts *= (1.-gamma)
+      self.wts[f] += gamma
+
+      if use_cached_xw:
+        self.xw = (1.-gamma)*self.xw + gamma*self.x[f, :]
+      else:
+        self.xw = self.wts.dot(self.x)
+      self._renormalize_xw()
+      self.M = m+1
+
+  def _renormalize_xw(self):
+    nrm = np.sqrt((self.xw**2).sum())
+    self.xw /= nrm
+    self.wts /= nrm
+  
+  def _step_coeffs(self, f):
+    gA = self.xs.dot(self.x[f,:]) - self.xs.dot(self.xw) * self.xw.dot(self.x[f,:])
+    gB = self.xs.dot(self.xw) - self.xs.dot(self.x[f,:]) * self.xw.dot(self.x[f,:])
+    return gA, gB
+
+  def _get_step(self):
+    gA = -1.
+    gB = -1.
+    f = self._search()
+    if f >= 0:
+      gA, gB = self._step_coeffs(f)
+
+    #if the direction and/or line search failed
+    if gA <= 0. or gB < 0:
+      #try recomputing yw from scratch and rerunning search
+      self.xw = self.wts.dot(self.x)
+      self._renormalize_xw()
+
+      f = self._search()
+      if f >= 0:
+        gA, gB = self._step_coeffs(f)
+      #if it still didn't work, we've reached the numeric limit
+      if gA <= 0. or gB < 0:
+        self.reached_numeric_limit = True
+        return f, -1
+
+    return f, gA/(gA+gB)
+
+  def _search(self):
+    cdir = self.xs - self.xs.dot(self.xw)*self.xw
+    cdirnrm =np.sqrt((cdir**2).sum()) 
+    if cdirnrm < 1e-14:
+      return -1
+    cdir /= cdirnrm
+    self.f_search += self.y.shape[0]
+    return self.libgs.search(self.x.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+                             self.xw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+                             cdir.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+                             self.x.shape[0], self.x.shape[1])
+  
+  #old numpy search code
+  #def search(self):
+  #  cdir = self.ys - self.ys.dot(self.yw)*self.yw
+  #  cdirnrm =np.sqrt((cdir**2).sum()) 
+  #  if cdirnrm < 1e-14:
+  #    return -1
+  #  cdir /= cdirnrm
+  #  scorenums = self.y.dot(cdir) 
+  #  scoredenoms = self.y.dot(self.yw)
+  #  #extract points for which the geodesic direction is stable (1st condition) and well defined (2nd)
+  #  idcs = np.logical_and(scoredenoms > -1.+1e-14,  1.-scoredenoms**2 > 0.)
+  #  #compute the norm 
+  #  scoredenoms[idcs] = np.sqrt(1.-scoredenoms[idcs]**2)
+  #  scoredenoms[np.logical_not(idcs)] = np.inf
+  #  #compute the scores
+  #  scores = scorenums/scoredenoms
+  #  self.f_lin += 2.*self.N+2.
+  #  return scores.argmax()
+  
+
+
