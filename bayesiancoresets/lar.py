@@ -1,50 +1,72 @@
 import numpy as np
 from .coreset import CoresetConstruction
+from scipy.optimize import lsq_linear
 
 class LAR(CoresetConstruction):
 
   def _xw_unscaled(self):
     return False
-  
+
   def _initialize(self):
-    f = self._search()
-    self.search_x = self.x[f, :]
-    self.search_w = np.zeros(self.wts.shape[0])
-    self.search_w[f] = 1.
-
+    self.active_idcs = np.zeros(self.wts.shape[0], dtype=np.bool)
+    self.active_idcs[self._search()] = True
+  
   def _step(self, use_cached_xw):
-    #move along the search direction until another variable is as aligned *or* a current variable leaves the active set
-    #TODO
+    #do least squares on active set
+    X = self.x[self.active_idcs, :]
+    res = lsq_linear(X.T, self.snorm*self.xs, max_iter=max(1000, 10*self.xs.shape[0]))
 
-    #update the weights
-    #TODO
-
-    #use LBFGS to compute next search direction
-    X = self.x[self.wts > 0, :]
-    w0 = self.wts[self.wts > 0]
-    res = minimize(fun = lambda w : ((self.snorm*self.xs - w.dot(X))**2).sum(), 
-             x0 = w0, method='L-BFGS-B', 
-             jac = lambda w : (w.dot(X)).dot(X.T) - 2*self.snorm*self.xs.dot(X.T), 
-             options ={'ftol': 1e-12, 'gtol': 1e-9})
- 
     #if the optimizer failed or our cost increased, stop
-    xopt = res.x.dot(X)
-    if not res.success or np.sqrt(((self.snorm*self.xs - xopt)**2).sum()) >= self.error():
+    prev_cost = self.error()
+    if not res.success or np.sqrt(2.*res.cost) >= prev_cost:
       self.reached_numeric_limit = True
       return
+  
+    x_opt = res.x.dot(X)
+    w_opt = np.zeros(self.wts.shape[0])
+    w_opt[self.active_idcs] = res.x
+    sdir = x_opt - self.xw
+    sdir /= np.sqrt((sdir**2).sum())
 
-    wopt = np.zeros(self.wts.shape[0])
-    wopt[self.wts > 0] = res.x
+    #do line search towards x_opt
 
-    #update search direction
-    self.search_x = xopt - self.xw
-    self.search_x /= np.sqrt((self.search_dir**2).sum())
-    
+    #find earliest gamma for which a variable joins the active set
+    gammas = (sdir - self.x).dot(self.snorm*self.xs - self.xw) / (sdir - self.x).dot(x_opt - self.xw)
+    gammas[gammas < 0] = np.inf
+    f_least_angle = gammas.argmin()
+    gamma_least_angle = gammas[f_least_angle]
 
-    #update weights, xw, and prev_cost
-    self.wts[self.wts > 0] = res.x
-    self.xw = self.wts.dot(self.x)
-    self.prev_cost = self.error()
+    #find earliest gamma for which a variable leaves the active set
+    f_leave_active = -1
+    gamma_leave_active = np.inf
+    gammas[:] = np.inf
+    leave_idcs = w_opt < 0
+    gammas[leave_idcs] = self.wts[leave_idcs]/(self.wts[leave_idcs] - w_opt[leave_idcs])
+    f_leave_active = gammas.argmin()
+    gamma_leave_active = gammas[f_leave_active]
+
+    if gamma_leave_active >= 1. and gamma_least_angle >= 1.:
+      #no variable leaves active set, and no variable becomes more aligned; we are done
+      self.xw = x_opt
+      self.wts[self.active_idcs] = w_opt
+      self.reached_numeric_limit = True
+    elif gamma_leave_active < gamma_least_angle:
+      #a variable leaves the active set first
+      self.wts = (1. - gamma_leave_active)*self.wts + gamma_leave_active*w_opt
+      self.wts[f_leave_active] = 0
+      self.active_idcs[f_leave_active] = False
+      if use_cached_xw:
+        self.xw = (1. - gamma_leave_active)*self.xw + gamma_leave_active*x_opt
+      else:
+        self.xw = self.wts.dot(self.x)
+    else: 
+      #a variable becomes aligned first, joins active set
+      self.wts = (1. - gamma_least_angle)*self.wts + gamma_least_angle*w_opt
+      self.active_idcs[f_least_angle] = True
+      if use_cached_xw:
+        self.xw = (1. - gamma_least_angle)*self.xw + gamma_least_angle*x_opt
+      else:
+        self.xw = self.wts.dot(self.x)
 
   def _search(self):
     return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()
