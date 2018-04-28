@@ -139,7 +139,7 @@ class ImportanceSampling2(CoresetConstruction):
     self.M = M
     return
 
-class RandomSubsampling2(ImportanceSampling):
+class RandomSubsampling2(ImportanceSampling2):
   def _initialize(self):
     self.cts = np.zeros(self.N)
     self.ps = 1.0/float(self.N)*np.ones(self.N)

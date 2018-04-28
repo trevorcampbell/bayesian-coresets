@@ -20,6 +20,7 @@ N = 10000
 D = 50
 
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
+scaled_err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 csize = np.zeros((len(anms), n_trials, Ms.shape[0]))
 cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
@@ -36,9 +37,11 @@ for tr in range(n_trials):
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts = alg.weights()
       err[aidx, tr, m] = np.sqrt((((wts[:, np.newaxis]*X).sum(axis=0) - XS)**2).sum())
+      wts = alg.weights(optimal_scaling=True)
+      scaled_err[aidx, tr, m] = np.sqrt((((wts[:, np.newaxis]*X).sum(axis=0) - XS)**2).sum())
       csize[aidx, tr, m] = (wts > 0).sum()
 
-np.savez_compressed('gauss_results.npz', err=err, csize=csize, cput=cput, Ms = Ms, anms=anms)
+np.savez_compressed('gauss_results.npz', err=err, csize=csize, cput=cput, scaled_err=scaled_err, Ms = Ms, anms=anms)
 
 ##########################################
 ## Test 2: axis-aligned data
@@ -51,6 +54,7 @@ X = np.eye(N)
 XS = np.ones(N)
 
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
+scaled_err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 csize = np.zeros((len(anms), n_trials, Ms.shape[0]))
 cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
@@ -71,7 +75,9 @@ for tr in range(n_trials):
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts = alg.weights()
       err[aidx, tr, m] = np.sqrt((((wts[:, np.newaxis]*X).sum(axis=0) - XS)**2).sum())
+      wts = alg.weights(optimal_scaling=True)
+      scaled_err[aidx, tr, m] = np.sqrt((((wts[:, np.newaxis]*X).sum(axis=0) - XS)**2).sum())
       csize[aidx, tr, m] = (wts>0).sum()
 
-np.savez_compressed('axis_results.npz', err=err, csize=csize, cput=cput, Ms = Ms, anms=anms)
+np.savez_compressed('axis_results.npz', err=err, csize=csize, cput=cput, scaled_err=scaled_err, Ms = Ms, anms=anms)
 
