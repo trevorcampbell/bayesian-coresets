@@ -242,7 +242,7 @@ class GIGA2(IterativeCoresetConstruction):
       self.M = 1
       self.reached_numeric_limit = True
       return
-    if self.y.shape[1] == 1:
+    if self.x.shape[1] == 1:
       self.xw = self.xs.copy()
       self.wts[np.argmax(self.x.dot(self.xs))] = 1.0
       self.M = 1
@@ -303,7 +303,7 @@ class GIGA2(IterativeCoresetConstruction):
     if cdirnrm < 1e-14:
       return -1
     cdir /= cdirnrm
-    self.f_search += self.y.shape[0]
+    self.f_search += self.x.shape[0]
     return self.libgs.search(self.x.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
                              self.xw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
                              cdir.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
