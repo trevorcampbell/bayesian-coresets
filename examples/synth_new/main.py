@@ -16,6 +16,7 @@ algs = [bc.GIGA2, bc.FrankWolfe2, bc.RandomSubsampling]
 ## Test 1: gaussian data
 ##########################################
 N = 1000000
+N = 10000
 D = 50
 
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
@@ -44,6 +45,7 @@ np.savez_compressed('gauss_results.npz', err=err, csize=csize, cput=cput, Ms = M
 ##########################################
  
 N = 5000
+N = 100
 
 X = np.eye(N)
 XS = np.ones(N)

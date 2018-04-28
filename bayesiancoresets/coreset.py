@@ -95,11 +95,11 @@ class IterativeCoresetConstruction(CoresetConstruction):
   def _build(self, M, use_cached_xw):
     Mnew = self.M
     for m in range(self.M, M):
+      if self.reached_numeric_limit:
+        break
       stepped = self._step(use_cached_xw)
       if stepped:
         Mnew = m+1
-      if self.reached_numeric_limit:
-        break
     return Mnew
 
   def _step(self, use_cached_xw):

@@ -303,7 +303,6 @@ class GIGA2(IterativeCoresetConstruction):
     if cdirnrm < 1e-14:
       return -1
     cdir /= cdirnrm
-    self.f_search += self.x.shape[0]
     return self.libgs.search(self.x.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
                              self.xw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
                              cdir.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
