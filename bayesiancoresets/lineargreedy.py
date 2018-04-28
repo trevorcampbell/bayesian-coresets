@@ -40,7 +40,7 @@ class LinearGreedy(IterativeCoresetConstruction):
     if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
       self.xw = self.wts.dot(self.x)
       f = self._search()
-      gammanum, gammadenom = self.step_coeffs(f) 
+      gammanum, gammadenom = self._step_coeffs(f) 
 
       #if it's still no good, we've reached the numeric limit
       if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:  

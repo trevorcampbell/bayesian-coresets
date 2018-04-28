@@ -49,7 +49,7 @@ class CoresetConstruction(object):
 
   def error(self, optimal_scaling=False, use_cached_xw=True):
     if use_cached_xw:
-      yw = self.xw
+      yw = self.xw.copy()
     else:
       yw = self.wts.dot(self.x)
 
