@@ -81,10 +81,10 @@ class CoresetConstruction(object):
     yn = np.sqrt((y**2).sum())
     return self.snorm/yn*max(0., (y/yn).dot(self.xs))
 
-  def _build(self, M, use_cached_xw):
-    raise NotImplementedError()
-
   def _initialize(self):
+    pass #implementation optional
+
+  def _build(self, M, use_cached_xw):
     raise NotImplementedError()
 
   def _xw_unscaled(self):
