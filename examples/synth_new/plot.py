@@ -85,10 +85,13 @@ pal = bokeh.palettes.colorblind['Colorblind'][8]
 pal = [pal[0], pal[1], '#d62728', pal[4], pal[6], pal[3], pal[7], pal[2]]
 for aidx, anm in enumerate(anms):
   fig_err_g.line(Ms, np.percentile(err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm.decode('utf-8'))
+  fig_err_g.line(Ms, np.percentile(scaled_err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, line_dash='dotted')
   fig_csz_g.line(Ms, np.percentile(csize[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm.decode('utf-8'))
   fig_t_g.line(Ms, np.percentile(cput[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm.decode('utf-8'))
   fig_errc_g.line(np.percentile(csize[aidx,:,:], 50, axis=0), np.percentile(err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm.decode('utf-8'))
+  fig_errc_g.line(np.percentile(csize[aidx,:,:], 50, axis=0), np.percentile(scaled_err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, line_dash='dotted')
   fig_errt_g.line(np.percentile(cput[aidx,:,:], 50, axis=0), np.percentile(err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm.decode('utf-8'))
+  fig_errt_g.line(np.percentile(cput[aidx,:,:], 50, axis=0), np.percentile(scaled_err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, line_dash='dotted')
 
 
 aa = np.load('axis_results.npz')
@@ -100,10 +103,13 @@ csize = aa['csize']
 #pal = bokeh.palettes.colorblind['Colorblind'][len(anms)]
 for aidx, anm in enumerate(anms):
   fig_err_a.line(Ms, np.percentile(err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm.decode('utf-8'), line_dash=[20, 30], line_dash_offset=np.random.randint(50))
+  fig_err_a.line(Ms, np.percentile(scaled_err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, line_dash='dotted')
   fig_csz_a.line(Ms, np.percentile(csize[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm.decode('utf-8'), line_dash=[20, 30], line_dash_offset=np.random.randint(50))
   fig_t_a.line(Ms, np.percentile(cput[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm.decode('utf-8'))
   fig_errc_a.line(np.percentile(csize[aidx,:,:], 50, axis=0), np.percentile(err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm.decode('utf-8'), line_dash=[20, 30], line_dash_offset=np.random.randint(50))
+  fig_errc_a.line(np.percentile(csize[aidx,:,:], 50, axis=0), np.percentile(scaled_err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, line_dash='dotted')
   fig_errt_a.line(np.percentile(cput[aidx,:,:], 50, axis=0), np.percentile(err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm.decode('utf-8'), line_dash=[20, 30], line_dash_offset=np.random.randint(50))
+  fig_errt_a.line(np.percentile(cput[aidx,:,:], 50, axis=0), np.percentile(scaled_err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, line_dash='dotted')
  
 for f in [fig_err_g, fig_err_a, fig_csz_a, fig_csz_g, fig_t_a, fig_t_g, fig_errc_g, fig_errc_a, fig_errt_g, fig_errt_a]:
   f.legend.label_text_font_size= legend_font_size
