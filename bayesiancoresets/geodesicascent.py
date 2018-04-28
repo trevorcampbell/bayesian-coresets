@@ -3,7 +3,7 @@ import warnings
 import pkgutil
 import os
 import ctypes
-from .coreset import CoresetConstruction
+from .coreset import IterativeCoresetConstruction
 
 class GIGA(object):
   def __init__(self, _x): 
@@ -218,7 +218,7 @@ class GIGA(object):
     raise NotImplementedError("GIGA.sqrt_bound(): not implemented")
     
 
-class GIGA2(CoresetConstruction):
+class GIGA2(IterativeCoresetConstruction):
   def __init__(self, _x): 
     super(GIGA2, self).__init__(_x)
     if not self.x.flags['C_CONTIGUOUS']:
@@ -252,7 +252,8 @@ class GIGA2(CoresetConstruction):
   def _step(self, use_cached_xw):
       f, gamma = self._get_step()
       if gamma < 0:
-        break
+        self.reached_numeric_limit = True
+        return False
 
       self.wts *= (1.-gamma)
       self.wts[f] += gamma
@@ -262,7 +263,7 @@ class GIGA2(CoresetConstruction):
       else:
         self.xw = self.wts.dot(self.x)
       self._renormalize_xw()
-      self.M = m+1
+      return True
 
   def _renormalize_xw(self):
     nrm = np.sqrt((self.xw**2).sum())
@@ -292,7 +293,6 @@ class GIGA2(CoresetConstruction):
         gA, gB = self._step_coeffs(f)
       #if it still didn't work, we've reached the numeric limit
       if gA <= 0. or gB < 0:
-        self.reached_numeric_limit = True
         return f, -1
 
     return f, gA/(gA+gB)

@@ -1,8 +1,8 @@
 import numpy as np
-from .coreset import CoresetConstruction
+from .coreset import IterativeCoresetConstruction
 from scipy.optimize import lsq_linear
 
-class LAR(CoresetConstruction):
+class LAR(IterativeCoresetConstruction):
 
   def _xw_unscaled(self):
     return False
@@ -20,7 +20,7 @@ class LAR(CoresetConstruction):
     prev_cost = self.error()
     if not res.success or np.sqrt(2.*res.cost) >= prev_cost:
       self.reached_numeric_limit = True
-      return
+      return False
   
     x_opt = res.x.dot(X)
     w_opt = np.zeros(self.wts.shape[0])
@@ -67,6 +67,8 @@ class LAR(CoresetConstruction):
         self.xw = (1. - gamma_least_angle)*self.xw + gamma_least_angle*x_opt
       else:
         self.xw = self.wts.dot(self.x)
+
+    return True
 
   def _search(self):
     return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()

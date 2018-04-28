@@ -73,24 +73,34 @@ class CoresetConstruction(object):
     if self.M == 0:
       self._initialize()
     
-    #iterative construction
-    for m in range(self.M, M):
-      self._step(use_cached_xw)
-      if self.reached_numeric_limit:
-        break
-      self.M = m+1
-
+    #build the coreset with size at most M
+    self.M = self._build(M, use_cached_xw)
     return
-
+    
   def _optimal_scaling(self, y):
     yn = np.sqrt((y**2).sum())
     return self.snorm/yn*max(0., (y/yn).dot(self.xs))
 
-  def _step(self, use_cached_xw):
+  def _build(self, M, use_cached_xw):
     raise NotImplementedError()
 
   def _initialize(self):
     raise NotImplementedError()
 
   def _xw_unscaled(self):
+    raise NotImplementedError()
+
+class IterativeCoresetConstruction(CoresetConstruction):
+  #iterative construction
+  def _build(self, M, use_cached_xw):
+  Mnew = self.M
+  for m in range(self.M, M):
+    stepped = self._step(use_cached_xw)
+    if stepped:
+      Mnew = m+1
+    if self.reached_numeric_limit:
+      break
+  return Mnew
+
+  def _step(self, use_cached_xw):
     raise NotImplementedError()

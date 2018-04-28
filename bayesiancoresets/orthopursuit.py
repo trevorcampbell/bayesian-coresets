@@ -2,7 +2,7 @@ import numpy as np
 from .geometry import *
 from scipy.optimize import lsq_linear, minimize
 import warnings
-from .coreset import CoresetConstruction
+from .coreset import IterativeCoresetConstruction
 
 class OrthoPursuit(object):
   def __init__(self, _x):
@@ -97,7 +97,7 @@ class OrthoPursuit(object):
     return np.sqrt(((self.xw - self.xs)**2).sum())
 
 
-class OrthoPursuit2(CoresetConstruction):
+class OrthoPursuit2(IterativeCoresetConstruction):
 
   def _xw_unscaled(self):
     return False
@@ -120,11 +120,13 @@ class OrthoPursuit2(CoresetConstruction):
     prev_cost = self.error()
     if not res.success or np.sqrt(2.*res.cost) >= prev_cost:
       self.reached_numeric_limit = True
-      return
+      return False
 
     #update weights, xw, and prev_cost
     self.wts[active_idcs] = res.x
     self.xw = self.wts.dot(self.x)
+    
+    return True
 
   def _search(self):
     return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()

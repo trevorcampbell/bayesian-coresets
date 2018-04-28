@@ -1,7 +1,7 @@
 import numpy as np
-from .coreset import CoresetConstruction
+from .coreset import IterativeCoresetConstruction
 
-class LinearGreedy(CoresetConstruction):
+class LinearGreedy(IterativeCoresetConstruction):
   def __init__(self, _x):
     super(LinearGreedy, self).__init__(_x)
  
@@ -14,7 +14,7 @@ class LinearGreedy(CoresetConstruction):
     #if the step size was bad, set numeric limit reached and quit
     if gamma < 0:
       self.reached_numeric_limit = True
-      break
+      return False
 
     #shrink the step
     gamma *= self.step_fraction
@@ -27,6 +27,8 @@ class LinearGreedy(CoresetConstruction):
       self.xw = (1.-gamma)*self.xw + gamma*self.weight_scale*self.x[f, :]
     else:
       self.xw = self.wts.dot(self.x)
+
+    return True
 
   
   def _get_step(self):

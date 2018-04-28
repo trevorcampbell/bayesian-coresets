@@ -1,6 +1,7 @@
 import numpy as np
 import warnings
 from .geometry import *
+from .coreset import CoresetConstruction
 
 class ImportanceSampling(object):
   def __init__(self, _x):
@@ -119,3 +120,26 @@ class RandomSubsampling(ImportanceSampling):
     #return np.sqrt(self.tau/float(M))*( np.sqrt(1./2.) + nm*np.sqrt(self.tau*np.log(1./delta)))
 
   
+
+class ImportanceSampling2(CoresetConstruction):
+
+  def _xw_unscaled(self):
+    return False
+
+  def _initialize(self):
+    self.cts = np.zeros(self.N)
+    if self.norm_sum > 0.:
+      self.ps = self.norms/self.norm_sum
+    else:
+      self.ps = 1.0/float(self.N) * np.ones(self.N)
+
+  def _build(self, M, use_cached_xw):
+    self.cts += np.random.multinomial(M - self.M, self.ps)
+    self.wts = self.cts/self.ps/M
+    self.M = M
+    return
+
+class RandomSubsampling2(ImportanceSampling):
+  def _initialize(self):
+    self.cts = np.zeros(self.N)
+    self.ps = 1.0/float(self.N)*np.ones(self.N)
