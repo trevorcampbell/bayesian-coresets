@@ -13,7 +13,7 @@ class build_so(install):
 
 setup(
     name = 'bayesiancoresets',
-    version='0.6',
+    version='0.7',
     description="Coresets for approximate Bayesian inference",
     author='Trevor Campbell',
     author_email='tdjc@mit.edu',
