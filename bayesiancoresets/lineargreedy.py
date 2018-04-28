@@ -69,7 +69,7 @@ class FrankWolfe2(LinearGreedy):
     self.xw = self.norm_sum*self.x[f, :]
     self.M = 1
 
-class ForwardStagewise2(LinearGreedy):
+class ForwardStagewise(LinearGreedy):
   def __init__(self, _x, step_fraction=0.05):
     self.weight_scale = 1.0
     self.step_fraction = step_fraction
