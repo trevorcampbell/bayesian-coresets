@@ -1,6 +1,5 @@
 from setuptools import setup
 from setuptools.command.install import install
-from pip.commands.install import logger
 import subprocess
 
 

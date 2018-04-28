@@ -93,14 +93,14 @@ class CoresetConstruction(object):
 class IterativeCoresetConstruction(CoresetConstruction):
   #iterative construction
   def _build(self, M, use_cached_xw):
-  Mnew = self.M
-  for m in range(self.M, M):
-    stepped = self._step(use_cached_xw)
-    if stepped:
-      Mnew = m+1
-    if self.reached_numeric_limit:
-      break
-  return Mnew
+    Mnew = self.M
+    for m in range(self.M, M):
+      stepped = self._step(use_cached_xw)
+      if stepped:
+        Mnew = m+1
+      if self.reached_numeric_limit:
+        break
+    return Mnew
 
   def _step(self, use_cached_xw):
     raise NotImplementedError()
