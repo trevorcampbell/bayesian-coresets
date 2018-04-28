@@ -136,8 +136,7 @@ class ImportanceSampling2(CoresetConstruction):
   def _build(self, M, use_cached_xw):
     self.cts += np.random.multinomial(M - self.M, self.ps)
     self.wts = self.cts/self.ps/M
-    self.M = M
-    return
+    return M
 
 class RandomSubsampling2(ImportanceSampling2):
   def _initialize(self):
