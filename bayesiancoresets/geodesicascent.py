@@ -219,18 +219,18 @@ class GIGA(object):
     
 
 class GIGA2(IterativeCoresetConstruction):
-  def __init__(self, _x): 
-    super(GIGA2, self).__init__(_x)
-    if not self.x.flags['C_CONTIGUOUS']:
-      raise ValueError(self.alg_name+': data must be c_contiguous')
-    loader = pkgutil.get_loader('bayesiancoresets')
-    if 'filename' in loader.__dict__: #python2
-      hcfn = loader.filename
-    else: #python3
-      hcfn = os.path.split(loader.path)[0]
-    self.libgs = ctypes.cdll.LoadLibrary(os.path.join(hcfn, 'libgigasearch.so'))
-    self.libgs.search.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_uint, ctypes.c_uint]
-    self.libgs.search.restype = ctypes.c_int
+  #def __init__(self, _x): 
+  #  super(GIGA2, self).__init__(_x)
+  #  if not self.x.flags['C_CONTIGUOUS']:
+  #    raise ValueError(self.alg_name+': data must be c_contiguous')
+  #  loader = pkgutil.get_loader('bayesiancoresets')
+  #  if 'filename' in loader.__dict__: #python2
+  #    hcfn = loader.filename
+  #  else: #python3
+  #    hcfn = os.path.split(loader.path)[0]
+  #  self.libgs = ctypes.cdll.LoadLibrary(os.path.join(hcfn, 'libgigasearch.so'))
+  #  self.libgs.search.argtypes = [ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double), ctypes.c_uint, ctypes.c_uint]
+  #  self.libgs.search.restype = ctypes.c_int
 
   def _xw_unscaled(self):
     return True
@@ -297,35 +297,33 @@ class GIGA2(IterativeCoresetConstruction):
 
     return f, gA/(gA+gB)
 
+  #def _old_search(self):
+  #  cdir = self.xs - self.xs.dot(self.xw)*self.xw
+  #  cdirnrm =np.sqrt((cdir**2).sum()) 
+  #  if cdirnrm < 1e-14:
+  #    return -1
+  #  cdir /= cdirnrm
+  #  return self.libgs.search(self.x.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+  #                           self.xw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+  #                           cdir.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+  #                           self.x.shape[0], self.x.shape[1])
+  
   def _search(self):
     cdir = self.xs - self.xs.dot(self.xw)*self.xw
     cdirnrm =np.sqrt((cdir**2).sum()) 
     if cdirnrm < 1e-14:
       return -1
     cdir /= cdirnrm
-    return self.libgs.search(self.x.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
-                             self.xw.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
-                             cdir.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
-                             self.x.shape[0], self.x.shape[1])
-  
-  #old numpy search code
-  #def search(self):
-  #  cdir = self.ys - self.ys.dot(self.yw)*self.yw
-  #  cdirnrm =np.sqrt((cdir**2).sum()) 
-  #  if cdirnrm < 1e-14:
-  #    return -1
-  #  cdir /= cdirnrm
-  #  scorenums = self.y.dot(cdir) 
-  #  scoredenoms = self.y.dot(self.yw)
-  #  #extract points for which the geodesic direction is stable (1st condition) and well defined (2nd)
-  #  idcs = np.logical_and(scoredenoms > -1.+1e-14,  1.-scoredenoms**2 > 0.)
-  #  #compute the norm 
-  #  scoredenoms[idcs] = np.sqrt(1.-scoredenoms[idcs]**2)
-  #  scoredenoms[np.logical_not(idcs)] = np.inf
-  #  #compute the scores
-  #  scores = scorenums/scoredenoms
-  #  self.f_lin += 2.*self.N+2.
-  #  return scores.argmax()
+    scorenums = self.x.dot(cdir) 
+    scoredenoms = self.x.dot(self.xw)
+    #extract points for which the geodesic direction is stable (1st condition) and well defined (2nd)
+    idcs = np.logical_and(scoredenoms > -1.+1e-14,  1.-scoredenoms**2 > 0.)
+    #compute the norm 
+    scoredenoms[idcs] = np.sqrt(1.-scoredenoms[idcs]**2)
+    scoredenoms[np.logical_not(idcs)] = np.inf
+    #compute the scores
+    scores = scorenums/scoredenoms
+    return scores.argmax()
   
 
 
