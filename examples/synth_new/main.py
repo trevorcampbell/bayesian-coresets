@@ -8,8 +8,8 @@ Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 anms = ['GIGA', 'FW', 'MP', 'FSW', 'OMP', 'LAR', 'IS', 'RND']
 algs = [bc.GIGA2, bc.FrankWolfe2, bc.Pursuit, bc.ForwardStagewise, bc.OrthoPursuit2, bc.LAR, bc.ImportanceSampling2, bc.RandomSubsampling2]
 
-anms = ['GIGA', 'FW', 'RND']
-algs = [bc.GIGA2, bc.FrankWolfe2, bc.RandomSubsampling2]
+#anms = ['GIGA', 'FW', 'RND']
+#algs = [bc.GIGA2, bc.FrankWolfe2, bc.RandomSubsampling2]
 
 
 ##########################################
@@ -60,13 +60,7 @@ cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   for aidx, anm in enumerate(anms):
     print('data: axis, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm)
-    alg = None
-    if anm == 'GIGA':
-      alg = bc.GIGA(X)
-    elif anm == 'FW':
-      alg = bc.FrankWolfe(X)
-    else:
-      alg = bc.RandomSubsampling(X) 
+    alg = algs[aidx](X)
 
     for m, M in enumerate(Ms):
       t0 = time.time()

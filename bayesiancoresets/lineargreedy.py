@@ -77,9 +77,14 @@ class ForwardStagewise(LinearGreedy):
       raise ValueError(self.alg_name+'.__init__(): step_fraction must be in (0, 1)')
     super(ForwardStagewise2, self).__init__(_x)
 
+  def _initialize(self):
+    pass
+
 class Pursuit(LinearGreedy):
   def __init__(self, _x):
     super(Pursuit, self).__init__(_x)
     self.step_fraction = 1.0
     self.weight_scale = 1.0
 
+  def _initialize(self):
+    pass
