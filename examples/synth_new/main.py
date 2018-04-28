@@ -6,10 +6,10 @@ import time
 n_trials = 20
 Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 anms = ['GIGA', 'FW', 'MP', 'FSW', 'OMP', 'LAR', 'IS', 'RND']
-algs = [bc.GIGA2, bc.FrankWolfe2, bc.Pursuit, bc.ForwardStagewise, bc.OrthoPursuit2, bc.LAR, bc.ImportanceSampling, bc.RandomSubsampling]
+algs = [bc.GIGA2, bc.FrankWolfe2, bc.Pursuit, bc.ForwardStagewise, bc.OrthoPursuit2, bc.LAR, bc.ImportanceSampling2, bc.RandomSubsampling2]
 
 anms = ['GIGA', 'FW', 'RND']
-algs = [bc.GIGA2, bc.FrankWolfe2, bc.RandomSubsampling]
+algs = [bc.GIGA2, bc.FrankWolfe2, bc.RandomSubsampling2]
 
 
 ##########################################
