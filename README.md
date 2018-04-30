@@ -18,6 +18,13 @@ Unit tests for Frank--Wolfe, GIGA, and subsampling methods all currently pass. R
 
 More details about usage, output, status, etc will be updated here shortly.
 
+### Citations
+
+Below are some papers to cite if you find the algorithms in this repository useful in your own research:
+
+* T. Campbell and T. Broderick, "[Automated scalable Bayesian inference via Hilbert coresets](http://arxiv.org/abs/1710.05053)," arXiv:1710.05053, 2017,
+* T. Campbell and T. Broderick, "[Bayesian coreset construction via Greedy Iterative Geodesic Ascent](https://arxiv.org/abs/1802.01737)," arXiv:1802.01737, 2018.
+
 ### License Info
 
 This code is offered under the [MIT License](https://opensource.org/licenses/MIT).
