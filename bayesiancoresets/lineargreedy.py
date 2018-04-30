@@ -51,7 +51,7 @@ class FrankWolfe2(LinearGreedy):
     gammadenom = ((self.norm_sum*self.x[f, :] - self.xw)**2).sum()
     if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
       return None, None
-    return 1. - gammanum/gammadenom, gammanum/gammadenom
+    return 1. - gammanum/gammadenom, self.norm_sum*gammanum/gammadenom
   
   def _initialize(self):
     f = self._search()
