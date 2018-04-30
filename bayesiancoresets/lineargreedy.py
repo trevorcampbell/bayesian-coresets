@@ -47,8 +47,8 @@ class FrankWolfe2(LinearGreedy):
     super(FrankWolfe2, self).__init__(_x)
 
   def _step_coeffs(self, f):
-    gammanum = (self.x[f, :] - self.xw).dot(self.snorm*self.xs - self.xw)
-    gammadenom = ((self.x[f, :] - self.xw)**2).sum()
+    gammanum = (self.norm_sum*self.x[f, :] - self.xw).dot(self.snorm*self.xs - self.xw)
+    gammadenom = ((self.norm_sum*self.x[f, :] - self.xw)**2).sum()
     if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
       return None, None
     return 1. - gammanum/gammadenom, gammanum/gammadenom
