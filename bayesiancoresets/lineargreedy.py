@@ -79,3 +79,4 @@ class Pursuit(LinearGreedy):
     if beta < 0.:
       return None, None
     return 1.0, beta
+
