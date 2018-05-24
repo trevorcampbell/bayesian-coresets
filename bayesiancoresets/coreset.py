@@ -8,6 +8,7 @@ class CoresetConstruction(object):
     x = np.asarray(_x)
     if len(x.shape) != 2 or not np.issubdtype(x.dtype, np.number):
       raise ValueError(self.alg_name + ': input must be a 2d numeric ndarray')
+    
     #extract data with nonzero norm, save original size and nonzero index locations
     self.full_N = x.shape[0]
     nrms = np.sqrt((x**2).sum(axis=1))
@@ -25,6 +26,8 @@ class CoresetConstruction(object):
     self.N = self.x.shape[0]
     #call reset to initialize weights, weighted sum; stored quantities that will be updated 
     self.reset()
+    if self.x.size == 0:
+      warnings.warn(self.alg_name+'.__init__(): data has no nonzero vectors. ' + self.alg_name+'.run() will return immediately')
 
   def reset(self):
     self.M = 0
@@ -61,12 +64,9 @@ class CoresetConstruction(object):
   def run(self, M, use_cached_xw=True):
     #if M is not greater than self.M, just return 
     if M <= self.M:
-      raise ValueError(self.alg_name+'.run(): M must be increasing. self.M = '+str(self.M) + ' M = '+str(M))
-    if self.x.size == 0:
-      warnings.warn(self.alg_name+'.run(): data has no nonzero vectors. No more iterations will be run. M = ' + str(self.M) + ', error = ' +str(self.error()))
+      warnings.warn(self.alg_name+'.run(): M must be increasing; returning. self.M = '+str(self.M) + ' M = '+str(M))
       return
-    if self.reached_numeric_limit:
-      warnings.warn(self.alg_name+'.run(): the numeric limit has been reached. No more iterations will be run. M = ' + str(self.M) + ', error = ' +str(self.error()))
+    if self.reached_numeric_limit or self.x.size == 0:
       return
 
     #initialize optimization
@@ -75,6 +75,10 @@ class CoresetConstruction(object):
     
     #build the coreset with size at most M
     self.M = self._build(M, use_cached_xw)
+
+    #if we reached numeric limit during the current build, warn immediately
+    if self.reached_numeric_limit:
+      warnings.warn(self.alg_name+'.run(): the numeric limit has been reached. No more iterations will be run. M = ' + str(self.M) + ', error = ' +str(self.error()))
     return
     
   def _optimal_scaling(self, y):
