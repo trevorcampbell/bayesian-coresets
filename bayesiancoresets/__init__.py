@@ -2,15 +2,9 @@ from .frankwolfe import FrankWolfe
 from .subsampling import ImportanceSampling, RandomSubsampling
 from .fulldataset import FullDataset
 from .projection import ProjectionF, Projection2
-from .geodesicascent import GIGA
-
-#new imports
-from .lineargreedy import FrankWolfe2, Pursuit, ForwardStagewise
-from .geodesicascent import GIGA2
-from .subsampling import ImportanceSampling2, RandomSubsampling2
-from .orthopursuit import OrthoPursuit2
+from .giga import GIGA
+from .forwardstagewise import ForwardStagewise
+from .pursuit import Pursuit
+from .orthopursuit import OrthoPursuit
 from .lar import LAR
-
-#newer imports
-from .lineargreedy import FrankWolfe3, Pursuit2, ForwardStagewise2, GIGA3
 

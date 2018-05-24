@@ -108,3 +108,53 @@ class IterativeCoresetConstruction(CoresetConstruction):
 
   def _step(self, use_cached_xw):
     raise NotImplementedError()
+
+class GreedySingleUpdate(IterativeCoresetConstruction):
+  def __init__(self, _x):
+    super(GreedySingleUpdate, self).__init__(_x)
+
+  def _renormalize(self):
+    nrm = np.sqrt((self.xw**2).sum())
+    self.xw /= nrm
+    self.wts /= nrm
+  
+  def _step(self, use_cached_xw):
+    #search for the next best point and step length
+    f = self._search()
+    alpha, beta = self._step_coeffs(f) 
+
+    #if the line search is invalid, possibly reached numeric limit
+    if alpha is None:
+      #try recomputing xw from scratch and rerunning search
+      self.xw = self.wts.dot(self.x)
+      if self._xw_unscaled():
+        self._renormalize()
+      f = self._search()
+      alpha, beta = self._step_coeffs(f) 
+
+      #if it's still no good, we've reached the numeric limit
+      if alpha is None: #gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:  
+        self.reached_numeric_limit = True
+        return False
+
+    #update the weights
+    self.wts *= alpha
+    self.wts[f] += beta
+    #apply the same update to xw
+    if use_cached_xw:
+      self.xw = alpha*self.xw + beta*self.x[f, :]
+    else:
+      self.xw = self.wts.dot(self.x)
+
+    if self._xw_unscaled():
+      self._renormalize()
+
+    return True
+
+  def _search(self):
+    raise NotImplementedError()
+
+  def _step_coeffs(self, f):
+    raise NotImplementedError()
+
+
