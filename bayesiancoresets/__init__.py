@@ -10,3 +10,7 @@ from .geodesicascent import GIGA2
 from .subsampling import ImportanceSampling2, RandomSubsampling2
 from .orthopursuit import OrthoPursuit2
 from .lar import LAR
+
+#newer imports
+from .lineargreedy import FrankWolfe3, Pursuit2, ForwardStagewise2, GIGA3
+
