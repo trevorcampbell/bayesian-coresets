@@ -40,8 +40,6 @@ class LinearGreedy(IterativeCoresetConstruction):
     return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()
 
   
-
-  
 class FrankWolfe2(LinearGreedy):
   def __init__(self, _x):
     super(FrankWolfe2, self).__init__(_x)
@@ -95,7 +93,7 @@ class GreedySingleUpdate(IterativeCoresetConstruction):
     #search for the next best point and step length
     f = self._search()
     alpha, beta = self._step_coeffs(f) 
-    
+
     #if the line search is invalid, possibly reached numeric limit
     if alpha is None:
       #try recomputing xw from scratch and rerunning search
@@ -229,5 +227,5 @@ class GIGA3(GreedySingleUpdate):
     gB = self.xs.dot(self.xw) - self.xs.dot(self.x[f,:]) * self.xw.dot(self.x[f,:])
     if gA <= 0. or gB < 0:
       return None, None
-    return gA/(gA+gB), gB/(gA+gB)
+    return gB/(gA+gB), gA/(gA+gB) 
 
