@@ -46,9 +46,6 @@ def gendata(N, D, dist="gauss"):
 #-run(M) with increasing M outputs same weights as one run with large M
 #-if input size = 1, error is 0 for any M
 #-if input is colinear, error is 0 forall M
-#-sqrt_bound()/exp_bound is valid
-#-bound is positive, decreasing -> 0 
-#-giga outputs expected weights and error for axis_aligned data 
 ####################################################
 def coreset_single(N, D, dist, algn):
   x = gendata(N, D, dist)
