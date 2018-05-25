@@ -101,9 +101,8 @@ fig_cput.legend.glyph_height=80
 fig_cput.legend.spacing=20
 fig_cput.legend.orientation='horizontal'
 
-#bkp.show(fig_cput)
-#bki.export_png(fig_cput, "errvscput.png")
-bkp.output_file('errvscput.html')
-bkp.save(fig_cput)
+bkp.show(fig_cput)
+#bkp.output_file('errvscput.html')
+#bkp.save(fig_cput)
 
 
