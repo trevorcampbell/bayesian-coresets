@@ -96,9 +96,8 @@ fig_csz.legend.glyph_height=80
 fig_csz.legend.spacing=20
 fig_csz.legend.orientation='horizontal'
 
-#bkp.show(fig_csz)
-#bki.export_png(fig_csz, 'errvscsz.png')
-bkp.output_file('errvscsz.html')
-bkp.save(fig_csz)
+bkp.show(fig_csz)
+#bkp.output_file('errvscsz.html')
+#bkp.save(fig_csz)
 
 
