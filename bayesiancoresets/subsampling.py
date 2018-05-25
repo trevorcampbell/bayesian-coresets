@@ -18,7 +18,7 @@ class ImportanceSampling(CoresetConstruction):
     self.wts = self.cts/self.ps/M
     return M
 
-class RandomSubsampling(ImportanceSampling2):
+class RandomSubsampling(ImportanceSampling):
   def _initialize(self):
     self.cts = np.zeros(self.N)
     self.ps = 1.0/float(self.N)*np.ones(self.N)
