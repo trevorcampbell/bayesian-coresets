@@ -3,6 +3,7 @@ import numpy as np
 import warnings
 
 np.seterr(all='raise')
+np.set_printoptions(linewidth=500)
 
 np.random.seed(1)
 
@@ -15,8 +16,6 @@ algs = [bc.GIGA, bc.FrankWolfe, bc.ReweightedPursuit, bc.ForwardStagewise, bc.Or
 algs_nms = zip(anms, algs)
 tests = [(N, D, dist, algn) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned'] for algn in algs_nms]
 
-
-tests = [(N, D, dist, algn) for N in [10] for D in [3] for dist in ['gauss'] for algn in algs_nms]
 
 def gendata(N, D, dist="gauss"):
   if dist == "gauss":
