@@ -83,7 +83,7 @@ def coreset_single(N, D, dist, algn):
 
   #check reset
   coreset.reset()
-  assert coreset.M == 0 and np.all(np.fabs(coreset.weights()) < tol) and np.fabs(coreset.error() - np.sqrt((xs**2).sum())) < tol and not coreset.reached_numeric_limit, anm+" failed: reset() did not properly reset"
+  assert coreset.M == 0 and np.all(np.fabs(coreset.weights()) == 0.) and np.fabs(coreset.error() - np.sqrt((xs**2).sum())) < tol and not coreset.reached_numeric_limit, anm+" failed: reset() did not properly reset"
   #check run up to N all at once vs incremental
   #do this test for all except bin, where symmetries can cause instabilities in the choice of vector (and then different weights if the original vector norms were different)
   if dist != 'bin':

@@ -6,7 +6,8 @@ class FullDataset(CoresetConstruction):
     return False
 
   def _initialize(self):
-    self.wts = np.ones(self.N)
+    self.wts = self.norms.copy()
+    self.xw = self.wts.dot(self.x)
 
   def _build(self, M, use_cached_xw):
     pass
