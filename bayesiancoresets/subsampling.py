@@ -1,7 +1,7 @@
 import numpy as np
 from .coreset import CoresetConstruction
 
-class ImportanceSampling2(CoresetConstruction):
+class ImportanceSampling(CoresetConstruction):
 
   def _xw_unscaled(self):
     return False
@@ -18,7 +18,7 @@ class ImportanceSampling2(CoresetConstruction):
     self.wts = self.cts/self.ps/M
     return M
 
-class RandomSubsampling2(ImportanceSampling2):
+class RandomSubsampling(ImportanceSampling2):
   def _initialize(self):
     self.cts = np.zeros(self.N)
     self.ps = 1.0/float(self.N)*np.ones(self.N)
