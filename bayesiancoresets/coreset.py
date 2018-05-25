@@ -31,7 +31,6 @@ class CoresetConstruction(object):
 
   def reset(self):
     self.M = 0
-    self.coreset_size = 0
     self.reached_numeric_limit = False
     self.wts = np.zeros(self.N)
     self.xw = np.zeros(self.x.shape[1])
