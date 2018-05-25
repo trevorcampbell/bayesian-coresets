@@ -15,8 +15,8 @@ class ImportanceSampling(CoresetConstruction):
 
   def _build(self, M, use_cached_xw):
     self.cts += np.random.multinomial(M - self.M, self.ps)
-    self.wts = self.cts/self.ps/M
-    self.xw = (self.wts/self.norms).dot(self.x)
+    self.wts = self.norms*self.cts/self.ps/M
+    self.xw = self.wts.dot(self.x)
     return M
 
 class RandomSubsampling(ImportanceSampling):
