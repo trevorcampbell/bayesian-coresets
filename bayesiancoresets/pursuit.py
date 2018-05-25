@@ -1,6 +1,6 @@
 from .coreset import GreedySingleUpdate
 
-class Pursuit(GreedySingleUpdate):
+class ReweightedPursuit(GreedySingleUpdate):
 
   def _xw_unscaled(self):
     return False
@@ -18,7 +18,7 @@ class Pursuit(GreedySingleUpdate):
     alpha = (self.snorm*self.xs).dot(v1) / self.xw.dot(v1)
     beta = (self.snorm*self.xs).dot(v2) / self.xw.dot(v1)
 
-    if beta < 0. or alpha < 0.:
+    if beta < 0. or alpha < 0. or (beta == 0. and alpha == 1.):
       return None, None
     return alpha,  beta
 
