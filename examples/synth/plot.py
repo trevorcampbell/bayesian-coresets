@@ -122,8 +122,8 @@ for f in [fig_err_g, fig_err_a, fig_csz_a, fig_csz_g, fig_t_a, fig_t_g, fig_errc
 fig_err_a.legend.location = 'bottom_left'
 fig_csz_a.legend.location = 'bottom_right'
 
-#bkp.show(bkl.gridplot([[fig_err_g, fig_csz_g], [fig_t_g], [fig_errc_g, fig_errt_g], [fig_err_a, fig_csz_a], [fig_t_a], [fig_errc_a, fig_errt_a]]))
-bkp.output_file('results.html')
-bkp.save(bkl.gridplot([[fig_err_g, fig_csz_g], [fig_t_g], [fig_errc_g, fig_errt_g], [fig_err_a, fig_csz_a], [fig_t_a], [fig_errc_a, fig_errt_a]]))
+bkp.show(bkl.gridplot([[fig_err_g, fig_csz_g], [fig_t_g], [fig_errc_g, fig_errt_g], [fig_err_a, fig_csz_a], [fig_t_a], [fig_errc_a, fig_errt_a]]))
+#bkp.output_file('results.html')
+#bkp.save(bkl.gridplot([[fig_err_g, fig_csz_g], [fig_t_g], [fig_errc_g, fig_errt_g], [fig_err_a, fig_csz_a], [fig_t_a], [fig_errc_a, fig_errt_a]]))
 
 
