@@ -3,17 +3,18 @@ import numpy as np
 import warnings
 
 np.seterr(all='raise')
+np.set_printoptions(linewidth=500)
 
-np.random.seed(1)
+np.random.seed(2)
 
 warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
 
-n_trials = 1
+n_trials = 10
 tol = 1e-9
 anms = ['IS', 'RND']
 algs = [bc.ImportanceSampling, bc.RandomSubsampling]
 algs_nms = zip(anms, algs)
-tests = [(N, D, dist, algn) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned'] for algn in algs_nms]
+tests = [(N, D, dist, algn) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'axis_aligned'] for algn in algs_nms]
 
 
 
@@ -62,18 +63,15 @@ def coreset_single(N, D, dist, algn):
     xwopt = (coreset.weights(optimal_scaling=True)[:, np.newaxis]*x).sum(axis=0)
   
     if not (np.fabs(coreset.error(use_cached_xw=False, optimal_scaling=True) - np.sqrt(((xwopt-xs)**2).sum())) < tol):
-      print 'wts'
-      print coreset.weights()
+      wts = coreset.weights(bad_flag=True)
+      print 'external wts'
+      print wts
       print 'xw'
       print xw
-      print 'optwts'
-      print coreset.weights(optimal_scaling=True)
-      print 'xwopt'
-      print xwopt
-      print 'xs'
-      print xs
-      print 'optimal scaling'
-      print coreset._optimal_scaling(xw)
+      print 'x'
+      print x
+      print 'xsave'
+      print xsave
 
     #check if x was modified
     assert np.fabs(x-xsave).sum() < tol, anm + " failed: modified external data directly"
