@@ -8,7 +8,7 @@ np.random.seed(1)
 
 warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
 
-n_trials = 10
+n_trials = 1
 tol = 1e-9
 anms = ['IS', 'RND']
 algs = [bc.ImportanceSampling, bc.RandomSubsampling]
@@ -16,8 +16,6 @@ algs_nms = zip(anms, algs)
 tests = [(N, D, dist, algn) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned'] for algn in algs_nms]
 
 
-n_trials = 1
-tests = [(N, D, dist, algn) for N in [10] for D in [3] for dist in ['gauss'] for algn in algs_nms]
 
 def gendata(N, D, dist="gauss"):
   if dist == "gauss":
@@ -46,6 +44,7 @@ def gendata(N, D, dist="gauss"):
 ####################################################
 def coreset_single(N, D, dist, algn):
   x = gendata(N, D, dist)
+  xsave = x.copy()
   xs = x.sum(axis=0)
   anm, alg = algn
   coreset = alg(x)
@@ -56,10 +55,28 @@ def coreset_single(N, D, dist, algn):
     
     #check if coreset is valid
     assert (coreset.weights() > 0.).sum() <= m, anm+" failed: coreset size > m"
+    assert (coreset.weights() > 0.).sum() == coreset.coreset_size(), anm+" failed: sum of coreset.weights()>0  not equal to coreset_size(): sum = " + str((coreset.weights()>0).sum()) + " coreset_size(): " + str(coreset.coreset_size())
     assert np.all(coreset.weights() >= 0.), anm+" failed: coreset has negative weights"
     
     xw = (coreset.weights()[:, np.newaxis]*x).sum(axis=0)
     xwopt = (coreset.weights(optimal_scaling=True)[:, np.newaxis]*x).sum(axis=0)
+  
+    if not (np.fabs(coreset.error(use_cached_xw=False, optimal_scaling=True) - np.sqrt(((xwopt-xs)**2).sum())) < tol):
+      print 'wts'
+      print coreset.weights()
+      print 'xw'
+      print xw
+      print 'optwts'
+      print coreset.weights(optimal_scaling=True)
+      print 'xwopt'
+      print xwopt
+      print 'xs'
+      print xs
+      print 'optimal scaling'
+      print coreset._optimal_scaling(xw)
+
+    #check if x was modified
+    assert np.fabs(x-xsave).sum() < tol, anm + " failed: modified external data directly"
  
     #check if coreset is computing error properly
     #without optimal scaling

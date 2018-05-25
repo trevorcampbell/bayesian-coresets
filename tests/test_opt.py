@@ -62,6 +62,7 @@ def coreset_single(N, D, dist, algn):
       assert np.fabs(coreset.weights() - np.array([1])) < tol or (np.fabs(coreset.weights() - np.array([0])) < tol and (x**2).sum() == 0.), anm +" failed: coreset not immediately optimal with N = 1"
     #check if coreset is valid
     assert (coreset.weights() > 0.).sum() <= m, anm+" failed: coreset size > m"
+    assert (coreset.weights() > 0.).sum() == coreset.coreset_size(), anm+" failed: sum of coreset.weights()>0  not equal to coreset_size(): sum = " + str((coreset.weights()>0).sum()) + " coreset_size(): " + str(coreset.coreset_size())
     assert np.all(coreset.weights() >= 0.), anm+" failed: coreset has negative weights"
     
     xw = (coreset.weights()[:, np.newaxis]*x).sum(axis=0)
