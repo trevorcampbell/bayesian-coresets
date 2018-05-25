@@ -1,6 +1,7 @@
 from .coreset import GreedySingleUpdate
 
 class Pursuit(GreedySingleUpdate):
+
   def _xw_unscaled(self):
     return False
 
@@ -21,10 +22,9 @@ class Pursuit(GreedySingleUpdate):
       return None, None
     return alpha,  beta
 
-    #old code; does not converge (e.g. try data [[-.1, .9], [.1, .9]] )
-    #beta = (self.x[f, :]).dot(self.snorm*self.xs - self.xw)
-    #if beta < 0.:
-    #  return None, None
-    #return 1.0, beta
-
+  def _initialize(self):
+    f = self._search()
+    self.wts[f] = self.snorm*self.x[f, :].dot(self.xs)
+    self.xw = self.wts[f]*self.x[f, :]
+    self.M = 1
 
