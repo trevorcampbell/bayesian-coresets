@@ -2,6 +2,9 @@ import bayesiancoresets as bc
 import numpy as np
 import warnings
 
+#anms = ['GIGA', 'FW', 'RP', 'FSW', 'OMP', 'LAR', 'IS', 'RND']
+#algs = [bc.GIGA, bc.FrankWolfe, bc.ReweightedPursuit, bc.ForwardStagewise, bc.OrthoPursuit, bc.LAR, bc.ImportanceSampling, bc.RandomSubsampling]
+
 
 np.random.seed(1)
 
@@ -9,10 +12,13 @@ warnings.filterwarnings('ignore', category=UserWarning) #tests will generate war
 
 n_trials = 10
 tol = 1e-6
-anms = ['GIGA', 'FW', 'RP', 'FSW', 'OMP', 'LAR', 'IS', 'RND', 'Full']
-algs = [bc.GIGA, bc.FrankWolfe, bc.ReweightedPursuit, bc.ForwardStagewise, bc.OrthoPursuit, bc.LAR, bc.ImportanceSampling, bc.RandomSubsampling, bc.FullDataset]
+anms = ['IS', 'RND']
+algs = [bc.ImportanceSampling, bc.RandomSubsampling]
 algs_nms = zip(anms, algs)
 tests = [(N, D, dist, algn) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned'] for algn in algs_nms]
+
+
+tests = [(N, D, dist, algn) for N in [10] for D in [3] for dist in ['gauss'] for algn in algs_nms]
 
 def gendata(N, D, dist="gauss"):
   if dist == "gauss":
@@ -39,8 +45,7 @@ def gendata(N, D, dist="gauss"):
 #-error() vs output y(weights) are close to each other
 #-error is decreasing
 #-reset() resets the alg properly
-#-run(M) with increasing M outputs same weights as 
-# one run with large M
+#-run(M) with increasing M outputs same weights as one run with large M
 #-if input size = 1, error is 0 for any M
 #-if input is colinear, error is 0 forall M
 #-sqrt_bound()/exp_bound is valid
