@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import lsq_linear, minimize
+import warnings
 from .coreset import IterativeCoresetConstruction
 
 class OrthoPursuit(IterativeCoresetConstruction):
