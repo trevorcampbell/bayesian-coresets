@@ -83,7 +83,9 @@ class CoresetConstruction(object):
     
   def _optimal_scaling(self, y):
     yn = np.sqrt((y**2).sum())
-    return self.snorm/yn*max(0., (y/yn).dot(self.xs))
+    if yn > 0.:
+      return self.snorm/yn*max(0., (y/yn).dot(self.xs))
+    return 0.
 
   def _initialize(self):
     pass #implementation optional
