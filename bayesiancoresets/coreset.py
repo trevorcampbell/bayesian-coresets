@@ -83,6 +83,8 @@ class CoresetConstruction(object):
   def _optimal_scaling(self, y):
     yn = np.sqrt((y**2).sum())
     if yn > 0.:
+      if yn < 1e-9:
+        warnings.warn(self.alg_name+'._optimal_scaling(): the norm of y is small; optimal scaling might be unstable. ||y|| = ' + str(yn))
       return self.snorm/yn*max(0., (y/yn).dot(self.xs))
     return 0.
 
