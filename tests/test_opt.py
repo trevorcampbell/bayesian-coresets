@@ -13,6 +13,10 @@ n_trials = 10
 tol = 1e-9
 anms = ['GIGA', 'FW', 'RP', 'FSW', 'OMP', 'LAR']
 algs = [bc.GIGA, bc.FrankWolfe, bc.ReweightedPursuit, bc.ForwardStagewise, bc.OrthoPursuit, bc.LAR]
+
+
+anms = ['GIGA', 'FW']
+algs = [bc.GIGA, bc.FrankWolfe]
 algs_nms = zip(anms, algs)
 tests = [(N, D, dist, algn) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned'] for algn in algs_nms]
 
@@ -87,7 +91,7 @@ def coreset_single(N, D, dist, algn):
 
     #if data are colinear, check if the coreset is optimal immediately
     if 'colinear' in dist and m >= 1:
-      assert np.sqrt(((xw-xs)**2).sum()) < tol and np.sqrt(((xwopt-xs)**2).sum()) < tol, anm + " failed: colinear data, m>= 1 not immediately optimal: true err = " +str(np.sqrt(((xw-xs)**2).sum())) + " optimal scaled err " + str(np.sqrt(((xwopt-xs)**2).sum())) + " tol = " + str(tol) + " m = " + str(m)
+      assert np.sqrt(((xwopt-xs)**2).sum()) < tol, anm + " failed: colinear data, m>= 1 not immediately optimal:  optimal scaled err " + str(np.sqrt(((xwopt-xs)**2).sum())) + " tol = " + str(tol) + " m = " + str(m)
     ##if data are axis aligned, 
     #if 'axis' in dist:
     #  assert np.all( np.fabs(coreset.weights()[ coreset.weights() > 0. ] - 1. ) < tol ), anm+" failed: on axis-aligned data, weights are not 1"

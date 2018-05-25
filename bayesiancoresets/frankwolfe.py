@@ -2,7 +2,7 @@ from .coreset import GreedySingleUpdate
 
 class FrankWolfe(GreedySingleUpdate):
   def __init__(self, _x):
-    super(FrankWolfe3, self).__init__(_x)
+    super(FrankWolfe, self).__init__(_x)
 
   def _search(self):
     return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()
