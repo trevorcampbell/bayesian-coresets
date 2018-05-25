@@ -2,16 +2,14 @@ import bayesiancoresets as bc
 import numpy as np
 import warnings
 
-#anms = ['GIGA', 'FW', 'RP', 'FSW', 'OMP', 'LAR', 'IS', 'RND']
-#algs = [bc.GIGA, bc.FrankWolfe, bc.ReweightedPursuit, bc.ForwardStagewise, bc.OrthoPursuit, bc.LAR, bc.ImportanceSampling, bc.RandomSubsampling]
-
+np.seterr(all='raise')
 
 np.random.seed(1)
 
 warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
 
 n_trials = 10
-tol = 1e-6
+tol = 1e-9
 anms = ['IS', 'RND']
 algs = [bc.ImportanceSampling, bc.RandomSubsampling]
 algs_nms = zip(anms, algs)
@@ -62,20 +60,41 @@ def coreset_single(N, D, dist, algn):
   prev_err = np.inf
   for m in range(1, N+1):
     coreset.run(m)
+    #check if coreset for 1 datapoint is immediately optimal
     if x.shape[0] == 1:
       assert np.fabs(coreset.weights() - np.array([1])) < tol or (np.fabs(coreset.weights() - np.array([0])) < tol and (x**2).sum() == 0.), anm +" failed: coreset not immediately optimal with N = 1"
+    #check if coreset is valid
     assert (coreset.weights() > 0.).sum() <= m, anm+" failed: coreset size > m"
+    assert np.all(coreset.weights() >= 0.), anm+" failed: coreset has negative weights"
+    
     xw = (coreset.weights()[:, np.newaxis]*x).sum(axis=0)
+    xwopt = (coreset.weights(optimal_scaling=True)[:, np.newaxis]*x).sum(axis=0)
+ 
+    #check if actual output error is monotone
     assert np.sqrt(((xw-xs)**2).sum()) - prev_err < tol, anm+" failed: error is not monotone decreasing, err = " + str(np.sqrt(((xw-xs)**2).sum())) + " prev_err = " +str(prev_err) + " M = " + str(coreset.M)
-    assert np.fabs(coreset.error('accurate') - np.sqrt(((xw-xs)**2).sum())) < tol, anm+" failed: x(w) est is not close to true x(w): est err = " + str(coreset.error('accurate')) + ' true err = ' + str(np.sqrt(((xw-xs)**2).sum()))
-    assert np.fabs(coreset.error('accurate') - coreset.error()) < tol*1000, anm+" failed: error(accurate/fast) do not return similar results: fast err = " + str(coreset.error()) + ' acc err = ' + str(coreset.error('accurate'))
+
+    #check if coreset is computing error properly
+    #without optimal scaling
+    assert np.fabs(coreset.error(use_cached_xw=False) - np.sqrt(((xw-xs)**2).sum())) < tol, anm+" failed: x(w) est is not close to true x(w): est err = " + str(coreset.error(use_cached_xw=False)) + ' true err = ' + str(np.sqrt(((xw-xs)**2).sum()))
+    #with optimal scaling
+    assert np.fabs(coreset.error(use_cached_xw=False, optimal_scaling=True) - np.sqrt(((xwopt-xs)**2).sum())) < tol, anm+" failed: x(w) est is not close to true x(w) with optimal scaling: est err = " + str(coreset.error(optimal_scaling=True, use_cached_xw=False)) + ' true err = ' + str(np.sqrt(((xwopt-xs)**2).sum()))
+
+    #check if fast / accurate error estimates are close
+    #without optimal scaling
+    assert np.fabs(coreset.error(use_cached_xw=False) - coreset.error()) < tol*1000, anm+" failed: error(accurate/fast) do not return similar results: fast err = " + str(coreset.error()) + ' acc err = ' + str(coreset.error(use_cached_xw=False))
+    #with optimal scaling
+    assert np.fabs(coreset.error(optimal_scaling=True, use_cached_xw=False) - coreset.error(optimal_scaling=True)) < tol*1000, anm+" failed: error(accurate/fast) with optimal scaling do not return similar results: fast err = " + str(coreset.error(optimal_scaling=True)) + ' acc err = ' + str(coreset.error(use_cached_xw=False, optimal_scaling=True))
+
+    #ensure optimally scaled error is lower than  regular
+    assert coreset.error(optimal_scaling=True, use_cached_xw=False) - coreset.error(use_cached_xw=False) < tol, anm+" failed: optimal scaled coreset produces higher acc error than regular one. Optimal err = " + str(coreset.error(optimal_scaling=True)) + ' regular err: ' + str(coreset.error())
+
+    #if data are colinear, check if the coreset is optimal immediately
     if 'colinear' in dist and m >= 1:
-      if not np.sqrt(((xw-xs)**2).sum()) < tol:
-        assert False, "colinear m>= 1 problem nrm = " +str(np.sqrt(((xw-xs)**2).sum())) + " tol = " + str(tol) + " m = " + str(m)
-      assert np.sqrt(((xw-xs)**2).sum()) < tol, anm+" failed: for M>=2, coreset with colinear data not optimal"
-    if 'axis' in dist:
-      assert np.all( np.fabs(coreset.weights()[ coreset.weights() > 0. ] - 1. ) < tol ), anm+" failed: on axis-aligned data, weights are not 1"
-      assert np.fabs(np.sqrt(((xw-xs)**2).sum())/np.sqrt((xs**2).sum()) - np.sqrt(1. - float(m)/float(N))) < tol, anm+" failed: on axis-aligned data, error is not sqrt(1 - M/N)"
+      assert np.sqrt(((xw-xs)**2).sum()) < tol and np.sqrt(((xwopt-xs)**2).sum()) < tol, anm + " failed: colinear data, m>= 1 not immediately optimal: true err = " +str(np.sqrt(((xw-xs)**2).sum())) + " optimal scaled err " + str(np.sqrt(((xwopt-xs)**2).sum())) + " tol = " + str(tol) + " m = " + str(m)
+    ##if data are axis aligned, 
+    #if 'axis' in dist:
+    #  assert np.all( np.fabs(coreset.weights()[ coreset.weights() > 0. ] - 1. ) < tol ), anm+" failed: on axis-aligned data, weights are not 1"
+    #  assert np.fabs(np.sqrt(((xw-xs)**2).sum())/np.sqrt((xs**2).sum()) - np.sqrt(1. - float(m)/float(N))) < tol, anm+" failed: on axis-aligned data, error is not sqrt(1 - M/N)"
     prev_err = np.sqrt(((xw-xs)**2).sum())
   #save incremental M result
   w_inc = coreset.weights()
@@ -84,12 +103,14 @@ def coreset_single(N, D, dist, algn):
   #check reset
   coreset.reset()
   assert coreset.M == 0 and np.all(np.fabs(coreset.weights()) == 0.) and np.fabs(coreset.error() - np.sqrt((xs**2).sum())) < tol and not coreset.reached_numeric_limit, anm+" failed: reset() did not properly reset"
+
   #check run up to N all at once vs incremental
-  #do this test for all except bin, where symmetries can cause instabilities in the choice of vector (and then different weights if the original vector norms were different)
+  #do this test for all except bin, where symmetries can cause instabilities in the choice of vector / weights
   if dist != 'bin':
     coreset.run(N)
     xw = (coreset.weights()[:, np.newaxis]*x).sum(axis=0) 
     assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, anm+" failed: incremental run up to N doesn't produce same result as one run at N : \n xw = " + str(xw) + " error = " +str(np.sqrt(((xw-xs)**2).sum())) + " \n xw_inc = " + str(xw_inc) + " error = " +  str(np.sqrt(((xw_inc-xs)**2).sum())) + " \n xs = " +str(xs)
+
 
 def test_coreset():
   for N, D, dist, alg in tests:
