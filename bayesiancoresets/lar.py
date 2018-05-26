@@ -31,8 +31,12 @@ class LAR(IterativeCoresetConstruction):
     #do line search towards x_opt
 
     #find earliest gamma for which a variable joins the active set
-    gammas = (sdir - self.x).dot(self.snorm*self.xs - self.xw) / (sdir - self.x).dot(x_opt - self.xw)
-    gammas[gammas < 0] = np.inf
+    #anywhere gamma_denom = 0 or gamma < 0, the variable never enters the active set 
+    gamma_nums = (sdir - self.x).dot(self.snorm*self.xs - self.xw)
+    gamma_denoms = (sdir - self.x).dot(x_opt - self.xw)
+    good_idcs = np.logical_not(np.logical_or(gamma_denoms == 0, gamma_nums*gamma_denoms < 0))
+    gammas = np.inf*np.ones(gamma_nums.shape[0])
+    gammas[good_idcs] = gamma_nums[good_idcs]/gamma_denoms[good_idcs]
     f_least_angle = gammas.argmin()
     gamma_least_angle = gammas[f_least_angle]
 
@@ -48,7 +52,7 @@ class LAR(IterativeCoresetConstruction):
     if gamma_leave_active >= 1. and gamma_least_angle >= 1.:
       #no variable leaves active set, and no variable becomes more aligned; we are done
       self.xw = x_opt
-      self.wts[self.active_idcs] = w_opt
+      self.wts = w_opt
       self.reached_numeric_limit = True
     elif gamma_leave_active < gamma_least_angle:
       #a variable leaves the active set first
