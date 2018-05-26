@@ -7,7 +7,7 @@ warnings.filterwarnings('ignore', category=UserWarning) #tests will generate war
 np.seterr(all='raise')
 np.set_printoptions(linewidth=500)
 np.random.seed(100)
-Nsamps = 10000000
+Nsamps=10000000
 
 #linear test function/grad, sampling fcn for th and corresponding expectation gram matrix
 def sample_linear(N, D):
@@ -79,7 +79,7 @@ def single_llgll(ll, gll, g2, gF, samp):
     assert np.all(exact_grad[:,i] == gll(x, th, i)), "error: grad().component != grad(component)"
   #compare the numerical grad
   num_grad = np.zeros((3,2))
-  eps = 1e-8
+  eps = 1e-9
   for i in range(2):
     thr = th.copy()
     thr[i] += eps
@@ -100,42 +100,57 @@ def single_llgll(ll, gll, g2, gF, samp):
     num_gramF += glls.dot(glls.T)
   num_gram2 /= Nsamps
   num_gramF /= Nsamps
-  assert np.all(np.fabs(num_gramF - exact_gramF) < 1e-2), "error: numerical/exact gramF matrices don't match up; max diff = " + str(np.fabs(num_gramF-exact_gramF).max())
-  assert np.all(np.fabs(num_gram2 - exact_gram2) < 1e-2), "error: numerical/exact gram2 matrices don't match up; max diff = " + str(np.fabs(num_gram2-exact_gram2).max())
+  assert np.all(np.fabs(num_gramF - exact_gramF) < 5e-2), "error: numerical/exact gramF matrices don't match up; max diff = " + str(np.fabs(num_gramF-exact_gramF).max())
+  assert np.all(np.fabs(num_gram2 - exact_gram2) < 5e-2), "error: numerical/exact gram2 matrices don't match up; max diff = " + str(np.fabs(num_gram2-exact_gram2).max())
   
 def test_llgll():
   for ll, gll, g2, gF, samp in [(ll_linear, gll_linear, gram2_linear, gramF_linear, sample_linear), (ll_quad, gll_quad, gram2_quad, gramF_quad, sample_quad)]:
     yield single_llgll, ll, gll, g2, gF, samp
   
 #test if the F projection converges to the expectation
-def test_projF(gll, gram, samp):
+def single_projF(gll, gram, samp):
   x = samp(3, 2)
   proj = bc.ProjectionF(x, gll, Nsamps, lambda : samp(1, 2).flatten())
   w = proj.get()
   assert np.all(np.fabs(gram(x) - w.dot(w.T)) < 1e-2), "error: projectionF doesn't converge to expectation; max diff = " + str(np.fabs(gram(x) - w.dot(w.T)).max())
   proj.reset()
-  assert np.all(np.fabs(w - proj.get()) > 0) and proj.get().shape == w.shape(), "error: proj.reset() doesn't retain shape or doesn't refresh entries"
+  assert proj.get().shape == w.shape, "error: proj.reset() doesn't retain shape"
+
+  is_constant = True
+  gtest = gll(x, samp(1, 2).flatten())
+  for i in range(10):
+    gtest2 = gll(x, samp(1,2).flatten())
+    if np.any(gtest2 != gtest):
+      is_constant = False
+  if not is_constant:
+    assert np.all(np.fabs(w - proj.get()) > 0), "error: proj.reset() doesn't refresh entries"
+
   proj.reset(5)
   assert proj.get().shape[1] == 5, "error: proj.reset(5) doesn't create a new projection with 5 components"
 
 #test if 2 projection converges to its expectation
-def test_proj2(ll, gram, samp):
+def single_proj2(ll, gram, samp):
   x = samp(3, 2)
   proj = bc.Projection2(x, ll, Nsamps, lambda : samp(1, 2).flatten())
   w = proj.get()
   assert np.all(np.fabs(gram(x) - w.dot(w.T)) < 1e-2), "error: projection2 doesn't converge to expectation; max diff = " + str(np.fabs(gram(x) - w.dot(w.T)).max())
   proj.reset()
-  assert np.all(np.fabs(w - proj.get()) > 0) and proj.get().shape == w.shape(), "error: proj.reset() doesn't retain shape or doesn't refresh entries"
+  assert proj.get().shape == w.shape, "error: proj.reset() doesn't retain shape"
+ 
+  is_constant = True
+  ltest = ll(x, samp(1, 2).flatten())
+  for i in range(10):
+    ltest2 = ll(x, samp(1,2).flatten())
+    if np.any(ltest2 != ltest):
+      is_constant = False
+  if not is_constant:
+    assert np.all(np.fabs(w - proj.get()) > 0), "error: proj.reset() doesn't refresh entries"
+
   proj.reset(5)
   assert proj.get().shape[1] == 5, "error: proj.reset(5) doesn't create a new projection with 5 components"
 
-  
-#test F on gaussian data, ensure converges to mean
-#def test_projection_gaussian_data():
-#  pass #TODO
-
-#pass in garbage and make sure it catches it
-#def test_projection_input_validation():
-#  pass #TODO
- 
+def test_proj():
+  for ll, gll, g2, gF, samp in [(ll_linear, gll_linear, gram2_linear, gramF_linear, sample_linear), (ll_quad, gll_quad, gram2_quad, gramF_quad, sample_quad)]:
+    yield single_projF, gll, gF, samp
+    yield single_proj2, ll, g2, samp
 
