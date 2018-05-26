@@ -21,7 +21,7 @@ def gll_linear(x, th, idx=None):
 def ll_quad(x, th):
   return (x.dot(th[:,np.newaxis]).T)**2
 
-def gll_quad(x, th, idx):
+def gll_quad(x, th, idx=None):
   if idx is None:
     return 2*x.dot(th[:,np.newaxis])*x
   return 2*x.dot(th[:,np.newaxis]).T * x[:,idx]
@@ -44,7 +44,7 @@ def single_llgll(ll, gll):
     thl = th.copy()
     thl[i] -= tol
     num_grad[:, i] = (ll(x, thr) - ll(x, thl))/(2*tol)
-  assert np.all(np.fabs(num_grad - exact_grad) < tol), "error: numerical/exact gradients do not match up; diff = " + str(np.fabs(num_grad-exact_grad).sum())
+  assert np.all(np.fabs(num_grad - exact_grad) < tol), "error: numerical/exact gradients do not match up; max diff = " + str(np.fabs(num_grad-exact_grad).max())
 
 def test_llgll():
   for ll, gll in [(ll_linear, gll_linear), (ll_quad, gll_quad)]:
