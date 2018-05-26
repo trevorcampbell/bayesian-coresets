@@ -24,7 +24,7 @@ class _Projection(object):
     return
 
   def reset_projection(self, projection_dim=None):
-    if not projection_dim:
+    if projection_dim is None:
       projection_dim = self.x.shape[1]
     self.update_projection_dimension(0)
     self.update_projection_dimension(projection_dim)
