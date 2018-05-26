@@ -15,7 +15,7 @@ The code for this package has been tested and is compatible with both python 2.7
 
 Unit tests are written for `nose`. To run the tests, install the package, navigate to the `tests` subfolder, and run `nosetests`.
 
-Unit tests for all coreset construction algorithms currently pass. Random projections code is not yet tested.
+All unit tests currently pass. 
 
 ### Usage
 
@@ -26,7 +26,7 @@ More details about usage, output, etc will be updated here shortly.
 Below are some papers to cite if you find the algorithms in this repository useful in your own research:
 
 * T. Campbell and T. Broderick, "[Automated scalable Bayesian inference via Hilbert coresets](http://arxiv.org/abs/1710.05053)," arXiv:1710.05053, 2017,
-* T. Campbell and T. Broderick, "[Bayesian coreset construction via Greedy Iterative Geodesic Ascent](https://arxiv.org/abs/1802.01737)," arXiv:1802.01737, 2018.
+* T. Campbell and T. Broderick, "[Bayesian coreset construction via Greedy Iterative Geodesic Ascent](https://arxiv.org/abs/1802.01737)," International Conference on Machine Learning (ICML), 2018.
 
 ### License Info
 
