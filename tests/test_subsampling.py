@@ -2,15 +2,13 @@ import bayesiancoresets as bc
 import numpy as np
 import warnings
 
+warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
 np.seterr(all='raise')
 np.set_printoptions(linewidth=500)
-
 np.random.seed(100)
-
-warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
+tol = 1e-9
 
 n_trials = 10
-tol = 1e-9
 anms = ['IS', 'RND']
 algs = [bc.ImportanceSampling, bc.RandomSubsampling]
 algs_nms = zip(anms, algs)

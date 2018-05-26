@@ -2,10 +2,11 @@ import bayesiancoresets as bc
 import numpy as np
 import warnings
 
-
 warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
+np.seterr(all='raise')
+np.set_printoptions(linewidth=500)
 np.random.seed(100)
-tol = 1e-12
+tol = 1e-9
 
 def test_empty():
   x = np.random.randn(0, 0)
