@@ -46,7 +46,7 @@ def log_likelihood(z, th):
 def log_prior(th):
   return -0.5*th.shape[0]*np.log(2.*np.pi) - 0.5*(th**2).sum()
 
-def grad_log_likelihood(z, th):
+def grad_log_likelihood(z, th, idx=None):
   if len(z.shape) == 1:
     m = -(th*z).sum()
     if m < 100:
@@ -61,7 +61,9 @@ def grad_log_likelihood(z, th):
     idcs = m < 100
     m[idcs] = np.exp(m[idcs])/(1.+np.exp(m[idcs]))
     m[np.logical_not(idcs)] = 1.
-    return m[:, np.newaxis]*z
+    if idx is None:
+      return m[:, np.newaxis]*z
+    return m*z[:, idx]
     #es = np.exp(-(th*z).sum(axis=1))
     #return (es/(1.+es))[:, np.newaxis]*z
 
