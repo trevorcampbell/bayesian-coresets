@@ -13,11 +13,6 @@ n_trials = 10
 tol = 1e-9
 anms = ['GIGA', 'FW', 'RP', 'FSW', 'OMP', 'LAR']
 algs = [bc.GIGA, bc.FrankWolfe, bc.ReweightedPursuit, bc.ForwardStagewise, bc.OrthoPursuit, bc.LAR]
-
-anms = ['RP']
-algs = [bc.ReweightedPursuit]
-
-
 algs_nms = zip(anms, algs)
 tests = [(N, D, dist, algn) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned'] for algn in algs_nms]
 
