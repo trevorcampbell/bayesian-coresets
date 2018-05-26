@@ -20,6 +20,8 @@ class OrthoPursuit(IterativeCoresetConstruction):
     active_idcs = self.wts > 0
     active_idcs[f] = True
     X = self.x[active_idcs, :]
+    print self.snorm*self.xs
+    print X.T
     res = lsq_linear(X.T, self.snorm*self.xs, bounds=(0., np.inf), max_iter=max(1000, 10*self.xs.shape[0]))
  
     #if the optimizer failed or our cost increased, stop

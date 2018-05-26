@@ -30,7 +30,7 @@ class ReweightedPursuit(GreedySingleUpdate):
     else:
       #in the worst case (ill-conditioned matrix), use a nonnegative lsq solver
       A = np.vstack((self.xw, self.x[f, :])).T
-      res = lsq_linear(A, self.snorm*self.xs, bounds=([0., 0.], [np.inf, np.inf]))
+      res = lsq_linear(A, self.snorm*self.xs, bounds=(0., np.inf))
       #if the optimizer failed or our cost increased, stop
       prev_cost = self.error()
       if not res.success or np.sqrt(2.*res.cost) >= prev_cost:

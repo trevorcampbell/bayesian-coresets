@@ -4,7 +4,7 @@ import warnings
 
 
 warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
-np.random.seed(1)
+np.random.seed(100)
 tol = 1e-12
 
 def test_empty():
