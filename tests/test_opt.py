@@ -14,8 +14,8 @@ tol = 1e-9
 anms = ['GIGA', 'FW', 'RP', 'FSW', 'OMP', 'LAR']
 algs = [bc.GIGA, bc.FrankWolfe, bc.ReweightedPursuit, bc.ForwardStagewise, bc.OrthoPursuit, bc.LAR]
 
-anms = ['FSW', 'OMP']
-algs = [bc.ForwardStagewise, bc.OrthoPursuit]
+anms = ['RP']
+algs = [bc.ReweightedPursuit]
 
 
 algs_nms = zip(anms, algs)

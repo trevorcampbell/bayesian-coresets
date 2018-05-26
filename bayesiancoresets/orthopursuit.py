@@ -16,7 +16,7 @@ class OrthoPursuit(IterativeCoresetConstruction):
     if self.wts[f] > 0:
       warnings.warn(self.alg_name+'.run(): search selected a nonzero weight to update')
 
-    #run L-BFGS-B for optimal weight update
+    #run least squares optimal weight update
     active_idcs = self.wts > 0
     active_idcs[f] = True
     X = self.x[active_idcs, :]
