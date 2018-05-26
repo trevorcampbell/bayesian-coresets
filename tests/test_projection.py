@@ -7,11 +7,19 @@ warnings.filterwarnings('ignore', category=UserWarning) #tests will generate war
 np.seterr(all='raise')
 np.set_printoptions(linewidth=500)
 np.random.seed(100)
-tol = 1e-8
+Nsamps = 10000000
 
 #linear test function/grad, sampling fcn for th and corresponding expectation gram matrix
 def sample_linear(N, D):
   return np.random.randn(N, D)
+
+def ll_linear(x, th):
+  return (x.dot(th[:,np.newaxis])).flatten()
+
+def gll_linear(x, th, idx=None):
+  if idx is None:
+    return x
+  return x[:, idx]
 
 def gram2_linear(x):
   return x.dot(x.T)
@@ -19,17 +27,17 @@ def gram2_linear(x):
 def gramF_linear(x):
   return x.dot(x.T)
   
-def ll_linear(x, th):
-  return x.dot(th[:,np.newaxis]).T
-
-def gll_linear(x, th, idx=None):
-  if idx is None:
-    return x
-  return x[:, idx]
-
 #quadratic test function/grad, sampling fcn for th and corresponding expectation gram matrix
 def sample_quad(N, D):
   return np.random.randn(N, D)
+
+def ll_quad(x, th):
+  return (0.5*(x.dot(th[:,np.newaxis]))**2).flatten()
+
+def gll_quad(x, th, idx=None):
+  if idx is None:
+    return x.dot(th[:,np.newaxis])*x
+  return x.dot(th[:,np.newaxis]).T * x[:,idx]
 
 def gram2_quad(x):
   #init gram matrix
@@ -47,7 +55,7 @@ def gram2_quad(x):
         if nunq == 3 or nunq == 4:
           continue
         if nunq == 1:
-          grm[m,n] += 0.25*3*x[m,i]**2*x[n,i]
+          grm[m,n] += 0.25*3*x[m,i]**2*x[n,i]**2
           continue
         #nunq == 2
         if (idcs == unq[0]).sum() == 3 or (idcs == unq[1]).sum() == 3:
@@ -59,45 +67,68 @@ def gram2_quad(x):
 def gramF_quad(x):
   return (x.dot(x.T))**2
   
-def ll_quad(x, th):
-  return 0.5*(x.dot(th[:,np.newaxis]).T)**2
-
-def gll_quad(x, th, idx=None):
-  if idx is None:
-    return x.dot(th[:,np.newaxis])*x
-  return x.dot(th[:,np.newaxis]).T * x[:,idx]
-
 #evaluate the testing ll / gll functions to make sure there's no error in the tests themselves
-def single_llgll(ll, gll):
-  th = np.random.randn(5)
-  x = np.random.randn(10, 5)
+def single_llgll(ll, gll, g2, gF, samp):
+  th = np.random.randn(2)
+  x = np.random.randn(3, 2)
   #compute exact gradient
   exact_grad = gll(x, th)
   #make sure it has the right shape and the component evals are equal
-  assert exact_grad.shape == (10, 5), "error: grad has incorrect shape"
-  for i in range(5):
+  assert exact_grad.shape == (3, 2), "error: grad has incorrect shape"
+  for i in range(2):
     assert np.all(exact_grad[:,i] == gll(x, th, i)), "error: grad().component != grad(component)"
   #compare the numerical grad
-  num_grad = np.zeros((10, 5))
-  for i in range(5):
+  num_grad = np.zeros((3,2))
+  eps = 1e-8
+  for i in range(2):
     thr = th.copy()
-    thr[i] += tol
+    thr[i] += eps
     thl = th.copy()
-    thl[i] -= tol
-    num_grad[:, i] = (ll(x, thr) - ll(x, thl))/(2*tol)
-  assert np.all(np.fabs(num_grad - exact_grad) < 100*tol), "error: numerical/exact gradients do not match up; max diff = " + str(np.fabs(num_grad-exact_grad).max())
-
+    thl[i] -= eps
+    num_grad[:, i] = (ll(x, thr) - ll(x, thl))/(2*eps)
+  assert np.all(np.fabs(num_grad - exact_grad) < 1e-6), "error: numerical/exact gradients do not match up; max diff = " + str(np.fabs(num_grad-exact_grad).max())
+  #make sure the exact expected gram matrices are close to numerical values
+  exact_gram2 = g2(x)
+  exact_gramF = gF(x)
+  ths = samp(Nsamps, 2)
+  num_gram2 = np.zeros_like(exact_gram2)
+  num_gramF = np.zeros_like(exact_gramF)
+  for i in range(Nsamps):
+    lls = ll(x, ths[i, :])
+    glls = gll(x, ths[i, :])
+    num_gram2 += lls[:, np.newaxis]*lls
+    num_gramF += glls.dot(glls.T)
+  num_gram2 /= Nsamps
+  num_gramF /= Nsamps
+  assert np.all(np.fabs(num_gramF - exact_gramF) < 1e-2), "error: numerical/exact gramF matrices don't match up; max diff = " + str(np.fabs(num_gramF-exact_gramF).max())
+  assert np.all(np.fabs(num_gram2 - exact_gram2) < 1e-2), "error: numerical/exact gram2 matrices don't match up; max diff = " + str(np.fabs(num_gram2-exact_gram2).max())
+  
 def test_llgll():
-  for ll, gll in [(ll_linear, gll_linear), (ll_quad, gll_quad)]:
-    yield single_llgll, ll, gll
+  for ll, gll, g2, gF, samp in [(ll_linear, gll_linear, gram2_linear, gramF_linear, sample_linear), (ll_quad, gll_quad, gram2_quad, gramF_quad, sample_quad)]:
+    yield single_llgll, ll, gll, g2, gF, samp
   
 #test if the F projection converges to the expectation
-def test_projF():
-  bc.Projection2(data, log_likelihood, projection_dim, sample_approx_posterior)
-  bc.ProjectionF(data, grad_log_likelihood, projection_dim, sample_approx_posterior)
+def test_projF(gll, gram, samp):
+  x = samp(3, 2)
+  proj = bc.ProjectionF(x, gll, Nsamps, lambda : samp(1, 2).flatten())
+  w = proj.get()
+  assert np.all(np.fabs(gram(x) - w.dot(w.T)) < 1e-2), "error: projectionF doesn't converge to expectation; max diff = " + str(np.fabs(gram(x) - w.dot(w.T)).max())
+  proj.reset()
+  assert np.all(np.fabs(w - proj.get()) > 0) and proj.get().shape == w.shape(), "error: proj.reset() doesn't retain shape or doesn't refresh entries"
+  proj.reset(5)
+  assert proj.get().shape[1] == 5, "error: proj.reset(5) doesn't create a new projection with 5 components"
 
 #test if 2 projection converges to its expectation
-def test_proj2():
+def test_proj2(ll, gram, samp):
+  x = samp(3, 2)
+  proj = bc.Projection2(x, ll, Nsamps, lambda : samp(1, 2).flatten())
+  w = proj.get()
+  assert np.all(np.fabs(gram(x) - w.dot(w.T)) < 1e-2), "error: projection2 doesn't converge to expectation; max diff = " + str(np.fabs(gram(x) - w.dot(w.T)).max())
+  proj.reset()
+  assert np.all(np.fabs(w - proj.get()) > 0) and proj.get().shape == w.shape(), "error: proj.reset() doesn't retain shape or doesn't refresh entries"
+  proj.reset(5)
+  assert proj.get().shape[1] == 5, "error: proj.reset(5) doesn't create a new projection with 5 components"
+
   
 #test F on gaussian data, ensure converges to mean
 #def test_projection_gaussian_data():
