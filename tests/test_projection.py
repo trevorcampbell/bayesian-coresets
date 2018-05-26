@@ -11,7 +11,7 @@ tol = 1e-9
 
 #linear test function/grad
 def ll_linear(x, th):
-  return x.dot(th[:,np.newaxis])
+  return x.dot(th[:,np.newaxis]).T
 def gll_linear(x, th, idx=None):
   if idx is None:
     return x
@@ -19,7 +19,7 @@ def gll_linear(x, th, idx=None):
 
 #quadratic test function/grad
 def ll_quad(x, th):
-  return x.dot((th[:,np.newaxis]*th).dot(x.T))
+  return (x.dot(th[:,np.newaxis]).T)**2
 
 def gll_quad(x, th, idx):
   if idx is None:
