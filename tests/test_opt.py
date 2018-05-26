@@ -5,7 +5,7 @@ import warnings
 np.seterr(all='raise')
 np.set_printoptions(linewidth=500)
 
-np.random.seed(1)
+np.random.seed(100)
 
 warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
 
