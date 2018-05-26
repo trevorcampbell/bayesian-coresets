@@ -7,7 +7,7 @@ warnings.filterwarnings('ignore', category=UserWarning) #tests will generate war
 np.seterr(all='raise')
 np.set_printoptions(linewidth=500)
 np.random.seed(100)
-tol = 1e-9
+tol = 1e-8
 
 #linear test function/grad
 def ll_linear(x, th):
@@ -44,7 +44,7 @@ def single_llgll(ll, gll):
     thl = th.copy()
     thl[i] -= tol
     num_grad[:, i] = (ll(x, thr) - ll(x, thl))/(2*tol)
-  assert np.all(np.fabs(num_grad - exact_grad) < tol), "error: numerical/exact gradients do not match up; max diff = " + str(np.fabs(num_grad-exact_grad).max())
+  assert np.all(np.fabs(num_grad - exact_grad) < 100*tol), "error: numerical/exact gradients do not match up; max diff = " + str(np.fabs(num_grad-exact_grad).max())
 
 def test_llgll():
   for ll, gll in [(ll_linear, gll_linear), (ll_quad, gll_quad)]:
