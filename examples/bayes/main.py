@@ -43,7 +43,6 @@ for dnm in dnames:
   cputs = np.zeros((len(anms), n_trials, Ms.shape[0]))
   csizes = np.zeros((len(anms), n_trials, Ms.shape[0]))
   Fs = np.zeros((len(anms), n_trials, Ms.shape[0]))
-  Fs_full = np.zeros(n_trials)
   cputs_full = np.zeros(n_trials)
 
   chains = np.zeros((n_trials, mcmc_steps, mu.shape[0]))
@@ -65,7 +64,6 @@ for dnm in dnames:
                      x0 = mcmc_param_init, sample_steps=mcmc_steps, burn_steps=mcmc_burn, adapt_steps=mcmc_burn, 
                      n_leapfrogs = n_leap, scale=var_scales, progress_bar=pbar, step_size=step_size_init, target_accept=target_a) 
     cputs_full[tr] = time.time()-t0
-    Fs_full[tr] = 0. #always 0, just doing this to make later code simpler
     chains[tr, :, :] = full_samples
 
     print('Running coreset construction / MCMC')
@@ -111,4 +109,4 @@ for dnm in dnames:
         gfs = np.array([ grad_log_joint(Z, full_samples[i, :], np.ones(Z.shape[0])) for i in range(full_samples.shape[0]) ])
         Fs[aidx, tr, m] = (((gcs - gfs)**2).sum(axis=1)).mean()
   #print(rhat(chains))
-  np.savez_compressed(fldr+'/'+dnm+'_results.npz', Ms=Ms, Fs=Fs, Fs_full=Fs_full, cputs=cputs, cputs_full=cputs_full, csizes=csizes, anms=anms)
+  np.savez_compressed(fldr+'/'+dnm+'_results.npz', Ms=Ms, Fs=Fs, cputs=cputs, cputs_full=cputs_full, csizes=csizes, anms=anms)
