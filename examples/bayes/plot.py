@@ -51,19 +51,19 @@ return ret;
 dnames = ['poiss/biketrips', 'poiss/airportdelays', 'lr/synth', 'lr/ds1']
 dnames = ['poiss/synth', 'poiss/biketrips', 'poiss/airportdelays', 'lr/synth', 'lr/ds1', 'lr/phishing']
 
+fig_cput = bkp.figure(y_axis_type='log', y_axis_label='Normalized Fisher Information Distance', x_axis_type='log', x_axis_label='Relative Total CPU Time', x_range=(.05, 1.1), plot_width=1250, plot_height=1250)
 fig_csz = bkp.figure(y_axis_type='log', y_axis_label='Normalized Fisher Information Distance', x_axis_type='log', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
 
 axis_font_size='36pt'
 legend_font_size='36pt'
-#fig_csz.xaxis.ticker = bkm.tickers.FixedTicker(ticks=[.1, .5, 1])
-fig_csz.xaxis.axis_label_text_font_size= axis_font_size
-fig_csz.xaxis.major_label_text_font_size= axis_font_size
+for f in [fig_cput, fig_csz]:
+  f.xaxis.axis_label_text_font_size= axis_font_size
+  f.xaxis.major_label_text_font_size= axis_font_size
+  f.yaxis.axis_label_text_font_size= axis_font_size
+  f.yaxis.major_label_text_font_size= axis_font_size
+  f.yaxis.formatter = logFmtr
+fig_cput.xaxis.ticker = bkm.tickers.FixedTicker(ticks=[.1, .5, 1])
 fig_csz.xaxis.formatter = logFmtr
-fig_csz.yaxis.axis_label_text_font_size= axis_font_size
-fig_csz.yaxis.major_label_text_font_size= axis_font_size
-fig_csz.yaxis.formatter = logFmtr
-#fig_csz.toolbar.logo = None
-#fig_csz.toolbar_location = None
 
 
 pal = bokeh.palettes.colorblind['Colorblind'][8]
@@ -73,7 +73,6 @@ for didx, dnm in enumerate(dnames):
   res = np.load(dnm  + '_results.npz')
 
   Fs = res['Fs']
-  Fs_full = res['Fs_full']
   cputs = res['cputs']
   cputs_full = res['cputs_full']
   csizes = res['csizes']
@@ -88,16 +87,21 @@ for didx, dnm in enumerate(dnames):
     else:
       clr = pal[2]
 
+    fig_cput.line(np.percentile(cputs[aidx,:,:], 50, axis=0)/np.percentile(cputs_full, 50, axis=0), np.percentile(Fs[aidx, :, :], 50, axis=0)/np.percentile(Fs[2, :, :], 50), line_color=clr, line_width=8, legend=anm)
     fig_csz.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(Fs[aidx, :, :], 50, axis=0)/np.percentile(Fs[2, :, :], 50), line_color=clr, line_width=8, legend=anm)
     
-fig_csz.legend.label_text_font_size= legend_font_size
-fig_csz.legend.glyph_width=40
-fig_csz.legend.glyph_height=80
-fig_csz.legend.spacing=20
-fig_csz.legend.orientation='horizontal'
+rndlbl = bkm.Label(x=1.0, x_offset=-10, y=700, y_units='screen', text='Full Dataset MCMC', angle=90, angle_units='deg', text_font_size='30pt')
+rndspan = bkm.Span(location = 1.0, dimension='height', line_width=8, line_color='black', line_dash='40 40')
+fig_cput.add_layout(rndspan)
+fig_cput.add_layout(rndlbl)
 
-bkp.show(fig_csz)
-#bkp.output_file('errvscsz.html')
-#bkp.save(fig_csz)
+for f in [fig_cput, fig_csz]:
+  f.legend.label_text_font_size= legend_font_size
+  f.legend.glyph_width=40
+  f.legend.glyph_height=80
+  f.legend.spacing=20
+  f.legend.orientation='horizontal'
 
+bkp.show(bkl.gridplot([[fig_cput, fig_csz]]))
+#bkp.save(bkl.gridplot([[fig_cput, fig_csz]]))
 
