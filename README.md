@@ -20,104 +20,62 @@ All unit tests currently pass.
 
 ### Example Usage: Bayesian Logistic Regression
 
-The code to run this example may be found in `examples/simple_logistic_regression/`.
+The code to follow along with this example may be found in `examples/simple_logistic_regression/`. Calling `python main.py` runs the example code, but currently there's no visualization / usage of the output.
 
 **Setup:** In Bayesian logistic regression, we have a dataset `x` of `N` input vectors `x[n, :]` in `D` dimensions along with `N` responses `y[n]` equal to -1 or 1, and we want to predict the response at an arbitrary input. The model is that there is a latent `D`-dimensional parameter `theta` such that `y[n] | theta ~ Bernoulli(1/(1+np.exp(-np.dot(theta, x[n, :]))))` independently across the data. We take a Bayesian approach to learning `theta`, and place a standard prior on it: `theta ~ Normal(0, I)`. When `N` is large, MCMC and variational inference run slowly; instead, we will first "compress" / "summarize" the dataset by building a coreset, and then run inference on that.
 
-**Step 1 - Define the Model:**
+**Step 0 - Obtain/Generate Data:** In the example, we generate synthetic data.
+```
+#10,000 datapoints, 10-dimensional
+N = 10000
+D = 10
+#generate input vectors from standard normal
+mu = np.zeros(D)
+cov = np.eye(D)
+X = np.random.multivariate_normal(mu, cov, N)
+#set the true parameter to [3,3,3,..3]
+th = 3.*np.ones(D)
+#generate responses given inputs
+ps = 1.0/(1.0+np.exp(-(X*th).sum(axis=1)))
+y =(np.random.rand(N) <= ps).astype(int)
+#format data for (grad/hess) log (likelihood/prior/joint)
+Z = y[:, np.newaxis]*X
 
-**Step 2 - Obtain a Cheap Posterior Approximation:**
+```
+
+**Step 1 - Define the Model:** The Bayesian logistic regression model, including log-prior/likelihood/joint functions and their derivatives, is defined in  `examples/simple_logistic_regression/model.py`. 
+```
+from model import *
+```
+
+**Step 2 - Obtain a Cheap Posterior Approximation:** We use the Laplace approximation to find a cheap Gaussian approximation to the posterior.
+```
+#first, optimize the log joint to find the mode:
+res = minimize(lambda mu : -log_joint(Z, mu, np.ones(Z.shape[0])), Z.mean(axis=0), jac=lambda mu : -grad_log_joint(Z, mu, np.ones(Z.shape[0])))
+#then find a quadratic expansion around the mode, and assume the distribution is Gaussian
+cov = -np.linalg.inv(hess_log_joint(Z, mu))
+
+#we can call post_approx() to sample from the approximate posterior
+post_approx = lambda : np.random.multivariate_normal(mu, cov)
+```
 
 **Step 3 - Discretize the Log-Likelihood Functions:**
+```
+projection_dim = 500 #random projection dimension, K
+#build the discretization of all the log-likelihoods based on random projection
+proj = bc.ProjectionF(Z, grad_log_likelihood, projection_dim, post_approx) 
+#construct the N x K discretized log-likelihood matrix; each row represents the discretized LL func for one datapoint
+vecs = proj.get()
+```
 
 **Step 4 - Build the Coreset**
-
-**Step 5 - Run Posterior Inference**
-
-
-
-
-**Inputs:** A Bayesian model for conditionally independent data given a latent parameter (see the **Background** section below), and a dataset. To build a coreset, you need to implement two things: the gradient of the log-likelihood function, and a cheap approximate posterior sampler.
 ```
-#dataset is an N x D numpy array, one row for each data point
-#param is a length-K numpy array
-#k is an integer from 1 to K
-#output: grads is a length-N numpy array
-def grad_log_likelihood(dataset, param, k):
-   grads = [gradient of the log_likelihood with respect to dimension k of param for each datapoint in dataset]
-   return grads
+M = 100 # use 100 datapoints
+giga = bc.GIGA(vecs) #do coreset construction using the discretized log-likelihood functions
+giga.run(M) #build the coreset
+wts = giga.weights() #get the output weights
+idcs = wts > 0 #pull out the indices of datapoints that were included in the coreset
 ```
-And second, an approximate posterior sampler:
-```
-```
-
-If we have `N` datapoints `x_1, x_2, ..., x_N`, when we run inference (MCMC, variational inference, etc), we have to compute the joint probability `p(x_1, x_2, ... x_N, theta)` for all the data many times:
-```
-def log_joint(dataset, theta):
-   lj = log_prior(theta)
-   for i in range(N):
-     lj += log_likelihood(dataset[i], theta)
-   return lj
-```
-**Outputs:** A set of weights 
-
-
-```
-nonzero_idcs = [i for i in range(N) if weights[i] > 0]
-...
-def coreset_log_joint(dataset, weights, nonzero_idcs, theta):
-   lj = log_prior(theta)
-   for i in nonzero_idcs:
-     lj += weights[i]*log_likelihood(dataset[i], theta)
-   return lj
-```
-
-This is expensive when there are lots of datapoints, i.e., `N` is large. Rather than computing the full log joint repeatedly, instead we compute the log joint for a **Bayesian coreset:**
-
-
-If the number of nonzero entries in `weights` is small compared to `N`, this function is much less expensive to compute than `log_joint`. This repository finds a good set of `weights` given a `dataset` and a Bayesian model, consisting of functions `log_likelihood`, `log_prior`, and their gradients.
-
-**Step 1: Project**
-
-The first step to build a coreset
-
-**Step 2: Find Sparse Weights**
-
-
-
-**Step 3: Posterior Inference**
-
-
-### Background
-In the setting of Bayesian inference, we have a model consisting of two components: a prior distribution on some latent parameter of interest `p(theta)`, and a likelihood distribution `p(x|theta)` that governs how the data are generated given the parameter `theta`:
-```
-def log_prior(theta):
-   lp = [ compute log(p(theta)) given parameter theta ]
-   return lp
-   
-def log_likelihood(x, theta):
-   ll = [compute log(p(x|theta)) for datapoint x with parameter theta]
-   return ll
-```
-If we have `N` datapoints `x_1, x_2, ..., x_N`, when we run inference (MCMC, variational inference, etc), we have to compute the joint probability `p(x_1, x_2, ... x_N, theta)` for all the data many times:
-```
-def log_joint(dataset, theta):
-   lj = log_prior(theta)
-   for i in range(N):
-     lj += log_likelihood(dataset[i], theta)
-   return lj
-```
-This is expensive when there are lots of datapoints, i.e., `N` is large. Rather than computing the full log joint repeatedly, instead we compute the log joint for a **Bayesian coreset:**
-```
-nonzero_idcs = [i for i in range(N) if weights[i] > 0]
-...
-def coreset_log_joint(dataset, weights, nonzero_idcs, theta):
-   lj = log_prior(theta)
-   for i in nonzero_idcs:
-     lj += weights[i]*log_likelihood(dataset[i], theta)
-   return lj
-```
-If the number of nonzero entries in `weights` is small compared to `N`, this function is much less expensive to compute than `log_joint`. This repository finds a good set of `weights` given a `dataset` and a Bayesian model, consisting of functions `log_likelihood`, `log_prior`, and their gradients.
 
 ### Citations
 
