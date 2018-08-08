@@ -59,7 +59,7 @@ cov = -np.linalg.inv(hess_log_joint(Z, mu))
 post_approx = lambda : np.random.multivariate_normal(mu, cov)
 ```
 
-**Step 3 - Discretize the Log-Likelihood Functions:**
+**Step 3 - Discretize the Log-Likelihood Functions:** The coreset construction algorithms in this repository require a finite-dimensional approximation of the log-likelihood functions for each datapoint.  
 ```
 projection_dim = 500 #random projection dimension, K
 #build the discretization of all the log-likelihoods based on random projection
