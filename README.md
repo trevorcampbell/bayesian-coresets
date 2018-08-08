@@ -1,7 +1,40 @@
 # Bayesian Coresets: Automated, Scalable Inference
 
-This repository contains the main package used to construct [Bayesian coresets](http://arxiv.org/abs/1710.05053). It also contains all the code used to run the experiments in [Bayesian Coreset Construction via Greedy Iterative Geodesic Ascent](https://arxiv.org/abs/1802.01737). More details will be added soon.
+This repository provides a python package that can be used to construct [Bayesian coresets](http://arxiv.org/abs/1710.05053). It also contains all the code used to run the experiments in [Bayesian Coreset Construction via Greedy Iterative Geodesic Ascent](https://arxiv.org/abs/1802.01737) in the `bayesian-coresets/examples/` folder.
 
+### Background
+
+A **coreset** (i.e. the "core of a dataset") is a small, weighted subset of a dataset that can be used in place of the original dataset when learning a statistical model. If the coreset is much smaller than the original dataset, generally this makes learning faster; but if the coreset is too small, it doesn't represent the original dataset well. Building a coreset that is both small and a good approximation for the purposes of Bayesian inference is what the code in this repository does.
+
+In the setting of Bayesian inference, we have a model consisting of two components: a prior distribution on some latent parameter of interest `p(theta)`, and a likelihood distribution `p(x|theta)` that governs how the data are generated given the parameter `theta`:
+```
+def log_prior(theta):
+   lp = [ compute log(p(theta)) given parameter theta ]
+   return lp
+   
+def log_likelihood(x, theta):
+   ll = [compute log(p(x|theta)) for datapoint x with parameter theta]
+   return ll
+```
+If we have `N` datapoints `x_1, x_2, ..., x_N`, when we run inference (MCMC, variational inference, etc), we have to compute the joint probability `p(x_1, x_2, ... x_N, theta)` for all the data many times:
+```
+def log_joint(dataset, theta):
+   lj = log_prior(theta)
+   for i in range(N):
+     lj += log_likelihood(dataset[i], theta)
+   return lj
+```
+This is expensive when there are lots of datapoints, i.e., `N` is large. Rather than computing the full log joint repeatedly, instead we compute the log joint for a **Bayesian coreset:**
+```
+nonzero_idcs = [i for i in range(N) if weights[i] > 0]
+...
+def coreset_log_joint(dataset, weights, nonzero_idcs, theta):
+   lj = log_prior(theta)
+   for i in nonzero_idcs:
+     lj += weights[i]*log_likelihood(dataset[i], theta)
+   return lj
+```
+If the number of nonzero entries in `weights` is small compared to `N`, this function is much less expensive to compute than `log_joint`. This repository finds a good set of `weights` given a `dataset` and a Bayesian model, consisting of functions `log_likelihood`, `log_prior`, and their gradients.
 
 ### Installation and Dependencies
 
@@ -17,9 +50,19 @@ Unit tests are written for `nose`. To run the tests, install the package, naviga
 
 All unit tests currently pass. 
 
-### Usage
+### Basic Usage
 
-More details about usage, output, etc will be updated here shortly.
+**Step 1: Project**
+
+asdfasdf
+
+**Step 2: Find **
+
+asdfasd
+
+**Step 3: Inference**
+
+asdfasdf
 
 ### Citations
 
