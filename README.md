@@ -54,15 +54,15 @@ All unit tests currently pass.
 
 **Step 1: Project**
 
-asdfasdf
 
-**Step 2: Find **
 
-asdfasd
+**Step 2: Find Sparse Weights**
 
-**Step 3: Inference**
 
-asdfasdf
+
+**Step 3: Posterior Inference**
+
+
 
 ### Citations
 
