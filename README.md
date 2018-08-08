@@ -68,7 +68,7 @@ proj = bc.ProjectionF(Z, grad_log_likelihood, projection_dim, post_approx)
 vecs = proj.get()
 ```
 
-**Step 4 - Build the Coreset**
+**Step 4 - Build the Coreset:** GIGA takes the discretized log-likelihood functions, and finds a sparse weighted subset that approximates the total log-likelihood for all the data.
 ```
 M = 100 # use 100 datapoints
 giga = bc.GIGA(vecs) #do coreset construction using the discretized log-likelihood functions
