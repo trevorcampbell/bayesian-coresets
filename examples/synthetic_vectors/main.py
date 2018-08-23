@@ -9,8 +9,8 @@ warnings.filterwarnings('ignore', category=UserWarning) #tests will generate lot
 
 n_trials = 20
 Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
-anms = ['GIGA', 'FW', 'RP', 'FSW', 'OMP', 'LAR', 'IS', 'RND']
-algs = [bc.GIGA, bc.FrankWolfe, bc.ReweightedPursuit, bc.ForwardStagewise, bc.OrthoPursuit, bc.LAR, bc.ImportanceSampling, bc.RandomSubsampling]
+anms = ['GIGA', 'FW', 'MP', 'FSW', 'OMP', 'LAR', 'IS', 'RND']
+algs = [bc.GIGA, bc.FrankWolfe, bc.MatchingPursuit, bc.ForwardStagewise, bc.OrthoPursuit, bc.LAR, bc.ImportanceSampling, bc.RandomSubsampling]
 
 
 ##########################################
