@@ -7,6 +7,9 @@ class OrthoPursuit(IterativeCoresetConstruction):
 
   def _xw_unscaled(self):
     return False
+
+  def _search(self):
+    return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()
   
   def _step(self, use_cached_xw):
     #search for FW vertex and compute line search
@@ -34,6 +37,5 @@ class OrthoPursuit(IterativeCoresetConstruction):
     
     return True
 
-  def _search(self):
-    return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()
+  
 
