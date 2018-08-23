@@ -7,4 +7,3 @@ from .forwardstagewise import ForwardStagewise
 from .pursuit import ReweightedPursuit
 from .orthopursuit import OrthoPursuit
 from .lar import LAR
-from .pipeline import BayesianCoreset
