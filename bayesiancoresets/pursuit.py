@@ -10,6 +10,11 @@ class MatchingPursuit(GreedySingleUpdate):
     res = self.snorm*self.xs - self.xw
     dots = (res*self.x).sum(axis=1)
     widcs = np.argwhere(self.wts > 0).flatten()
+
+    #if no active indices, just output argmax
+    if widcs.shape[0] == 0:
+      return dots.argmax()
+    
     #search positive direction on whole dataset, negative direction on active set
     fpos = dots.argmax()
     pos = dots[fpos]
