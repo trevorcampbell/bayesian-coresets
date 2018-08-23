@@ -142,7 +142,8 @@ class GreedySingleUpdate(IterativeCoresetConstruction):
 
     #update the weights
     self.wts *= alpha
-    self.wts[f] += beta
+    #it's possible wts[f] becomes negative if beta approx -wts[f], so threshold
+    self.wts[f] = max(self.wts[f]+beta, 0)
     #apply the same update to xw
     if use_cached_xw:
       self.xw = alpha*self.xw + beta*self.x[f, :]
