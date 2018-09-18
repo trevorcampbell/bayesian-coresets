@@ -23,6 +23,7 @@ th = 3.*np.ones(D)
 #generate responses given inputs
 ps = 1.0/(1.0+np.exp(-(X*th).sum(axis=1)))
 y =(np.random.rand(N) <= ps).astype(int)
+y[y==0] = -1
 #format data for (grad/hess) log (likelihood/prior/joint)
 Z = y[:, np.newaxis]*X
 
