@@ -56,7 +56,7 @@ res = minimize(lambda mu : -log_joint(Z, mu, np.ones(Z.shape[0])), Z.mean(axis=0
 cov = -np.linalg.inv(hess_log_joint(Z, res.x))
 
 #we can call post_approx() to sample from the approximate posterior
-post_approx = lambda : np.random.multivariate_normal(mu, cov)
+post_approx = lambda : np.random.multivariate_normal(res.x, cov)
 ```
 
 **Step 3 - Discretize the Log-Likelihood Functions:** The coreset construction algorithms in this repository require a finite-dimensional approximation of the log-likelihood functions for each datapoint.  
