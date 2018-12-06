@@ -45,10 +45,10 @@ from model import *
 #first, optimize the log joint to find the mode:
 res = minimize(lambda mu : -log_joint(Z, mu, np.ones(Z.shape[0])), Z.mean(axis=0), jac=lambda mu : -grad_log_joint(Z, mu, np.ones(Z.shape[0])))
 #then find a quadratic expansion around the mode, and assume the distribution is Gaussian
-cov = -np.linalg.inv(hess_log_joint(Z, mu))
+cov = -np.linalg.inv(hess_log_joint(Z, res.x))
 
 #we can call post_approx() to sample from the approximate posterior
-post_approx = lambda : np.random.multivariate_normal(mu, cov)
+post_approx = lambda : np.random.multivariate_normal(res.x, cov)
 
 #you can replace this step with almost any inference alg: subset MCMC, variational inference, INLA, SGLD, etc
 
