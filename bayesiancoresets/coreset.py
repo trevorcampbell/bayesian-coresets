@@ -26,7 +26,7 @@ class Coreset(object):
     if M <= self.M:
       warnings.warn(self.alg_name+'.build(): M must be increasing; returning. self.M = '+str(self.M) + ' M = '+str(M))
       return
-    if self.reached_numeric_limit
+    if self.reached_numeric_limit:
       return
 
     #initialize optimization
