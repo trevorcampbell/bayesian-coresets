@@ -32,6 +32,7 @@ class SingleGreedyCoreset(IterativeCoreset):
         f = self._search()
         if int(f) != f or f < 0:
           raise ValueError(self.alg_name+'._step(): _search() must return a nonnegative integer. type = ' + str(type(f)) + ' val = ' + str(f))
+        break
       except NumericalPrecisionError:
         if retried_already:
           warnings.warn(self.alg_name+'._step(): Greedy next point selection failed a second time. Assuming numeric limit reached.')
@@ -52,6 +53,7 @@ class SingleGreedyCoreset(IterativeCoreset):
         if type(ret) is not tuple or len(ret) != 2:
           raise ValueError(self.alg_name+'._step(): _step_coeffs() must return a 2-tuple of floats. type = ' +str(type(ret)) + ' val = ' + str(ret))
         alpha, beta = ret
+        break
       except NumericalPrecisionError:
         if retried_already:
           warnings.warn(self.alg_name+'._step(): Step coefficient computation failed a second time. Assuming numeric limit reached.')

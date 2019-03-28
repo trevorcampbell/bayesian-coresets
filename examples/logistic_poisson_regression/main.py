@@ -77,7 +77,7 @@ for dnm in dnames:
       elif anm == 'FW':
         alg = bc.FrankWolfeCoreset(vecs)
       else:
-        alg = bc.UniformSamplingCoreset(vecs)
+        alg = bc.VectorUniformSamplingCoreset(vecs)
       t_setup = time.time() - t0
 
       t_alg = 0.
