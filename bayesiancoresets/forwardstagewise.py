@@ -5,7 +5,7 @@ class ForwardStagewiseCoreset(MatchingPursuitCoreset):
     self.step_fraction = step_fraction
     if self.step_fraction <= 0 or self.step_fraction >= 1:
       raise ValueError(self.alg_name+'.__init__(): step_fraction must be in (0, 1)')
-    super(ForwardStagewise, self).__init__(_x, use_cached_xw)
+    super(ForwardStagewiseCoreset, self).__init__(_x, use_cached_xw)
 
   def _step_coeffs(self, f):
     alpha = 1.0

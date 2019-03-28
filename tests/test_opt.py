@@ -41,7 +41,7 @@ def gendata(N, D, dist="gauss"):
 #-error() vs output y(weights) are close to each other
 #-error is decreasing
 #-reset() resets the alg properly
-#-run(M) with increasing M outputs same weights as one run with large M
+#-build(M) with increasing M outputs same weights as one run with large M
 #-if input size = 1, error is 0 for any M
 #-if input is colinear, error is 0 forall M
 ####################################################
@@ -54,7 +54,7 @@ def coreset_single(N, D, dist, algn):
   #incremental M tests
   prev_err = np.inf
   for m in range(1, N+1):
-    coreset.run(m)
+    coreset.build(m)
     #check if coreset for 1 datapoint is immediately optimal
     if x.shape[0] == 1:
       assert np.fabs(coreset.weights(optimal_scaling=True) - np.array([1])) < tol or (np.fabs(coreset.weights(optimal_scaling=True) - np.array([0])) < tol and (x**2).sum() == 0.), anm +" failed: coreset not immediately optimal with N = 1"
@@ -100,12 +100,12 @@ def coreset_single(N, D, dist, algn):
   coreset.reset()
   assert coreset.M == 0 and np.all(np.fabs(coreset.weights()) == 0.) and np.fabs(coreset.error() - np.sqrt((xs**2).sum())) < tol and not coreset.reached_numeric_limit, anm+" failed: reset() did not properly reset"
 
-  #check run up to N all at once vs incremental
+  #check build up to N all at once vs incremental
   #do this test for all except bin, where symmetries can cause instabilities in the choice of vector / weights
   if dist != 'bin':
-    coreset.run(N)
+    coreset.build(N)
     xw = (coreset.weights()[:, np.newaxis]*x).sum(axis=0) 
-    assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, anm+" failed: incremental run up to N doesn't produce same result as one run at N : \n xw = " + str(xw) + " error = " +str(np.sqrt(((xw-xs)**2).sum())) + " \n xw_inc = " + str(xw_inc) + " error = " +  str(np.sqrt(((xw_inc-xs)**2).sum())) + " \n xs = " +str(xs)
+    assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, anm+" failed: incremental buid up to N doesn't produce same result as one run at N : \n xw = " + str(xw) + " error = " +str(np.sqrt(((xw-xs)**2).sum())) + " \n xw_inc = " + str(xw_inc) + " error = " +  str(np.sqrt(((xw_inc-xs)**2).sum())) + " \n xs = " +str(xs)
 
 
 def test_coreset():

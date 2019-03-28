@@ -12,7 +12,7 @@ def test_empty():
   x = np.random.randn(0, 0)
   fd = bc.FullDataset(x.shape[0])
   for m in [1, 10, 100]:
-    fd.run(m)
+    fd.build(m)
     assert fd.error() < tol, "full wts failed: error not 0"
     assert np.all(fd.weights() == np.ones(x.shape[0])), "full wts failed: weights not ones"
   #check reset
@@ -25,7 +25,7 @@ def test_one():
   x = np.random.randn(1, 3)
   fd = bc.FullDataset(x.shape[0])
   for m in [1, 10, 100]:
-    fd.run(m)
+    fd.build(m)
     assert fd.error() < tol, "full wts failed: error not 0"
     assert np.all(fd.weights() == np.ones(x.shape[0])), "full wts failed: weights not ones: "+str(fd.weights())
   #check reset
@@ -37,7 +37,7 @@ def test_many():
   x = np.random.randn(10, 3)
   fd = bc.FullDataset(x.shape[0])
   for m in [1, 10, 100]:
-    fd.run(m)
+    fd.build(m)
     assert fd.error() < tol, "full wts failed: error not 0"
     assert np.all(fd.weights() == np.ones(x.shape[0])), "full wts failed: weights not ones "+str(fd.weights())
   #check reset

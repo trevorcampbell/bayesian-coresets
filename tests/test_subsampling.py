@@ -10,7 +10,7 @@ tol = 1e-9
 
 n_trials = 10
 anms = ['IS', 'RND']
-algs = [bc.VectorImportanceSamplingCoreset, bc.VectorUniformSubsamplingCoreset]
+algs = [bc.VectorImportanceSamplingCoreset, bc.VectorUniformSamplingCoreset]
 algs_nms = zip(anms, algs)
 tests = [(N, D, dist, algn) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned'] for algn in algs_nms]
 
@@ -50,7 +50,7 @@ def coreset_single(N, D, dist, algn):
 
   #incremental M tests
   for m in range(1, N+1):
-    coreset.run(m)
+    coreset.build(m)
     
     #check if coreset is valid
     assert (coreset.weights() > 0.).sum() <= m, anm+" failed: coreset size > m"
