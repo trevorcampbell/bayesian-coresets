@@ -1,6 +1,6 @@
 from .pursuit import MatchingPursuitCoreset
 
-class ForwardStagewiseCoreset(MatchingPursuit):
+class ForwardStagewiseCoreset(MatchingPursuitCoreset):
   def __init__(self, _x, use_cached_xw=False, step_fraction=0.05):
     self.step_fraction = step_fraction
     if self.step_fraction <= 0 or self.step_fraction >= 1:

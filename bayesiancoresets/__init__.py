@@ -1,5 +1,5 @@
 from .frankwolfe import FrankWolfeCoreset
-from .subsampling import VectorImportanceSamplingCoreset, VectorUniformSubsamplingCoreset
+from .subsampling import VectorImportanceSamplingCoreset, VectorUniformSamplingCoreset
 from .fulldataset import FullDataset
 from .projection import ProjectionF, Projection2
 from .giga import GIGACoreset
