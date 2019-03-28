@@ -52,6 +52,7 @@ def coreset_single(N, D, dist, algn):
   #incremental M tests
   for m in range(1, N+1):
     coreset.build(m)
+    accuratecoreset.build(m)
     
     #check if coreset is valid
     assert (coreset.weights() > 0.).sum() <= m, anm+" failed: coreset size > m"

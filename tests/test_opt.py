@@ -56,6 +56,7 @@ def coreset_single(N, D, dist, algn):
   prev_err = np.inf
   for m in range(1, N+1):
     coreset.build(m)
+    accuratecoreset.build(m)
     #check if coreset for 1 datapoint is immediately optimal
     if x.shape[0] == 1:
       assert np.fabs(coreset.weights(optimal_scaling=True) - np.array([1])) < tol or (np.fabs(coreset.weights(optimal_scaling=True) - np.array([0])) < tol and (x**2).sum() == 0.), anm +" failed: coreset not immediately optimal with N = 1"
