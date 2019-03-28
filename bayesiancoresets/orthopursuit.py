@@ -3,7 +3,7 @@ from scipy.optimize import lsq_linear, minimize
 import warnings
 from .vector import IterativeVectorCoreset
 
-class OrthoPursuit(IterativeVectorCoreset):
+class OrthoPursuitCoreset(IterativeVectorCoreset):
 
   def _xw_unscaled(self):
     return False

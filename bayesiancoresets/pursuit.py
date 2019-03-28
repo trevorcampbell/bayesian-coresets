@@ -1,7 +1,7 @@
 from .vector import SingleGreedyVectorCoreset
 import numpy as np
 
-class MatchingPursuit(SingleGreedyVectorCoreset):
+class MatchingPursuitCoreset(SingleGreedyVectorCoreset):
 
   def _xw_unscaled(self):
     return False

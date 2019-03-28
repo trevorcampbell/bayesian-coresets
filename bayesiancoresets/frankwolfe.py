@@ -1,7 +1,7 @@
 from .vector import SingleGreedyVectorCoreset
 from .iterative import NumericalPrecisionError
 
-class FrankWolfe(SingleGreedyVectorCoreset):
+class FrankWolfeCoreset(SingleGreedyVectorCoreset):
 
   def _search(self):
     return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()

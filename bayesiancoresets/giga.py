@@ -2,7 +2,7 @@ import numpy as np
 from .vector import SingleGreedyVectorCoreset
 from .iterative import NumericalPrecisionError
 
-class GIGA(SingleGreedyVectorCoreset):
+class GIGACoreset(SingleGreedyVectorCoreset):
 
   def _xw_unscaled(self):
     return True

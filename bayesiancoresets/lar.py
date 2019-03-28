@@ -2,7 +2,7 @@ import numpy as np
 from .vector import IterativeVectorCoreset
 from scipy.optimize import lsq_linear
 
-class LAR(IterativeVectorCoreset):
+class LARCoreset(IterativeVectorCoreset):
 
   def _xw_unscaled(self):
     return False
