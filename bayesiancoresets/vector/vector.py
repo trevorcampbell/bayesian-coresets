@@ -1,7 +1,7 @@
 import numpy as np
 import warnings
-from .coreset import Coreset
-from .iterative import SingleGreedyCoreset, IterativeCoreset
+from ..base.coreset import Coreset
+from ..base.iterative import SingleGreedyCoreset, IterativeCoreset
 
 class VectorCoreset(Coreset):
   def __init__(self, _x, use_cached_xw=True):

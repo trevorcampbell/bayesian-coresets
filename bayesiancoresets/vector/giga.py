@@ -1,6 +1,6 @@
 import numpy as np
 from .vector import SingleGreedyVectorCoreset
-from .iterative import NumericalPrecisionError
+from ..base.iterative import NumericalPrecisionError
 
 class GIGACoreset(SingleGreedyVectorCoreset):
 
