@@ -11,7 +11,7 @@ tol = 1e-9
 
 n_trials = 10
 anms = ['GIGA', 'FW', 'MP', 'FSW', 'OMP', 'LAR']
-algs = [bc.GIGA, bc.FrankWolfe, bc.MatchingPursuit, bc.ForwardStagewise, bc.OrthoPursuit, bc.LAR]
+algs = [bc.GIGACoreset, bc.FrankWolfeCoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.LARCoreset]
 algs_nms = zip(anms, algs)
 tests = [(N, D, dist, algn) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned'] for algn in algs_nms]
 
