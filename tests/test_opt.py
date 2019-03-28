@@ -49,7 +49,8 @@ def coreset_single(N, D, dist, algn):
   x = gendata(N, D, dist)
   xs = x.sum(axis=0)
   anm, alg = algn
-  coreset = alg(x)
+  coreset = alg(x, use_cached_xw=True)
+  accuratecoreset = alg(x, use_cached_xw=False)
 
   #incremental M tests
   prev_err = np.inf
@@ -60,7 +61,7 @@ def coreset_single(N, D, dist, algn):
       assert np.fabs(coreset.weights(optimal_scaling=True) - np.array([1])) < tol or (np.fabs(coreset.weights(optimal_scaling=True) - np.array([0])) < tol and (x**2).sum() == 0.), anm +" failed: coreset not immediately optimal with N = 1"
     #check if coreset is valid
     assert (coreset.weights() > 0.).sum() <= m, anm+" failed: coreset size > m"
-    assert (coreset.weights() > 0.).sum() == coreset.coreset_size(), anm+" failed: sum of coreset.weights()>0  not equal to coreset_size(): sum = " + str((coreset.weights()>0).sum()) + " coreset_size(): " + str(coreset.coreset_size())
+    assert (coreset.weights() > 0.).sum() == coreset.size(), anm+" failed: sum of coreset.weights()>0  not equal to size(): sum = " + str((coreset.weights()>0).sum()) + " size(): " + str(coreset.size())
     assert np.all(coreset.weights() >= 0.), anm+" failed: coreset has negative weights"
     
     xw = (coreset.weights()[:, np.newaxis]*x).sum(axis=0)
@@ -71,18 +72,18 @@ def coreset_single(N, D, dist, algn):
 
     #check if coreset is computing error properly
     #without optimal scaling
-    assert np.fabs(coreset.error(use_cached_xw=False) - np.sqrt(((xw-xs)**2).sum())) < tol, anm+" failed: x(w) est is not close to true x(w): est err = " + str(coreset.error(use_cached_xw=False)) + ' true err = ' + str(np.sqrt(((xw-xs)**2).sum()))
+    assert np.fabs(coreset.error() - np.sqrt(((xw-xs)**2).sum())) < tol, anm+" failed: x(w) est is not close to true x(w): est err = " + str(coreset.error()) + ' true err = ' + str(np.sqrt(((xw-xs)**2).sum()))
     #with optimal scaling
-    assert np.fabs(coreset.error(use_cached_xw=False, optimal_scaling=True) - np.sqrt(((xwopt-xs)**2).sum())) < tol, anm+" failed: x(w) est is not close to true x(w) with optimal scaling: est err = " + str(coreset.error(optimal_scaling=True, use_cached_xw=False)) + ' true err = ' + str(np.sqrt(((xwopt-xs)**2).sum()))
+    assert np.fabs(coreset.error(optimal_scaling=True) - np.sqrt(((xwopt-xs)**2).sum())) < tol, anm+" failed: x(w) est is not close to true x(w) with optimal scaling: est err = " + str(coreset.error(optimal_scaling=True)) + ' true err = ' + str(np.sqrt(((xwopt-xs)**2).sum()))
 
     #check if fast / accurate error estimates are close
     #without optimal scaling
-    assert np.fabs(coreset.error(use_cached_xw=False) - coreset.error()) < tol*1000, anm+" failed: error(accurate/fast) do not return similar results: fast err = " + str(coreset.error()) + ' acc err = ' + str(coreset.error(use_cached_xw=False))
+    assert np.fabs(coreset.error() - accuratecoreset.error()) < tol*1000, anm+" failed: error(accurate/fast) do not return similar results: fast err = " + str(coreset.error()) + ' acc err = ' + str(accuratecoreset.error())
     #with optimal scaling
-    assert np.fabs(coreset.error(optimal_scaling=True, use_cached_xw=False) - coreset.error(optimal_scaling=True)) < tol*1000, anm+" failed: error(accurate/fast) with optimal scaling do not return similar results: fast err = " + str(coreset.error(optimal_scaling=True)) + ' acc err = ' + str(coreset.error(use_cached_xw=False, optimal_scaling=True))
+    assert np.fabs(coreset.error(optimal_scaling=True) - coreset.error(optimal_scaling=True)) < tol*1000, anm+" failed: error(accurate/fast) with optimal scaling do not return similar results: fast err = " + str(coreset.error(optimal_scaling=True)) + ' acc err = ' + str(coreset.error(optimal_scaling=True))
 
     #ensure optimally scaled error is lower than  regular
-    assert coreset.error(optimal_scaling=True, use_cached_xw=False) - coreset.error(use_cached_xw=False) < tol, anm+" failed: optimal scaled coreset produces higher acc error than regular one. Optimal err = " + str(coreset.error(optimal_scaling=True)) + ' regular err: ' + str(coreset.error())
+    assert coreset.error(optimal_scaling=True) - coreset.error() < tol, anm+" failed: optimal scaled coreset produces higher acc error than regular one. Optimal err = " + str(coreset.error(optimal_scaling=True)) + ' regular err: ' + str(coreset.error())
 
     #if data are colinear, check if the coreset is optimal immediately
     if 'colinear' in dist and m >= 1:

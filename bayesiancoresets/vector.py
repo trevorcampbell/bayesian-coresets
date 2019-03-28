@@ -4,7 +4,7 @@ from .coreset import Coreset
 from .iterative import SingleGreedyCoreset, IterativeCoreset
 
 class VectorCoreset(Coreset):
-  def __init__(self, _x, use_cached_xw=False):
+  def __init__(self, _x, use_cached_xw=True):
     #convert x to a 2d N x D numpy array with each row = D-dim data vector
     x = np.asarray(_x)
     if len(x.shape) != 2 or not np.issubdtype(x.dtype, np.number):
@@ -41,12 +41,12 @@ class VectorCoreset(Coreset):
     full_wts[self.nzidcs] = self.wts/self.norms
     #if xw is not scaled properly (e.g. normalized, as in GIGA) or if the user explicitly asks for it, optimally scale
     if self._xw_unscaled() or optimal_scaling:
-      return full_wts*self._optimal_scaling(self.xw if use_cached_xw else self.wts.dot(self.x))
+      return full_wts*self._optimal_scaling(self.xw if self.use_cached_xw else self.wts.dot(self.x))
     else:
       return full_wts
 
   def error(self, optimal_scaling=False):
-    if use_cached_xw:
+    if self.use_cached_xw:
       yw = self.xw.copy()
     else:
       yw = self.wts.dot(self.x)
@@ -88,7 +88,7 @@ class SingleGreedyVectorCoreset(VectorCoreset, SingleGreedyCoreset):
 
   def _update_cache(self, alpha, beta):
     #apply the same update to xw
-    if use_cached_xw:
+    if self.use_cached_xw:
       self.xw = alpha*self.xw + beta*self.x[f, :]
     else:
       self.xw = self.wts.dot(self.x)
