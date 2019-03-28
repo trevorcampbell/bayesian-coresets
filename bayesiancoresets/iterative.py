@@ -70,6 +70,7 @@ class SingleGreedyCoreset(IterativeCoreset):
     self.wts[f] = max(self.wts[f]+beta, 0)
 
     self._update_cache(alpha, beta, f)
+    return True
 
   def _search(self):
     raise NotImplementedError()
