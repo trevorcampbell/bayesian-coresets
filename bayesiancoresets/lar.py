@@ -1,8 +1,8 @@
 import numpy as np
-from .coreset import IterativeCoresetConstruction
+from .vector import IterativeVectorCoreset
 from scipy.optimize import lsq_linear
 
-class LAR(IterativeCoresetConstruction):
+class LAR(IterativeVectorCoreset):
 
   def _xw_unscaled(self):
     return False
@@ -11,7 +11,7 @@ class LAR(IterativeCoresetConstruction):
     self.active_idcs = np.zeros(self.wts.shape[0], dtype=np.bool)
     self.active_idcs[self._search()] = True
   
-  def _step(self, use_cached_xw):
+  def _step(self):
     #do least squares on active set
     X = self.x[self.active_idcs, :]
     res = lsq_linear(X.T, self.snorm*self.xs, max_iter=max(1000, 10*self.xs.shape[0]))
@@ -59,7 +59,7 @@ class LAR(IterativeCoresetConstruction):
       self.wts = (1. - gamma_leave_active)*self.wts + gamma_leave_active*w_opt
       self.wts[f_leave_active] = 0
       self.active_idcs[f_leave_active] = False
-      if use_cached_xw:
+      if self.use_cached_xw:
         self.xw = (1. - gamma_leave_active)*self.xw + gamma_leave_active*x_opt
       else:
         self.xw = self.wts.dot(self.x)
@@ -67,7 +67,7 @@ class LAR(IterativeCoresetConstruction):
       #a variable becomes aligned first, joins active set
       self.wts = (1. - gamma_least_angle)*self.wts + gamma_least_angle*w_opt
       self.active_idcs[f_least_angle] = True
-      if use_cached_xw:
+      if self.use_cached_xw:
         self.xw = (1. - gamma_least_angle)*self.xw + gamma_least_angle*x_opt
       else:
         self.xw = self.wts.dot(self.x)

@@ -1,7 +1,8 @@
 import numpy as np
-from .coreset import GreedySingleUpdate
+from .vector import SingleGreedyVectorCoreset
+from .iterative import NumericalPrecisionError
 
-class GIGA(GreedySingleUpdate):
+class GIGA(SingleGreedyVectorCoreset):
 
   def _xw_unscaled(self):
     return True
@@ -24,7 +25,7 @@ class GIGA(GreedySingleUpdate):
     cdir = self.xs - self.xs.dot(self.xw)*self.xw
     cdirnrm =np.sqrt((cdir**2).sum()) 
     if cdirnrm < 1e-14:
-      return None
+      raise NumericalPrecisionError
     cdir /= cdirnrm
     scorenums = self.x.dot(cdir) 
     scoredenoms = self.x.dot(self.xw)
@@ -38,12 +39,10 @@ class GIGA(GreedySingleUpdate):
     return scores.argmax()
  
   def _step_coeffs(self, f):
-    if f is None:
-      return None, None
     gA = self.xs.dot(self.x[f,:]) - self.xs.dot(self.xw) * self.xw.dot(self.x[f,:])
     gB = self.xs.dot(self.xw) - self.xs.dot(self.x[f,:]) * self.xw.dot(self.x[f,:])
     if gA <= 0. or gB < 0:
-      return None, None
+      raise NumericalPrecisionError
     return gB/(gA+gB), gA/(gA+gB) 
 
 

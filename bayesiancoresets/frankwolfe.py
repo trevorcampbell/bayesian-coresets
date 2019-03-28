@@ -1,8 +1,7 @@
-from .coreset import GreedySingleUpdate
+from .vector import SingleGreedyVectorCoreset
+from .iterative import NumericalPrecisionError
 
-class FrankWolfe(GreedySingleUpdate):
-  def __init__(self, _x):
-    super(FrankWolfe, self).__init__(_x)
+class FrankWolfe(SingleGreedyVectorCoreset):
 
   def _search(self):
     return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()
@@ -14,7 +13,7 @@ class FrankWolfe(GreedySingleUpdate):
     gammanum = (self.norm_sum*self.x[f, :] - self.xw).dot(self.snorm*self.xs - self.xw)
     gammadenom = ((self.norm_sum*self.x[f, :] - self.xw)**2).sum()
     if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
-      return None, None
+      raise NumericalPrecisionError
     return 1. - gammanum/gammadenom, self.norm_sum*gammanum/gammadenom
   
   def _initialize(self):

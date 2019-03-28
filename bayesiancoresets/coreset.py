@@ -24,7 +24,7 @@ class Coreset(object):
   def build(self, M):
     #if M is not greater than self.M, just return 
     if M <= self.M:
-      warnings.warn(self.alg_name+'.run(): M must be increasing; returning. self.M = '+str(self.M) + ' M = '+str(M))
+      warnings.warn(self.alg_name+'.build(): M must be increasing; returning. self.M = '+str(self.M) + ' M = '+str(M))
       return
     if self.reached_numeric_limit
       return

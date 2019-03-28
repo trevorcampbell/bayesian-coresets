@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.optimize import lsq_linear, minimize
 import warnings
-from .coreset import IterativeCoresetConstruction
+from .vector import IterativeVectorCoreset
 
-class OrthoPursuit(IterativeCoresetConstruction):
+class OrthoPursuit(IterativeVectorCoreset):
 
   def _xw_unscaled(self):
     return False
@@ -11,7 +11,7 @@ class OrthoPursuit(IterativeCoresetConstruction):
   def _search(self):
     return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()
   
-  def _step(self, use_cached_xw):
+  def _step(self):
     #search for FW vertex and compute line search
     f = self._search()
 

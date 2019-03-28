@@ -2,6 +2,10 @@ import numpy as np
 import warnings
 from .coreset import Coreset
 
+
+class NumericalPrecisionError(Exception):
+  pass
+
 class IterativeCoreset(Coreset):
   def _build(self, M):
     Mnew = self.M
@@ -9,6 +13,8 @@ class IterativeCoreset(Coreset):
       if self.reached_numeric_limit:
         break
       stepped = self._step()
+      if type(stepped) is not bool:
+        raise ValueError(self.alg_name+'._build(): _step() must return a bool denoting failure or success.')
       if stepped:
         Mnew = m+1
     return Mnew
@@ -16,50 +22,52 @@ class IterativeCoreset(Coreset):
   def _step(self):
     raise NotImplementedError()
 
-class StepFailureError(Exception):
-  pass
-
-class SearchFailureError(Exception):
-  pass
-
-class GreedySingleUpdate(IterativeCoreset):
+class SingleGreedyCoreset(IterativeCoreset):
 
   def _step(self):
-    #search for the next best point and step length
-    try:
-      f = self._search()
-    except SearchFailureError:
-      print('Greedy next point selection failed')
-    alpha, beta = self._step_coeffs(f) 
+    #search for the next best point
+    retried_already = False
+    while True:
+      try:
+        f = self._search()
+        if type(f) is not int or f < 0:
+          raise ValueError(self.alg_name+'._step(): _search() must return a nonnegative integer.')
+      except NumericalPrecisionError:
+        if retried_already:
+          warnings.warn(self.alg_name+'._step(): Greedy next point selection failed a second time. Assuming numeric limit reached.')
+          self.reached_numeric_limit = True
+          return False
+        else:
+          warnings.warn(self.alg_name+'._step(): Greedy next point selection failed. Retrying...')
+          retried_already = True
+          self._prepare_retry_search()
 
-    #if the line search is invalid, possibly reached numeric limit
-    if alpha is None:
-      #try recomputing xw from scratch and rerunning search
-      self.xw = self.wts.dot(self.x)
-      if self._xw_unscaled():
-        self._renormalize()
-      f = self._search()
-      alpha, beta = self._step_coeffs(f) 
-
-      #if it's still no good, we've reached the numeric limit
-      if alpha is None: #gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:  
-        self.reached_numeric_limit = True
-        return False
+    #get step length
+    retried_already = False
+    while True:
+      try:
+        #alpha is the downweighting for all other data
+        #beta is the new weight for single selected data
+        ret = self._step_coeffs(f)
+        if type(ret) is not tuple or len(ret) != 2:
+          raise ValueError(self.alg_name+'._step(): _step_coeffs() must return a 2-tuple of floats.')
+        alpha, beta = ret
+      except NumericalPrecisionError:
+        if retried_already:
+          warnings.warn(self.alg_name+'._step(): Step coefficient computation failed a second time. Assuming numeric limit reached.')
+          self.reached_numeric_limit = True
+          return False
+        else:
+          warnings.warn(self.alg_name+'._step(): Step coefficient computation failed. Retrying...')
+          retried_already = True
+          self._prepare_retry_search()
 
     #update the weights
     self.wts *= alpha
     #it's possible wts[f] becomes negative if beta approx -wts[f], so threshold
     self.wts[f] = max(self.wts[f]+beta, 0)
-    #apply the same update to xw
-    if use_cached_xw:
-      self.xw = alpha*self.xw + beta*self.x[f, :]
-    else:
-      self.xw = self.wts.dot(self.x)
 
-    if self._xw_unscaled():
-      self._renormalize()
-
-    return True
+    self._update_cache(alpha, beta)
 
   def _search(self):
     raise NotImplementedError()
@@ -67,11 +75,14 @@ class GreedySingleUpdate(IterativeCoreset):
   def _step_coeffs(self, f):
     raise NotImplementedError()
 
-  def _step_prepare_retry(self):
-    raise NotImplementedError()
+  def _prepare_retry_step(self):
+    pass #implementation optional
   
-  def _search_prepare_retry(self):
-    raise NotImplementedError()
+  def _prepare_retry_search(self):
+    pass #implementation optional
+
+  def _update_cache(self):
+    pass #implementation optional
 
   
 

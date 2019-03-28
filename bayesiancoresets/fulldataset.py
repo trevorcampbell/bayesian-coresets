@@ -1,16 +1,21 @@
 import numpy as np
-from .coreset import CoresetConstruction
+from .coreset import Coreset
 
-class FullDataset(CoresetConstruction):
-  def _xw_unscaled(self):
-    return False
+class FullDataset(Coreset):
 
   def _initialize(self):
-    self.wts = self.norms.copy()
-    self.xw = self.wts.dot(self.x)
+    self.wts = np.ones(self.N)
 
-  def _build(self, M, use_cached_xw):
+  def weights(self):
+    return self.wts
+
+  def error(self):
+    return 0.
+
+  def _build(self, M):
     pass
 
-  
+  def optimize(self):
+    pass
+
 

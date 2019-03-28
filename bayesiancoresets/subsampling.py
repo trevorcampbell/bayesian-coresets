@@ -1,7 +1,7 @@
 import numpy as np
-from .coreset import CoresetConstruction
+from .vector import VectorCoreset
 
-class ImportanceSampling(CoresetConstruction):
+class VectorImportanceSamplingCoreset(VectorCoreset):
 
   def _xw_unscaled(self):
     return False
@@ -13,13 +13,15 @@ class ImportanceSampling(CoresetConstruction):
     else:
       self.ps = 1.0/float(self.N) * np.ones(self.N)
 
-  def _build(self, M, use_cached_xw):
+  def _build(self, M):
     self.cts += np.random.multinomial(M - self.M, self.ps)
     self.wts = self.norms*self.cts/self.ps/M
     self.xw = self.wts.dot(self.x)
     return M
 
-class RandomSubsampling(ImportanceSampling):
+class VectorUniformSamplingCoreset(VectorImportanceSamplingCoreset):
   def _initialize(self):
     self.cts = np.zeros(self.N)
     self.ps = 1.0/float(self.N)*np.ones(self.N)
+
+
