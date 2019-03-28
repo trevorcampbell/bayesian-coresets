@@ -10,7 +10,7 @@ tol = 1e-9
 
 def test_empty():
   x = np.random.randn(0, 0)
-  fd = bc.FullDataset(x)
+  fd = bc.FullDataset(x.shape[0])
   for m in [1, 10, 100]:
     fd.run(m)
     assert fd.error() < tol, "full wts failed: error not 0"
@@ -23,7 +23,7 @@ def test_empty():
 
 def test_one():
   x = np.random.randn(1, 3)
-  fd = bc.FullDataset(x)
+  fd = bc.FullDataset(x.shape[0])
   for m in [1, 10, 100]:
     fd.run(m)
     assert fd.error() < tol, "full wts failed: error not 0"
@@ -35,7 +35,7 @@ def test_one():
 
 def test_many():
   x = np.random.randn(10, 3)
-  fd = bc.FullDataset(x)
+  fd = bc.FullDataset(x.shape[0])
   for m in [1, 10, 100]:
     fd.run(m)
     assert fd.error() < tol, "full wts failed: error not 0"
