@@ -86,7 +86,7 @@ class SingleGreedyVectorCoreset(VectorCoreset, SingleGreedyCoreset):
   def _prepare_retry_search(self):
     self._prepare_retry_step()
 
-  def _update_cache(self, alpha, beta):
+  def _update_cache(self, alpha, beta, f):
     #apply the same update to xw
     if self.use_cached_xw:
       self.xw = alpha*self.xw + beta*self.x[f, :]
