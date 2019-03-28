@@ -72,8 +72,8 @@ vecs = proj.get()
 
 #build the coreset
 M = 100 # use 100 datapoints
-giga = bc.GIGA(vecs) #do coreset construction using the discretized log-likelihood functions
-giga.run(M) #build the coreset
+giga = bc.GIGACoreset(vecs) #do coreset construction using the discretized log-likelihood functions
+giga.build(M) #build the coreset
 wts = giga.weights() #get the output weights
 idcs = wts > 0 #pull out the indices of datapoints that were included in the coreset
 

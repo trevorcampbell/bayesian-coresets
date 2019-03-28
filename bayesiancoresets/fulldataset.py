@@ -13,7 +13,7 @@ class FullDataset(Coreset):
     return 0.
 
   def _build(self, M):
-    pass
+    return M
 
   def optimize(self):
     pass

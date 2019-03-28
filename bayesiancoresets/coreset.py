@@ -34,7 +34,10 @@ class Coreset(object):
       self._initialize()
     
     #build the coreset with size at most M
-    self.M = self._build(M)
+    Mnew = self._build(M)
+    if Mnew != int(Mnew):
+      raise ValueError(self.alg_name + '.build(): ._build(M) must return the new total number of steps taken. type = ' + str(type(Mnew)) + ' val = ' + str(Mnew))
+    self.M = Mnew
 
     #if we reached numeric limit during the current build, warn immediately
     if self.reached_numeric_limit:

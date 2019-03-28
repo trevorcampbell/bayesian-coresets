@@ -73,11 +73,11 @@ for dnm in dnames:
       t0 = time.time()
       alg = None
       if 'GIGA' in anm:
-        alg = bc.GIGA(vecs)
+        alg = bc.GIGACoreset(vecs)
       elif anm == 'FW':
-        alg = bc.FrankWolfe(vecs)
+        alg = bc.FrankWolfeCoreset(vecs)
       else:
-        alg = bc.RandomSubsampling(vecs) 
+        alg = bc.UniformSamplingCoreset(vecs)
       t_setup = time.time() - t0
 
       t_alg = 0.
@@ -85,7 +85,7 @@ for dnm in dnames:
         print('M = ' + str(Ms[m]) + ': coreset construction')
         #this runs alg up to a level of M; on the next iteration, it will continue from where it left off
         t0 = time.time()
-        alg.run(Ms[m])
+        alg.build(Ms[m])
         t_alg += time.time()-t0
         wts = alg.weights()
         idcs = wts > 0

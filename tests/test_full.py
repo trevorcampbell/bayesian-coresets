@@ -17,7 +17,7 @@ def test_empty():
     assert np.all(fd.weights() == np.ones(x.shape[0])), "full wts failed: weights not ones"
   #check reset
   fd.reset()
-  assert fd.M == 0 and np.all(np.fabs(fd.weights()) == 0.) and np.fabs(fd.error() - np.sqrt((fd.snorm**2).sum())) < tol and not fd.reached_numeric_limit, "FullDataset failed: reset() did not properly reset"
+  assert fd.M == 0 and np.all(np.fabs(fd.weights()) == 0.) and np.fabs(fd.error() - 0.) < tol and not fd.reached_numeric_limit, "FullDataset failed: reset() did not properly reset"
 
 
 
@@ -30,7 +30,7 @@ def test_one():
     assert np.all(fd.weights() == np.ones(x.shape[0])), "full wts failed: weights not ones: "+str(fd.weights())
   #check reset
   fd.reset()
-  assert fd.M == 0 and np.all(np.fabs(fd.weights()) == 0.) and np.fabs(fd.error() - np.sqrt((fd.snorm**2).sum())) < tol and not fd.reached_numeric_limit, "FullDataset failed: reset() did not properly reset"
+  assert fd.M == 0 and np.all(np.fabs(fd.weights()) == 0.) and np.fabs(fd.error() - np.sqrt((x.sum(axis=0)**2).sum())) < tol and not fd.reached_numeric_limit, "FullDataset failed: reset() did not properly reset"
 
 
 def test_many():
@@ -42,6 +42,6 @@ def test_many():
     assert np.all(fd.weights() == np.ones(x.shape[0])), "full wts failed: weights not ones "+str(fd.weights())
   #check reset
   fd.reset()
-  assert fd.M == 0 and np.all(np.fabs(fd.weights()) == 0.) and np.fabs(fd.error() - np.sqrt((fd.snorm**2).sum())) < tol and not fd.reached_numeric_limit, "FullDataset failed: reset() did not properly reset"
+  assert fd.M == 0 and np.all(np.fabs(fd.weights()) == 0.) and np.fabs(fd.error() - np.sqrt((x.sum(axis=0)**2).sum())) < tol and not fd.reached_numeric_limit, "FullDataset failed: reset() did not properly reset"
 
 

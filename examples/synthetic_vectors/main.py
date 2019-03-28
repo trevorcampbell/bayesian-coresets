@@ -10,7 +10,7 @@ warnings.filterwarnings('ignore', category=UserWarning) #tests will generate lot
 n_trials = 20
 Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 anms = ['GIGA', 'FW', 'MP', 'FSW', 'OMP', 'LAR', 'IS', 'RND']
-algs = [bc.GIGA, bc.FrankWolfe, bc.MatchingPursuit, bc.ForwardStagewise, bc.OrthoPursuit, bc.LAR, bc.ImportanceSampling, bc.RandomSubsampling]
+algs = [bc.GIGACoreset, bc.FrankWolfeCoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.LARCoreset, bc.ImportanceSamplingCoreset, bc.UniformSamplingCoreset]
 
 
 ##########################################
@@ -33,7 +33,7 @@ for tr in range(n_trials):
 
     for m, M in enumerate(Ms):
       t0 = time.time()
-      alg.run(M)
+      alg.build(M)
       tf = time.time()
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts = alg.weights()
@@ -65,7 +65,7 @@ for tr in range(n_trials):
 
     for m, M in enumerate(Ms):
       t0 = time.time()
-      alg.run(M)
+      alg.build(M)
       tf = time.time()
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts = alg.weights()
