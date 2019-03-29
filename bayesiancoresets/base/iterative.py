@@ -2,10 +2,6 @@ import numpy as np
 import warnings
 from .coreset import Coreset
 
-
-class NumericalPrecisionError(Exception):
-  pass
-
 class IterativeCoreset(Coreset):
   def _build(self, M):
     Mnew = self.M
