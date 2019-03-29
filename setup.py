@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name = 'bayesiancoresets',
@@ -7,7 +7,8 @@ setup(
     author='Trevor Campbell',
     author_email='tdjc@mit.edu',
     url='https://github.com/trevorcampbell/bayesian-coresets/',
-    packages=['bayesiancoresets'],
+    #packages=['bayesiancoresets'],
+    packages=find_packages(),
     install_requires=['numpy', 'scipy'],
     keywords = ['Bayesian', 'inference', 'coreset', 'Hilbert', 'Frank-Wolfe', 'greedy', 'geodesic'],
     platforms='ALL',
