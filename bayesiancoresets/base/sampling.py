@@ -1,14 +1,14 @@
 import numpy as np
 from .coreset import Coreset
 
-#TODO this is not fully implemented yet
 class ImportanceSamplingCoreset(Coreset):
-  def __init__(self, N):
-    raise NotImplementedError
+  def __init__(self, ps):
+    if np.any(ps < 0.):
+      raise ValueError(self.alg_name+'.__init__(): ps must be all nonnegative')
+    self.ps /= self.ps.sum()
 
   def _initialize(self):
     self.cts = np.zeros(self.N)
-    self.ps = self.norms/self.norm_sum
 
   def _build(self, M):
     self.cts += np.random.multinomial(M - self.M, self.ps)
@@ -16,8 +16,6 @@ class ImportanceSamplingCoreset(Coreset):
     return M
 
 class UniformSamplingCoreset(ImportanceSamplingCoreset):
-  def _initialize(self):
-    self.cts = np.zeros(self.N)
-    self.ps = 1.0/float(self.N)*np.ones(self.N)
-
-
+  def __init__(self, N):
+    self.N = N
+    self.ps = 1./float(N)*np.ones(N)
