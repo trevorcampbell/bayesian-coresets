@@ -47,6 +47,8 @@ class Coreset(object):
   def optimize(self):
     raise NotImplementedError()
     
+
+  #things that initialize the weights to be in a valid state
   def _initialize(self):
     pass #implementation optional
 
