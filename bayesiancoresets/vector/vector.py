@@ -1,5 +1,6 @@
 import numpy as np
 import warnings
+from scipy.optimize import lsq_linear, minimize
 from ..base.coreset import Coreset
 from ..base.iterative import SingleGreedyCoreset, IterativeCoreset
 
@@ -66,6 +67,13 @@ class VectorCoreset(Coreset):
 
   def _xw_unscaled(self):
     raise NotImplementedError()
+
+  def optimize(self):
+    #run least squares optimal weight update
+    active_idcs = self.wts > 0
+    X = self.x[active_idcs, :]
+    res = lsq_linear(X.T, self.snorm*self.xs, bounds=(0., np.inf), max_iter=max(1000, 10*self.xs.shape[0]))
+
 
 class IterativeVectorCoreset(VectorCoreset, IterativeCoreset):
   pass
