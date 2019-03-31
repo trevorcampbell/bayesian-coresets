@@ -3,15 +3,15 @@ import warnings
 from scipy.special import erfc
 import bisect
 
-class OptimizationCoreset(Coreset):
+class OptimizationResult(object):
+  def __init__(self, x, f0, v0, f1, v1):
+    self.x = x
+    self.f0 = f0
+    self.v0 = v0
+    self.f1 = f1
+    self.v1 = v1
 
-  def __init__(self, N, opt_itrs=1000, adam_a=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
-    super(OptimizationCoreset, self).__init__(N)
-    self.opt_itrs = opt_itrs
-    self.adam_a = adam_a
-    self.adam_b1 = adam_b1
-    self.adam_b2 = adam_b2
-    self.adam_eps = adam_eps
+class OptimizationCoreset(Coreset):
 
   def reset(self):
     super(OptimizationCoreset, self).reset()
@@ -37,7 +37,7 @@ class OptimizationCoreset(Coreset):
       lmb = (lmbu+lmbl)/2.
 
       #optimize weights
-      w = self._adam(wi, lambda w : self._grad(w, np.full(self.N, True), reg(lmb))[0]) 
+      w = self._optimize(wi, np.full(self.N, True), lmb).w
       
       #add to the cache
       nnz = (w > 0).sum()
@@ -62,51 +62,21 @@ class OptimizationCoreset(Coreset):
   def _max_reg_coeff(self):
     raise NotImplementedError()
   
-  #support stochastic: output estimate, uncertainty = variance
-  #support caching
-  def _reg(self, w, idcs, coeff):
+  def _optimize(self, w0, idcs, reg_coeff):
     raise NotImplementedError()
-
-  #support stochastic: output estimate, uncertainty = variance
-  #support caching
-  def _obj(self, w, idcs, regularization=None):
-    raise NotImplementedError()
-
-  #support stochastic: output estimate, uncertainty = variance
-  #support caching
-  def _grad(self, w, idcs, regularization=None):
-    raise NotImplementedError()
-
-  def weights(self):
-    return self.wts
-
-  def error(self):
-    return self._obj_estimate(True)
-
-  def _adam(self, w, grad):
-    w = w.copy() #avoid overwriting input, just in case
-    adam_m1 = np.zeros(w.shape[0])
-    adam_m2 = np.zeros(w.shape[0])
-    for i in range(opt_itrs):
-      g = grad(w)
-      adam_m1 = self.adam_b1*adam_m1 + (1.-self.adam_b1)*g
-      adam_m2 = self.adam_b2*adam_m2 + (1.-self.adam_b2)*g**2
-      upd = self.adam_a(i)*adam_m1/(1.-self.adam_b1**(i+1))/(self.adam_eps + np.sqrt(adam_m2/(1.-self.adam_b2**(i+1))))
-      w -= upd
-
-      #project onto w>=0
-      w = np.maximum(wi, 0.)
-    return w
 
   def optimize(self, check_obj_decrease=False, verbose=False):
-    w = self._adam(self.wts, lambda w : self._grad(w, self.wts>0, None)[0])
+    res = self._optimize(self.wts, self.wts > 0, 0.)  
+    w = res.w
+    f0 = res.f0
+    v0 = res.v0
+    f1 = res.f1
+    v1 = res.v1 
 
     #update weights to optimized version
     if check_obj_decrease:
-      old_obj = self._obj(self.wts, self.wts > 0, None) 
-      new_obj = self._obj(w, w > 0, None) 
-      diffmean = new_obj[0] - old_obj[0]
-      diffvar =  old_obj[1] + new_obj[1]
+      diffmean = f1 - f0
+      diffvar =  v1 + v0
       #check if gaussian with mean diffmean, diffvar > 0, only update if pr > 0.5
       pr_decrease = 0.5*erfc(diffmean / (np.sqrt(2*diffvar)))
       if pr_decrease > 0.5:
@@ -115,6 +85,21 @@ class OptimizationCoreset(Coreset):
       self.wts = w
 
 
+def adam(self, x0, grad, opt_itrs=1000, adam_a=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8):
+  x = x0.copy()
+  adam_m1 = np.zeros(x.shape[0])
+  adam_m2 = np.zeros(x.shape[0])
+  for i in range(opt_itrs):
+    g = grad(x)
+    adam_m1 = adam_b1*adam_m1 + (1.-adam_b1)*g
+    adam_m2 = adam_b2*adam_m2 + (1.-adam_b2)*g**2
+    upd = adam_a(i)*adam_m1/(1.-adam_b1**(i+1))/(adam_eps + np.sqrt(adam_m2/(1.-adam_b2**(i+1))))
+    x -= upd
+
+    #project onto x>=0
+    x = np.maximum(x, 0.)
+
+  return x
 
 
 

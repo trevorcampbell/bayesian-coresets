@@ -73,6 +73,8 @@ class VectorCoreset(Coreset):
     active_idcs = self.wts > 0
     X = self.x[active_idcs, :]
     res = lsq_linear(X.T, self.snorm*self.xs, bounds=(0., np.inf), max_iter=max(1000, 10*self.xs.shape[0]))
+    self.wts[active_idcs] = res.x
+    self.xw = self.wts.dot(self.x)
 
 
 class IterativeVectorCoreset(VectorCoreset, IterativeCoreset):
