@@ -1,3 +1,10 @@
+import numpy as np
+import warnings
+from .kl import KLCoreset
+from ..base.iterative import GreedySingleUpdateCoreset
+
+
+
 class GreedyKLCoreset(KLCoreset,GreedySingleUpdateCoreset):
 
   def _search(self):
