@@ -1,3 +1,3 @@
 from .vector import *
 from .kl import *
-from .base import FullDataset
+from .base import FullDataset, ImportanceSamplingCoreset, UniformSamplingCoreset
