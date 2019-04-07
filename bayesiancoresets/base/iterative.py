@@ -45,7 +45,7 @@ class SingleGreedyCoreset(IterativeCoreset):
     while True:
       try:
         #alpha is the downweighting for all other data
-        #beta is the new weight for single selected data
+        #beta is the new additional weight for single selected data
         ret = self._step_coeffs(f)
         if type(ret) is not tuple or len(ret) != 2:
           raise ValueError(self.alg_name+'._step(): _step_coeffs() must return a 2-tuple of floats. type = ' +str(type(ret)) + ' val = ' + str(ret))

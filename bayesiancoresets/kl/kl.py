@@ -3,7 +3,7 @@ import warnings
 from ..base.coreset import Coreset
 
 class KLCoreset(Coreset): 
-  def __init__(self, N, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, scaled=True):
+  def __init__(self, N, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, scaled=True, normalized = True):
     super(Coreset, self).__init__(N)
     self.potentials = potentials
     self.sampler = sampler
@@ -15,9 +15,16 @@ class KLCoreset(Coreset):
     else:
       self.scales = np.ones(self.N)
       self.full_wts = np.ones(self.N)
+    self.normalized = normalized
     self.full_potentials_cache = np.zeros(self.N)
     self.n_fpc = 0
     self.n_lognorm_disc = n_lognorm_disc
+
+  def weights(self):
+    return self.wts/self.scales
+
+  def error(self):
+    return self._kl_estimate()
 
   def _sample_potentials(self, w, scls=None):
     if not scls:
@@ -35,11 +42,11 @@ class KLCoreset(Coreset):
     ps = self._sample_potentials(np.zeros(self.N), scls = np.ones(self.N))
     return ps.std(axis=1)
 
-  def weights(self):
-    return self.wts/self.scales
+  def _kl_grad_estimate(self, idcs):
+    return self._reverse_kl_grad_estimate() if self.reverse else self._forward_kl_grad_estimate()
 
-  def error(self):
-    return self.reverse_kl_estimate() if self.reverse else self.forward_kl_estimate()
+  def _kl_estimate(self):
+    return self._reverse_kl_estimate() if self.reverse else self._forward_kl_estimate()
       
   def _forward_kl_grad_estimate(self):
     #compute two potentials
@@ -51,12 +58,12 @@ class KLCoreset(Coreset):
     #return grad
     return wpots.mean(axis=1) - self.full_potentials_cache
 
-  def _reverse_kl_grad_estimate(self, normalized=False):
+  def _reverse_kl_grad_estimate(self):
     pots = self._sample_potentials(self.wts)
     residual_pots = (self.full_wts - self.wts).dot(pots)
 
     num = -(pots*residual_pots).var(axis=1)
-    if normalized:
+    if self.normalized:
       denom = pots.std(axis=1) * residual_pots.std()
     else:
       denom = 1.

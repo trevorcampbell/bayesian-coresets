@@ -15,7 +15,7 @@ class OptimizationCoreset(Coreset):
 
   def reset(self):
     super(OptimizationCoreset, self).reset()
-    self.lmb_cache = [self._max_reg_coeff(), 0.]
+    self.lmb_cache = [self._mrc(), 0.]
     self.w_cache = [np.zeros(self.N), np.ones(self.N)]
     self.M_cache = [0, self.N]
 
@@ -37,7 +37,7 @@ class OptimizationCoreset(Coreset):
       lmb = (lmbu+lmbl)/2.
 
       #optimize weights
-      w = self._optimize(wi, np.full(self.N, True), lmb).w
+      w = self._optimize(wi, np.full(self.N, True), lmb).x
       
       #add to the cache
       nnz = (w > 0).sum()
@@ -59,6 +59,13 @@ class OptimizationCoreset(Coreset):
       self.M = Ml
       return Ml
 
+  def _mrc(self):
+    if not hasattr(self, 'mrcoeff'):
+      if not np.all(self.wts == 0):
+        raise ValueError()
+      self.mrcoeff = self._max_reg_coeff()
+    return self.mrcoeff
+      
   def _max_reg_coeff(self):
     raise NotImplementedError()
   
@@ -67,7 +74,7 @@ class OptimizationCoreset(Coreset):
 
   def optimize(self, check_obj_decrease=False, verbose=False):
     res = self._optimize(self.wts, self.wts > 0, 0.)  
-    w = res.w
+    w = res.x
     f0 = res.f0
     v0 = res.v0
     f1 = res.f1
@@ -85,7 +92,7 @@ class OptimizationCoreset(Coreset):
       self.wts = w
 
 
-def adam(self, x0, grad, opt_itrs=1000, adam_a=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8):
+def adam(x0, grad, opt_itrs=1000, adam_a=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8):
   x = x0.copy()
   adam_m1 = np.zeros(x.shape[0])
   adam_m2 = np.zeros(x.shape[0])
