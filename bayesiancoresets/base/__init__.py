@@ -1,4 +1,4 @@
 from .coreset import Coreset
 from .iterative import IterativeCoreset, SingleGreedyCoreset
 from .fulldataset import FullDataCoreset
-from .sampling import ImportanceSamplingCoreset, UniformSamplingCoreset
+from .sampling import SamplingCoreset
