@@ -1,5 +1,5 @@
 from .frankwolfe import FrankWolfeCoreset
-from .sampling import VectorImportanceSamplingCoreset, VectorUniformSamplingCoreset
+from .sampling import VectorSamplingCoreset, VectorUniformSamplingCoreset
 from .projection import ProjectionF, Projection2
 from .giga import GIGACoreset
 from .forwardstagewise import ForwardStagewiseCoreset
