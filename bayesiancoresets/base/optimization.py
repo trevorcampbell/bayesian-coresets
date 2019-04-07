@@ -30,7 +30,7 @@ class OptimizationCoreset(Coreset):
     idx = bisect(self.M_cache, M)
     lmbu = self.lmb_cache[idx]
     lmbl = self.lmb_cache[idx-1]
-    wi = abs(self.M_cache[idx] - M) < abs(self.M_cache[idx-1] - M) ? self.w_cache[idx] : self.w_cache[idx-1]
+    wi = self.w_cache[idx] if abs(self.M_cache[idx] - M) < abs(self.M_cache[idx-1] - M) else self.w_cache[idx-1]
     nnz = -1
     while nnz != M and (lmbu-lmbl)/lmbu > 1e-6:
       #pick new lambda
