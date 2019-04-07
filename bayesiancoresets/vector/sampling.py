@@ -17,7 +17,7 @@ class VectorSamplingCoreset(VectorCoreset, SamplingCoreset):
     self.wts *= self.norms #puts the weights on the scale of the normalized vectors
     self.xw = self.wts.dot(self.x) #computes new cached xw
 
-class VectorUniformSamplingCoreset(VectorSamplingCoreset)
+class VectorUniformSamplingCoreset(VectorSamplingCoreset):
 
   def _compute_sampling_probabilities(self):
     self.ps = 1.0/float(self.N) * np.ones(self.N)
