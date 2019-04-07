@@ -1,27 +1,25 @@
 import numpy as np
 from .vector import VectorCoreset
+from ..base.sampling import SamplingCoreset
 
-class VectorImportanceSamplingCoreset(VectorCoreset):
+class VectorSamplingCoreset(VectorCoreset, SamplingCoreset):
 
   def _xw_unscaled(self):
     return False
 
-  def _initialize(self):
-    self.cts = np.zeros(self.N)
+  def _compute_sampling_probabilities(self):
     if self.norm_sum > 0.:
       self.ps = self.norms/self.norm_sum
     else:
       self.ps = 1.0/float(self.N) * np.ones(self.N)
 
-  def _build(self, M):
-    self.cts += np.random.multinomial(M - self.M, self.ps)
-    self.wts = self.norms*self.cts/self.ps/M
-    self.xw = self.wts.dot(self.x)
-    return M
+  def _update_cache(self):
+    self.wts *= self.norms #puts the weights on the scale of the normalized vectors
+    self.xw = self.wts.dot(self.x) #computes new cached xw
 
-class VectorUniformSamplingCoreset(VectorImportanceSamplingCoreset):
-  def _initialize(self):
-    self.cts = np.zeros(self.N)
-    self.ps = 1.0/float(self.N)*np.ones(self.N)
+class VectorUniformSamplingCoreset(VectorSamplingCoreset)
+
+  def _compute_sampling_probabilities(self):
+    self.ps = 1.0/float(self.N) * np.ones(self.N)
 
 
