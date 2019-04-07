@@ -1,6 +1,7 @@
 import numpy as np
 import warnings
 from ..base.coreset import Coreset
+from ..base.optimization import adam
 
 class KLCoreset(Coreset): 
   def __init__(self, N, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, scaled=True, normalized = True):
@@ -26,6 +27,16 @@ class KLCoreset(Coreset):
   def error(self):
     return self._kl_estimate()
 
+  def optimize(self):
+    nzidcs = self.wts > 0
+    zidcs = np.logical_not(nzidcs)
+    #set inactive w gradient components to 0 
+    def grd(w):
+      g = self._kl_grad_estimate(w)
+      g[zidcs] = 0.
+      return g
+    self.wts = adam(self.wts, grd, opt_itrs=1000, adam_a=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
+
   def _sample_potentials(self, w, scls=None):
     if not scls:
       scls = self.scales
@@ -42,15 +53,15 @@ class KLCoreset(Coreset):
     ps = self._sample_potentials(np.zeros(self.N), scls = np.ones(self.N))
     return ps.std(axis=1)
 
-  def _kl_grad_estimate(self, idcs):
-    return self._reverse_kl_grad_estimate() if self.reverse else self._forward_kl_grad_estimate()
+  def _kl_grad_estimate(self, w):
+    return self._reverse_kl_grad_estimate(w) if self.reverse else self._forward_kl_grad_estimate(w)
 
   def _kl_estimate(self):
     return self._reverse_kl_estimate() if self.reverse else self._forward_kl_estimate()
       
-  def _forward_kl_grad_estimate(self):
+  def _forward_kl_grad_estimate(self, w):
     #compute two potentials
-    wpots = self._sample_potentials(self.wts)
+    wpots = self._sample_potentials(w)
     fpots = self._sample_potentials(self.full_wts)
     #add fpots result to the cache
     self.full_potentials_cache = (self.n_fpc*self.full_potentials_cache + fpots.shape[1]*fpots.mean(axis=1))/(self.n_fpc+fpots.shape[1])
@@ -58,9 +69,9 @@ class KLCoreset(Coreset):
     #return grad
     return wpots.mean(axis=1) - self.full_potentials_cache
 
-  def _reverse_kl_grad_estimate(self):
-    pots = self._sample_potentials(self.wts)
-    residual_pots = (self.full_wts - self.wts).dot(pots)
+  def _reverse_kl_grad_estimate(self, w):
+    pots = self._sample_potentials(w)
+    residual_pots = (self.full_wts - w).dot(pots)
 
     num = -(pots*residual_pots).var(axis=1)
     if self.normalized:
