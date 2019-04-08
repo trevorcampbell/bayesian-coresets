@@ -13,7 +13,7 @@ class KLSamplingCoreset(KLCoreset, SamplingCoreset):
   def _update_cache(self):
     self.wts *= self.scales #puts the weights on the same scale as the scaled potentials
 
-class KLUniformSamplingCoreset(VectorSamplingCoreset)
+class KLUniformSamplingCoreset(VectorSamplingCoreset):
 
   def _compute_sampling_probabilities(self):
     self.ps = 1.0/float(self.N) * np.ones(self.N)
