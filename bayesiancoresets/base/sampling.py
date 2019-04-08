@@ -19,9 +19,6 @@ class SamplingCoreset(Coreset):
     self._update_cache()
     return M
 
-  def weights(self):
-    return self.wts
-
   def _compute_sampling_probabilities(self):
     raise NotImplementedError()
   

@@ -8,7 +8,6 @@ class FullDataCoreset(Coreset):
   def reset(self):
     super(FullDataCoreset, self).reset()
     self.wts = np.ones(self.N)
-    self.M = self.N
 
   def weights(self):
     return self.wts
