@@ -1,90 +1,55 @@
-#import numpy as np
-#import warnings
-#from .coreset import Coreset
-#from .errors import NumericalPrecisionError
-#
-#class IterativeCoreset(Coreset):
-#  def _build(self, M):
-#    Mnew = self.M
-#    for m in range(self.M, M):
-#      if self.reached_numeric_limit:
-#        break
-#      stepped = self._step()
-#      if type(stepped) is not bool:
-#        raise ValueError(self.alg_name+'._build(): _step() must return a bool denoting failure or success.')
-#      if stepped:
-#        Mnew = m+1
-#    return Mnew
-#
-#  def _step(self):
-#    raise NotImplementedError()
-#
-#class SingleGreedyCoreset(IterativeCoreset):
-#
-#  def _step(self):
-#    #search for the next best point
-#    retried_already = False
-#    while True:
-#      try:
-#        f = self._search()
-#        if int(f) != f or f < 0:
-#          raise ValueError(self.alg_name+'._step(): _search() must return a nonnegative integer. type = ' + str(type(f)) + ' val = ' + str(f))
-#        break
-#      except NumericalPrecisionError:
-#        if retried_already:
-#          warnings.warn(self.alg_name+'._step(): Greedy next point selection failed a second time. Assuming numeric limit reached.')
-#          self.reached_numeric_limit = True
-#          return False
-#        else:
-#          warnings.warn(self.alg_name+'._step(): Greedy next point selection failed. Retrying...')
-#          retried_already = True
-#          self._prepare_retry_search()
-#
-#    #get step length
-#    retried_already = False
-#    while True:
-#      try:
-#        #alpha is the downweighting for all other data
-#        #beta is the new additional weight for single selected data
-#        ret = self._step_coeffs(f)
-#        if type(ret) is not tuple or len(ret) != 2:
-#          raise ValueError(self.alg_name+'._step(): _step_coeffs() must return a 2-tuple of floats. type = ' +str(type(ret)) + ' val = ' + str(ret))
-#        alpha, beta = ret
-#        break
-#      except NumericalPrecisionError:
-#        if retried_already:
-#          warnings.warn(self.alg_name+'._step(): Step coefficient computation failed a second time. Assuming numeric limit reached.')
-#          self.reached_numeric_limit = True
-#          return False
-#        else:
-#          warnings.warn(self.alg_name+'._step(): Step coefficient computation failed. Retrying...')
-#          retried_already = True
-#          self._prepare_retry_search()
-#
-#    #update the weights
-#    self.wts *= alpha
-#    #it's possible wts[f] becomes negative if beta approx -wts[f], so threshold
-#    self.wts[f] = max(self.wts[f]+beta, 0)
-#
-#    self._update_cache(alpha, beta, f)
-#    return True
-#
-#  def _search(self):
-#    raise NotImplementedError()
-#
-#  def _step_coeffs(self, f):
-#    raise NotImplementedError()
-#
-#  def _prepare_retry_step(self):
-#    pass #implementation optional
-#  
-#  def _prepare_retry_search(self):
-#    pass #implementation optional
-#
-#  def _update_cache(self, alpha, beta, f):
-#    pass #implementation optional
-#
-#  
-#
-#
-#
+from bayesiancoresets.base import IterativeCoreset
+import numpy as np
+import warnings
+
+warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
+np.seterr(all='raise')
+np.set_printoptions(linewidth=500)
+np.random.seed(100)
+tol = 1e-9
+
+class DummyIterativeCoreset(IterativeCoreset):
+
+  def _step(self):
+    return True
+
+
+def test_initialization():
+  for N in [0, 1, 10]:
+    coreset = DummyIterativeCoreset(N)
+    assert coreset.N == N, "IterativeCoreset failed: N was not set properly"
+    assert coreset.initialized, "IterativeCoreset failed: did not initialize"
+    assert coreset.wts.shape[0] == coreset.N, "IterativeCoreset failed: probabilities do not sum to 1: sum = " + str(coreset.ps.sum())
+
+
+def test_reset():
+  for N in [0, 1, 10]:
+    coreset = DummyIterativeCoreset(N)
+    for m in [1, 10, 100]:
+      coreset.build(m)
+      #check reset
+      coreset.reset()
+      assert coreset.M == 0 and np.all(np.fabs(coreset.wts) == 0.) and not coreset.reached_numeric_limit, "IterativeCoreset failed: reset() did not properly reset"
+
+def test_implementations():      
+  for N in [0, 1, 10]:
+    coreset = DummyIterativeCoreset(N)
+    try:
+      a = coreset.error()
+      a = coreset.weights()
+      a = coreset._step()
+    except NotImplementedError as e:
+      pass
+    except:
+      assert False, "IterativeCoreset shouldn't implement error, weights, _step"
+
+def test_build():
+  for N in [0, 1, 10]:
+    coreset = DummyIterativeCoreset(N)
+    for m in [1, 10, 100]:
+      coreset.build(m)
+      assert coreset.M == m or (coreset.M == 0 and coreset.N == 0), "IterativeCoreset failed: M should always be number of steps taken"
+      assert np.all(coreset.wts >= 0), "IterativeCoreset failed: weights must be nonnegative"
+      assert (coreset.wts > 0).sum() <= m, "IterativeCoreset failed: number of nonzero weights must be <= M: number = " + str((coreset.wts > 0).sum()) + " M = " + str(coreset.M)
+
+

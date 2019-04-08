@@ -30,6 +30,10 @@ class Coreset(object):
     if self.reached_numeric_limit:
       return
 
+    if self.N == 0:
+      warnings.warn(self.alg_name+'.build(): there are no data, returning.')
+      return
+
     #initialize optimization
     if self.M == 0:
       self._initialize_weights()
