@@ -7,7 +7,7 @@ class GIGACoreset(SingleGreedyVectorCoreset):
   def _xw_unscaled(self):
     return True
 
-  def _initialize(self):
+  def _initialize_weights(self):
     if self.x.shape[0] == 1:
       self.xw = self.x[0, :]
       self.wts[0] = 1.

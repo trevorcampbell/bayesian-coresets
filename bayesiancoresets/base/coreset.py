@@ -5,8 +5,9 @@ class Coreset(object):
   def __init__(self, N):
     self.alg_name = self.__class__.__name__
     self.N = N
-    self.__initialize()
-    self.reset()
+    self.M = 0
+    self.reached_numeric_limit = False
+    self.wts = np.zeros(self.N)
     
   def reset(self):
     self.M = 0
@@ -52,19 +53,9 @@ class Coreset(object):
   def optimize(self):
     raise NotImplementedError()
     
-  #things that initialize the weights to be in a valid state
-  def _initialize_weights(self):
+  #runs once on first call to .build()
+  def _prebuild(self):
     pass #implementation optional
-
-  #prevent _initialize from being called multiple times
-  def __initialize(self):
-    if not hasattr(self, 'initialized'):
-      self.initialized = True
-      self._initialize()
-
-  #things that initialize the coreset object itself
-  def _initialize(self):
-    pass
 
   def _build(self, M):
     raise NotImplementedError()

@@ -16,7 +16,7 @@ class FrankWolfeCoreset(SingleGreedyVectorCoreset):
       raise NumericalPrecisionError
     return 1. - gammanum/gammadenom, self.norm_sum*gammanum/gammadenom
   
-  def _initialize(self):
+  def _initialize_weights(self):
     f = self._search()
     self.wts[f] = self.norm_sum
     self.xw = self.norm_sum*self.x[f, :]

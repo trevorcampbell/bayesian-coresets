@@ -15,7 +15,7 @@ from .coreset import Coreset
 class OptimizationCoreset(Coreset):
 
   def reset(self):
-    super(OptimizationCoreset, self).reset()
+    super().reset()
     self.lmb_cache = [self._mrc(), 0.]
     self.w_cache = [np.zeros(self.N), np.ones(self.N)]
     self.M_cache = [0, self.N]
