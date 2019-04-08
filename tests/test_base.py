@@ -14,14 +14,13 @@ algs = [bc.FullDataCoreset]
 algs_nms = zip(anms, algs)
 tests = [(N, algn) for N in [0, 1, 10] for algn in algs_nms]
 
-
-def test_full_data(N, algn):
+def test_full_data():
   for N in [0, 1, 10]:
     coreset = bc.FullDataCoreset(N)
     for m in [1, 10, 100]:
-      fd.build(m)
+      coreset.build(m)
       assert coreset.error() < tol, "full wts failed: error not 0"
-      assert np.all(coreset.weights() == np.ones(x.shape[0])), "full wts failed: weights not ones"
+      assert np.all(coreset.weights() == np.ones(N)), "full wts failed: weights not ones"
     #check reset
     coreset.reset()
-    assert coreset.M == N and np.all(np.fabs(fd.weights() - 1.) == 0.) and np.fabs(fd.error()) < tol and not fd.reached_numeric_limit, "FullDataset failed: reset() did not properly reset"
+    assert coreset.M == N and np.all(np.fabs(coreset.weights() - 1.) == 0.) and np.fabs(coreset.error()) < tol and not coreset.reached_numeric_limit, "FullDataset failed: reset() did not properly reset"
