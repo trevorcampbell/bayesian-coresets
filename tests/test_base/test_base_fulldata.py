@@ -42,7 +42,7 @@ def test_build():
       coreset.build(m)
       assert coreset.error() < tol, "FullDataCoreset failed: error not 0"
       assert np.all(coreset.weights() == np.ones(N)), "full wts failed: weights not ones"
-      assert coreset.M == m, "FullDataCoreset failed: M should always be = m"
+      assert coreset.M == m or coreset.N == 0, "FullDataCoreset failed: M should always be = m"
       assert np.all(coreset.wts >= 0), "FullDataCoreset failed: weights must be nonnegative"
 
 

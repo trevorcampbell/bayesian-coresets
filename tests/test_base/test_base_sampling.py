@@ -49,7 +49,7 @@ def test_build():
     coreset = DummySamplingCoreset(N)
     for m in [1, 10, 100]:
       coreset.build(m)
-      assert coreset.M == m and (coreset.M == coreset.cts.sum() or N == 0), "SamplingCoreset failed: M should always be number of samples taken: cts = " + str(coreset.cts.sum()) + " M = " + str(coreset.M)
+      assert (coreset.M == m and coreset.M == coreset.cts.sum()) or N == 0, "SamplingCoreset failed: M should always be number of samples taken: cts = " + str(coreset.cts.sum()) + " M = " + str(coreset.M)
       assert np.all(coreset.wts >= 0), "SamplingCoreset failed: weights must be nonnegative"
       assert (coreset.wts > 0).sum() <= m, "SamplingCoreset failed: number of nonzero weights must be <= M: number = " + str((coreset.wts > 0).sum()) + " M = " + str(coreset.M)
 
