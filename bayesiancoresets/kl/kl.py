@@ -4,13 +4,12 @@ from ..base.coreset import Coreset
 from ..base.optimization import adam
 
 class KLCoreset(Coreset): 
-  def __init__(self, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, scaled=True, normalized = True, **kw):
+  def __init__(self, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, scaled=True, **kw):
     super().__init__(**kw)
     self.potentials = potentials
     self.sampler = sampler
     self.n_samples = n_samples
     self.reverse = reverse
-    self.normalized = normalized
     self.n_lognorm_disc = n_lognorm_disc
     self.n_fpc = 0
     self.full_potentials_cache = np.zeros(self.N)
@@ -20,10 +19,10 @@ class KLCoreset(Coreset):
       return
     if scaled:
       self.scales = self._compute_scales()
-      self.full_wts = self.scales
     else:
       self.scales = np.ones(self.N)
-      self.full_wts = np.ones(self.N)
+    self.scales[self.scales == 0] = 1.
+    self.full_wts = np.ones(self.N)
 
   def weights(self):
     return self.wts/self.scales
@@ -57,13 +56,13 @@ class KLCoreset(Coreset):
     ps = self._sample_potentials(np.zeros(self.N), np.ones(self.N))
     return ps.std(axis=1)
 
-  def _kl_grad_estimate(self, w):
-    return self._reverse_kl_grad_estimate(w) if self.reverse else self._forward_kl_grad_estimate(w)
+  def _kl_grad_estimate(self, w, normalize=False):
+    return self._reverse_kl_grad_estimate(w, normalize) if self.reverse else self._forward_kl_grad_estimate(w, normalize)
 
   def _kl_estimate(self):
     return self._reverse_kl_estimate() if self.reverse else self._forward_kl_estimate()
       
-  def _forward_kl_grad_estimate(self, w):
+  def _forward_kl_grad_estimate(self, w, normalize):
     #compute two potentials
     wpots = self._sample_potentials(w)
     fpots = self._sample_potentials(self.full_wts)
@@ -73,15 +72,19 @@ class KLCoreset(Coreset):
     #return grad
     return wpots.mean(axis=1) - self.full_potentials_cache
 
-  def _reverse_kl_grad_estimate(self, w):
+  def _reverse_kl_grad_estimate(self, w, normalize):
     pots = self._sample_potentials(w)
     residual_pots = (self.full_wts - w).dot(pots)
 
     num = -(pots*residual_pots).var(axis=1)
-    if self.normalized:
+    if normalize:
       denom = pots.std(axis=1) * residual_pots.std()
     else:
       denom = 1.
+    if isinstance(denom, float):
+      denom = 1. if denom == 0. else denom
+    else:
+      denom[denom == 0] = 1.
 
     return num / denom
 

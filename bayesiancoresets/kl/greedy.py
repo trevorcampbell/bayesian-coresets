@@ -7,11 +7,11 @@ from ..base.optimization import adam
 
 class GreedyKLCoreset(KLCoreset,SingleGreedyCoreset):
 
-  def __init__(self, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, scaled=True, normalized = True):
-    super().__init__(potentials=potentials, sampler=sampler, n_samples=n_samples, reverse=reverse, n_lognorm_disc=n_lognorm_disc, scaled=scaled, normalized=normalized, N=len(potentials))
+  def __init__(self, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, scaled=True):
+    super().__init__(potentials=potentials, sampler=sampler, n_samples=n_samples, reverse=reverse, n_lognorm_disc=n_lognorm_disc, scaled=scaled, N=len(potentials))
 
   def _search(self):
-    return self._kl_grad_estimate(self.wts).argmin()
+    return self._kl_grad_estimate(self.wts, True).argmin()
 
   def _step_coeffs(self, f):
     def grd(x):
@@ -22,4 +22,5 @@ class GreedyKLCoreset(KLCoreset,SingleGreedyCoreset):
       ga = (self.wts*g).sum()
       gb = g[f]
       return np.array([ga, gb])
-    return adam(np.array([1., 0.]), grd, opt_itrs=1000, adam_a=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
+    ret= adam(np.array([1., 0.]), grd, opt_itrs=1000, adam_a1=1., adam_a2=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
+    return ret[0], ret[1]

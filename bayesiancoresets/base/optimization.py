@@ -103,7 +103,7 @@ class OptimizationCoreset(Coreset):
   #    self.wts = w
 
 
-def adam(x0, grd, opt_itrs=1000, adam_a=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8):
+def adam(x0, grd, opt_itrs=1000, adam_a1=1., adam_a2=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8):
   x = x0.copy()
   adam_m1 = np.zeros(x.shape[0])
   adam_m2 = np.zeros(x.shape[0])
@@ -111,7 +111,7 @@ def adam(x0, grd, opt_itrs=1000, adam_a=1., adam_b1=0.9, adam_b2=0.99, adam_eps=
     g = grd(x)
     adam_m1 = adam_b1*adam_m1 + (1.-adam_b1)*g
     adam_m2 = adam_b2*adam_m2 + (1.-adam_b2)*g**2
-    upd = adam_a(i)*adam_m1/(1.-adam_b1**(i+1))/(adam_eps + np.sqrt(adam_m2/(1.-adam_b2**(i+1))))
+    upd = adam_a1/(i+1+adam_a2)*adam_m1/(1.-adam_b1**(i+1))/(adam_eps + np.sqrt(adam_m2/(1.-adam_b2**(i+1))))
     x -= upd
 
     #project onto x>=0
