@@ -1,11 +1,11 @@
 import numpy as np
 import warnings
 from .kl import KLCoreset
-from ..base.iterative import GreedySingleUpdateCoreset
+from ..base.iterative import SingleGreedyCoreset
 from ..base.optimization import adam
 
 
-class GreedyKLCoreset(KLCoreset,GreedySingleUpdateCoreset):
+class GreedyKLCoreset(KLCoreset,SingleGreedyCoreset):
 
   def _search(self):
     return self._kl_grad_estimate(self.wts).argmin()

@@ -1,6 +1,7 @@
 from ..base.optimization import OptimizationCoreset
 import numpy as np
 from sklearn.linear_model import Lasso
+from .vector import VectorCoreset
 
 class LassoCoreset(OptimizationCoreset, VectorCoreset):
  
