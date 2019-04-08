@@ -10,6 +10,9 @@ tol = 1e-9
 
 class DummySamplingCoreset(SamplingCoreset):
 
+  def __init__(self, N):
+    super().__init__(N=N)
+
   def _compute_sampling_probabilities(self):
     return np.ones(self.N)/self.N
   
@@ -20,7 +23,6 @@ def test_initialization():
   for N in [0, 1, 10]:
     coreset = DummySamplingCoreset(N)
     assert coreset.N == N, "SamplingCoreset failed: N was not set properly"
-    assert coreset.initialized, "SamplingCoreset failed: did not initialize"
     assert N == 0 or coreset.ps.sum() == 1., "SamplingCoreset failed: probabilities do not sum to 1: sum = " + str(coreset.ps.sum())
     assert coreset.ps.shape[0] == coreset.N and coreset.cts.shape[0] == coreset.N and coreset.wts.shape[0] == coreset.N, "SamplingCoreset failed: probabilities do not sum to 1: sum = " + str(coreset.ps.sum())
 

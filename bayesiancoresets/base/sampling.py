@@ -9,6 +9,7 @@ class SamplingCoreset(Coreset):
     if np.any(self.ps < 0.):
       raise ValueError(self.alg_name+'.__init__(): sampling probabilities must be all nonnegative')
     self.ps /= self.ps.sum()
+    self.cts = np.zeros(self.N)
     
   def reset(self):
     super().reset()

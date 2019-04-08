@@ -10,6 +10,9 @@ tol = 1e-9
 
 class DummyIterativeCoreset(IterativeCoreset):
 
+  def __init__(self, N):
+    super().__init__(N=N)
+
   def _step(self):
     return True
 
@@ -18,8 +21,7 @@ def test_initialization():
   for N in [0, 1, 10]:
     coreset = DummyIterativeCoreset(N)
     assert coreset.N == N, "IterativeCoreset failed: N was not set properly"
-    assert coreset.initialized, "IterativeCoreset failed: did not initialize"
-    assert coreset.wts.shape[0] == coreset.N, "IterativeCoreset failed: probabilities do not sum to 1: sum = " + str(coreset.ps.sum())
+    assert coreset.wts.shape[0] == coreset.N, "IterativeCoreset failed: wts not initialized to size N"
 
 
 def test_reset():

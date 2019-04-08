@@ -10,6 +10,9 @@ tol = 1e-9
 
 class DummySingleGreedyCoreset(SingleGreedyCoreset):
 
+  def __init__(self, N):
+    super().__init__(N=N)
+
   def _search(self):
     return np.random.randint(self.N)
 
@@ -20,8 +23,7 @@ def test_initialization():
   for N in [0, 1, 10]:
     coreset = DummySingleGreedyCoreset(N)
     assert coreset.N == N, "SingleGreedyCoreset failed: N was not set properly"
-    assert coreset.initialized, "SingleGreedyCoreset failed: did not initialize"
-    assert coreset.wts.shape[0] == coreset.N, "SingleGreedyCoreset failed: probabilities do not sum to 1: sum = " + str(coreset.ps.sum())
+    assert coreset.wts.shape[0] == coreset.N, "SingleGreedyCoreset failed: weights not initialized to size N"
 
 
 def test_reset():

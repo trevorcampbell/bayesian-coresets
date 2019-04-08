@@ -30,8 +30,7 @@ def test_initialization():
       pass
     except:
       assert False, "FullDataCoreset failed: Allowed error() before build"
-    assert coreset.initialized, "FullDataCoreset failed: did not initialize"
-    assert coreset.wts.shape[0] == coreset.N, "FullDataCoreset failed: probabilities do not sum to 1: sum = " + str(coreset.ps.sum())
+    assert coreset.wts.shape[0] == coreset.N, "FullDataCoreset failed: weights not initialized to size N"
 
 def test_reset():
   for N in [0, 1, 10]:

@@ -10,6 +10,9 @@ tol = 1e-9
 
 class DummyOptimizationCoreset(OptimizationCoreset):
 
+  def __init__(self, N):
+    super().__init__(N=N)
+
   def _optimize(self):
     return np.zeros(self.N)
 
@@ -21,8 +24,7 @@ def test_initialization():
   for N in [0, 1, 10]:
     coreset = DummyOptimizationCoreset(N)
     assert coreset.N == N, "OptimizationCoreset failed: N was not set properly"
-    assert coreset.initialized, "OptimizationCoreset failed: did not initialize"
-    assert coreset.wts.shape[0] == coreset.N, "OptimizationCoreset failed: probabilities do not sum to 1: sum = " + str(coreset.ps.sum())
+    assert coreset.wts.shape[0] == coreset.N, "OptimizationCoreset failed: weights not initialized to size N"
 
 
 def test_reset():
