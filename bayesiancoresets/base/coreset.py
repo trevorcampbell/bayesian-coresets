@@ -2,7 +2,7 @@ import numpy as np
 import warnings
 
 class Coreset(object):
-  def __init__(self, N):
+  def __init__(self, N, **kw):
     self.alg_name = self.__class__.__name__
     self.N = N
     self.M = 0

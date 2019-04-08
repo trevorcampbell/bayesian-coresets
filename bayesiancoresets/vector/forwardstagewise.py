@@ -1,8 +1,8 @@
 from .pursuit import MatchingPursuitCoreset
 
 class ForwardStagewiseCoreset(MatchingPursuitCoreset):
-  def __init__(self, _x, use_cached_xw=False, step_fraction=0.05):
-    super().__init__(_x, use_cached_xw)
+  def __init__(self, x, use_cached_xw=False, step_fraction=0.05):
+    super().__init__(x=x, use_cached_xw=use_cached_xw, N=x.shape[0])
     self.step_fraction = step_fraction
     if self.step_fraction <= 0 or self.step_fraction >= 1:
       raise ValueError(self.alg_name+'.__init__(): step_fraction must be in (0, 1)')

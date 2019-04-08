@@ -5,10 +5,8 @@ from ..base.coreset import Coreset
 from ..base.iterative import SingleGreedyCoreset, IterativeCoreset
 
 class VectorCoreset(Coreset):
-  def __init__(self, _x, use_cached_xw=True):
-    super().__init__(self.x.shape[0])
-    #convert x to a 2d N x D numpy array with each row = D-dim data vector
-    x = np.asarray(_x)
+  def __init__(self, x, use_cached_xw=True, **kw):
+    super().__init__(**kw) 
     if len(x.shape) != 2 or not np.issubdtype(x.dtype, np.number):
       raise ValueError(self.alg_name + ': input must be a 2d numeric ndarray')
     
@@ -76,9 +74,6 @@ class VectorCoreset(Coreset):
     self.wts[active_idcs] = res.x
     self.xw = self.wts.dot(self.x)
 
-
-class IterativeVectorCoreset(VectorCoreset, IterativeCoreset):
-  pass
 
 class SingleGreedyVectorCoreset(VectorCoreset, SingleGreedyCoreset):
 

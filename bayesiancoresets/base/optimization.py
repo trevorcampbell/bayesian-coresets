@@ -14,6 +14,13 @@ from .coreset import Coreset
 
 class OptimizationCoreset(Coreset):
 
+  def __init__(self, **kw):
+    super().__init__(**kw)
+    self.lmb_cache = [self._mrc(), 0.]
+    self.w_cache = [np.zeros(self.N), np.ones(self.N)]
+    self.M_cache = [0, self.N]
+
+
   def reset(self):
     super().reset()
     self.lmb_cache = [self._mrc(), 0.]

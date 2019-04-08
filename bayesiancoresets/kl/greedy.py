@@ -7,6 +7,9 @@ from ..base.optimization import adam
 
 class GreedyKLCoreset(KLCoreset,SingleGreedyCoreset):
 
+  def __init__(self, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, scaled=True, normalized = True):
+    super().__init__(potentials=potentials, sampler=sampler, n_samples=n_samples, reverse=reverse, n_lognorm_disc=n_lognorm_disc, scaled=scaled, normalized=normalized, N=len(potentials))
+
   def _search(self):
     return self._kl_grad_estimate(self.wts).argmin()
 

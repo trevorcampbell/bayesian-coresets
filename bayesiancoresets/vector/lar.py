@@ -1,8 +1,12 @@
 import numpy as np
-from .vector import IterativeVectorCoreset
+from .vector import VectorCoreset
+from ..base.iterative import IterativeCoreset
 from scipy.optimize import lsq_linear
 
-class LARCoreset(IterativeVectorCoreset):
+class LARCoreset(VectorCoreset, IterativeCoreset):
+
+  def __init__(self, x, use_cached_xw=False):
+    super().__init__(x=x, use_cached_xw=use_cached_xw, N=x.shape[0])
 
   def _xw_unscaled(self):
     return False
