@@ -29,6 +29,7 @@ def test_reset():
   for N in [0, 1, 10]:
     coreset = DummyOptimizationCoreset(N)
     for m in [1, 10, 100]:
+      print('N: ' + str(N) + ' m: ' + str(m))
       coreset.build(m)
       #check reset
       coreset.reset()
@@ -51,7 +52,6 @@ def test_build():
     coreset = DummyOptimizationCoreset(N)
     for m in [1, 10, 100]:
       coreset.build(m)
-      assert coreset.M == m or (coreset.M == 0 and coreset.N == 0), "OptimizationCoreset failed: M should always be number of steps taken"
       assert np.all(coreset.wts >= 0), "OptimizationCoreset failed: weights must be nonnegative"
       assert (coreset.wts > 0).sum() <= m, "OptimizationCoreset failed: number of nonzero weights must be <= M: number = " + str((coreset.wts > 0).sum()) + " M = " + str(coreset.M)
 

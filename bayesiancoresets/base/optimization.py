@@ -21,19 +21,26 @@ class OptimizationCoreset(Coreset):
     self.M_cache = [0, self.N]
 
   def _build(self, M):
-    #do bisection search and keep cache of results
-    cached_idx = np.where(self.M_cache == M)[0]
-    if cached_idx.size > 0:
-      self.wts = self.w_cache[ cached_idx[0] ]
+    #if we requested M > N, just give all ones and return
+    if M > self.N:
+      self.wts = np.ones(self.N)
       self.M = M
       return M
 
+    #if we previously cached a relevant result, return
+    if M in self.M_cache:
+        cached_idx = self.M_cache.index(M)
+        self.wts = self.w_cache[cached_idx]
+        self.M = M
+        return M
+
+    #otherwise do bisection search on regularization
     idx = bisect.bisect(self.M_cache, M)
     lmbu = self.lmb_cache[idx]
     lmbl = self.lmb_cache[idx-1]
     wi = self.w_cache[idx] if abs(self.M_cache[idx] - M) < abs(self.M_cache[idx-1] - M) else self.w_cache[idx-1]
     nnz = -1
-    while nnz != M and (lmbu-lmbl)/lmbu > 1e-6:
+    while nnz != M and lmbu > 0 and (lmbu-lmbl)/lmbu > 1e-6:
       #pick new lambda
       lmb = (lmbu+lmbl)/2.
 
