@@ -37,7 +37,7 @@ class Coreset(object):
 
     #initialize optimization
     if self.M == 0:
-      self._initialize_weights()
+      self._prebuild()
     
     #build the coreset with size at most M
     Mnew = self._build(M)

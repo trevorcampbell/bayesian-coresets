@@ -5,7 +5,7 @@ from ..base.optimization import adam
 
 class KLCoreset(Coreset): 
   def __init__(self, N, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, scaled=True, normalized = True):
-    super(Coreset, self).__init__(N)
+    super().__init__(N)
     self.potentials = potentials
     self.sampler = sampler
     self.n_samples = n_samples
