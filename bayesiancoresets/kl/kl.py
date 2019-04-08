@@ -14,6 +14,10 @@ class KLCoreset(Coreset):
     self.n_lognorm_disc = n_lognorm_disc
     self.n_fpc = 0
     self.full_potentials_cache = np.zeros(self.N)
+    if self.N == 0:
+      self.scales = np.array([])
+      self.full_wts = self.scales
+      return
     if scaled:
       self.scales = self._compute_scales()
       self.full_wts = self.scales
