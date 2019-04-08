@@ -9,7 +9,7 @@ setup(
     url='https://github.com/trevorcampbell/bayesian-coresets/',
     #packages=['bayesiancoresets'],
     packages=find_packages(),
-    install_requires=['numpy', 'scipy'],
+    install_requires=['numpy', 'scipy', 'scikit-learn'],
     keywords = ['Bayesian', 'inference', 'coreset', 'Hilbert', 'Frank-Wolfe', 'greedy', 'geodesic'],
     platforms='ALL',
 )

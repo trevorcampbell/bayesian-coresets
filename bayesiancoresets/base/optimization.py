@@ -2,6 +2,7 @@ import numpy as np
 import warnings
 from scipy.special import erfc
 import bisect
+from .coreset import Coreset
 
 #class OptimizationResult(object):
 #  def __init__(self, x, f0, v0, f1, v1):
