@@ -27,6 +27,7 @@ class VectorCoreset(Coreset):
     self.norm_sum = self.norms.sum()
     if self.x.size == 0:
       warnings.warn(self.alg_name+'.__init__(): data has no nonzero vectors. ' + self.alg_name+'.run() will return immediately')
+    self.xw = np.zeros(self.x.shape[1])
 
   def reset(self):
     super().reset()

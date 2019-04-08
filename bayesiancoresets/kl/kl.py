@@ -10,16 +10,16 @@ class KLCoreset(Coreset):
     self.sampler = sampler
     self.n_samples = n_samples
     self.reverse = reverse
+    self.normalized = normalized
+    self.n_lognorm_disc = n_lognorm_disc
+    self.n_fpc = 0
+    self.full_potentials_cache = np.zeros(self.N)
     if scaled:
-      self.scales = self._compute_scales(S)
+      self.scales = self._compute_scales()
       self.full_wts = self.scales
     else:
       self.scales = np.ones(self.N)
       self.full_wts = np.ones(self.N)
-    self.normalized = normalized
-    self.full_potentials_cache = np.zeros(self.N)
-    self.n_fpc = 0
-    self.n_lognorm_disc = n_lognorm_disc
 
   def weights(self):
     return self.wts/self.scales
@@ -38,7 +38,7 @@ class KLCoreset(Coreset):
     self.wts = adam(self.wts, grd, opt_itrs=1000, adam_a=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
 
   def _sample_potentials(self, w, scls=None):
-    if not scls:
+    if scls is None:
       scls = self.scales
     samples = self.sampler.sample(w/scls, self.n_samples)
     ps = np.zeros((self.N, samples.shape[0]))
@@ -50,7 +50,7 @@ class KLCoreset(Coreset):
     return ps
 
   def _compute_scales(self):
-    ps = self._sample_potentials(np.zeros(self.N), scls = np.ones(self.N))
+    ps = self._sample_potentials(np.zeros(self.N), np.ones(self.N))
     return ps.std(axis=1)
 
   def _kl_grad_estimate(self, w):
