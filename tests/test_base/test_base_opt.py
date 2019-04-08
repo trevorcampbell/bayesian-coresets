@@ -1,116 +1,58 @@
-#import numpy as np
-#import warnings
-#from scipy.special import erfc
-#import bisect
-#from .coreset import Coreset
-#
-##class OptimizationResult(object):
-##  def __init__(self, x, f0, v0, f1, v1):
-##    self.x = x
-##    self.f0 = f0
-##    self.v0 = v0
-##    self.f1 = f1
-##    self.v1 = v1
-#
-#class OptimizationCoreset(Coreset):
-#
-#  def reset(self):
-#    super(OptimizationCoreset, self).reset()
-#    self.lmb_cache = [self._mrc(), 0.]
-#    self.w_cache = [np.zeros(self.N), np.ones(self.N)]
-#    self.M_cache = [0, self.N]
-#
-#  def _build(self, M):
-#    #do bisection search and keep cache of results
-#    cached_idx = (self.M_cache == M).nonzero()[0]
-#    if cached_idx.size > 0:
-#      self.wts = self.w_cache[ cached_idx[0] ]
-#      self.M = M
-#      return M
-#
-#    idx = bisect(self.M_cache, M)
-#    lmbu = self.lmb_cache[idx]
-#    lmbl = self.lmb_cache[idx-1]
-#    wi = self.w_cache[idx] if abs(self.M_cache[idx] - M) < abs(self.M_cache[idx-1] - M) else self.w_cache[idx-1]
-#    nnz = -1
-#    while nnz != M and (lmbu-lmbl)/lmbu > 1e-6:
-#      #pick new lambda
-#      lmb = (lmbu+lmbl)/2.
-#
-#      #optimize weights
-#      w = self._optimize(wi, lmb)
-#      
-#      #add to the cache
-#      nnz = (w > 0).sum()
-#      idx = bisect.bisect(self.M_cache, nnz)
-#      self.lmb_cache.insert(idx, lmb)
-#      self.w_cache.insert(idx, w)
-#      self.M_cache.insert(idx, nnz)
-#
-#    #find closest entry in M_cache to M
-#    idx = bisect(self.M_cache, M)
-#    Mu = self.M_cache[idx]
-#    Ml = self.M_cache[idx-1]
-#    if abs(Mu - M) < abs(Ml-M):
-#      self.wts = self.w_cache[idx]
-#      self.M = Mu
-#      return Mu
-#    else:
-#      self.wts = self.w_cache[idx-1]
-#      self.M = Ml
-#      return Ml
-#
-#  def _mrc(self):
-#    if not hasattr(self, 'mrcoeff'):
-#      if not np.all(self.wts == 0):
-#        raise ValueError()
-#      self.mrcoeff = self._max_reg_coeff()
-#    return self.mrcoeff
-#      
-#  def _max_reg_coeff(self):
-#    raise NotImplementedError()
-#  
-#  def _optimize(self, w0, reg_coeff):
-#    raise NotImplementedError()
-#
-#  #removed since optimize() should be specified in the objective-type parent class (e.g. kl, vector)
-#  #def optimize(self, check_obj_decrease=False, verbose=False):
-#  #  res = self._optimize(self.wts, self.wts > 0, 0.)  
-#  #  w = res.x
-#  #  f0 = res.f0
-#  #  v0 = res.v0
-#  #  f1 = res.f1
-#  #  v1 = res.v1 
-#
-#  #  #update weights to optimized version
-#  #  if check_obj_decrease:
-#  #    diffmean = f1 - f0
-#  #    diffvar =  v1 + v0
-#  #    #check if gaussian with mean diffmean, diffvar > 0, only update if pr > 0.5
-#  #    pr_decrease = 0.5*erfc(diffmean / (np.sqrt(2*diffvar)))
-#  #    if pr_decrease > 0.5:
-#  #      self.wts = w
-#  #  else:
-#  #    self.wts = w
-#
-#
-#def adam(x0, grd, opt_itrs=1000, adam_a=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8):
-#  x = x0.copy()
-#  adam_m1 = np.zeros(x.shape[0])
-#  adam_m2 = np.zeros(x.shape[0])
-#  for i in range(opt_itrs):
-#    g = grd(x)
-#    adam_m1 = adam_b1*adam_m1 + (1.-adam_b1)*g
-#    adam_m2 = adam_b2*adam_m2 + (1.-adam_b2)*g**2
-#    upd = adam_a(i)*adam_m1/(1.-adam_b1**(i+1))/(adam_eps + np.sqrt(adam_m2/(1.-adam_b2**(i+1))))
-#    x -= upd
-#
-#    #project onto x>=0
-#    x = np.maximum(x, 0.)
-#
-#  return x
-#
-#
-#
-#
-#
+from bayesiancoresets.base import OptimizationCoreset
+import numpy as np
+import warnings
+
+warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
+np.seterr(all='raise')
+np.set_printoptions(linewidth=500)
+np.random.seed(100)
+tol = 1e-9
+
+class DummyOptimizationCoreset(OptimizationCoreset):
+
+  def _optimize(self):
+    return np.zeros(self.N)
+
+  def _max_reg_coeff(self):
+    return 1.
+
+
+def test_initialization():
+  for N in [0, 1, 10]:
+    coreset = DummyOptimizationCoreset(N)
+    assert coreset.N == N, "OptimizationCoreset failed: N was not set properly"
+    assert coreset.initialized, "OptimizationCoreset failed: did not initialize"
+    assert coreset.wts.shape[0] == coreset.N, "OptimizationCoreset failed: probabilities do not sum to 1: sum = " + str(coreset.ps.sum())
+
+
+def test_reset():
+  for N in [0, 1, 10]:
+    coreset = DummyOptimizationCoreset(N)
+    for m in [1, 10, 100]:
+      coreset.build(m)
+      #check reset
+      coreset.reset()
+      assert coreset.M == 0 and np.all(np.fabs(coreset.wts) == 0.) and not coreset.reached_numeric_limit, "OptimizationCoreset failed: reset() did not properly reset"
+
+def test_implementations():      
+  for N in [0, 1, 10]:
+    coreset = DummyOptimizationCoreset(N)
+    try:
+      a = coreset.error()
+      a = coreset.weights()
+      a = coreset._optimize()
+    except NotImplementedError as e:
+      pass
+    except:
+      assert False, "OptimizationCoreset shouldn't implement error, weights, _step"
+
+def test_build():
+  for N in [0, 1, 10]:
+    coreset = DummyOptimizationCoreset(N)
+    for m in [1, 10, 100]:
+      coreset.build(m)
+      assert coreset.M == m or (coreset.M == 0 and coreset.N == 0), "OptimizationCoreset failed: M should always be number of steps taken"
+      assert np.all(coreset.wts >= 0), "OptimizationCoreset failed: weights must be nonnegative"
+      assert (coreset.wts > 0).sum() <= m, "OptimizationCoreset failed: number of nonzero weights must be <= M: number = " + str((coreset.wts > 0).sum()) + " M = " + str(coreset.M)
+
+

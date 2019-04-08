@@ -22,13 +22,13 @@ class OptimizationCoreset(Coreset):
 
   def _build(self, M):
     #do bisection search and keep cache of results
-    cached_idx = (self.M_cache == M).nonzero()[0]
+    cached_idx = np.where(self.M_cache == M)[0]
     if cached_idx.size > 0:
       self.wts = self.w_cache[ cached_idx[0] ]
       self.M = M
       return M
 
-    idx = bisect(self.M_cache, M)
+    idx = bisect.bisect(self.M_cache, M)
     lmbu = self.lmb_cache[idx]
     lmbl = self.lmb_cache[idx-1]
     wi = self.w_cache[idx] if abs(self.M_cache[idx] - M) < abs(self.M_cache[idx-1] - M) else self.w_cache[idx-1]
@@ -48,7 +48,7 @@ class OptimizationCoreset(Coreset):
       self.M_cache.insert(idx, nnz)
 
     #find closest entry in M_cache to M
-    idx = bisect(self.M_cache, M)
+    idx = bisect.bisect(self.M_cache, M)
     Mu = self.M_cache[idx]
     Ml = self.M_cache[idx-1]
     if abs(Mu - M) < abs(Ml-M):
