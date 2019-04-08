@@ -6,6 +6,7 @@ from ..base.iterative import SingleGreedyCoreset, IterativeCoreset
 
 class VectorCoreset(Coreset):
   def __init__(self, _x, use_cached_xw=True):
+    super().__init__(self.x.shape[0])
     #convert x to a 2d N x D numpy array with each row = D-dim data vector
     x = np.asarray(_x)
     if len(x.shape) != 2 or not np.issubdtype(x.dtype, np.number):
@@ -28,10 +29,9 @@ class VectorCoreset(Coreset):
     self.norm_sum = self.norms.sum()
     if self.x.size == 0:
       warnings.warn(self.alg_name+'.__init__(): data has no nonzero vectors. ' + self.alg_name+'.run() will return immediately')
-    super(VectorCoreset, self).__init__(self.x.shape[0])
 
   def reset(self):
-    super(VectorCoreset, self).reset()
+    super().reset()
     #reset the cached xw too
     self.xw = np.zeros(self.x.shape[1])
 

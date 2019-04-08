@@ -7,7 +7,7 @@ class LARCoreset(IterativeVectorCoreset):
   def _xw_unscaled(self):
     return False
 
-  def _initialize_weights(self):
+  def _prebuild(self):
     self.active_idcs = np.zeros(self.wts.shape[0], dtype=np.bool)
     self.active_idcs[self._search()] = True
   
