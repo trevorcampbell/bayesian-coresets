@@ -2,6 +2,7 @@ import numpy as np
 import warnings
 from ..base.coreset import Coreset
 from ..base.optimization import adam
+import sys
 
 class KLCoreset(Coreset): 
   def __init__(self, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, scaled=True, **kw):
@@ -48,7 +49,8 @@ class KLCoreset(Coreset):
     for i in range(self.N):
       for j in range(samples.shape[0]):
         ps[i,j] = self.potentials[i](samples[j,:])   
-    ps /= scls
+
+    ps /= scls[:, np.newaxis]
 
     return ps
 

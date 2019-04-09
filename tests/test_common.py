@@ -9,7 +9,7 @@ np.set_printoptions(linewidth=500)
 np.random.seed(100)
 tol = 1e-9
 
-n_trials = 10
+n_trials = 5
 algs = [FullDataCoreset]
 types = ['dummy']
 algs.extend([DummyOptimizationCoreset, DummyIterativeCoreset, DummySingleGreedyCoreset, DummySamplingCoreset])
@@ -54,14 +54,14 @@ def initialization(N, D, coreset):
 
 
 def reset(N, D, coreset):
-  for m in [1, 10, 100]:
+  for m in [1, 10]:
     coreset.build(m)
     #check reset
     coreset.reset()
     assert coreset.M == 0 and np.all(np.fabs(coreset.wts) == 0.) and not coreset.reached_numeric_limit, coreset.alg_name + " failed: reset() did not properly reset"
 
 def build(N, D, coreset):
-  for m in [1, 10, 100]:
+  for m in [1, 10]:
     coreset.build(m)
     #assert coreset.M <= m or (coreset.M == 0 and coreset.N == 0), coreset.alg_name + " failed: M should always be number of steps taken"
     assert np.all(coreset.wts >= 0), coreset.alg_name + " failed: weights must be nonnegative"
