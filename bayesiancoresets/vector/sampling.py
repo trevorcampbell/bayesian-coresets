@@ -12,7 +12,7 @@ class VectorSamplingCoreset(SamplingCoreset, VectorCoreset):
 
   def _compute_sampling_probabilities(self):
     if self.norm_sum > 0.:
-      return self.norms[:]
+      return self.norms.copy()
     else:
       return np.ones(self.N)
 

@@ -9,7 +9,7 @@ class KLSamplingCoreset(SamplingCoreset, KLCoreset):
 
   def _compute_sampling_probabilities(self):
     if np.any(self.scales > 0.):
-      return self.scales[:]
+      return self.scales.copy()
     else:
       return np.ones(self.N)
 
