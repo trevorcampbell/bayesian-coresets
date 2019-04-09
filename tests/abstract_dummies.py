@@ -15,7 +15,7 @@ class DummyOptimizationCoreset(OptimizationCoreset):
   def __init__(self, N):
     super().__init__(N=N)
 
-  def _optimize(self):
+  def _optimize(self, w, lmb):
     return np.zeros(self.N)
 
   def _max_reg_coeff(self):
