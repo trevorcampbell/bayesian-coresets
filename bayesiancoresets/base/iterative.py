@@ -61,7 +61,7 @@ class SingleGreedyCoreset(IterativeCoreset):
           retried_already = True
           self._prepare_retry_search()
 
-    self._update_weights(alpha, beta, f)
+    self._update_weights_single(alpha, beta, f)
 
     return True
 
