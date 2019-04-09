@@ -18,6 +18,8 @@ class LassoCoreset(OptimizationCoreset, VectorCoreset):
   #  return 0.5*((w.dot(self.x)-self.snorm*self.xs)**2).sum()/self.N + reg_coeff*w.sum()
   
   def _optimize(self, w0, reg_coeff):
+    #sys.stderr.write('w0: ' +str(w0)+'\n')
+    #sys.stderr.write('regcoeff: ' +str(reg_coeff)+'\n')
     lasso = Lasso(reg_coeff, positive=True, fit_intercept=False)
     lasso.fit(self.x.T, self.snorm*self.xs)
     return lasso.coef_

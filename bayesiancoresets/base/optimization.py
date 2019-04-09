@@ -3,6 +3,7 @@ import warnings
 from scipy.special import erfc
 import bisect
 from .coreset import Coreset
+import sys
 
 #class OptimizationResult(object):
 #  def __init__(self, x, f0, v0, f1, v1):
@@ -22,9 +23,9 @@ class OptimizationCoreset(Coreset):
     self.w_cache = [np.zeros(self.N), np.ones(self.N)]
     self.M_cache = [0, self.N]
 
-  def _build(self, M):
+  def _build(self, M): 
     #if we requested M > N, just give all ones and return
-    if M > self.N:
+    if M >= self.N:
       self.wts = np.ones(self.N)
       self.M = M
       return M
@@ -36,18 +37,22 @@ class OptimizationCoreset(Coreset):
         self.M = M
         return M
 
+    
+
     #otherwise do bisection search on regularization
     idx = bisect.bisect(self.M_cache, M)
-    lmbu = self.lmb_cache[idx]
-    lmbl = self.lmb_cache[idx-1]
-    wi = self.w_cache[idx] if abs(self.M_cache[idx] - M) < abs(self.M_cache[idx-1] - M) else self.w_cache[idx-1]
+    lmbu = self.lmb_cache[idx-1]
+    lmbl = self.lmb_cache[idx]
+    w = self.w_cache[idx] if abs(self.M_cache[idx] - M) < abs(self.M_cache[idx-1] - M) else self.w_cache[idx-1]
     nnz = -1
+    itr = 0
     while nnz != M and lmbu > 0 and (lmbu-lmbl)/lmbu > 1e-6:
+      itr += 1
       #pick new lambda
       lmb = (lmbu+lmbl)/2.
 
-      #optimize weights
-      w = self._optimize(wi, lmb)
+      #optimize weights 
+      w = self._optimize(w, lmb)
       
       #add to the cache
       nnz = (w > 0).sum()
@@ -55,11 +60,16 @@ class OptimizationCoreset(Coreset):
       self.lmb_cache.insert(idx, lmb)
       self.w_cache.insert(idx, w)
       self.M_cache.insert(idx, nnz)
-
+      if nnz < M:
+        lmbu = lmb
+      else:
+        lmbl = lmb
+ 
     #find closest entry in M_cache s.t. <= M
     idx = bisect.bisect(self.M_cache, M)
     self.M = self.M_cache[idx-1]
     self.wts = self.w_cache[idx-1]
+    return self.M
 
   def _mrc(self):
     if not hasattr(self, 'mrcoeff'):

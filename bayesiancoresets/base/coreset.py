@@ -28,12 +28,19 @@ class Coreset(object):
     if M <= self.M:
       warnings.warn(self.alg_name+'.build(): M must be increasing; returning. self.M = '+str(self.M) + ' M = '+str(M))
       return self.M
+
     if self.reached_numeric_limit:
       return self.M
 
     if self.N == 0:
       warnings.warn(self.alg_name+'.build(): there are no data, returning.')
       return self.M
+
+    #if we requested M >= N, just give all ones and return
+    if M >= self.N:
+      self.wts = np.ones(self.N)
+      self.M = M
+      return M
 
     #initialize optimization
     if self.M == 0:
