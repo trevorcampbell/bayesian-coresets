@@ -8,47 +8,27 @@ np.set_printoptions(linewidth=500)
 np.random.seed(100)
 tol = 1e-9
 
-def test_full_data():
-  for N in [0, 1, 10]:
-    coreset = FullDataCoreset(N)
-    for m in [1, 10, 100]:
-      coreset.build(m)
-      assert coreset.error() < tol, "FullDataCoreset failed: error not 0"
-      assert np.all(coreset.weights() == np.ones(N)), "FullDataCoreset failed: weights not ones"
-      assert coreset.M == N, "FullDataCoreset failed: coreset.M not equal to N after build"
-    #check reset
-    coreset.reset()
 
-
-def test_initialization():
+def test_api():
   for N in [0, 1, 10]:
-    coreset = FullDataCoreset(N)
-    assert coreset.N == N, "FullDataCoreset failed: N was not set properly"
     try:
       coreset.error()
     except NotImplementedError:
       pass
     except:
       assert False, "FullDataCoreset failed: Allowed error() before build"
-    assert coreset.wts.shape[0] == coreset.N, "FullDataCoreset failed: weights not initialized to size N"
+    coreset.build(1)
+    assert coreset.error() == 0., "FullDataCoreset failed: error() should be 0 after build"
+    assert coreset.weights() == coreset.wts
 
-def test_reset():
-  for N in [0, 1, 10]:
-    coreset = FullDataCoreset(N)
-    for m in [1, 10, 100]:
-      coreset.build(m)
-      #check reset
-      coreset.reset()
-      assert coreset.M == 0 and np.all(np.fabs(coreset.weights()) == 0.) and not coreset.reached_numeric_limit, "FullDataset failed: reset() did not properly reset"
 
 def test_build():
   for N in [0, 1, 10]:
     coreset = FullDataCoreset(N)
     for m in [1, 10, 100]:
-      coreset.build(m)
+      M = coreset.build(m)
       assert coreset.error() < tol, "FullDataCoreset failed: error not 0"
       assert np.all(coreset.weights() == np.ones(N)), "FullDataCoreset failed: weights not ones"
-      assert coreset.M == N, "FullDataCoreset failed: M should always be = m"
-      assert np.all(coreset.wts >= 0), "FullDataCoreset failed: weights must be nonnegative"
+      assert M == N and coreset.M == N, "FullDataCoreset failed: M should = N after build"
 
 

@@ -27,13 +27,13 @@ class Coreset(object):
     #if M is not greater than self.M, just return 
     if M <= self.M:
       warnings.warn(self.alg_name+'.build(): M must be increasing; returning. self.M = '+str(self.M) + ' M = '+str(M))
-      return
+      return self.M
     if self.reached_numeric_limit:
-      return
+      return self.M
 
     if self.N == 0:
       warnings.warn(self.alg_name+'.build(): there are no data, returning.')
-      return
+      return self.M
 
     #initialize optimization
     if self.M == 0:
@@ -48,7 +48,7 @@ class Coreset(object):
     #if we reached numeric limit during the current build, warn immediately
     if self.reached_numeric_limit:
       warnings.warn(self.alg_name+'.build(): the numeric limit has been reached. No more points will be added. M = ' + str(self.M) + ', error = ' +str(self.error()))
-    return
+    return self.M
 
   def optimize(self):
     raise NotImplementedError()
