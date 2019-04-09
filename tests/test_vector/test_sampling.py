@@ -1,6 +1,7 @@
 import bayesiancoresets as bc
 import numpy as np
 import warnings
+import sys
 
 warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
 np.seterr(all='raise')
@@ -10,7 +11,7 @@ tol = 1e-9
 
 n_trials = 10
 anms = ['IS', 'RND']
-algs = [bc.VectorImportanceSamplingCoreset, bc.VectorUniformSamplingCoreset]
+algs = [bc.VectorSamplingCoreset, bc.VectorUniformSamplingCoreset]
 algs_nms = zip(anms, algs)
 tests = [(N, D, dist, algn) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned'] for algn in algs_nms]
 
@@ -58,6 +59,12 @@ def coreset_single(N, D, dist, algn):
     assert (coreset.weights() > 0.).sum() <= m, anm+" failed: coreset size > m"
     assert (coreset.weights() > 0.).sum() == coreset.size(), anm+" failed: sum of coreset.weights()>0  not equal to size(): sum = " + str((coreset.weights()>0).sum()) + " size(): " + str(coreset.size())
     assert np.all(coreset.weights() >= 0.), anm+" failed: coreset has negative weights"
+
+    sys.stderr.write('wts: ' + str(coreset.weights()) + '\n')
+    sys.stderr.write('wts2: ' +str(coreset.wts) + '\n')
+    sys.stderr.write('xwcomp: ' + str((coreset.weights()[:, np.newaxis]*x).sum(axis=0)) + '\n')
+    sys.stderr.write('xw: ' + str(coreset.xw)+ '\n')
+    sys.stderr.write('xs: ' + str(xs)+ '\n')
     
     xw = (coreset.weights()[:, np.newaxis]*x).sum(axis=0)
     xwopt = (coreset.weights(optimal_scaling=True)[:, np.newaxis]*x).sum(axis=0)
