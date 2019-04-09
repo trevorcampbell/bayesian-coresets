@@ -82,7 +82,7 @@ class SingleGreedyCoreset(IterativeCoreset):
     self.wts *= alpha
     #it's possible wts[f] becomes negative if beta approx -wts[f], so threshold
     self.wts[f] = max(self.wts[f]+beta, 0)
-    self._update_cache(alpha, beta, f)
+    self._update_cache_single(alpha, beta, f)
 
   def _update_cache_single(self, alpha, beta, f):
     pass #implementation optional
