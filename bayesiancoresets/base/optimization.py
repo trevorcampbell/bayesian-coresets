@@ -56,18 +56,10 @@ class OptimizationCoreset(Coreset):
       self.w_cache.insert(idx, w)
       self.M_cache.insert(idx, nnz)
 
-    #find closest entry in M_cache to M
+    #find closest entry in M_cache s.t. <= M
     idx = bisect.bisect(self.M_cache, M)
-    Mu = self.M_cache[idx]
-    Ml = self.M_cache[idx-1]
-    if abs(Mu - M) < abs(Ml-M):
-      self.wts = self.w_cache[idx]
-      self.M = Mu
-      return Mu
-    else:
-      self.wts = self.w_cache[idx-1]
-      self.M = Ml
-      return Ml
+    self.M = self.M_cache[idx-1]
+    self.wts = self.w_cache[idx-1]
 
   def _mrc(self):
     if not hasattr(self, 'mrcoeff'):
@@ -81,6 +73,9 @@ class OptimizationCoreset(Coreset):
   
   def _optimize(self, w0, reg_coeff):
     raise NotImplementedError()
+
+  def _update_cache(self):
+    pass
 
   #removed since optimize() should be specified in the objective-type parent class (e.g. kl, vector)
   #def optimize(self, check_obj_decrease=False, verbose=False):

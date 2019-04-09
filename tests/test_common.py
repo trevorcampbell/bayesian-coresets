@@ -66,3 +66,4 @@ def build(N, D, coreset):
     #assert coreset.M <= m or (coreset.M == 0 and coreset.N == 0), coreset.alg_name + " failed: M should always be number of steps taken"
     assert np.all(coreset.wts >= 0), coreset.alg_name + " failed: weights must be nonnegative"
     assert (coreset.wts > 0).sum() <= coreset.M, coreset.alg_name +  " failed: number of nonzero weights must be <= M: number = " + str((coreset.wts > 0).sum()) + " M = " + str(coreset.M)
+    assert (coreset.wts > 0).sum() == coreset.size(), coreset.alg_name +  " failed: number of nonzero weights != size()"

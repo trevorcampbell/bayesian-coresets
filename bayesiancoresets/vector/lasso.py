@@ -22,3 +22,6 @@ class LassoCoreset(OptimizationCoreset, VectorCoreset):
     lasso.fit(self.x.T, self.snorm*self.xs)
     return lasso.coef_
 
+  def _update_cache(self):
+    self.xw = self.wts.dot(self.x)
+
