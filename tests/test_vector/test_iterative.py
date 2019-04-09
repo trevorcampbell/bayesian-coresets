@@ -12,7 +12,7 @@ tol = 1e-9
 n_trials = 10
 anms = ['GIGA', 'FW', 'MP', 'FSW', 'OMP', 'LAR']
 algs = [bc.GIGACoreset, bc.FrankWolfeCoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.LARCoreset]
-algs_nms = zip(anms, algs)
+algs_nms = list(zip(anms, algs))
 tests = [(N, D, dist, algn) for N in [1, 10, 100] for D in [1, 3, 10] for dist in ['gauss', 'bin', 'gauss_colinear', 'bin_colinear', 'axis_aligned'] for algn in algs_nms]
 
 
@@ -128,18 +128,12 @@ def input_validation_single(alg, anm):
   fe2 = False
   try:
     alg('fdas')
-  except ValueError:
-    fe1 = True
-    pass
   except:
-    assert False, anm + " failed: produced unrecognized error type"
+    fe1 = True
   try:
     alg(np.array(['fdsa', 'asdf']))
-  except ValueError:
-    fe2 = True
-    pass
   except:
-    assert False, anm + " failed: produced unrecognized error type"
+    fe2 = True
 
   if not fe1 or not fe2:
     assert False, anm + " failed: did not catch invalid input"

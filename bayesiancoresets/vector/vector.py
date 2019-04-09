@@ -15,6 +15,9 @@ class VectorCoreset(Coreset):
     self.full_N = x.shape[0]
     nrms = np.sqrt((x**2).sum(axis=1))
     self.nzidcs = nrms > 0.
+    #overwrite N and wts from base to nonzeroidcs size
+    self.N = (self.nzidcs > 0).sum()
+    self.wts = np.zeros(self.N)
     #compute the sum vector
     self.xs = x[self.nzidcs, :].sum(axis=0)
     self.snorm = np.sqrt((self.xs**2).sum())
