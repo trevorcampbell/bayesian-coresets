@@ -16,9 +16,9 @@ class VectorSamplingCoreset(SamplingCoreset, VectorCoreset):
     else:
       return np.ones(self.N)
 
-  def _update_cache(self):
-    self.wts *= self.norms #puts the weights on the scale of the normalized vectors
-    self.xw = self.wts.dot(self.x) #computes new cached xw
+  def _weight_scaling(self):
+    return self.norms
+
 
 class VectorUniformSamplingCoreset(VectorSamplingCoreset):
 

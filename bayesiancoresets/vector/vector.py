@@ -75,33 +75,39 @@ class VectorCoreset(Coreset):
     active_idcs = self.wts > 0
     X = self.x[active_idcs, :]
     res = lsq_linear(X.T, self.snorm*self.xs, bounds=(0., np.inf), max_iter=max(1000, 10*self.xs.shape[0]))
-    self.wts[active_idcs] = res.x
+    #update weights
+    w = self.wts.copy()
+    w[active_idcs] = res.x
+    self._update_weights(w)
+
+  #called by _update_weights(w)
+  def _update_cache(self):
     self.xw = self.wts.dot(self.x)
-
-
-class SingleGreedyVectorCoreset(VectorCoreset, SingleGreedyCoreset):
+    #if xw is unscaled, renormalize
+    if self._xw_unscaled():
+      self._renormalize()
 
   def _renormalize(self):
     nrm = np.sqrt((self.xw**2).sum())
     self.xw /= nrm
     self.wts /= nrm
 
+
+class SingleGreedyVectorCoreset(VectorCoreset, SingleGreedyCoreset):
+
   def _prepare_retry_step(self):
-    #try recomputing xw from scratch and rerunning search
-    self.xw = self.wts.dot(self.x)
-    if self._xw_unscaled():
-      self._renormalize()
+    self._update_cache()
   
   def _prepare_retry_search(self):
     self._prepare_retry_step()
 
+  #called by _update_weights(alpha, beta, f)
   def _update_cache(self, alpha, beta, f):
     #apply the same update to xw
     if self.use_cached_xw:
       self.xw = alpha*self.xw + beta*self.x[f, :]
+      #if xw is unscaled, renormalize
+      if self._xw_unscaled():
+        self._renormalize()
     else:
-      self.xw = self.wts.dot(self.x)
-    #if xw is unscaled, renormalize
-    if self._xw_unscaled():
-      self._renormalize()
-   
+      self._update_cache()

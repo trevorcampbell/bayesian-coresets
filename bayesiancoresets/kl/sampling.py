@@ -13,8 +13,8 @@ class KLSamplingCoreset(SamplingCoreset, KLCoreset):
     else:
       return np.ones(self.N)
 
-  def _update_cache(self):
-    self.wts *= self.scales #puts the weights on the same scale as the scaled potentials
+  def _weight_scaling(self):
+    return self.scales #puts the weights on the same scale as the scaled potentials
 
 class KLUniformSamplingCoreset(KLSamplingCoreset):
 

@@ -38,8 +38,9 @@ class Coreset(object):
 
     #if we requested M >= N, just give all ones and return
     if M >= self.N:
-      self.wts = np.ones(self.N)
+      self._update_weights(np.ones(self.N))
       self.M = M
+      self._update_cache()
       return M
 
     #initialize optimization
@@ -59,6 +60,14 @@ class Coreset(object):
 
   def optimize(self):
     raise NotImplementedError()
+
+  def _update_weights(self, w):
+    self.wts = w
+    self._update_cache()
+
+  #gets called when wts updated
+  def _update_cache(self):
+    pass
     
   #runs once on first call to .build()
   def _prebuild(self):
@@ -67,4 +76,4 @@ class Coreset(object):
   def _build(self, M):
     raise NotImplementedError()
 
-
+  

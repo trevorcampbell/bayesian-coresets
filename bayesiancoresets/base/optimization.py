@@ -24,20 +24,12 @@ class OptimizationCoreset(Coreset):
     self.M_cache = [0, self.N]
 
   def _build(self, M): 
-    #if we requested M > N, just give all ones and return
-    if M >= self.N:
-      self.wts = np.ones(self.N)
-      self.M = M
-      return M
-
     #if we previously cached a relevant result, return
     if M in self.M_cache:
         cached_idx = self.M_cache.index(M)
-        self.wts = self.w_cache[cached_idx]
+        self._update_weights(self.w_cache[cached_idx])
         self.M = M
         return M
-
-    
 
     #otherwise do bisection search on regularization
     idx = bisect.bisect(self.M_cache, M)
@@ -68,7 +60,7 @@ class OptimizationCoreset(Coreset):
     #find closest entry in M_cache s.t. <= M
     idx = bisect.bisect(self.M_cache, M)
     self.M = self.M_cache[idx-1]
-    self.wts = self.w_cache[idx-1]
+    self._update_weights(self.w_cache[idx-1])
     return self.M
 
   def _mrc(self):
@@ -84,8 +76,6 @@ class OptimizationCoreset(Coreset):
   def _optimize(self, w0, reg_coeff):
     raise NotImplementedError()
 
-  def _update_cache(self):
-    pass
 
   #removed since optimize() should be specified in the objective-type parent class (e.g. kl, vector)
   #def optimize(self, check_obj_decrease=False, verbose=False):

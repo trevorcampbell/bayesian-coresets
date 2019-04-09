@@ -17,14 +17,12 @@ class SamplingCoreset(Coreset):
     
   def _build(self, M):
     self.cts += np.random.multinomial(M - self.M, self.ps)
-    self.wts = self.cts/self.ps/M
-    self._update_cache()
+    self._update_weights(self._weight_scaling()*self.cts/self.ps/M)
     return M
+
+  def _weight_scaling(self):
+    return 1.
 
   def _compute_sampling_probabilities(self):
     raise NotImplementedError()
   
-  def _update_cache(self):
-    pass
-
-
