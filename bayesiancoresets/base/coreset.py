@@ -39,9 +39,9 @@ class Coreset(object):
     #if we requested M >= N, just give all ones and return
     if M >= self.N:
       self._update_weights(np.ones(self.N))
-      self.M = M
+      self.M = self.N
       self._update_cache()
-      return M
+      return self.M
 
     #initialize optimization
     if self.M == 0:

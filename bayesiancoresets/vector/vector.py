@@ -102,7 +102,7 @@ class SingleGreedyVectorCoreset(VectorCoreset, SingleGreedyCoreset):
     self._prepare_retry_step()
 
   #called by _update_weights(alpha, beta, f)
-  def _update_cache(self, alpha, beta, f):
+  def _update_cache_single(self, alpha, beta, f):
     #apply the same update to xw
     if self.use_cached_xw:
       self.xw = alpha*self.xw + beta*self.x[f, :]

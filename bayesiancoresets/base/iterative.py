@@ -77,14 +77,14 @@ class SingleGreedyCoreset(IterativeCoreset):
   def _prepare_retry_search(self):
     pass #implementation optional
 
-  def _update_weights(self, alpha, beta, f):
+  def _update_weights_single(self, alpha, beta, f):
     #update the weights
     self.wts *= alpha
     #it's possible wts[f] becomes negative if beta approx -wts[f], so threshold
     self.wts[f] = max(self.wts[f]+beta, 0)
     self._update_cache(alpha, beta, f)
 
-  def _update_cache(self, alpha, beta, f):
+  def _update_cache_single(self, alpha, beta, f):
     pass #implementation optional
 
   
