@@ -60,6 +60,7 @@ def coreset_single(N, D, dist, algn):
     assert (coreset.weights() > 0.).sum() == coreset.size(), anm+" failed: sum of coreset.weights()>0  not equal to size(): sum = " + str((coreset.weights()>0).sum()) + " size(): " + str(coreset.size())
     assert np.all(coreset.weights() >= 0.), anm+" failed: coreset has negative weights"
 
+    sys.stderr.write('algnm: ' + str(coreset.alg_name) + '\n')
     sys.stderr.write('ps: ' + str(coreset.ps) + '\n')
     sys.stderr.write('wts: ' + str(coreset.weights()) + '\n')
     sys.stderr.write('wts2: ' +str(coreset.wts) + '\n')
