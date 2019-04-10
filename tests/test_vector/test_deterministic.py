@@ -109,6 +109,10 @@ def coreset_single(N, D, dist, algn):
     xw = (coreset.weights()[:, np.newaxis]*x).sum(axis=0) 
     assert np.sqrt(((xw-xw_inc)**2).sum()) < tol, anm+" failed: incremental buid up to N doesn't produce same result as one run at N : \n xw = " + str(xw) + " error = " +str(np.sqrt(((xw-xs)**2).sum())) + " \n xw_inc = " + str(xw_inc) + " error = " +  str(np.sqrt(((xw_inc-xs)**2).sum())) + " \n xs = " +str(xs)
 
+  #check if coreset with all_data_wts is optimal
+  coreset._update_weights(coreset.all_data_wts)
+  assert coreset.error() < tol, anm + " failed: coreset with all_data_wts does not have error 0"
+
 
 def test_coreset():
   for N, D, dist, alg in tests:

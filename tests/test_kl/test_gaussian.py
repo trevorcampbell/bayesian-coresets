@@ -1,6 +1,8 @@
 import bayesiancoresets as bc
 import autograd.numpy as np
+from autograd import grad
 import warnings
+import sys
 
 def gaussian_KL(mu0, Sig0, mu1, Sig1inv):
   t1 = np.dot(Sig1inv, Sig0).trace()
@@ -8,7 +10,7 @@ def gaussian_KL(mu0, Sig0, mu1, Sig1inv):
   t3 = -np.linalg.slogdet(Sig1inv)[1] - np.linalg.slogdet(Sig0)[1]
   return 0.5*(t1+t2+t3-mu0.shape[0])
 
-def weighted_post(th0, Sig0inv, Siginv, x, w):
+def weighted_post(th0, Sig0inv, Siginv, x, w): 
   Sigp = np.linalg.inv(Sig0inv + w.sum()*Siginv)
   mup = np.dot(Sigp,  np.dot(Sig0inv,th0) + np.dot(Siginv, (w[:, np.newaxis]*x).sum(axis=0)))
   return mup, Sigp
@@ -59,7 +61,7 @@ class ExactGaussianL1KLCoreset(bc.L1KLCoreset):
     self.Sig0inv = np.linalg.inv(Sig0)
     self.Sig = Sig
     self.Siginv = np.linalg.inv(Sig)
-    super().__init__(potentials=None, sampler=None, n_samples=0, reverse=reverse)
+    super().__init__(potentials=[None]*x.shape[0], sampler=None, n_samples=0, reverse=reverse, scaled=False)
 
   def _compute_scales(self):
     return np.sqrt(ll_m2_exact_diag(self.mu0, self.Sig0, self.Siginv, self.x))
@@ -71,11 +73,11 @@ class ExactGaussianL1KLCoreset(bc.L1KLCoreset):
     return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts, reverse=True)
 
   def _forward_kl_grad_estimate(self, w, normalize):
-    g = lambda w : grad(weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=False))
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=False))
     return g(w)
 
   def _reverse_kl_grad_estimate(self, w, normalize):
-    g = lambda w : grad(weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=True))
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=True))
     if normalize:
       muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w)
       return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x))
@@ -84,11 +86,11 @@ class ExactGaussianL1KLCoreset(bc.L1KLCoreset):
 
 class EGL1Reverse(ExactGaussianL1KLCoreset):
   def __init__(self, x, mu0, Sig0, Sig): 
-    super().__init__(self, x, mu0, Sig0, Sig, reverse=True) 
+    super().__init__(x, mu0, Sig0, Sig, True) 
 
 class EGL1Forward(ExactGaussianL1KLCoreset):
   def __init__(self, x, mu0, Sig0, Sig):
-    super().__init__(self, x, mu0, Sig0, Sig, reverse=False) 
+    super().__init__(x, mu0, Sig0, Sig, False) 
 
 class ExactGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
   def __init__(self, x, mu0, Sig0, Sig, reverse=True):
@@ -98,7 +100,7 @@ class ExactGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
     self.Sig0inv = np.linalg.inv(Sig0)
     self.Sig = Sig
     self.Siginv = np.linalg.inv(Sig)
-    super().__init__(potentials=None, sampler=None, n_samples=0, reverse=reverse)
+    super().__init__(potentials=[None]*x.shape[0], sampler=None, n_samples=0, reverse=reverse, scaled=False)
 
   def _compute_scales(self):
     return np.sqrt(ll_m2_exact_diag(self.mu0, self.Sig0, self.Siginv, self.x))
@@ -110,11 +112,11 @@ class ExactGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
     return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts, reverse=True)
 
   def _forward_kl_grad_estimate(self, w, normalize):
-    g = lambda w : grad(weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=False))
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=False))
     return g(w)
 
   def _reverse_kl_grad_estimate(self, w, normalize):
-    g = lambda w : grad(weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=True))
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=True))
     if normalize:
       muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w)
       return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x))
@@ -123,11 +125,11 @@ class ExactGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
 
 class EGGreedyReverse(ExactGaussianGreedyKLCoreset):
   def __init__(self, x, mu0, Sig0, Sig): 
-    super().__init__(self, x, mu0, Sig0, Sig, reverse=True) 
+    super().__init__(x, mu0, Sig0, Sig, True) 
 
 class EGGreedyForward(ExactGaussianGreedyKLCoreset):
   def __init__(self, x, mu0, Sig0, Sig): 
-    super().__init__(self, x, mu0, Sig0, Sig, reverse=False) 
+    super().__init__(x, mu0, Sig0, Sig, False) 
 
 
 
@@ -138,7 +140,7 @@ np.random.seed(324)
 tol = 1e-6
 
 
-n_trials = 10
+n_trials = 1
 anms = ['GreedyKLReverse', 'GreedyKLForward', 'L1KLReverse', 'L1KLForward']
 algs = [EGGreedyReverse, EGGreedyForward, EGL1Reverse, EGL1Forward]
 algs_nms = list(zip(anms, algs))
@@ -159,11 +161,12 @@ def gendata(N, D, dist="gauss"):
     y = np.random.rand(N)*2.-1.
     x = y[:, np.newaxis]*x
   else:
-    x = np.zeros((N, N))
-    for i in range(N):
-      x[i, i] = 1./float(N)
+    D = N
+    x = np.zeros((D, D))
+    for i in range(D):
+      x[i, i] = 1./float(D)
 
-  mu0 = np.random.normal(0., 1.)
+  mu0 = np.random.normal(0., 1., D)
   Sig0 = np.random.normal(0., 1., (D, D))
   Sig0 = Sig0.T.dot(Sig0)
   Sig = np.random.normal(0., 1., (D, D))
@@ -193,16 +196,16 @@ def coreset_single(N, D, dist, algn):
   prev_err = np.inf
   for m in range(1, N+1):
     coreset.build(m)
-    #check if coreset for 1 datapoint is immediately optimal
-    if x.shape[0] == 1:
-      assert np.fabs(coreset.weights() - np.array([1])) < tol or (np.fabs(coreset.weights() - np.array([0])) < tol and (x**2).sum() == 0.), anm +" failed: coreset not immediately optimal with N = 1. weights: " + str(coreset.weights(optimal_scaling=True))
-    #check if coreset is valid
-    assert (coreset.weights() > 0.).sum() <= m, anm+" failed: coreset size > m"
-    assert (coreset.weights() > 0.).sum() == coreset.size(), anm+" failed: sum of coreset.weights()>0  not equal to size(): sum = " + str((coreset.weights()>0).sum()) + " size(): " + str(coreset.size())
-    assert np.all(coreset.weights() >= 0.), anm+" failed: coreset has negative weights"
-    
     muw, Sigw = weighted_post(mu0, Sig0inv, Siginv, x, coreset.weights())
     w = coreset.weights()
+    #check if coreset for 1 datapoint is immediately optimal
+    if x.shape[0] == 1:
+      assert np.fabs(w - np.array([1])) < tol, anm +" failed: coreset not immediately optimal with N = 1. weights: " + str(coreset.weights()) + " mup = " + str(mup) + " Sigp = " + str(Sigp) + " muw = " + str(muw) + " Sigw = " + str(Sigw) + " scales = " + str(coreset.scales)
+    #check if coreset is valid
+    assert (w > 0.).sum() <= m, anm+" failed: coreset size > m"
+    assert (w > 0.).sum() == coreset.size(), anm+" failed: sum of coreset.weights()>0  not equal to size(): sum = " + str((coreset.weights()>0).sum()) + " size(): " + str(coreset.size())
+    assert np.all(w >= 0.), anm+" failed: coreset has negative weights"
+    
  
     #check if actual output error is monotone
     err = weighted_post_KL(mu0, Sig0inv, Siginv, x, w, reverse=True if 'Reverse' in anm else False)
@@ -232,6 +235,9 @@ def coreset_single(N, D, dist, algn):
     err = weighted_post_KL(mu0, Sig0inv, Siginv, x, w, reverse=True if 'Reverse' in anm else False)
     err_inc = weighted_post_KL(mu0, Sig0inv, Siginv, x, w_inc, reverse=True if 'Reverse' in anm else False)
     assert np.sqrt(((w - w_inc)**2).sum()) < tol, anm+" failed: incremental buid up to N doesn't produce same result as one run at N : \n error = " +str(err) + " error_inc = " +  str(err_inc)
+  #check if coreset with all_data_wts is optimal
+  coreset._update_weights(coreset.all_data_wts)
+  assert coreset.error() < tol, anm + " failed: coreset with all_data_wts does not have error 0"
 
 def test_coreset():
   for N, D, dist, alg in tests:

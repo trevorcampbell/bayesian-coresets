@@ -5,7 +5,11 @@ from ..base.sampling import SamplingCoreset
 class KLSamplingCoreset(SamplingCoreset, KLCoreset):
 
   def __init__(self, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, scaled=True):
-    super().__init__(potentials=potentials, sampler=sampler, n_samples=n_samples, reverse=reverse, n_lognorm_disc=n_lognorm_disc, scaled=scaled, N=len(potentials))
+    smp = sampler.sample(1)
+    ps = potentials(np.atleast_2d(smp))
+    if ps.ndim != 2:
+      raise ValueError(self.alg_name + ".__init__(): potentials must return an N x (num samples) 2d numpy array")
+    super().__init__(potentials=potentials, sampler=sampler, n_samples=n_samples, reverse=reverse, n_lognorm_disc=n_lognorm_disc, scaled=scaled, N=ps.shape[0])
 
   def _compute_sampling_probabilities(self):
     if np.any(self.scales > 0.):

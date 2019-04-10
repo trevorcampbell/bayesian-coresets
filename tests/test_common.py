@@ -28,9 +28,8 @@ def test_coreset():
     if typ == 'dummy':
       coreset = alg(N)
     elif typ == 'kl':
-      def pot(x, i):
-        return i 
-      pots = [lambda x : pot(x, i) for i in range(N)] 
+      def pot(samps):
+        return np.ones((N, samps.shape[0])) 
       sampler = DummySampler(D)
       coreset = alg(pots, sampler, 20)
     elif typ == 'vector':

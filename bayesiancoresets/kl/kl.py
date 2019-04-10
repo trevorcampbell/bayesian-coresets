@@ -16,14 +16,12 @@ class KLCoreset(Coreset):
     self.full_potentials_cache = np.zeros(self.N)
     if self.N == 0:
       self.scales = np.array([])
-      self.full_wts = self.scales
-      return
-    if scaled:
+    elif scaled:
       self.scales = self._compute_scales()
     else:
       self.scales = np.ones(self.N)
     self.scales[self.scales == 0] = 1.
-    self.full_wts = np.ones(self.N)
+    self.all_data_wts = self.scales
 
   def weights(self):
     return self.wts/self.scales
@@ -39,19 +37,13 @@ class KLCoreset(Coreset):
       g = self._kl_grad_estimate(w)
       g[zidcs] = 0.
       return g
-    self.wts = adam(self.wts, grd, opt_itrs=1000, adam_a1=1., adam_a2=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
+    self.wts = adam(self.wts, grd, opt_itrs=10000, adam_a1=1., adam_a2=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
 
   def _sample_potentials(self, w, scls=None):
     if scls is None:
       scls = self.scales
     samples = self.sampler.sample(w/scls, self.n_samples)
-    ps = np.zeros((self.N, samples.shape[0]))
-    for i in range(self.N):
-      for j in range(samples.shape[0]):
-        ps[i,j] = self.potentials[i](samples[j,:])   
-
-    ps /= scls[:, np.newaxis]
-
+    ps = self.potentials(samples) / scls[:, np.newaxis]
     return ps
 
   def _compute_scales(self):
@@ -67,7 +59,7 @@ class KLCoreset(Coreset):
   def _forward_kl_grad_estimate(self, w, normalize):
     #compute two potentials
     wpots = self._sample_potentials(w)
-    fpots = self._sample_potentials(self.full_wts)
+    fpots = self._sample_potentials(self.all_data_wts)
     #add fpots result to the cache
     self.full_potentials_cache = (self.n_fpc*self.full_potentials_cache + fpots.shape[1]*fpots.mean(axis=1))/(self.n_fpc+fpots.shape[1])
     self.n_fpc += fpots.shape[1]
@@ -76,7 +68,7 @@ class KLCoreset(Coreset):
 
   def _reverse_kl_grad_estimate(self, w, normalize):
     pots = self._sample_potentials(w)
-    residual_pots = (self.full_wts - w).dot(pots)
+    residual_pots = (self.all_data_wts - w).dot(pots)
 
     num = -(pots*residual_pots).var(axis=1)
     if normalize:
@@ -91,10 +83,10 @@ class KLCoreset(Coreset):
     return num / denom
 
   def _reverse_kl_estimate(self):
-    return self._lognorm_ratio_estimate(self.wts, self.full_wts) - self._lineared_lognorm_estimate(self.wts, self.full_wts)
+    return self._lognorm_ratio_estimate(self.wts, self.all_data_wts) - self._lineared_lognorm_estimate(self.wts, self.all_data_wts)
 
   def _forward_kl_estimate(self):
-    return self._lognorm_ratio_estimate(self.full_wts, self.wts) - self._lineared_lognorm_estimate(self.full_wts, self.wts)
+    return self._lognorm_ratio_estimate(self.all_data_wts, self.wts) - self._lineared_lognorm_estimate(self.all_data_wts, self.wts)
 
   def _linearized_lognorm_estimate(self, w0, w):
     return (w - w0).dot(self._sample_potentials(w0).mean(axis=1))
