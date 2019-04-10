@@ -94,7 +94,6 @@ def coreset_single(N, D, dist, algn):
     #  assert np.all( np.fabs(coreset.weights()[ coreset.weights() > 0. ] - 1. ) < tol ), anm+" failed: on axis-aligned data, weights are not 1"
     #  assert np.fabs(np.sqrt(((xw-xs)**2).sum())/np.sqrt((xs**2).sum()) - np.sqrt(1. - float(m)/float(N))) < tol, anm+" failed: on axis-aligned data, error is not sqrt(1 - M/N)"
     prev_err = np.sqrt(((xw-xs)**2).sum())
-    prev_wts = coreset.wts.copy()
   #save incremental M result
   w_inc = coreset.weights()
   xw_inc = (coreset.weights()[:, np.newaxis]*x).sum(axis=0) 
