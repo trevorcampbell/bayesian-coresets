@@ -39,7 +39,7 @@ class KLCoreset(Coreset):
       g = self._kl_grad_estimate(w)
       g[zidcs] = 0.
       return g
-    self.wts = adam(self.wts, grd, opt_itrs=1000, adam_a=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
+    self.wts = adam(self.wts, grd, opt_itrs=1000, adam_a1=1., adam_a2=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
 
   def _sample_potentials(self, w, scls=None):
     if scls is None:

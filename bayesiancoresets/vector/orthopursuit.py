@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import lsq_linear, minimize
+from scipy.optimize import nnls
 import warnings
 from .vector import VectorCoreset
 from ..base.iterative import IterativeCoreset
@@ -27,16 +27,16 @@ class OrthoPursuitCoreset(VectorCoreset, IterativeCoreset):
     active_idcs = self.wts > 0
     active_idcs[f] = True
     X = self.x[active_idcs, :]
-    res = lsq_linear(X.T, self.snorm*self.xs, bounds=(0., np.inf), max_iter=max(1000, 10*self.xs.shape[0]))
+    res = nnls(X.T, self.snorm*self.xs)
  
     #if the optimizer failed or our cost increased, stop
     prev_cost = self.error()
-    if not res.success or np.sqrt(2.*res.cost) >= prev_cost:
+    if res[1] >= prev_cost:
       self.reached_numeric_limit = True
       return False
 
     #update weights, xw, and prev_cost
-    self.wts[active_idcs] = res.x
+    self.wts[active_idcs] = res[0]
     self.xw = self.wts.dot(self.x)
     
     return True

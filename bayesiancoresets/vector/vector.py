@@ -1,8 +1,9 @@
 import numpy as np
 import warnings
-from scipy.optimize import lsq_linear, minimize
+from scipy.optimize import nnls
 from ..base.coreset import Coreset
 from ..base.iterative import SingleGreedyCoreset, IterativeCoreset
+import sys
 
 class VectorCoreset(Coreset):
   def __init__(self, x, use_cached_xw=True, **kw):
@@ -76,10 +77,16 @@ class VectorCoreset(Coreset):
     active_idcs = self.wts > 0
     if active_idcs.sum() > 0:
       X = self.x[active_idcs, :]
-      res = lsq_linear(X.T, self.snorm*self.xs, bounds=(0., np.inf), max_iter=max(1000, 10*self.xs.shape[0]))
+      res = nnls(X.T, self.snorm*self.xs) #, bounds=(0., np.inf), max_iter=max(1000, 10*self.xs.shape[0]))
+      #try:
+      #  res = lsq_linear(X.T, self.snorm*self.xs, bounds=(0., np.inf), max_iter=max(1000, 10*self.xs.shape[0]))
+      #except FloatingPointError as e:
+      #  sys.stderr.write('lsq linear hit flting pt err\n')
+      #  sys.stderr.write('A: ' + str(X.T) + ' b: ' + str(self.snorm*self.xs) + '\n')
       #update weights
       w = self.wts.copy()
-      w[active_idcs] = res.x
+      #w[active_idcs] = res.x
+      w[active_idcs] = res[0]
       self._update_weights(w)
 
   #called by _update_weights(w)

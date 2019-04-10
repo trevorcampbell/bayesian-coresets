@@ -21,6 +21,9 @@ class DummyOptimizationCoreset(OptimizationCoreset):
   def _max_reg_coeff(self):
     return 1.
 
+  def optimize(self):
+    pass
+
 class DummySamplingCoreset(SamplingCoreset):
 
   def __init__(self, N):

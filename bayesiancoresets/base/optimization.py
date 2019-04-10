@@ -3,7 +3,6 @@ import warnings
 from scipy.special import erfc
 import bisect
 from .coreset import Coreset
-#import sys
 
 #class OptimizationResult(object):
 #  def __init__(self, x, f0, v0, f1, v1):
@@ -15,31 +14,39 @@ from .coreset import Coreset
 
 class OptimizationCoreset(Coreset):
 
-  def __init__(self, regularization_tolerance=1e-9, **kw):
+  def __init__(self, tol=1e-9, **kw):
     super().__init__(**kw)
-    self.tol = regularization_tolerance
-
-  def reset(self):
-    super().reset()
+    self.tol = tol
 
   def _prebuild(self):
-    self.lmb_cache = [self._mrc(), 0.]
-    self.w_cache = [np.zeros(self.N), np.ones(self.N)]
     self.M_cache = [0, self.N]
+
+    self.lmb_cache = {}
+    self.lmb_cache[0] = [self._mrc(), self._mrc()]
+    self.lmb_cache[self.N] = [0., 0.]
+
+    self.w_cache = {} 
+    self.w_cache[0] = np.zeros(self.N)
+    self.w_cache[self.N] = self.all_data_wts
+    
+    
 
   def _build(self, M): 
     #if we previously cached a relevant result, return
-    if M in self.M_cache:
-        cached_idx = self.M_cache.index(M)
-        self._update_weights(self.w_cache[cached_idx])
-        self.M = M
-        return M
+    cache_hit = self._cache_weight_update(M)
+    if cache_hit:
+      return M
 
     #otherwise do bisection search on regularization
-    idx = bisect.bisect(self.M_cache, M)
-    lmbu = self.lmb_cache[idx-1]
-    lmbl = self.lmb_cache[idx]
-    w = self.w_cache[idx] if abs(self.M_cache[idx] - M) < abs(self.M_cache[idx-1] - M) else self.w_cache[idx-1]
+    
+    Mr = self.M_cache[bisect.bisect_right(self.M_cache, M)]
+    Ml = self.M_cache[bisect.bisect_left(self.M_cache, M)-1]
+
+    #set max lambda = the minimum val of lambda s.t. M < desired M
+    lmbu = self.lmb_cache[Ml][0]
+    #set min lambda = the maximum val of lambda s.t. M > desired M
+    lmbl = self.lmb_cache[Mr][1]
+    w = self.w_cache[Mr] if abs(Mr - M) < abs(Ml - M) else self.w_cache[Ml]
     nnz = -1
     #keep searching if 
     # 1) we haven't found M, and
@@ -51,31 +58,44 @@ class OptimizationCoreset(Coreset):
 
       #optimize weights 
       w = self._optimize(w, lmb)
+ 
+      #threshold to 0
+      w[w < self.tol] = 0.
       
       #add to the cache
       nnz = (w > 0).sum()
-      idx = bisect.bisect(self.M_cache, nnz)
-      self.lmb_cache.insert(idx, lmb)
-      self.w_cache.insert(idx, w)
-      self.M_cache.insert(idx, nnz)
+      bisect.insort(self.M_cache, nnz)
+      self.w_cache[nnz] = w
+      if nnz in self.lmb_cache:
+        self.lmb_cache[nnz][0] = min(lmb, self.lmb_cache[nnz][0])
+        self.lmb_cache[nnz][1] = max(lmb, self.lmb_cache[nnz][1])
+      else:
+        self.lmb_cache[nnz] = [lmb, lmb]
+
       if nnz < M:
         lmbu = lmb
       else:
         lmbl = lmb
  
-    #find closest entry in M_cache s.t. <= M
-    idx = bisect.bisect(self.M_cache, M)
-    self.M = self.M_cache[idx-1]
-    self._update_weights(self.w_cache[idx-1])
+    self._cache_weight_update(M, lower_fallback=True)
 
-
-    sys.stderr.write('ERROR AFTER L1 BEFORE OPT: ' + str(   np.sqrt( ( (self.wts.dot(self.x) - self.snorm*self.xs)**2).sum() ) ) )
-
-    #optimize weights without regularization
-    self.optimize()
-    
-    sys.stderr.write('ERROR AFTER OPT: ' + str(   np.sqrt( ( (self.wts.dot(self.x) - self.snorm*self.xs)**2).sum() ) ) )
     return self.M
+
+  def _cache_weight_update(self, M, lower_fallback=False):
+    if M in self.M_cache:
+        self.M = M
+        self._update_weights(self.w_cache[M])
+        #optimize weights without regularization
+        self.optimize()
+        return True
+    elif lower_fallback:
+        #find closest entry in M_cache s.t. <= M
+        self.M = self.M_cache[bisect.bisect_left(self.M_cache, M)-1]
+        self._update_weights(self.w_cache[self.M])
+        self.optimize()
+        return True
+    else:
+        return False
 
   def _mrc(self):
     if not hasattr(self, 'mrcoeff'):

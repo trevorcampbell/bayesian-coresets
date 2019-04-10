@@ -5,8 +5,8 @@ import warnings
 warnings.filterwarnings('ignore', category=UserWarning) #tests will generate warnings (due to pathological data design for testing), just ignore them
 np.seterr(all='raise')
 np.set_printoptions(linewidth=500)
-np.random.seed(100)
-tol = 1e-9
+np.random.seed(324)
+tol = 1e-6
 
 
 n_trials = 10
@@ -47,7 +47,6 @@ def gendata(N, D, dist="gauss"):
 ####################################################
 def coreset_single(N, D, dist, algn):
   x = gendata(N, D, dist)
-  print(x)
   xs = x.sum(axis=0)
   anm, alg = algn
   coreset = alg(x, use_cached_xw=True)
@@ -70,9 +69,8 @@ def coreset_single(N, D, dist, algn):
     xwopt = (coreset.weights(optimal_scaling=True)[:, np.newaxis]*x).sum(axis=0)
  
     #check if actual output error is monotone
-    assert np.sqrt(((xw-xs)**2).sum()) - prev_err < tol, anm+" failed: error is not monotone decreasing, err = " + str(np.sqrt(((xw-xs)**2).sum())) + " prev_err = " +str(prev_err) + " M = " + str(coreset.M) + " N = " + str(N) + " m = " + str(m)   + " coreset.err = " + str(coreset.error()) + " xwopt = " + str(xwopt) + " w = " + str(coreset.wts) + " wext = " + str(coreset.weights()) + " xw = " + str(xw) + " coreset xw = " + str(coreset.xw) + " xs = " + str(xs)  + " prevwts = " + str(prev_wts) + " data = " + str(coreset.x)
+    assert np.sqrt(((xw-xs)**2).sum()) - prev_err < tol, anm+" failed: error is not monotone decreasing, err = " + str(np.sqrt(((xw-xs)**2).sum())) + " prev_err = " +str(prev_err) 
 
-#+ ' M_cache: '+ str( coreset.M_cache if anm == 'LASSO' else 0) + ' w_cache: '+ str( coreset.w_cache if anm == 'LASSO' else 0) + ' lmb_cache: '+ str( coreset.lmb_cache if anm == 'LASSO' else 0)
     #check if coreset is computing error properly
     #without optimal scaling
     assert np.fabs(coreset.error() - np.sqrt(((xw-xs)**2).sum())) < tol, anm+" failed: x(w) est is not close to true x(w): est err = " + str(coreset.error()) + ' true err = ' + str(np.sqrt(((xw-xs)**2).sum()))
@@ -83,14 +81,14 @@ def coreset_single(N, D, dist, algn):
     #without optimal scaling
     assert np.fabs(coreset.error() - accuratecoreset.error()) < tol*1000, anm+" failed: error(accurate/fast) do not return similar results: fast err = " + str(coreset.error()) + ' acc err = ' + str(accuratecoreset.error())
     #with optimal scaling
-    assert np.fabs(accuratecoreset.error(optimal_scaling=True) - coreset.error(optimal_scaling=True)) < tol*1000, anm+" failed: error(accurate/fast) with optimal scaling do not return similar results: fast err = " + str(coreset.error(optimal_scaling=True)) + ' acc err = ' + str(coreset.error(optimal_scaling=True))
+    assert np.fabs(accuratecoreset.error(optimal_scaling=True) - coreset.error(optimal_scaling=True)) < tol*1000, anm+" failed: error(accurate/fast) with optimal scaling do not return similar results: fast err = " + str(coreset.error(optimal_scaling=True)) + ' acc err = ' + str(accuratecoreset.error(optimal_scaling=True))
 
     #ensure optimally scaled error is lower than  regular
     assert coreset.error(optimal_scaling=True) - coreset.error() < tol, anm+" failed: optimal scaled coreset produces higher acc error than regular one. Optimal err = " + str(coreset.error(optimal_scaling=True)) + ' regular err: ' + str(coreset.error())
 
     #if data are colinear, check if the coreset is optimal immediately
     if 'colinear' in dist and m >= 1:
-      assert np.sqrt(((xwopt-xs)**2).sum()) < tol, anm + " failed: colinear data, m>= 1 not immediately optimal:  optimal scaled err " + str(np.sqrt(((xwopt-xs)**2).sum())) + " tol = " + str(tol) + " m = " + str(m)
+      assert np.sqrt(((xwopt-xs)**2).sum()) < tol, anm + " failed: colinear data, m>= 1 not immediately optimal:  optimal scaled err " + str(np.sqrt(((xwopt-xs)**2).sum())) + " tol = " + str(tol) + " m = " + str(m) + ' xwopt = ' + str(xwopt) + ' xs = ' + str(xs)
     ##if data are axis aligned, 
     #if 'axis' in dist:
     #  assert np.all( np.fabs(coreset.weights()[ coreset.weights() > 0. ] - 1. ) < tol ), anm+" failed: on axis-aligned data, weights are not 1"
