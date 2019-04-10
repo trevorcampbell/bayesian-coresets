@@ -3,7 +3,7 @@ import warnings
 from scipy.special import erfc
 import bisect
 from .coreset import Coreset
-import sys
+#import sys
 
 #class OptimizationResult(object):
 #  def __init__(self, x, f0, v0, f1, v1):
@@ -14,6 +14,10 @@ import sys
 #    self.v1 = v1
 
 class OptimizationCoreset(Coreset):
+
+  def __init__(self, regularization_tolerance=1e-9, **kw):
+    super().__init__(**kw)
+    self.tol = regularization_tolerance
 
   def reset(self):
     super().reset()
@@ -37,9 +41,11 @@ class OptimizationCoreset(Coreset):
     lmbl = self.lmb_cache[idx]
     w = self.w_cache[idx] if abs(self.M_cache[idx] - M) < abs(self.M_cache[idx-1] - M) else self.w_cache[idx-1]
     nnz = -1
-    itr = 0
-    while nnz != M and lmbu > 0 and (lmbu-lmbl)/lmbu > 1e-6:
-      itr += 1
+    #keep searching if 
+    # 1) we haven't found M, and
+    # 2) the upper/lower reg bounds are far apart in a relative sense, and
+    # 3) the upper/lower reg bounds are far apart in an abolute sense (only check if lmbl == 0.)
+    while nnz != M and (lmbu-lmbl)/lmbu > self.tol and (lmbu > self.tol or lmbl > 0.):
       #pick new lambda
       lmb = (lmbu+lmbl)/2.
 
@@ -61,6 +67,14 @@ class OptimizationCoreset(Coreset):
     idx = bisect.bisect(self.M_cache, M)
     self.M = self.M_cache[idx-1]
     self._update_weights(self.w_cache[idx-1])
+
+
+    sys.stderr.write('ERROR AFTER L1 BEFORE OPT: ' + str(   np.sqrt( ( (self.wts.dot(self.x) - self.snorm*self.xs)**2).sum() ) ) )
+
+    #optimize weights without regularization
+    self.optimize()
+    
+    sys.stderr.write('ERROR AFTER OPT: ' + str(   np.sqrt( ( (self.wts.dot(self.x) - self.snorm*self.xs)**2).sum() ) ) )
     return self.M
 
   def _mrc(self):

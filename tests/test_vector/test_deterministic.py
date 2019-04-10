@@ -47,6 +47,7 @@ def gendata(N, D, dist="gauss"):
 ####################################################
 def coreset_single(N, D, dist, algn):
   x = gendata(N, D, dist)
+  print(x)
   xs = x.sum(axis=0)
   anm, alg = algn
   coreset = alg(x, use_cached_xw=True)
@@ -69,8 +70,9 @@ def coreset_single(N, D, dist, algn):
     xwopt = (coreset.weights(optimal_scaling=True)[:, np.newaxis]*x).sum(axis=0)
  
     #check if actual output error is monotone
-    assert np.sqrt(((xw-xs)**2).sum()) - prev_err < tol, anm+" failed: error is not monotone decreasing, err = " + str(np.sqrt(((xw-xs)**2).sum())) + " prev_err = " +str(prev_err) + " M = " + str(coreset.M)
+    assert np.sqrt(((xw-xs)**2).sum()) - prev_err < tol, anm+" failed: error is not monotone decreasing, err = " + str(np.sqrt(((xw-xs)**2).sum())) + " prev_err = " +str(prev_err) + " M = " + str(coreset.M) + " N = " + str(N) + " m = " + str(m)   + " coreset.err = " + str(coreset.error()) + " xwopt = " + str(xwopt) + " w = " + str(coreset.wts) + " wext = " + str(coreset.weights()) + " xw = " + str(xw) + " coreset xw = " + str(coreset.xw) + " xs = " + str(xs)  + " prevwts = " + str(prev_wts) + " data = " + str(coreset.x)
 
+#+ ' M_cache: '+ str( coreset.M_cache if anm == 'LASSO' else 0) + ' w_cache: '+ str( coreset.w_cache if anm == 'LASSO' else 0) + ' lmb_cache: '+ str( coreset.lmb_cache if anm == 'LASSO' else 0)
     #check if coreset is computing error properly
     #without optimal scaling
     assert np.fabs(coreset.error() - np.sqrt(((xw-xs)**2).sum())) < tol, anm+" failed: x(w) est is not close to true x(w): est err = " + str(coreset.error()) + ' true err = ' + str(np.sqrt(((xw-xs)**2).sum()))
@@ -94,6 +96,7 @@ def coreset_single(N, D, dist, algn):
     #  assert np.all( np.fabs(coreset.weights()[ coreset.weights() > 0. ] - 1. ) < tol ), anm+" failed: on axis-aligned data, weights are not 1"
     #  assert np.fabs(np.sqrt(((xw-xs)**2).sum())/np.sqrt((xs**2).sum()) - np.sqrt(1. - float(m)/float(N))) < tol, anm+" failed: on axis-aligned data, error is not sqrt(1 - M/N)"
     prev_err = np.sqrt(((xw-xs)**2).sum())
+    prev_wts = coreset.wts.copy()
   #save incremental M result
   w_inc = coreset.weights()
   xw_inc = (coreset.weights()[:, np.newaxis]*x).sum(axis=0) 

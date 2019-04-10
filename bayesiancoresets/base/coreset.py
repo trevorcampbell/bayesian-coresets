@@ -8,6 +8,7 @@ class Coreset(object):
     self.M = 0
     self.reached_numeric_limit = False
     self.wts = np.zeros(self.N)
+    self.all_data_wts = np.ones(self.N)
     
   def reset(self):
     self.M = 0
@@ -38,9 +39,8 @@ class Coreset(object):
 
     #if we requested M >= N, just give all ones and return
     if M >= self.N:
-      self._update_weights(np.ones(self.N))
+      self._update_weights(self.all_data_wts)
       self.M = self.N
-      self._update_cache()
       return self.M
 
     #initialize optimization

@@ -26,6 +26,7 @@ class VectorCoreset(Coreset):
       self.xs /= self.snorm
     #save norms / data / size for nonzero vectors
     self.norms = nrms[self.nzidcs]
+    self.all_data_wts = self.norms.copy()
     self.x = x[self.nzidcs, :]/self.norms[:, np.newaxis]
     self.norm_sum = self.norms.sum()
     if self.x.size == 0:
@@ -73,12 +74,13 @@ class VectorCoreset(Coreset):
   def optimize(self):
     #run least squares optimal weight update
     active_idcs = self.wts > 0
-    X = self.x[active_idcs, :]
-    res = lsq_linear(X.T, self.snorm*self.xs, bounds=(0., np.inf), max_iter=max(1000, 10*self.xs.shape[0]))
-    #update weights
-    w = self.wts.copy()
-    w[active_idcs] = res.x
-    self._update_weights(w)
+    if active_idcs.sum() > 0:
+      X = self.x[active_idcs, :]
+      res = lsq_linear(X.T, self.snorm*self.xs, bounds=(0., np.inf), max_iter=max(1000, 10*self.xs.shape[0]))
+      #update weights
+      w = self.wts.copy()
+      w[active_idcs] = res.x
+      self._update_weights(w)
 
   #called by _update_weights(w)
   def _update_cache(self):
@@ -86,7 +88,7 @@ class VectorCoreset(Coreset):
     #if xw is unscaled, renormalize
     if self._xw_unscaled():
       self._renormalize()
-
+    
   def _renormalize(self):
     nrm = np.sqrt((self.xw**2).sum())
     self.xw /= nrm
