@@ -11,11 +11,11 @@ class StochasticGaussianL1KLCoreset(bc.L1KLCoreset):
     self.Sig0 = Sig0
     self.Sig0inv = np.linalg.inv(Sig0)
     self.Sig = Sig
-    self.logdetSig = np.linalg.slogdet(Sig)[1]
-    self.Siginv = np.linalg.inv(Sig)
-    self.xSiginv = np.dot(x, Siginv)
-    self.xSiginvx = (xSiginv*x).sum(axis=1)
-    super().__init__(N = x.shape[0], potentials=lambda s : gaussian_potentials(self.Siginv, self.xSiginvx, self.xSiginv, self.logdetSig, self.x, s), 
+    self.logdetSig = np.linalg.slogdet(self.Sig)[1]
+    self.Siginv = np.linalg.inv(self.Sig)
+    self.xSiginv = np.dot(self.x, self.Siginv)
+    self.xSiginvx = (self.xSiginv*self.x).sum(axis=1)
+    super().__init__(N = self.x.shape[0], potentials=lambda s : gaussian_potentials(self.Siginv, self.xSiginvx, self.xSiginv, self.logdetSig, self.x, s), 
                                      sampler=lambda w, n : gaussian_sampler(self.mu0, self.Sig0inv, self.Siginv, self.x, w, n), 
                                      n_samples=n_samples, reverse=reverse, scaled=scaled)
 
@@ -34,10 +34,10 @@ class StochasticGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
     self.Sig0 = Sig0
     self.Sig0inv = np.linalg.inv(Sig0)
     self.Sig = Sig
-    self.logdetSig = np.linalg.slogdet(Sig)[1]
-    self.Siginv = np.linalg.inv(Sig)
-    self.xSiginv = np.dot(x, Siginv)
-    self.xSiginvx = (xSiginv*x).sum(axis=1)
+    self.logdetSig = np.linalg.slogdet(self.Sig)[1]
+    self.Siginv = np.linalg.inv(self.Sig)
+    self.xSiginv = np.dot(self.x, self.Siginv)
+    self.xSiginvx = (self.xSiginv*self.x).sum(axis=1)
     super().__init__(N = x.shape[0], potentials=lambda s : gaussian_potentials(self.Siginv, self.xSiginvx, self.xSiginv, self.logdetSig, self.x, s), 
                                      sampler=lambda w, n : gaussian_sampler(self.mu0, self.Sig0inv, self.Siginv, self.x, w, n), 
                                      n_samples=n_samples, reverse=reverse, scaled=scaled)

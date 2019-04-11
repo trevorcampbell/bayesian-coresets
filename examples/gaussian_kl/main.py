@@ -43,14 +43,10 @@ algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg]
 ws = [w_erl1, w_efl1, w_erg, w_efg, w_srl1, w_sfl1, w_srg, w_sfg]
 nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG']
 
-algs = [erl1, efl1, erg, efg]
-ws = [w_erl1, w_efl1, w_erg, w_efg]
-nms = ['ERL1', 'EFL1', 'ERG', 'EFG']
-
-
 for w, nm, alg in zip(ws, nms, algs):
 
   for m in range(1, M+1):
+    print('alg: ' + nm + ' ' + str(m) +'/'+str(M))
     alg.build(m)
     w[m, :] = alg.weights()
 

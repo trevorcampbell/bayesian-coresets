@@ -27,7 +27,7 @@ def gaussian_sampler(th0, Sig0inv, Siginv, x, w, n_samples):
   muw, Sigw = weighted_post(th0, Sig0inv, Siginv, x, w)
   return np.random.multivariate_normal(muw, Sigw, n_samples)
 
-def gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, w, samples):
+def gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples):
   return -x.shape[1]/2*np.log(2*np.pi) - 1./2.*logdetSig - 1./2.*(xSiginvx[:, np.newaxis] - 2.*np.dot(xSiginv, samples.T) + (np.dot(samples, Siginv)*samples).sum(axis=1))
   
 
