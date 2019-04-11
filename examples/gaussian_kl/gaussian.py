@@ -1,6 +1,7 @@
 import autograd.numpy as np
 from autograd import grad
 import warnings
+
  
 def gaussian_KL(mu0, Sig0, mu1, Sig1inv):
   t1 = np.dot(Sig1inv, Sig0).trace()
@@ -20,6 +21,15 @@ def weighted_post_KL(th0, Sig0inv, Siginv, x, w, reverse=True):
     return gaussian_KL(muw, Sigw, mup, np.linalg.inv(Sigp))
   else:
     return gaussian_KL(mup, Sigp, muw, np.linalg.inv(Sigw))
+
+
+def gaussian_sampler(th0, Sig0inv, Siginv, x, w, n_samples):
+  muw, Sigw = weighted_post(th0, Sig0inv, Siginv, x, w)
+  return np.random.multivariate_normal(muw, Sigw, n_samples)
+
+def gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, w, samples):
+  return -x.shape[1]/2*np.log(2*np.pi) - 1./2.*logdetSig - 1./2.*(xSiginvx[:, np.newaxis] - 2.*np.dot(xSiginv, samples.T) + (np.dot(samples, Siginv)*samples).sum(axis=1))
+  
 
 #NB: without constant terms
 #E[Log N(x; mu, Sig)] under mu ~ N(muw, Sigw)

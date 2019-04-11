@@ -53,22 +53,16 @@ class KLCoreset(Coreset):
       return self._scales_estimate()
 
   def _kl(self):
-    if (self.reverse and hasattr(self, '_reverse_kl_exact')) or (not self.reverse and hasattr(self, '_forward_kl_exact')):
-      return self._reverse_kl_exact() if self.reverse else self._forward_kl_exact()
-    else:
-      return self._reverse_kl_estimate() if self.reverse else self._forward_kl_estimate()
+    return self._reverse_kl() if self.reverse else self._forward_kl()
   
   def _kl_grad(self, w, normalize=False):
-    if (self.reverse and hasattr(self, '_reverse_kl_grad_exact')) or (not self.reverse and hasattr(self, '_forward_kl_grad_exact')):
-      return self._reverse_kl_grad_exact(w, normalize) if self.reverse else self._forward_kl_grad_exact(w, normalize)
-    else:
-      return self._reverse_kl_grad_estimate(w, normalize) if self.reverse else self._forward_kl_grad_estimate(w, normalize)
+    return self._reverse_kl_grad(w, normalize) if self.reverse else self._forward_kl_grad(w, normalize)
 
-  def _scales_estimate(self):
+  def _compute_scales(self):
     ps = self._sample_potentials(np.zeros(self.N), np.ones(self.N))
     return ps.std(axis=1)
 
-  def _forward_kl_grad_estimate(self, w, normalize):
+  def _forward_kl_grad(self, w, normalize):
     #compute two potentials
     wpots = self._sample_potentials(w)
     fpots = self._sample_potentials(self.all_data_wts)
@@ -78,7 +72,7 @@ class KLCoreset(Coreset):
     #return grad
     return wpots.mean(axis=1) - self.full_potentials_cache
 
-  def _reverse_kl_grad_estimate(self, w, normalize):
+  def _reverse_kl_grad(self, w, normalize):
     pots = self._sample_potentials(w)
     residual_pots = (self.all_data_wts - w).dot(pots)
 
@@ -94,10 +88,10 @@ class KLCoreset(Coreset):
 
     return num / denom
 
-  def _reverse_kl_estimate(self):
+  def _reverse_kl(self):
     return self._lognorm_ratio_estimate(self.wts, self.all_data_wts) - self._lineared_lognorm_estimate(self.wts, self.all_data_wts)
 
-  def _forward_kl_estimate(self):
+  def _forward_kl(self):
     return self._lognorm_ratio_estimate(self.all_data_wts, self.wts) - self._lineared_lognorm_estimate(self.all_data_wts, self.wts)
 
   def _linearized_lognorm_estimate(self, w0, w):

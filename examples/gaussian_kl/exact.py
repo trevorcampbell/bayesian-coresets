@@ -17,17 +17,17 @@ class ExactGaussianL1KLCoreset(bc.L1KLCoreset):
   def _compute_scales(self):
     return np.sqrt(ll_m2_exact_diag(self.mu0, self.Sig0, self.Siginv, self.x))
 
-  def _forward_kl_estimate(self):
+  def _forward_kl(self):
     return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=False)
 
-  def _reverse_kl_estimate(self):
+  def _reverse_kl(self):
     return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=True)
 
-  def _forward_kl_grad_estimate(self, w, normalize):
+  def _forward_kl_grad(self, w, normalize):
     g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=False))
     return g(w)
 
-  def _reverse_kl_grad_estimate(self, w, normalize):
+  def _reverse_kl_grad(self, w, normalize):
     g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=True))
     if normalize:
       muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales)
@@ -56,17 +56,17 @@ class ExactGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
   def _compute_scales(self):
     return np.sqrt(ll_m2_exact_diag(self.mu0, self.Sig0, self.Siginv, self.x))
 
-  def _forward_kl_estimate(self):
+  def _forward_kl(self):
     return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=False)
 
-  def _reverse_kl_estimate(self):
+  def _reverse_kl(self):
     return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=True)
 
-  def _forward_kl_grad_estimate(self, w, normalize):
+  def _forward_kl_grad(self, w, normalize):
     g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=False))
     return g(w)
 
-  def _reverse_kl_grad_estimate(self, w, normalize):
+  def _reverse_kl_grad(self, w, normalize):
     g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=True))
     if normalize:
       muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales)
