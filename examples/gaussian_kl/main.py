@@ -2,6 +2,7 @@ import numpy as np
 from exact import *
 from stochastic import *
 from gaussian import *
+import bayesiancoresets as bc
 
 opt_itrs = 1000
 M = 20
@@ -29,6 +30,12 @@ sfl1 = SGL1Forward(x, mu0, Sig0, Sig, n_samples)
 srg = SGGreedyReverse(x, mu0, Sig0, Sig, n_samples)
 sfg = SGGreedyForward(x, mu0, Sig0, Sig, n_samples)
 
+sgs = SGS(x, mu0, Sig0, Sig, n_samples)
+egs = EGS(x, mu0, Sig0, Sig, n_samples)
+egus = EGUS(x, mu0, Sig0, Sig, n_samples)
+
+
+
 w_erl1 = np.zeros((M+1, x.shape[0]))
 w_efl1 = np.zeros((M+1, x.shape[0]))
 w_erg = np.zeros((M+1, x.shape[0]))
@@ -37,11 +44,14 @@ w_srl1 = np.zeros((M+1, x.shape[0]))
 w_sfl1 = np.zeros((M+1, x.shape[0]))
 w_srg = np.zeros((M+1, x.shape[0]))
 w_sfg = np.zeros((M+1, x.shape[0]))
+w_sgs = np.zeros((M+1, x.shape[0]))
+w_egs = np.zeros((M+1, x.shape[0]))
+w_egus = np.zeros((M+1, x.shape[0]))
 
 
-algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg]
-ws = [w_erl1, w_efl1, w_erg, w_efg, w_srl1, w_sfl1, w_srg, w_sfg]
-nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG']
+algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
+ws = [w_erl1, w_efl1, w_erg, w_efg, w_srl1, w_sfl1, w_srg, w_sfg, w_sgs, w_egs, w_egus]
+nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
 
 for w, nm, alg in zip(ws, nms, algs):
 

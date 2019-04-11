@@ -14,7 +14,7 @@ algs = [FullDataCoreset]
 types = ['dummy']
 algs.extend([DummyOptimizationCoreset, DummyIterativeCoreset, DummySingleGreedyCoreset, DummySamplingCoreset])
 types.extend(['dummy']*4)
-algs.extend([L1KLCoreset, GreedyKLCoreset, KLSamplingCoreset, KLUniformSamplingCoreset])
+algs.extend([L1KLCoreset, GreedyKLCoreset, SamplingKLCoreset, UniformSamplingKLCoreset])
 types.extend(['kl']*4)
 algs.extend([LassoCoreset, FrankWolfeCoreset, GIGACoreset, ForwardStagewiseCoreset, MatchingPursuitCoreset, LARCoreset, VectorSamplingCoreset, VectorUniformSamplingCoreset, OrthoPursuitCoreset])
 types.extend(['vector']*9)

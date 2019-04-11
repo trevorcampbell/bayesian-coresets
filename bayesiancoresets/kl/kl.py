@@ -46,12 +46,6 @@ class KLCoreset(Coreset):
     ps = self.potentials(samples) / scls[:, np.newaxis]
     return ps
 
-  def _compute_scales(self):
-    if hasattr(self, '_scales_exact'):
-      return self._scales_exact()
-    else:
-      return self._scales_estimate()
-
   def _kl(self):
     return self._reverse_kl() if self.reverse else self._forward_kl()
   
