@@ -3,6 +3,7 @@ import warnings
 from scipy.special import erfc
 import bisect
 from .coreset import Coreset
+import sys
 
 #class OptimizationResult(object):
 #  def __init__(self, x, f0, v0, f1, v1):
@@ -52,6 +53,16 @@ class OptimizationCoreset(Coreset):
     # 1) we haven't found M, and
     # 2) the upper/lower reg bounds are far apart in a relative sense, and
     # 3) the upper/lower reg bounds are far apart in an abolute sense (only check if lmbl == 0.)
+    try:
+      if nnz != M and (lmbu-lmbl)/lmbu > self.tol and (lmbu > self.tol or lmbl > 0.):
+        pass
+    except:
+      sys.stderr.write('nnz: ' + str(nnz) + '\n')
+      sys.stderr.write('lmbu: ' + str(lmbu) + '\n')
+      sys.stderr.write('lmbl: ' + str(lmbl) + '\n')
+      sys.stderr.write('tol: ' + str(self.tol) + '\n')
+      raise
+
     while nnz != M and (lmbu-lmbl)/lmbu > self.tol and (lmbu > self.tol or lmbl > 0.):
       #pick new lambda
       lmb = (lmbu+lmbl)/2.

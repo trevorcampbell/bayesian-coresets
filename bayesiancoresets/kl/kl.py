@@ -27,35 +27,47 @@ class KLCoreset(Coreset):
     return self.wts/self.scales
 
   def error(self):
-    return self._kl_estimate()
+    return self._kl()
 
   def optimize(self):
     nzidcs = self.wts > 0
     zidcs = np.logical_not(nzidcs)
     #set inactive w gradient components to 0 
     def grd(w):
-      g = self._kl_grad_estimate(w)
+      g = self._kl_grad(w)
       g[zidcs] = 0.
       return g
-    self.wts = adam(self.wts, grd, opt_itrs=10000, adam_a1=1., adam_a2=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
+    self.wts = adam(self.wts, grd, opt_itrs=1000, adam_a1=1., adam_a2=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
 
   def _sample_potentials(self, w, scls=None):
     if scls is None:
       scls = self.scales
-    samples = self.sampler.sample(w/scls, self.n_samples)
+    samples = self.sampler(w/scls, self.n_samples)
     ps = self.potentials(samples) / scls[:, np.newaxis]
     return ps
 
   def _compute_scales(self):
+    if hasattr(self, '_scales_exact'):
+      return self._scales_exact()
+    else:
+      return self._scales_estimate()
+
+  def _kl(self):
+    if (self.reverse and hasattr(self, '_reverse_kl_exact')) or (not self.reverse and hasattr(self, '_forward_kl_exact')):
+      return self._reverse_kl_exact() if self.reverse else self._forward_kl_exact()
+    else:
+      return self._reverse_kl_estimate() if self.reverse else self._forward_kl_estimate()
+  
+  def _kl_grad(self, w, normalize=False):
+    if (self.reverse and hasattr(self, '_reverse_kl_grad_exact')) or (not self.reverse and hasattr(self, '_forward_kl_grad_exact')):
+      return self._reverse_kl_grad_exact(w, normalize) if self.reverse else self._forward_kl_grad_exact(w, normalize)
+    else:
+      return self._reverse_kl_grad_estimate(w, normalize) if self.reverse else self._forward_kl_grad_estimate(w, normalize)
+
+  def _scales_estimate(self):
     ps = self._sample_potentials(np.zeros(self.N), np.ones(self.N))
     return ps.std(axis=1)
 
-  def _kl_grad_estimate(self, w, normalize=False):
-    return self._reverse_kl_grad_estimate(w, normalize) if self.reverse else self._forward_kl_grad_estimate(w, normalize)
-
-  def _kl_estimate(self):
-    return self._reverse_kl_estimate() if self.reverse else self._forward_kl_estimate()
-      
   def _forward_kl_grad_estimate(self, w, normalize):
     #compute two potentials
     wpots = self._sample_potentials(w)

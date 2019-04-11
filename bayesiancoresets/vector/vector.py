@@ -98,8 +98,9 @@ class VectorCoreset(Coreset):
     
   def _renormalize(self):
     nrm = np.sqrt((self.xw**2).sum())
-    self.xw /= nrm
-    self.wts /= nrm
+    if nrm > 0:
+      self.xw /= nrm
+      self.wts /= nrm
 
 
 class SingleGreedyVectorCoreset(VectorCoreset, SingleGreedyCoreset):

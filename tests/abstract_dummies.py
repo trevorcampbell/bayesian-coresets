@@ -4,11 +4,17 @@ from bayesiancoresets.base import SamplingCoreset
 from bayesiancoresets.base import SingleGreedyCoreset
 from bayesiancoresets.base import OptimizationCoreset
 
+def dummy_sampler(n_samples, D):
+  return np.random.randn(n_samples, D)
+
+def dummy_potentials(samples, N):
+  return np.ones((N, samples.shape[0]))
+
 class DummySampler(object):
   def __init__(self, D):
     self.D = D
   def sample(self, wts, n_samples):
-    return np.random.randn(self.D, n_samples)
+    return np.random.randn(n_samples, self.D)
 
 class DummyOptimizationCoreset(OptimizationCoreset):
 

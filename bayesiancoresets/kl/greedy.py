@@ -7,22 +7,18 @@ from ..base.optimization import adam
 
 class GreedyKLCoreset(KLCoreset,SingleGreedyCoreset):
 
-  def __init__(self, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, scaled=True):
-    smp = sampler.sample(1)
-    ps = potentials(np.atleast_2d(smp))
-    if ps.ndim != 2:
-      raise ValueError(self.alg_name + ".__init__(): potentials must return an N x (num samples) 2d numpy array")
-    super().__init__(potentials=potentials, sampler=sampler, n_samples=n_samples, reverse=reverse, n_lognorm_disc=n_lognorm_disc, scaled=scaled, N=ps.shape[0])
+  def __init__(self, N, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, scaled=True):
+    super().__init__(potentials=potentials, sampler=sampler, n_samples=n_samples, reverse=reverse, n_lognorm_disc=n_lognorm_disc, scaled=scaled, N=N)
 
   def _search(self):
-    return self._kl_grad_estimate(self.wts, True).argmin()
+    return self._kl_grad(self.wts, True).argmin()
 
   def _step_coeffs(self, f):
     def grd(x):
       #wnew = alpha*wold + beta 1n
       wi = x[0]*self.wts
       wi[f] += x[1]
-      g = self._kl_grad_estimate(wi)
+      g = self._kl_grad(wi)
       ga = (self.wts*g).sum()
       gb = g[f]
       return np.array([ga, gb])
