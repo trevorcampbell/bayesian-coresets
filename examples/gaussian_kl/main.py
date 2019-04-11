@@ -1,6 +1,7 @@
 import numpy as np
 from exact import *
 from stochastic import *
+from sampling import *
 from gaussian import *
 import bayesiancoresets as bc
 
@@ -31,8 +32,8 @@ srg = SGGreedyReverse(x, mu0, Sig0, Sig, n_samples)
 sfg = SGGreedyForward(x, mu0, Sig0, Sig, n_samples)
 
 sgs = SGS(x, mu0, Sig0, Sig, n_samples)
-egs = EGS(x, mu0, Sig0, Sig, n_samples)
-egus = EGUS(x, mu0, Sig0, Sig, n_samples)
+egs = EGS(x, mu0, Sig0, Sig)
+egus = EGUS(x, mu0, Sig0, Sig)
 
 
 
