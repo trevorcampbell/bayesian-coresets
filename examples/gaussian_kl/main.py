@@ -39,28 +39,16 @@ w_srg = np.zeros((M+1, x.shape[0]))
 w_sfg = np.zeros((M+1, x.shape[0]))
 
 
-for m in range(1, M+1):
-  erl1.build(m)
-  w_erl1[m, :] = erl1.weights()
-  efl1.build(m)
-  w_efl1[m, :] = efl1.weights()
-  erg.build(m)
-  w_erg[m, :] = erg.weights()
-  efg.build(m)
-  w_efg[m, :] = efg.weights()
-  srl1.build(m)
-  w_srl1[m, :] = srl1.weights()
-  sfl1.build(m)
-  w_sfl1[m, :] = sfl1.weights()
-  srg.build(m)
-  w_srg[m, :] = srg.weights()
-  sfg.build(m)
-  w_sfg[m, :] = sfg.weights()
-
+algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg]
 ws = [w_erl1, w_efl1, w_erg, w_efg, w_srl1, w_sfl1, w_srg, w_sfg]
 nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG']
 
-for w, nm in zip(ws, nms):
+for w, nm, alg in zip(ws, nms, algs):
+
+  for m in range(1, M+1):
+    alg.build(m)
+    w[m, :] = alg.weights()
+
   muw = np.zeros((M+1, mu0.shape[0]))
   Sigw = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
   rklw = np.zeros(M+1)
