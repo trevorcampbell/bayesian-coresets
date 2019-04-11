@@ -2,8 +2,9 @@ import numpy as np
 import warnings
 
 class Coreset(object):
-  def __init__(self, N, **kw):
+  def __init__(self, N, auto_above_N = True, **kw):
     self.alg_name = self.__class__.__name__
+    self.auto_above_N = auto_above_N
     self.N = N
     self.M = 0
     self.reached_numeric_limit = False
@@ -38,7 +39,7 @@ class Coreset(object):
       return self.M
 
     #if we requested M >= N, just give all ones and return
-    if M >= self.N:
+    if M >= self.N and self.auto_above_N:
       self._update_weights(self.all_data_wts)
       self.M = self.N
       return self.M

@@ -46,7 +46,7 @@ figs = []
 #                        Sigw_l1=Sigw_l1, Sigw_l1_post = Sigw_l1_post, Sigw_g=Sigw_g, Sigw_g_post=Sigw_g_post,
 #                        kl_g=kl_g, kl_g_post=kl_g_post, kl_l1=kl_l1, kl_l1_post=kl_l1_post)
 
-res = np.load('results_EFL1.npz')
+res = np.load('results_EGUS.npz')
 x = res['x']
 w = res['w']
 Sig = res['Sig']

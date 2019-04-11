@@ -17,7 +17,7 @@ class StochasticGaussianL1KLCoreset(bc.L1KLCoreset):
     self.xSiginvx = (self.xSiginv*self.x).sum(axis=1)
     super().__init__(N = self.x.shape[0], potentials=lambda s : gaussian_potentials(self.Siginv, self.xSiginvx, self.xSiginv, self.logdetSig, self.x, s), 
                                      sampler=lambda w, n : gaussian_sampler(self.mu0, self.Sig0inv, self.Siginv, self.x, w, n), 
-                                     n_samples=n_samples, reverse=reverse, scaled=scaled)
+                                     n_samples=n_samples, reverse=reverse, scaled=scaled, auto_above_N=False)
 
 class SGL1Reverse(StochasticGaussianL1KLCoreset):
   def __init__(self, x, mu0, Sig0, Sig, n_samples): 
@@ -40,7 +40,7 @@ class StochasticGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
     self.xSiginvx = (self.xSiginv*self.x).sum(axis=1)
     super().__init__(N = x.shape[0], potentials=lambda s : gaussian_potentials(self.Siginv, self.xSiginvx, self.xSiginv, self.logdetSig, self.x, s), 
                                      sampler=lambda w, n : gaussian_sampler(self.mu0, self.Sig0inv, self.Siginv, self.x, w, n), 
-                                     n_samples=n_samples, reverse=reverse, scaled=scaled)
+                                     n_samples=n_samples, reverse=reverse, scaled=scaled, auto_above_N=False)
 
 class SGGreedyReverse(StochasticGaussianGreedyKLCoreset):
   def __init__(self, x, mu0, Sig0, Sig, n_samples): 

@@ -13,7 +13,7 @@ class ExactGaussianL1KLCoreset(bc.L1KLCoreset):
     self.Sig0inv = np.linalg.inv(Sig0)
     self.Sig = Sig
     self.Siginv = np.linalg.inv(Sig)
-    super().__init__(N=x.shape[0], potentials=None, sampler=None, n_samples=None, reverse=reverse, scaled=scaled)
+    super().__init__(N=x.shape[0], potentials=None, sampler=None, n_samples=None, reverse=reverse, scaled=scaled, auto_above_N=False)
 
   def _compute_scales(self):
     return np.sqrt(ll_m2_exact_diag(self.mu0, self.Sig0, self.Siginv, self.x))
@@ -52,7 +52,7 @@ class ExactGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
     self.Sig0inv = np.linalg.inv(Sig0)
     self.Sig = Sig
     self.Siginv = np.linalg.inv(Sig)
-    super().__init__(N=x.shape[0], potentials=None, sampler=None, n_samples=None, reverse=reverse, scaled=scaled)
+    super().__init__(N=x.shape[0], potentials=None, sampler=None, n_samples=None, reverse=reverse, scaled=scaled, auto_above_N=False)
 
   def _compute_scales(self):
     return np.sqrt(ll_m2_exact_diag(self.mu0, self.Sig0, self.Siginv, self.x))

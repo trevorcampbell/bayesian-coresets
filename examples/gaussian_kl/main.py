@@ -35,8 +35,6 @@ sgs = SGS(x, mu0, Sig0, Sig, n_samples)
 egs = EGS(x, mu0, Sig0, Sig)
 egus = EGUS(x, mu0, Sig0, Sig)
 
-
-
 w_erl1 = np.zeros((M+1, x.shape[0]))
 w_efl1 = np.zeros((M+1, x.shape[0]))
 w_erg = np.zeros((M+1, x.shape[0]))
@@ -53,6 +51,11 @@ w_egus = np.zeros((M+1, x.shape[0]))
 algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
 ws = [w_erl1, w_efl1, w_erg, w_efg, w_srl1, w_sfl1, w_srg, w_sfg, w_sgs, w_egs, w_egus]
 nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
+
+algs = [egus]
+ws = [w_egus]
+nms = ['EGUS']
+
 
 for w, nm, alg in zip(ws, nms, algs):
 
