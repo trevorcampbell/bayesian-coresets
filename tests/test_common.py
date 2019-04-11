@@ -28,7 +28,7 @@ def test_coreset():
     if typ == 'dummy':
       coreset = alg(N)
     elif typ == 'kl':
-      coreset = alg(N, lambda x : dummy_potentials(x, N) , lambda x : dummy_sampler(x, D), 20)
+      coreset = alg(potentials=lambda x : dummy_potentials(x, N) , sampler=lambda w, n : dummy_sampler(w, n, D), n_samples=20, N=N)
     elif typ == 'vector':
       x = np.random.randn(N, D)
       coreset = alg(x)

@@ -4,7 +4,7 @@ from bayesiancoresets.base import SamplingCoreset
 from bayesiancoresets.base import SingleGreedyCoreset
 from bayesiancoresets.base import OptimizationCoreset
 
-def dummy_sampler(n_samples, D):
+def dummy_sampler(wts, n_samples, D):
   return np.random.randn(n_samples, D)
 
 def dummy_potentials(samples, N):

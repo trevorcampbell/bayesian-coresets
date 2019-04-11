@@ -5,7 +5,7 @@ from ..base.iterative import SingleGreedyCoreset
 from ..base.optimization import adam
 
 
-class GreedyKLCoreset(KLCoreset,SingleGreedyCoreset):
+class GreedyKLCoreset(KLCoreset, SingleGreedyCoreset):
 
   def _search(self):
     return self._kl_grad(self.wts, True).argmin()
