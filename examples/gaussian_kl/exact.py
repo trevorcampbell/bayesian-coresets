@@ -1,3 +1,4 @@
+import bayesiancoresets as bc
 import autograd.numpy as np
 from autograd import grad
 import warnings
