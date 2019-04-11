@@ -35,34 +35,19 @@ sgs = SGS(x, mu0, Sig0, Sig, n_samples)
 egs = EGS(x, mu0, Sig0, Sig)
 egus = EGUS(x, mu0, Sig0, Sig)
 
-w_erl1 = np.zeros((M+1, x.shape[0]))
-w_efl1 = np.zeros((M+1, x.shape[0]))
-w_erg = np.zeros((M+1, x.shape[0]))
-w_efg = np.zeros((M+1, x.shape[0]))
-w_srl1 = np.zeros((M+1, x.shape[0]))
-w_sfl1 = np.zeros((M+1, x.shape[0]))
-w_srg = np.zeros((M+1, x.shape[0]))
-w_sfg = np.zeros((M+1, x.shape[0]))
-w_sgs = np.zeros((M+1, x.shape[0]))
-w_egs = np.zeros((M+1, x.shape[0]))
-w_egus = np.zeros((M+1, x.shape[0]))
-
-
 algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
-ws = [w_erl1, w_efl1, w_erg, w_efg, w_srl1, w_sfl1, w_srg, w_sfg, w_sgs, w_egs, w_egus]
 nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
 
-algs = [egus]
-ws = [w_egus]
-nms = ['EGUS']
+for nm, alg in zip(nms, algs):
 
-
-for w, nm, alg in zip(ws, nms, algs):
-
+  w = np.zeros((M+1, x.shape[0]))
+  w_opt = np.zeros((M+1, x.shape[0]))
   for m in range(1, M+1):
     print('alg: ' + nm + ' ' + str(m) +'/'+str(M))
     alg.build(m)
     w[m, :] = alg.weights()
+    alg.optimize()
+    w_opt[m, :] = alg.weights()
 
   muw = np.zeros((M+1, mu0.shape[0]))
   Sigw = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
@@ -72,6 +57,17 @@ for w, nm, alg in zip(ws, nms, algs):
     muw[m, :], Sigw[m, :, :] = weighted_post(mu0, Sig0inv, Siginv, x, w[m, :])
     rklw[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=True)
     fklw[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=False)
+  muw_opt = np.zeros((M+1, mu0.shape[0]))
+  Sigw_opt = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
+  rklw_opt = np.zeros(M+1)
+  fklw_opt = np.zeros(M+1)
+  for m in range(M+1):
+    muw_opt[m, :], Sigw_opt[m, :, :] = weighted_post(mu0, Sig0inv, Siginv, x, w[m, :])
+    rklw_opt[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=True)
+    fklw_opt[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=False)
+
   
-  np.savez('results_'+nm+'.npz', x=x, mu0=mu0, Sig0=Sig0, Sig=Sig, mup=mup, Sigp=Sigp, w=w,
-                                 muw=muw, Sigw=Sigw, rklw=rklw, fklw=fklw)
+  
+  np.savez('results_'+nm+'.npz', x=x, mu0=mu0, Sig0=Sig0, Sig=Sig, mup=mup, Sigp=Sigp, w=w, w_opt=w_opt,
+                                 muw=muw, Sigw=Sigw, rklw=rklw, fklw=fklw,
+                                 muw_opt=muw_opt, Sigw_opt=Sigw_opt, rklw_opt=rklw_opt, fklw_opt=fklw_opt)
