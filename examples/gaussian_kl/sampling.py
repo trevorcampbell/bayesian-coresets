@@ -18,6 +18,24 @@ class EGS(bc.SamplingKLCoreset):
   def _compute_scales(self):
     return np.sqrt(ll_m2_exact_diag(self.mu0, self.Sig0, self.Siginv, self.x))
 
+  def _forward_kl(self):
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=False)
+
+  def _reverse_kl(self):
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=True)
+
+  def _forward_kl_grad(self, w, normalize):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=False))
+    return g(w)
+
+  def _reverse_kl_grad(self, w, normalize):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=True))
+    if normalize:
+      muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales)
+      return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x))
+    else:
+      return g(w)
+
 class SGS(bc.SamplingKLCoreset):
   def __init__(self, x, mu0, Sig0, Sig, n_samples, scaled=True):
     self.x = x
@@ -45,4 +63,23 @@ class EGUS(bc.UniformSamplingKLCoreset):
 
   def _compute_scales(self):
     return np.ones(self.x.shape[0])
+
+  def _forward_kl(self):
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=False)
+
+  def _reverse_kl(self):
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=True)
+
+  def _forward_kl_grad(self, w, normalize):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=False))
+    return g(w)
+
+  def _reverse_kl_grad(self, w, normalize):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=True))
+    if normalize:
+      muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales)
+      return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x))
+    else:
+      return g(w)
+
 

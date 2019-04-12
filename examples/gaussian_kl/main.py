@@ -62,9 +62,9 @@ for nm, alg in zip(nms, algs):
   rklw_opt = np.zeros(M+1)
   fklw_opt = np.zeros(M+1)
   for m in range(M+1):
-    muw_opt[m, :], Sigw_opt[m, :, :] = weighted_post(mu0, Sig0inv, Siginv, x, w[m, :])
-    rklw_opt[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=True)
-    fklw_opt[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=False)
+    muw_opt[m, :], Sigw_opt[m, :, :] = weighted_post(mu0, Sig0inv, Siginv, x, w_opt[m, :])
+    rklw_opt[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)
+    fklw_opt[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=False)
 
   
   

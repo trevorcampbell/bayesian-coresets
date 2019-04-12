@@ -48,23 +48,36 @@ figs = []
 
 res = np.load('results_EGUS.npz')
 x = res['x']
-w = res['w']
+wt = res['w']
+wt_opt = res['w_opt']
 Sig = res['Sig']
 mup = res['mup']
 Sigp = res['Sigp']
-muw = res['muw']
-Sigw = res['Sigw']
+muwt = res['muw']
+Sigwt = res['Sigw']
+muwt_opt = res['muw_opt']
+Sigwt_opt = res['Sigw_opt']
 rklw = res['rklw']
-fklw = res['rklw']
+fklw = res['fklw']
+rklw_opt = res['rklw_opt']
+fklw_opt = res['fklw_opt']
 
-for m in range(w.shape[0]):
-  fig = bkp.figure(x_range=(-5,5), y_range=(-5,5), plot_width=750, plot_height=750)
-  
-  fig.scatter(x[:, 0], x[:, 1], fill_color='black', alpha=0.1)
-  fig.scatter(x[:, 0], x[:, 1], fill_color='black', size=20*w[m,:]/w[m,:].max())
-  plot_gaussian(fig, mup, Sigp, Sig, 'blue', 5, 1, 1, 1, 'True')
-  plot_gaussian(fig, muw[m,:], Sigw[m,:], Sig, 'green', 5, 1, 1, 1, 'Coreset')
+for (kl, klopt, klnm) in [(rklw, rklw_opt, 'Reverse KL'), (fklw, fklw_opt, 'Forward KL')]:
+  fig = bkp.figure(plot_width=750, plot_height=750)
+  fig.line(np.arange(wt.shape[0]), kl, color='green', line_width=5, legend=klnm)
+  fig.line(np.arange(wt.shape[0]), klopt, color='blue', line_width=5, legend=klnm+' Optimized')
   figs.append([fig])
+
+for m in range(wt.shape[0]):
+  fig = bkp.figure(x_range=(-5,5), y_range=(-5,5), plot_width=750, plot_height=750)
+  fig_opt = bkp.figure(x_range=(-5,5), y_range=(-5,5), plot_width=750, plot_height=750)
+  for (f, w, muw, Sigw) in [(fig, wt, muwt, Sigwt), (fig_opt, wt_opt, muwt_opt, Sigwt_opt)]:
+    f.scatter(x[:, 0], x[:, 1], fill_color='black', alpha=0.1)
+    f.scatter(x[:, 0], x[:, 1], fill_color='black', size=20*w[m,:]/w[m,:].max())
+    plot_gaussian(f, mup, Sigp, Sig, 'blue', 5, 1, 1, 1, 'True')
+    plot_gaussian(f, muw[m,:], Sigw[m,:], Sig, 'green', 5, 1, 1, 1, 'Coreset')
+
+  figs.append([fig, fig_opt])
 
 bkp.show(bkl.gridplot(figs))
 
