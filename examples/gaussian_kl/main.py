@@ -10,7 +10,7 @@ import bayesiancoresets as bc
 np.random.seed(2)
 
 opt_itrs = 1000
-M = 500
+M = 50
 N = 20
 n_samples = 1000
 mu0 = np.zeros(2)
