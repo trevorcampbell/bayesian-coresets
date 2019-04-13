@@ -5,8 +5,12 @@ from sampling import *
 from gaussian import *
 import bayesiancoresets as bc
 
+
+
+np.random.seed(2)
+
 opt_itrs = 1000
-M = 20
+M = 500
 N = 20
 n_samples = 1000
 mu0 = np.zeros(2)
@@ -19,7 +23,6 @@ Siginv = np.linalg.inv(Sig)
 mup, Sigp = weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
 Sigpinv = np.linalg.inv(Sigp)
 
-np.random.seed()
 
 erl1 = EGL1Reverse(x, mu0, Sig0, Sig)
 efl1 = EGL1Forward(x, mu0, Sig0, Sig)
@@ -37,6 +40,9 @@ egus = EGUS(x, mu0, Sig0, Sig)
 
 algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
 nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
+
+algs = [erl1, erg, egus]
+nms = ['ERL1', 'ERG', 'EGUS']
 
 for nm, alg in zip(nms, algs):
 

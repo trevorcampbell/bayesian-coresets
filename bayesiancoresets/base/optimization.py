@@ -33,6 +33,8 @@ class OptimizationCoreset(Coreset):
     
 
   def _build(self, M): 
+    if M > self.N:
+      M = self.N
     #if we previously cached a relevant result, return
     cache_hit = self._cache_weight_update(M)
     if cache_hit:
