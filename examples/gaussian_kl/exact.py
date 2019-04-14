@@ -37,12 +37,12 @@ class ExactGaussianL1KLCoreset(bc.L1KLCoreset):
       return g(w)
 
 class EGL1Reverse(ExactGaussianL1KLCoreset):
-  def __init__(self, x, mu0, Sig0, Sig): 
-    super().__init__(x, mu0, Sig0, Sig, True) 
+  def __init__(self, x, mu0, Sig0, Sig, scaled=True): 
+    super().__init__(x, mu0, Sig0, Sig, True, scaled=scaled) 
 
 class EGL1Forward(ExactGaussianL1KLCoreset):
-  def __init__(self, x, mu0, Sig0, Sig):
-    super().__init__(x, mu0, Sig0, Sig, False) 
+  def __init__(self, x, mu0, Sig0, Sig, scaled=True):
+    super().__init__(x, mu0, Sig0, Sig, False, scaled=scaled) 
 
 class ExactGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
   def __init__(self, x, mu0, Sig0, Sig, reverse=True, scaled=True):
@@ -76,12 +76,12 @@ class ExactGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
       return g(w)
 
 class EGGreedyReverse(ExactGaussianGreedyKLCoreset):
-  def __init__(self, x, mu0, Sig0, Sig): 
-    super().__init__(x, mu0, Sig0, Sig, True) 
+  def __init__(self, x, mu0, Sig0, Sig, scaled=True): 
+    super().__init__(x, mu0, Sig0, Sig, True, scaled=scaled) 
 
 class EGGreedyForward(ExactGaussianGreedyKLCoreset):
-  def __init__(self, x, mu0, Sig0, Sig): 
-    super().__init__(x, mu0, Sig0, Sig, False) 
+  def __init__(self, x, mu0, Sig0, Sig, scaled=True): 
+    super().__init__(x, mu0, Sig0, Sig, False, scaled=scaled) 
 
 
 

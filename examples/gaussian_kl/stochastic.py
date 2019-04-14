@@ -20,12 +20,12 @@ class StochasticGaussianL1KLCoreset(bc.L1KLCoreset):
                                      n_samples=n_samples, reverse=reverse, scaled=scaled, auto_above_N=False)
 
 class SGL1Reverse(StochasticGaussianL1KLCoreset):
-  def __init__(self, x, mu0, Sig0, Sig, n_samples): 
-    super().__init__(x, mu0, Sig0, Sig, n_samples, True) 
+  def __init__(self, x, mu0, Sig0, Sig, n_samples, scaled=True): 
+    super().__init__(x, mu0, Sig0, Sig, n_samples, True, scaled=scaled) 
 
 class SGL1Forward(StochasticGaussianL1KLCoreset):
-  def __init__(self, x, mu0, Sig0, Sig, n_samples):
-    super().__init__(x, mu0, Sig0, Sig, n_samples, False) 
+  def __init__(self, x, mu0, Sig0, Sig, n_samples, scaled=True):
+    super().__init__(x, mu0, Sig0, Sig, n_samples, False, scaled=scaled) 
 
 class StochasticGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
   def __init__(self, x, mu0, Sig0, Sig, n_samples, reverse=True, scaled=True):
@@ -43,12 +43,12 @@ class StochasticGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
                                      n_samples=n_samples, reverse=reverse, scaled=scaled, auto_above_N=False)
 
 class SGGreedyReverse(StochasticGaussianGreedyKLCoreset):
-  def __init__(self, x, mu0, Sig0, Sig, n_samples): 
-    super().__init__(x, mu0, Sig0, Sig, n_samples, True) 
+  def __init__(self, x, mu0, Sig0, Sig, n_samples, scaled=True): 
+    super().__init__(x, mu0, Sig0, Sig, n_samples, True, scaled=scaled) 
 
 class SGGreedyForward(StochasticGaussianGreedyKLCoreset):
-  def __init__(self, x, mu0, Sig0, Sig, n_samples): 
-    super().__init__(x, mu0, Sig0, Sig, n_samples, False) 
+  def __init__(self, x, mu0, Sig0, Sig, n_samples, scaled=True): 
+    super().__init__(x, mu0, Sig0, Sig, n_samples, False, scaled=scaled) 
 
 
 
