@@ -12,6 +12,10 @@ def plot_gaussian(plot, mup, Sigp, Sig, color, dotsize, linewidth, dotalpha, lin
   t = 3*np.linalg.cholesky(Sigp+Sig).dot(t) + mup[:, np.newaxis]
   plot.line(t[0, :], t[1, :], color=color, line_width=linewidth, alpha=linealpha, line_dash=line_dash, legend=name)
 
+def plot_meanstd(plot, x, ys, color, linewidth, alpha, line_dash, name):
+  plot.line(x, ys.mean(axis=0), color=color, line_width=linewidth, line_dash=line_dash, legend=nm)
+  plot.patch(np.hstack((x, x[::-1])), np.hstack(( ys.mean(axis=0)+ys.std(axis=0), ys.mean(axis=0)-ys.std(axis=0))), color=color, line_width=linewidth/2, line_dash=line_dash, alpha=alpha, legend=nm)
+
 #logFmtr = FuncTickFormatter(code="return Math.log10(tick)")
 logFmtr = FuncTickFormatter(code="""
 var trns = [
@@ -40,40 +44,38 @@ pal = pl
 null_font_size='0pt'
 axis_font_size='40pt'
 
-nms = ['EGUS', 'EGS', 'ERG', 'ERL1']
-figs = [[]]
+scaled = True
+n_trials = 100
+
+nms = ['EGUS', 'ERG', 'ERL1']
+figs = []
 
 
 #plot the KL figure
 fig = bkp.figure(y_axis_type='log', plot_width=750, plot_height=750)
 for i, nm in enumerate(nms):
-  res = np.load('results_'+nm+'.npz')
-  x = res['x']
-  wt = res['w']
-  wt_opt = res['w_opt']
-  Sig = res['Sig']
-  mup = res['mup']
-  Sigp = res['Sigp']
-  muwt = res['muw']
-  Sigwt = res['Sigw']
-  muwt_opt = res['muw_opt']
-  Sigwt_opt = res['Sigw_opt']
-  rklw = res['rklw']
-  fklw = res['fklw']
-  rklw_opt = res['rklw_opt']
-  fklw_opt = res['fklw_opt']
-  fig.line(np.arange(wt.shape[0]), rklw, color=pal[i], line_width=5, line_dash='dashed', legend=nm)
-  fig.line(np.arange(wt.shape[0]), rklw_opt, color=pal[i], line_width=5, line_dash='solid', legend=nm)
-figs[0].append(fig)
+  fkl = []
+  fklopt = []
+  for t in range(n_trials):
+    res = np.load('results_'+nm+'_'+('scaled' if scaled else 'unscaled') + '_' + str(t)+'.npz')
+    fkl.append(res['fklw'])
+    fklopt.append(res['fklw_opt'])
+  fkl = np.array(fkl)
+  fklopt = np.array(fklopt)
+  plot_meanstd(fig, np.arange(fkl.shape[1]), fkl, pal[i], 5, 0.3, 'dashed', nm)
+  plot_meanstd(fig, np.arange(fkl.shape[1]), fklopt, pal[i], 5, 0.3, 'solid', nm)
+figs.append([fig])
 
 #plot the example set of 3-sigma ellipses
+figs.append([])
 Ms = np.arange(50)
+trial_num = 0
 for m in Ms:
   fig = bkp.figure(x_range=(-5,5), y_range=(-5,5), plot_width=750, plot_height=750)
   #plot the data
   fig.scatter(x[:, 0], x[:, 1], fill_color='black', alpha=0.1)
   for i, nm in enumerate(nms):
-    res = np.load('results_'+nm+'.npz')
+    res = np.load('results_'+nm+'_'+('scaled' if scaled else 'unscaled') + '_' + str(trial_num)+'.npz')
     x = res['x']
     wt = res['w']
     wt_opt = res['w_opt']
@@ -91,11 +93,13 @@ for m in Ms:
     plot_gaussian(fig, mup, Sigp, Sig, 'black', 5, 3, 1, 1, 'solid', 'True')
     plot_gaussian(fig, muwt[m,:], Sigwt[m,:,:], Sig, pal[i], 5, 3, 1, 1, 'dashed', nm)
     plot_gaussian(fig, muwt_opt[m,:], Sigwt_opt[m,:], Sig, pal[i], 5, 3, 1, 1, 'solid', nm)
-  figs[0].append(fig)
+  figs[1].append(fig)
 
 
+#plot the sequence of coreset pts and comparison of nonopt + opt
 nm = 'EGUS'
-res = np.load('results_'+ nm +'.npz')
+trial_num = 0
+res = np.load('results_'+nm+'_'+('scaled' if scaled else 'unscaled') + '_' + str(trial_num)+'.npz')
 x = res['x']
 wt = res['w']
 wt_opt = res['w_opt']
@@ -116,7 +120,37 @@ for m in range(wt.shape[0]):
   fig_opt = bkp.figure(x_range=(-5,5), y_range=(-5,5), plot_width=750, plot_height=750)
   for (f, w, muw, Sigw) in [(fig, wt, muwt, Sigwt), (fig_opt, wt_opt, muwt_opt, Sigwt_opt)]:
     f.scatter(x[:, 0], x[:, 1], fill_color='black', alpha=0.1)
-    f.scatter(x[:, 0], x[:, 1], fill_color='black', size=20*wt[m,:]/wt[m,:].max())
+    f.scatter(x[:, 0], x[:, 1], fill_color='black', size=20*w[m,:]/w[m,:].max())
+    plot_gaussian(f, mup, Sigp, Sig, 'black', 5, 3, 1, 1, 'solid', nm)
+    plot_gaussian(f, muw[m,:], Sigw[m,:], Sig, 'green', 5, 3, 1, 1, 'solid', nm)
+
+  figs.append([fig, fig_opt])
+
+
+#TODO plot the sequence of coreset pts and comparison of scaled vs unscaled
+nm = 'EGL1'
+trial_num = 0
+res_scaled = np.load('results_'+nm+'_scaled_' + str(trial_num)+'.npz')
+res_unscaled_unscaled = np.load('res_unscaledults_'+nm+'_unscaled_' + str(trial_num)+'.npz')
+x = res_unscaled['x']
+Sig = res_unscaled['Sig']
+mup = res_unscaled['mup']
+Sigp = res_unscaled['Sigp']
+
+wt_opt_unscaled = res_unscaled['w_opt']
+muwt_opt_unscaled = res_unscaled['muw_opt']
+Sigwt_opt_unscaled = res_unscaled['Sigw_opt']
+
+wt_opt_scaled = res_scaled['w_opt']
+muwt_opt_scaled = res_scaled['muw_opt']
+Sigwt_opt_scaled = res_scaled['Sigw_opt']
+
+for m in range(wt.shape[0]):
+  fig_unscaled = bkp.figure(x_range=(-5,5), y_range=(-5,5), plot_width=750, plot_height=750)
+  fig_scaled = bkp.figure(x_range=(-5,5), y_range=(-5,5), plot_width=750, plot_height=750)
+  for (f, w, muw, Sigw) in [(fig_unscaled, wt_opt_unscaled, muwt_opt_unscaled, Sigwt_opt_unscaled), (fig_scaled, wt_opt_scaled, muwt_opt_scaled, Sigwt_opt_scaled)]:
+    f.scatter(x[:, 0], x[:, 1], fill_color='black', alpha=0.1)
+    f.scatter(x[:, 0], x[:, 1], fill_color='black', size=20*w[m,:]/w[m,:].max())
     plot_gaussian(f, mup, Sigp, Sig, 'black', 5, 3, 1, 1, 'solid', nm)
     plot_gaussian(f, muw[m,:], Sigw[m,:], Sig, 'green', 5, 3, 1, 1, 'solid', nm)
 
