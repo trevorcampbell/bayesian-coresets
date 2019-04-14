@@ -23,31 +23,33 @@ Siginv = np.linalg.inv(Sig)
 scaled = True
 
 
-erl1 = EGL1Reverse(x, mu0, Sig0, Sig, scaled=scaled)
-efl1 = EGL1Forward(x, mu0, Sig0, Sig, scaled=scaled)
-erg = EGGreedyReverse(x, mu0, Sig0, Sig, scaled=scaled)
-efg = EGGreedyForward(x, mu0, Sig0, Sig, scaled=scaled)
-
-srl1 = SGL1Reverse(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-sfl1 = SGL1Forward(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-srg = SGGreedyReverse(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-sfg = SGGreedyForward(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-
-sgs = SGS(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-egs = EGS(x, mu0, Sig0, Sig, scaled=scaled)
-egus = EGUS(x, mu0, Sig0, Sig, scaled=scaled)
-
-algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
-nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
-
-algs = [erl1, erg, egus]
-nms = ['ERL1', 'ERG', 'EGUS']
-
 for t in range(n_trials):
   #gen data
   x = np.random.multivariate_normal(th, Sig, N)
   mup, Sigp = weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
   Sigpinv = np.linalg.inv(Sigp)
+
+  #create coreset objects
+  erl1 = EGL1Reverse(x, mu0, Sig0, Sig, scaled=scaled)
+  efl1 = EGL1Forward(x, mu0, Sig0, Sig, scaled=scaled)
+  erg = EGGreedyReverse(x, mu0, Sig0, Sig, scaled=scaled)
+  efg = EGGreedyForward(x, mu0, Sig0, Sig, scaled=scaled)
+  
+  srl1 = SGL1Reverse(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
+  sfl1 = SGL1Forward(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
+  srg = SGGreedyReverse(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
+  sfg = SGGreedyForward(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
+  
+  sgs = SGS(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
+  egs = EGS(x, mu0, Sig0, Sig, scaled=scaled)
+  egus = EGUS(x, mu0, Sig0, Sig, scaled=scaled)
+  
+  algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
+  nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
+  
+  algs = [erl1, erg, egus]
+  nms = ['ERL1', 'ERG', 'EGUS']
+
   #build coresets
   for nm, alg in zip(nms, algs):
     w = np.zeros((M+1, x.shape[0]))
