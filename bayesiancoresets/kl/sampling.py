@@ -4,8 +4,9 @@ from ..base.sampling import SamplingCoreset
 
 class SamplingKLCoreset(SamplingCoreset, KLCoreset):
 
+  #TODO: better sampling probabilities in forward/reverse cases
   def _compute_sampling_probabilities(self):
-    return (self._sample_potentials(np.zeros(self.N))).std(axis=1)
+    return np.ones(N)
 
 class UniformSamplingKLCoreset(SamplingKLCoreset):
 
