@@ -1,7 +1,7 @@
 import numpy as np
 import warnings
 from .kl import KLCoreset
-from ..base.iterative import SingleGreedyCoreset
+from ..base.iterative import IterativeCoreset
 from ..base.optimization import adam
 
 
