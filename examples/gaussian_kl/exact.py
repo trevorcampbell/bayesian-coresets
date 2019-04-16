@@ -19,19 +19,19 @@ class ExactGaussianL1KLCoreset(bc.L1KLCoreset):
     return np.sqrt(ll_m2_exact_diag(self.mu0, self.Sig0, self.Siginv, self.x))
 
   def _forward_kl(self):
-    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=False)
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts, reverse=False)
 
   def _reverse_kl(self):
-    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=True)
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts, reverse=True)
 
-  def _forward_kl_grad(self, w, normalize):
-    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=False))
+  def _forward_kl_grad(self, w, natural):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=False))
     return g(w)
 
-  def _reverse_kl_grad(self, w, normalize):
-    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=True))
-    if normalize:
-      muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales)
+  def _reverse_kl_grad(self, w, natural):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=True))
+    if natural:
+      muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w)
       return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x))
     else:
       return g(w)
@@ -45,43 +45,40 @@ class EGL1Forward(ExactGaussianL1KLCoreset):
     super().__init__(x, mu0, Sig0, Sig, False, scaled=scaled) 
 
 class ExactGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
-  def __init__(self, x, mu0, Sig0, Sig, reverse=True, scaled=True):
+  def __init__(self, x, mu0, Sig0, Sig, reverse=True):
     self.x = x
     self.mu0 = mu0
     self.Sig0 = Sig0
     self.Sig0inv = np.linalg.inv(Sig0)
     self.Sig = Sig
     self.Siginv = np.linalg.inv(Sig)
-    super().__init__(N=x.shape[0], potentials=None, sampler=None, n_samples=None, reverse=reverse, scaled=scaled, auto_above_N=False)
-
-  def _compute_scales(self):
-    return np.sqrt(ll_m2_exact_diag(self.mu0, self.Sig0, self.Siginv, self.x))
+    super().__init__(N=x.shape[0], potentials=None, sampler=None, n_samples=None, reverse=reverse, auto_above_N=False) 
 
   def _forward_kl(self):
-    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=False)
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts, reverse=False)
 
   def _reverse_kl(self):
-    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=True)
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts, reverse=True)
 
-  def _forward_kl_grad(self, w, normalize):
-    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=False))
+  def _forward_kl_grad(self, w, natural):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=False))
     return g(w)
 
-  def _reverse_kl_grad(self, w, normalize):
-    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=True))
-    if normalize:
-      muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales)
+  def _reverse_kl_grad(self, w, natural):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=True))
+    if natural:
+      muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w)
       return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x))
     else:
       return g(w)
 
 class EGGreedyReverse(ExactGaussianGreedyKLCoreset):
-  def __init__(self, x, mu0, Sig0, Sig, scaled=True): 
-    super().__init__(x, mu0, Sig0, Sig, True, scaled=scaled) 
+  def __init__(self, x, mu0, Sig0, Sig): 
+    super().__init__(x, mu0, Sig0, Sig, True) 
 
 class EGGreedyForward(ExactGaussianGreedyKLCoreset):
-  def __init__(self, x, mu0, Sig0, Sig, scaled=True): 
-    super().__init__(x, mu0, Sig0, Sig, False, scaled=scaled) 
+  def __init__(self, x, mu0, Sig0, Sig): 
+    super().__init__(x, mu0, Sig0, Sig, False) 
 
 
 

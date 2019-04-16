@@ -10,7 +10,7 @@ import bayesiancoresets as bc
 np.random.seed(1)
 
 opt_itrs = 1000
-M = 100
+M = 50
 N = 100
 n_samples = 1000
 n_trials = 100
@@ -31,21 +31,21 @@ for t in range(n_trials):
 
   #create coreset objects
   erl1 = EGL1Reverse(x, mu0, Sig0, Sig, scaled=scaled)
-  efl1 = EGL1Forward(x, mu0, Sig0, Sig, scaled=scaled)
-  erg = EGGreedyReverse(x, mu0, Sig0, Sig, scaled=scaled)
-  efg = EGGreedyForward(x, mu0, Sig0, Sig, scaled=scaled)
+  #efl1 = EGL1Forward(x, mu0, Sig0, Sig, scaled=scaled)
+  erg = EGGreedyReverse(x, mu0, Sig0, Sig)
+  #efg = EGGreedyForward(x, mu0, Sig0, Sig, scaled=scaled)
   
-  srl1 = SGL1Reverse(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-  sfl1 = SGL1Forward(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-  srg = SGGreedyReverse(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-  sfg = SGGreedyForward(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
+  #srl1 = SGL1Reverse(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
+  #sfl1 = SGL1Forward(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
+  #srg = SGGreedyReverse(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
+  #sfg = SGGreedyForward(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
   
-  sgs = SGS(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-  egs = EGS(x, mu0, Sig0, Sig, scaled=scaled)
-  egus = EGUS(x, mu0, Sig0, Sig, scaled=scaled)
+  #sgs = SGS(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
+  #egs = EGS(x, mu0, Sig0, Sig, scaled=scaled)
+  egus = EGUS(x, mu0, Sig0, Sig)
   
-  algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
-  nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
+  #algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
+  #nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
   
   algs = [erl1, erg, egus]
   nms = ['ERL1', 'ERG', 'EGUS']

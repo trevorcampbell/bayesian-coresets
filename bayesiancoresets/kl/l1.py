@@ -11,10 +11,13 @@ class L1KLCoreset(KLCoreset, OptimizationCoreset):
     if self.N == 0:
       self.scales = np.array([])
     elif scaled:
-      self.scales = (self._sample_potentials(np.zeros(self.N))).std(axis=1)
+      self.scales = self._compute_scales()
     else:
       self.scales = np.ones(self.N)
     self.scales[self.scales == 0] = 1.
+  
+  def _compute_scales(self):
+    return (self._sample_potentials(np.zeros(self.N))).std(axis=1)
 
   def _max_reg_coeff(self):
     m = 2*np.fabs(min( (self._kl_grad(np.zeros(self.N))/self.scales).min(), 0.)) #extra factor of 2 to add some wiggle room
