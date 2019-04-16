@@ -66,20 +66,20 @@ class ExactGaussianL1KLCoreset(bc.L1KLCoreset):
   def _compute_scales(self):
     return np.sqrt(ll_m2_exact_diag(self.mu0, self.Sig0, self.Siginv, self.x))
 
-  def _forward_kl_estimate(self):
-    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=False)
+  def _forward_kl(self):
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts, reverse=False)
 
-  def _reverse_kl_estimate(self):
-    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=True)
+  def _reverse_kl(self):
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts, reverse=True)
 
-  def _forward_kl_grad_estimate(self, w, normalize):
-    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=False))
+  def _forward_kl_grad(self, w, normalize):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=False))
     return g(w)
 
-  def _reverse_kl_grad_estimate(self, w, normalize):
-    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=True))
+  def _reverse_kl_grad(self, w, normalize):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=True))
     if normalize:
-      muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales)
+      muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w)
       return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x))
     else:
       return g(w)
@@ -93,32 +93,32 @@ class EGL1Forward(ExactGaussianL1KLCoreset):
     super().__init__(x, mu0, Sig0, Sig, False) 
 
 class ExactGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
-  def __init__(self, x, mu0, Sig0, Sig, reverse=True, scaled=True):
+  def __init__(self, x, mu0, Sig0, Sig, reverse=True):
     self.x = x
     self.mu0 = mu0
     self.Sig0 = Sig0
     self.Sig0inv = np.linalg.inv(Sig0)
     self.Sig = Sig
     self.Siginv = np.linalg.inv(Sig)
-    super().__init__(N=x.shape[0], potentials=None, sampler=None, n_samples=None, reverse=reverse, scaled=scaled)
+    super().__init__(N=x.shape[0], potentials=None, sampler=None, n_samples=None, reverse=reverse)
 
-  def _compute_scales(self):
-    return np.sqrt(ll_m2_exact_diag(self.mu0, self.Sig0, self.Siginv, self.x))
+  #def _compute_scales(self):
+  #  return np.sqrt(ll_m2_exact_diag(self.mu0, self.Sig0, self.Siginv, self.x))
 
-  def _forward_kl_estimate(self):
-    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=False)
+  def _forward_kl(self):
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts, reverse=False)
 
-  def _reverse_kl_estimate(self):
-    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts/self.scales, reverse=True)
+  def _reverse_kl(self):
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts, reverse=True)
 
-  def _forward_kl_grad_estimate(self, w, normalize):
-    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=False))
+  def _forward_kl_grad(self, w, normalize):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=False))
     return g(w)
 
-  def _reverse_kl_grad_estimate(self, w, normalize):
-    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales, reverse=True))
+  def _reverse_kl_grad(self, w, normalize):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=True))
     if normalize:
-      muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w/self.scales)
+      muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w)
       return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x))
     else:
       return g(w)
@@ -192,7 +192,7 @@ def coreset_single(N, D, dist, algn):
     w = coreset.weights()
     #check if coreset for 1 datapoint is immediately optimal
     if x.shape[0] == 1:
-      assert np.fabs(w - np.array([1])) < tol, anm +" failed: coreset not immediately optimal with N = 1. weights: " + str(coreset.weights()) + " mup = " + str(mup) + " Sigp = " + str(Sigp) + " muw = " + str(muw) + " Sigw = " + str(Sigw) + " scales = " + str(coreset.scales)
+      assert np.fabs(w - np.array([1])) < tol, anm +" failed: coreset not immediately optimal with N = 1. weights: " + str(coreset.weights()) + " mup = " + str(mup) + " Sigp = " + str(Sigp) + " muw = " + str(muw) + " Sigw = " + str(Sigw) 
     #check if coreset is valid
     assert (w > 0.).sum() <= m, anm+" failed: coreset size > m"
     assert (w > 0.).sum() == coreset.size(), anm+" failed: sum of coreset.weights()>0  not equal to size(): sum = " + str((coreset.weights()>0).sum()) + " size(): " + str(coreset.size())

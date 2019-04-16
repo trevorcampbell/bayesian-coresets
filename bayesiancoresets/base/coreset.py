@@ -16,6 +16,9 @@ class Coreset(object):
     self.wts = np.zeros(self.N)
     self.reached_numeric_limit = False
 
+  def size(self):
+    return (self.wts > 0).sum()
+
   def weights(self):
     raise NotImplementedError()
 

@@ -6,7 +6,7 @@ class SamplingKLCoreset(SamplingCoreset, KLCoreset):
 
   #TODO: better sampling probabilities in forward/reverse cases
   def _compute_sampling_probabilities(self):
-    return np.ones(N)
+    return np.ones(self.N)
 
 class UniformSamplingKLCoreset(SamplingKLCoreset):
 

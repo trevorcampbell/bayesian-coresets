@@ -23,6 +23,11 @@ Siginv = np.linalg.inv(Sig)
 scaled = True
 
 
+n_trials = 10
+scaled = True
+M = 20
+N = 20
+
 for t in range(n_trials):
   #gen data
   x = np.random.multivariate_normal(th, Sig, N)
