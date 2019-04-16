@@ -12,7 +12,7 @@ Ms = [0, 1, 2, 5, 10, 20, 50, 99]
 #plot the KL figure
 
 #plot the sequence of coreset pts and comparison of nonopt + opt
-res = np.load('results_'+nm[0]+'_'+('scaled' if scaled else 'unscaled') + '_' + str(trial_num)+'.npz')
+res = np.load('results_'+nm[0] + '_' + str(trial_num)+'.npz')
 x = res['x']
 wt = res['w']
 wt_opt = res['w_opt']
@@ -31,7 +31,7 @@ figs = []
 for m in Ms:
   fig = bkp.figure(x_range=(-5,5), y_range=(-5,5), plot_width=750, plot_height=750)
   #plot the data
-  x = np.load('results_'+nm[0]+'_'+('scaled' if scaled else 'unscaled') + '_' + str(trial_num)+'.npz')['x']
+  x = np.load('results_'+nm[0] + '_' + str(trial_num)+'.npz')['x']
   fig.scatter(x[:, 0], x[:, 1], fill_color='black', alpha=0.1)
   for i, nm in enumerate(nms):
     res = np.load('results_'+nm[0]+'_'+('scaled' if scaled else 'unscaled') + '_' + str(trial_num)+'.npz')

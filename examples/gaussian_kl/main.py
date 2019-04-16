@@ -4,6 +4,7 @@ from stochastic import *
 from sampling import *
 from gaussian import *
 import bayesiancoresets as bc
+from copy import deepcopy
 
 
 
@@ -34,6 +35,7 @@ for t in range(n_trials):
   #efl1 = EGL1Forward(x, mu0, Sig0, Sig, scaled=scaled)
   erg = EGGreedyReverse(x, mu0, Sig0, Sig)
   #efg = EGGreedyForward(x, mu0, Sig0, Sig, scaled=scaled)
+  ercg = EGCorrectiveGreedyReverse(x, mu0, Sig0, Sig)
   
   #srl1 = SGL1Reverse(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
   #sfl1 = SGL1Forward(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
@@ -47,8 +49,8 @@ for t in range(n_trials):
   #algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
   #nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
   
-  algs = [erl1, erl1u, erg, egus]
-  nms = ['ERL1', 'ERL1U', 'ERG', 'EGUS']
+  algs = [erl1, erl1u, erg, ercg, egus]
+  nms = ['ERL1', 'ERL1U', 'ERG', 'ERCG', 'EGUS']
 
   #build coresets
   for nm, alg in zip(nms, algs):
@@ -58,8 +60,9 @@ for t in range(n_trials):
       print('trial: ' + str(t+1)+'/'+str(n_trials)+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
       alg.build(m)
       w[m, :] = alg.weights()
-      alg.optimize()
-      w_opt[m, :] = alg.weights()
+      tmpalg = deepcopy(alg)
+      tmpalg.optimize()
+      w_opt[m, :] = tmpalg.weights()
 
     muw = np.zeros((M+1, mu0.shape[0]))
     Sigw = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
@@ -78,6 +81,6 @@ for t in range(n_trials):
       rklw_opt[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)
       fklw_opt[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=False)
 
-    np.savez('results_'+nm+'_'+('scaled' if scaled else 'unscaled') + '_' + str(t)+'.npz', x=x, mu0=mu0, Sig0=Sig0, Sig=Sig, mup=mup, Sigp=Sigp, w=w, w_opt=w_opt,
+    np.savez('results_'+nm+'_' + str(t)+'.npz', x=x, mu0=mu0, Sig0=Sig0, Sig=Sig, mup=mup, Sigp=Sigp, w=w, w_opt=w_opt,
                                    muw=muw, Sigw=Sigw, rklw=rklw, fklw=fklw,
                                    muw_opt=muw_opt, Sigw_opt=Sigw_opt, rklw_opt=rklw_opt, fklw_opt=fklw_opt)

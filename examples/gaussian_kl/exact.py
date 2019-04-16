@@ -81,4 +81,40 @@ class EGGreedyForward(ExactGaussianGreedyKLCoreset):
     super().__init__(x, mu0, Sig0, Sig, False) 
 
 
+class ExactGaussianCorrectiveGreedyKLCoreset(bc.CorrectiveGreedyKLCoreset):
+  def __init__(self, x, mu0, Sig0, Sig, reverse=True):
+    self.x = x
+    self.mu0 = mu0
+    self.Sig0 = Sig0
+    self.Sig0inv = np.linalg.inv(Sig0)
+    self.Sig = Sig
+    self.Siginv = np.linalg.inv(Sig)
+    super().__init__(N=x.shape[0], potentials=None, sampler=None, n_samples=None, reverse=reverse, auto_above_N=False) 
+
+  def _forward_kl(self):
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts, reverse=False)
+
+  def _reverse_kl(self):
+    return weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, self.wts, reverse=True)
+
+  def _forward_kl_grad(self, w, natural):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=False))
+    return g(w)
+
+  def _reverse_kl_grad(self, w, natural):
+    g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=True))
+    if natural:
+      muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w)
+      return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x))
+    else:
+      return g(w)
+
+class EGCorrectiveGreedyReverse(ExactGaussianCorrectiveGreedyKLCoreset):
+  def __init__(self, x, mu0, Sig0, Sig): 
+    super().__init__(x, mu0, Sig0, Sig, True) 
+
+class EGCorrectiveGreedyForward(ExactGaussianCorrectiveGreedyKLCoreset):
+  def __init__(self, x, mu0, Sig0, Sig): 
+    super().__init__(x, mu0, Sig0, Sig, False) 
+
 

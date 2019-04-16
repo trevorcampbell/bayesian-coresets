@@ -17,7 +17,7 @@ for i, nm in enumerate(nms):
   kl = []
   klopt = []
   for t in range(n_trials):
-    res = np.load('results_'+nm[0]+'_'+('scaled' if scaled else 'unscaled') + '_' + str(t)+'.npz')
+    res = np.load('results_'+nm[0]+'_' + str(t)+'.npz')
     if plot_reverse_kl:
       klt = res['rklw']
       kloptt = res['rklw_opt']
