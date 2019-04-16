@@ -5,13 +5,7 @@ from ..base.sampling import SamplingCoreset
 class SamplingKLCoreset(SamplingCoreset, KLCoreset):
 
   def _compute_sampling_probabilities(self):
-    if np.any(self.scales > 0.):
-      return self.scales.copy()
-    else:
-      return np.ones(self.N)
-
-  def _weight_scaling(self):
-    return self.scales #puts the weights on the same scale as the scaled potentials
+    return (self._sample_potentials(np.zeros(self.N))).std(axis=1)
 
 class UniformSamplingKLCoreset(SamplingKLCoreset):
 

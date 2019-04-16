@@ -5,7 +5,7 @@ from ..base.optimization import adam
 import sys
 
 class KLCoreset(Coreset): 
-  def __init__(self, potentials, sampler, n_samples, reverse=True, natural_grads=True, n_lognorm_disc = 100, **kw):
+  def __init__(self, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, **kw):
     super().__init__(**kw)
     self.potentials = potentials
     self.sampler = sampler
@@ -14,17 +14,10 @@ class KLCoreset(Coreset):
     self.n_lognorm_disc = n_lognorm_disc
     self.n_fpc = 0
     self.full_potentials_cache = np.zeros(self.N)
-    if self.N == 0:
-      self.scales = np.array([])
-    elif scaled:
-      self.scales = self._compute_scales()
-    else:
-      self.scales = np.ones(self.N)
-    self.scales[self.scales == 0] = 1.
-    self.all_data_wts = self.scales
+    self.all_data_wts = np.ones(self.N)
 
   def weights(self):
-    return self.wts/self.scales
+    return self.wts
 
   def error(self):
     return self._kl()
@@ -39,24 +32,19 @@ class KLCoreset(Coreset):
       return g
     self.wts = adam(self.wts, grd, opt_itrs=1000, adam_a1=1., adam_a2=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
 
-  def _sample_potentials(self, w, scls=None):
-    if scls is None:
-      scls = self.scales
-    samples = self.sampler(w/scls, self.n_samples)
-    ps = self.potentials(samples) / scls[:, np.newaxis]
+  def _sample_potentials(self, w):
+    samples = self.sampler(w, self.n_samples)
+    ps = self.potentials(samples)
     return ps
 
   def _kl(self):
     return self._reverse_kl() if self.reverse else self._forward_kl()
   
-  def _kl_grad(self, w, normalize=False):
-    return self._reverse_kl_grad(w, normalize) if self.reverse else self._forward_kl_grad(w, normalize)
+  def _kl_grad(self, w, natural=False):
+    return self._reverse_kl_grad(w, natural) if self.reverse else self._forward_kl_grad(w, natural)
 
-  def _compute_scales(self):
-    ps = self._sample_potentials(np.zeros(self.N), np.ones(self.N))
-    return ps.std(axis=1)
-
-  def _forward_kl_grad(self, w, normalize):
+  def _forward_kl_grad(self, w, natural):
+    #TODO implement forward nat grads
     #compute two potentials
     wpots = self._sample_potentials(w)
     fpots = self._sample_potentials(self.all_data_wts)
@@ -66,12 +54,13 @@ class KLCoreset(Coreset):
     #return grad
     return wpots.mean(axis=1) - self.full_potentials_cache
 
-  def _reverse_kl_grad(self, w, normalize):
+  def _reverse_kl_grad(self, w, natural):
     pots = self._sample_potentials(w)
     residual_pots = (self.all_data_wts - w).dot(pots)
 
+    #TODO fix nat grads
     num = -(pots*residual_pots).var(axis=1)
-    if normalize:
+    if natural:
       denom = pots.std(axis=1) * residual_pots.std()
     else:
       denom = 1.

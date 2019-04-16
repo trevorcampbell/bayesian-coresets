@@ -19,5 +19,5 @@ class GreedyKLCoreset(KLCoreset, SingleGreedyCoreset):
       ga = (self.wts*g).sum()
       gb = g[f]
       return np.array([ga, gb])
-    ret= adam(np.array([1., 0.]), grd, opt_itrs=1000, adam_a1=1., adam_a2=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
+    ret = adam(np.array([1., 0.]), grd, opt_itrs=1000, adam_a1=1., adam_a2=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
     return ret[0], ret[1]
