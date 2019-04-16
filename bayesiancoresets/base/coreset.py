@@ -6,11 +6,13 @@ class Coreset(object):
     self.alg_name = self.__class__.__name__
     self.auto_above_N = auto_above_N
     self.N = N
+    self.M = 0
     self.reached_numeric_limit = False
     self.all_data_wts = np.ones(self.N)
     self.wts = np.zeros(N)
     
   def reset(self):
+    self.M = 0
     self.wts = np.zeros(self.N)
     self.reached_numeric_limit = False
 
