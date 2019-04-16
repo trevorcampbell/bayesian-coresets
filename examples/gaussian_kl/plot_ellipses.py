@@ -24,6 +24,7 @@ Sigwt = res['Sigw']
 muwt_opt = res['muw_opt']
 Sigwt_opt = res['Sigw_opt']
 
+nms = [('EGUS', 'Uniform'), ('ERG', 'Greedy'), ('ERCG', 'CorrectiveGreedy'), ('ERL1', 'L1'), ('ERL1U', 'L1 Unscaled')]
 
 
 #plot the example set of 3-sigma ellipses

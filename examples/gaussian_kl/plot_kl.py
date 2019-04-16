@@ -4,9 +4,8 @@ import numpy as np
 
 plot_reverse_kl = True
 size_x_axis = True
-scaled = True
 n_trials = 10
-nms = [('EGUS', 'Uniform'), ('ERG', 'Greedy'), ('ERL1', 'L1')]
+nms = [('EGUS', 'Uniform'), ('ERG', 'Greedy'), ('ERCG', 'CorrectiveGreedy'), ('ERL1', 'L1'), ('ERL1U', 'L1 Unscaled')]
 Ms = np.arange(100)
 
 #plot the KL figure
