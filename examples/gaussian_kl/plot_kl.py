@@ -5,7 +5,7 @@ import numpy as np
 plot_reverse_kl = True
 size_x_axis = True
 scaled = True
-n_trials = 30
+n_trials = 10
 nms = [('EGUS', 'Uniform'), ('ERG', 'Greedy'), ('ERL1', 'L1')]
 Ms = np.arange(100)
 

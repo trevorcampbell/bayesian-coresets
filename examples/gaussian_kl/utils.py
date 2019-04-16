@@ -58,8 +58,8 @@ def preprocess_plot(fig, axis_font_size, log_scale):
   fig.yaxis.major_label_text_font_size= axis_font_size
   if log_scale:
     fig.yaxis.formatter = logFmtr
-  fig.toolbar.logo = None
-  fig.toolbar_location = None
+  #fig.toolbar.logo = None
+  #fig.toolbar_location = None
 
 def postprocess_plot(fig, legend_font_size, orientation='vertical', location='top_right', glyph_width=80):
   fig.legend.label_text_font_size= legend_font_size

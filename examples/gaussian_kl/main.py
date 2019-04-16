@@ -20,13 +20,7 @@ Sig = np.eye(2)
 th = np.ones(2)
 Sig0inv = np.linalg.inv(Sig0)
 Siginv = np.linalg.inv(Sig)
-scaled = True
 
-
-n_trials = 10
-scaled = True
-M = 20
-N = 20
 
 for t in range(n_trials):
   #gen data
@@ -35,7 +29,8 @@ for t in range(n_trials):
   Sigpinv = np.linalg.inv(Sigp)
 
   #create coreset objects
-  erl1 = EGL1Reverse(x, mu0, Sig0, Sig, scaled=scaled)
+  erl1 = EGL1Reverse(x, mu0, Sig0, Sig, scaled=True)
+  erl1u = EGL1Reverse(x, mu0, Sig0, Sig, scaled=False)
   #efl1 = EGL1Forward(x, mu0, Sig0, Sig, scaled=scaled)
   erg = EGGreedyReverse(x, mu0, Sig0, Sig)
   #efg = EGGreedyForward(x, mu0, Sig0, Sig, scaled=scaled)
@@ -52,8 +47,8 @@ for t in range(n_trials):
   #algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
   #nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
   
-  algs = [erl1, erg, egus]
-  nms = ['ERL1', 'ERG', 'EGUS']
+  algs = [erl1, erl1u, erg, egus]
+  nms = ['ERL1', 'ERL1U', 'ERG', 'EGUS']
 
   #build coresets
   for nm, alg in zip(nms, algs):
