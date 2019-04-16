@@ -2,17 +2,16 @@ import numpy as np
 import warnings
 
 class Coreset(object):
-  def __init__(self, N, weight_type, auto_above_N = True, **kw):
+  def __init__(self, N, auto_above_N = True, **kw):
     self.alg_name = self.__class__.__name__
     self.auto_above_N = auto_above_N
     self.N = N
-    self.weight_type = weight_type
-    self.results_cache = {}
     self.reached_numeric_limit = False
-    self.full_wts = np.ones(self.N)
+    self.all_data_wts = np.ones(self.N)
+    self.wts = np.zeros(N)
     
   def reset(self):
-    self.results_cache = {}
+    self.wts = np.zeros(self.N)
     self.reached_numeric_limit = False
 
   def weights(self):

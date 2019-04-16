@@ -3,15 +3,6 @@ import warnings
 from scipy.special import erfc
 import bisect
 from .coreset import Coreset
-import sys
-
-#class OptimizationResult(object):
-#  def __init__(self, x, f0, v0, f1, v1):
-#    self.x = x
-#    self.f0 = f0
-#    self.v0 = v0
-#    self.f1 = f1
-#    self.v1 = v1
 
 class OptimizationCoreset(Coreset):
 
@@ -55,15 +46,6 @@ class OptimizationCoreset(Coreset):
     # 1) we haven't found M, and
     # 2) the upper/lower reg bounds are far apart in a relative sense, and
     # 3) the upper/lower reg bounds are far apart in an abolute sense (only check if lmbl == 0.)
-    try:
-      if nnz != M and (lmbu-lmbl)/lmbu > self.tol and (lmbu > self.tol or lmbl > 0.):
-        pass
-    except:
-      sys.stderr.write('nnz: ' + str(nnz) + '\n')
-      sys.stderr.write('lmbu: ' + str(lmbu) + '\n')
-      sys.stderr.write('lmbl: ' + str(lmbl) + '\n')
-      sys.stderr.write('tol: ' + str(self.tol) + '\n')
-      raise
 
     while nnz != M and (lmbu-lmbl)/lmbu > self.tol and (lmbu > self.tol or lmbl > 0.):
       #pick new lambda
@@ -122,27 +104,6 @@ class OptimizationCoreset(Coreset):
   
   def _optimize(self, w0, reg_coeff):
     raise NotImplementedError()
-
-
-  #removed since optimize() should be specified in the objective-type parent class (e.g. kl, vector)
-  #def optimize(self, check_obj_decrease=False, verbose=False):
-  #  res = self._optimize(self.wts, self.wts > 0, 0.)  
-  #  w = res.x
-  #  f0 = res.f0
-  #  v0 = res.v0
-  #  f1 = res.f1
-  #  v1 = res.v1 
-
-  #  #update weights to optimized version
-  #  if check_obj_decrease:
-  #    diffmean = f1 - f0
-  #    diffvar =  v1 + v0
-  #    #check if gaussian with mean diffmean, diffvar > 0, only update if pr > 0.5
-  #    pr_decrease = 0.5*erfc(diffmean / (np.sqrt(2*diffvar)))
-  #    if pr_decrease > 0.5:
-  #      self.wts = w
-  #  else:
-  #    self.wts = w
 
 
 def adam(x0, grd, opt_itrs=1000, adam_a1=1., adam_a2=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8):
