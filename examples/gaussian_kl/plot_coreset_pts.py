@@ -3,11 +3,18 @@ from utils import *
 import bokeh.plotting as bkp
 import numpy as np
 
-size_x_axis = True
-scaled = True
-trial_num = 0
+size_x_axis = False
+trial_num = 1
 nm = ('EGUS', 'Uniform')
 Ms = [0, 1, 2, 5, 10, 20, 50, 99]
+
+nm = ('ERCG', 'CorrectiveGreedy')
+Ms = np.arange(20)
+
+nm = ('ERG', 'Greedy')
+Ms = np.arange(20)
+
+
 
 #plot the KL figure
 

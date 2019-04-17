@@ -14,7 +14,7 @@ class CorrectiveGreedyKLCoreset(KLCoreset, IterativeCoreset):
     #search for FW vertex and compute line search
     f = self._search()
     #make wts[f] active
-    self.wts[f] = 1.
+    self.wts[f] = 1e-9
     #fully optimize the active weights
     self.optimize()
     return True
