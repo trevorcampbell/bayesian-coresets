@@ -4,15 +4,24 @@ import bokeh.plotting as bkp
 import numpy as np
 
 size_x_axis = False
-trial_num = 1
+trial_num = 0
 nm = ('EGUS', 'Uniform')
 Ms = [0, 1, 2, 5, 10, 20, 50, 99]
 
-nm = ('ERCG', 'CorrectiveGreedy')
-Ms = np.arange(20)
+#nm = ('ERCG', 'CorrectiveGreedy')
+#Ms = np.arange(20)
 
-nm = ('ERG', 'Greedy')
-Ms = np.arange(20)
+#nm = ('ERG', 'Greedy')
+#Ms = np.arange(20)
+
+#nm = ('ERL1', 'L1')
+#Ms = np.arange(20)
+
+#nm = ('ERL1U', 'L1U')
+#Ms = np.arange(20)
+
+
+
 
 
 

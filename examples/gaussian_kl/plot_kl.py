@@ -3,7 +3,7 @@ import bokeh.plotting as bkp
 import numpy as np
 
 plot_reverse_kl = True
-size_x_axis = True
+size_x_axis = False
 n_trials = 10
 nms = [('EGUS', 'Uniform'), ('ERG', 'Greedy'), ('ERCG', 'CorrectiveGreedy'), ('ERL1', 'L1'), ('ERL1U', 'L1 Unscaled')]
 Ms = np.arange(100)
@@ -34,13 +34,13 @@ for i, nm in enumerate(nms):
     #fig.scatter(sz[-1], kl[-1], color=pal[i], legend=nm) 
     #fig.scatter(szopt[-1], klopt[-1], color=pal[i], legend=nm) 
   if size_x_axis:
-    fig.line(Ms, np.percentile(kl, 50, axis=0), color=pal[i], line_width=5, line_dash='dashed', legend=nm[1]) 
-    fig.line(Ms, np.percentile(klopt, 50, axis=0), color=pal[i], line_width=5, line_dash='solid', legend=nm[1]) 
+    fig.line(Ms, np.maximum(np.percentile(kl, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='dashed', legend=nm[1]) 
+    fig.line(Ms, np.maximum(np.percentile(klopt, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='solid', legend=nm[1]) 
   else:
     kl = np.array(kl)
     klopt = np.array(klopt)
-    fig.line(np.arange(kl.shape[1]), np.percentile(kl, 50, axis=0), color=pal[i], line_width=5, line_dash='dashed', legend=nm[1])
-    fig.line(np.arange(kl.shape[1]), np.percentile(klopt, 50, axis=0), color=pal[i], line_width=5, line_dash='solid', legend=nm[1])
+    fig.line(np.arange(kl.shape[1]), np.maximum(np.percentile(kl, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='dashed', legend=nm[1])
+    fig.line(np.arange(kl.shape[1]), np.maximum(np.percentile(klopt, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='solid', legend=nm[1])
     #plot_meanstd(fig, np.arange(kl.shape[1]), klopt, pal[i], 5, 0.3, 'solid', nm)
 
 postprocess_plot(fig, '16pt')
