@@ -3,13 +3,13 @@ from utils import *
 import bokeh.plotting as bkp
 import numpy as np
 
-size_x_axis = False
-trial_num = 0
+size_x_axis = True
+trial_num = 3
 nm = ('EGUS', 'Uniform')
 Ms = [0, 1, 2, 5, 10, 20, 50, 99]
 
-#nm = ('ERCG', 'CorrectiveGreedy')
-#Ms = np.arange(20)
+nm = ('ERCG', 'CorrectiveGreedy')
+Ms = np.arange(20)
 
 #nm = ('ERG', 'Greedy')
 #Ms = np.arange(20)
@@ -62,6 +62,7 @@ for m in Ms:
       plot_gaussian(f, muw[msz,:], Sigw[msz,:], Sig, 'green', 5, 3, 1, 1, 'solid', nm[1]+', size ' + str( (w[msz, :]>0).sum() ))
     else:
       plot_gaussian(f, muw[m,:], Sigw[m,:], Sig, 'green', 5, 3, 1, 1, 'solid', nm[1]+', ' + str(m) +' itrs') 
+
 
   for f in [fig, fig_opt]:
     postprocess_plot(f, '16pt', orientation='horizontal', glyph_width=40)

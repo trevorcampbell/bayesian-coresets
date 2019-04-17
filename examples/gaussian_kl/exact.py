@@ -32,7 +32,7 @@ class ExactGaussianL1KLCoreset(bc.L1KLCoreset):
     g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=True))
     if natural:
       muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w)
-      return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x))
+      return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x) - ll_m1_exact_diag(muw, Sigw, self.Siginv, self.x, constant=False)**2)
     else:
       return g(w)
 
@@ -68,7 +68,7 @@ class ExactGaussianGreedyKLCoreset(bc.GreedyKLCoreset):
     g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=True))
     if natural:
       muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w)
-      return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x))
+      return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x) - ll_m1_exact_diag(muw, Sigw, self.Siginv, self.x, constant=False)**2)
     else:
       return g(w)
 
@@ -105,7 +105,7 @@ class ExactGaussianCorrectiveGreedyKLCoreset(bc.CorrectiveGreedyKLCoreset):
     g = grad(lambda w : weighted_post_KL(self.mu0, self.Sig0inv, self.Siginv, self.x, w, reverse=True))
     if natural:
       muw, Sigw = weighted_post(self.mu0, self.Sig0inv, self.Siginv, self.x, w)
-      return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x))
+      return g(w)/np.sqrt(ll_m2_exact_diag(muw, Sigw, self.Siginv, self.x) - ll_m1_exact_diag(muw, Sigw, self.Siginv, self.x, constant=False)**2)
     else:
       return g(w)
 
