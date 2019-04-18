@@ -21,6 +21,9 @@ Sig = np.eye(2)
 th = np.ones(2)
 Sig0inv = np.linalg.inv(Sig0)
 Siginv = np.linalg.inv(Sig)
+adam_a1 = 100.
+adam_a2 = 1.
+opt_itrs = 1000
 
 
 for t in range(n_trials):
@@ -30,12 +33,12 @@ for t in range(n_trials):
   Sigpinv = np.linalg.inv(Sigp)
 
   #create coreset objects
-  erl1 = EGL1Reverse(x, mu0, Sig0, Sig, scaled=True)
-  erl1u = EGL1Reverse(x, mu0, Sig0, Sig, scaled=False)
+  erl1 = EGL1Reverse(x, mu0, Sig0, Sig, scaled=True, adam_a1=adam_a1, adam_a2=adam_a2, opt_itrs=opt_itrs)
+  erl1u = EGL1Reverse(x, mu0, Sig0, Sig, scaled=False, adam_a1=adam_a1, adam_a2=adam_a2, opt_itrs=opt_itrs)
   #efl1 = EGL1Forward(x, mu0, Sig0, Sig, scaled=scaled)
-  erg = EGGreedyReverse(x, mu0, Sig0, Sig)
+  erg = EGGreedyReverse(x, mu0, Sig0, Sig, adam_a1=adam_a1, adam_a2=adam_a2, opt_itrs=opt_itrs)
   #efg = EGGreedyForward(x, mu0, Sig0, Sig, scaled=scaled)
-  ercg = EGCorrectiveGreedyReverse(x, mu0, Sig0, Sig)
+  ercg = EGCorrectiveGreedyReverse(x, mu0, Sig0, Sig, adam_a1=adam_a1, adam_a2=adam_a2, opt_itrs=opt_itrs)
   
   #srl1 = SGL1Reverse(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
   #sfl1 = SGL1Forward(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
@@ -44,7 +47,7 @@ for t in range(n_trials):
   
   #sgs = SGS(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
   #egs = EGS(x, mu0, Sig0, Sig, scaled=scaled)
-  egus = EGUS(x, mu0, Sig0, Sig)
+  egus = EGUS(x, mu0, Sig0, Sig, adam_a1=adam_a1, adam_a2=adam_a2, opt_itrs=opt_itrs)
   
   #algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
   #nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
