@@ -28,6 +28,6 @@ class L1KLCoreset(KLCoreset, OptimizationCoreset):
       g = self._kl_grad(w)
       g += reg_coeff*self.scales
       return g
-    return adam(w0, grd, opt_itrs=self.opt_itrs, adam_a1=self.adam_a1, adam_a2=self.adam_a2))
+    return adam(w0, grd, opt_itrs=self.opt_itrs, adam_a1=self.adam_a1, adam_a2=self.adam_a2)
 
 

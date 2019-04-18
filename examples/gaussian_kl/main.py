@@ -33,12 +33,12 @@ for t in range(n_trials):
   Sigpinv = np.linalg.inv(Sigp)
 
   #create coreset objects
-  erl1 = EGL1Reverse(x, mu0, Sig0, Sig, scaled=True, adam_a1=adam_a1, adam_a2=adam_a2, opt_itrs=opt_itrs)
-  erl1u = EGL1Reverse(x, mu0, Sig0, Sig, scaled=False, adam_a1=adam_a1, adam_a2=adam_a2, opt_itrs=opt_itrs)
+  erl1 = EGL1Reverse(x, mu0, Sig0, Sig, adam_a1, adam_a2, opt_itrs, scaled=True)
+  erl1u = EGL1Reverse(x, mu0, Sig0, Sig, adam_a1, adam_a2, opt_itrs, scaled=False)
   #efl1 = EGL1Forward(x, mu0, Sig0, Sig, scaled=scaled)
-  erg = EGGreedyReverse(x, mu0, Sig0, Sig, adam_a1=adam_a1, adam_a2=adam_a2, opt_itrs=opt_itrs)
+  erg = EGGreedyReverse(x, mu0, Sig0, Sig, adam_a1, adam_a2, opt_itrs)
   #efg = EGGreedyForward(x, mu0, Sig0, Sig, scaled=scaled)
-  ercg = EGCorrectiveGreedyReverse(x, mu0, Sig0, Sig, adam_a1=adam_a1, adam_a2=adam_a2, opt_itrs=opt_itrs)
+  ercg = EGCorrectiveGreedyReverse(x, mu0, Sig0, Sig, adam_a1, adam_a2, opt_itrs)
   
   #srl1 = SGL1Reverse(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
   #sfl1 = SGL1Forward(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
@@ -47,7 +47,7 @@ for t in range(n_trials):
   
   #sgs = SGS(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
   #egs = EGS(x, mu0, Sig0, Sig, scaled=scaled)
-  egus = EGUS(x, mu0, Sig0, Sig, adam_a1=adam_a1, adam_a2=adam_a2, opt_itrs=opt_itrs)
+  egus = EGUS(x, mu0, Sig0, Sig, adam_a1, adam_a2, opt_itrs)
   
   #algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
   #nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
@@ -55,14 +55,14 @@ for t in range(n_trials):
   algs = [erl1, erl1u, erg, ercg, egus]
   nms = ['ERL1', 'ERL1U', 'ERG', 'ERCG', 'EGUS']
 
-  algs = [ercg]
-  nms = ['ERCG']
-  
+  #algs = [ercg]
+  #nms = ['ERCG']
+  #
+  ##algs = [erl1u]
+  ##nms = ['ERL1U']
+
   #algs = [erl1u]
   #nms = ['ERL1U']
-
-  algs = [erl1u]
-  nms = ['ERL1U']
 
 
 
@@ -78,8 +78,8 @@ for t in range(n_trials):
       tmpalg = deepcopy(alg)
       tmpalg.optimize()
       w_opt[m, :] = tmpalg.weights()
-      print('reverse KL: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
-      print('reverse KL opt: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
+      #print('reverse KL: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
+      #print('reverse KL opt: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
 
     muw = np.zeros((M+1, mu0.shape[0]))
     Sigw = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
