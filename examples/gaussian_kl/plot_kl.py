@@ -4,7 +4,7 @@ import numpy as np
 
 plot_reverse_kl = True
 size_x_axis = False
-n_trials = 5
+n_trials = 28
 nms = [('EGUS', 'Uniform'), ('ERG', 'Greedy'), ('ERCG', 'CorrectiveGreedy'), ('ERL1', 'L1'), ('ERL1U', 'L1 Unscaled')]
 Ms = np.arange(100)
 

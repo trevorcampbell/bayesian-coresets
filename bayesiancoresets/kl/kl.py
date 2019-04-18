@@ -5,8 +5,11 @@ from ..base.optimization import adam
 import sys
 
 class KLCoreset(Coreset): 
-  def __init__(self, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, **kw):
+  def __init__(self, potentials, sampler, n_samples, reverse=True, n_lognorm_disc = 100, adam_a1 = 1., adam_a2 = 1., opt_itrs = 1000, **kw):
     super().__init__(**kw)
+    self.adam_a1 = adam_a1
+    self.adam_a2 = adam_a2
+    self.opt_itrs = opt_itrs
     self.potentials = potentials
     self.sampler = sampler
     self.n_samples = n_samples
@@ -30,7 +33,7 @@ class KLCoreset(Coreset):
       g = self._kl_grad(w)
       g[zidcs] = 0.
       return g
-    self._update_weights(adam(self.wts, grd, opt_itrs=1000, adam_a1=1., adam_a2=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8))
+    self._update_weights(adam(self.wts, grd, opt_itrs=self.opt_itrs, adam_a1=self.adam_a1, adam_a2=self.adam_a2))
 
   def _sample_potentials(self, w):
     samples = self.sampler(w, self.n_samples)

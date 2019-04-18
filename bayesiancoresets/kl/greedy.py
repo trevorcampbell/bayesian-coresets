@@ -8,6 +8,7 @@ from ..base.optimization import adam
 class GreedyKLCoreset(KLCoreset, SingleGreedyCoreset):
 
   def _search(self):
+    #print('search result: ' + str(self._kl_grad(self.wts, True).argmin()))
     return self._kl_grad(self.wts, True).argmin()
 
   def _step_coeffs(self, f):
@@ -19,5 +20,5 @@ class GreedyKLCoreset(KLCoreset, SingleGreedyCoreset):
       ga = (self.wts*g).sum()
       gb = g[f]
       return np.array([ga, gb])
-    ret = adam(np.array([1., 0.]), grd, opt_itrs=1000, adam_a1=1., adam_a2=1., adam_b1=0.9, adam_b2=0.99, adam_eps=1e-8)
+    ret = adam(np.array([1., 0.]), grd, opt_itrs=self.opt_itrs, adam_a1=self.adam_a1, adam_a2=self.adam_a2)
     return ret[0], ret[1]

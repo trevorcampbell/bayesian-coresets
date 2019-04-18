@@ -61,7 +61,9 @@ class SingleGreedyCoreset(IterativeCoreset):
           retried_already = True
           self._prepare_retry_search()
 
+    #print('before step: ' + str(self.wts))
     self._update_weights_single(alpha, beta, f)
+    #print('after step: ' + str(self.wts))
 
     return True
 

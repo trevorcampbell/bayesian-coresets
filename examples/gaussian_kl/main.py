@@ -52,6 +52,18 @@ for t in range(n_trials):
   algs = [erl1, erl1u, erg, ercg, egus]
   nms = ['ERL1', 'ERL1U', 'ERG', 'ERCG', 'EGUS']
 
+  algs = [ercg]
+  nms = ['ERCG']
+  
+  #algs = [erl1u]
+  #nms = ['ERL1U']
+
+  algs = [erl1u]
+  nms = ['ERL1U']
+
+
+
+
   #build coresets
   for nm, alg in zip(nms, algs):
     w = np.zeros((M+1, x.shape[0]))
@@ -63,6 +75,8 @@ for t in range(n_trials):
       tmpalg = deepcopy(alg)
       tmpalg.optimize()
       w_opt[m, :] = tmpalg.weights()
+      print('reverse KL: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
+      print('reverse KL opt: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
 
     muw = np.zeros((M+1, mu0.shape[0]))
     Sigw = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
