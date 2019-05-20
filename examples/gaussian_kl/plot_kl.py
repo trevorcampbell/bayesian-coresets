@@ -4,18 +4,18 @@ import numpy as np
 
 plot_reverse_kl = True
 size_x_axis = False
-n_trials = 15
-nms = [('EGUS', 'Uniform'), ('ERG', 'Greedy'), ('ERCG', 'CorrectiveGreedy'), ('ERL1', 'L1'), ('ERL1U', 'L1 Unscaled')]
+trials = np.arange(6)
+nms = [('EGUS', 'Uniform'), ('ERG', 'Greedy'), ('ERCG', 'Corr. Greedy'), ('ERL1', 'L1'), ('ERL1U', 'Unsc. L1')]
 Ms = np.arange(100)
 
 #plot the KL figure
-fig = bkp.figure(y_axis_type='log', plot_width=750, plot_height=750, x_axis_label=('Coreset Size' if size_x_axis else '# Iterations'), y_axis_label=('Reverse KL' if plot_reverse_kl else 'Forward KL') )
-preprocess_plot(fig, '24pt', True)
+fig = bkp.figure(y_axis_type='log', plot_width=750, plot_height=750, x_axis_label=('Coreset Size' if size_x_axis else 'Coreset Size'), y_axis_label=('Reverse KL' if plot_reverse_kl else 'Forward KL') )
+preprocess_plot(fig, '32pt', True)
 
 for i, nm in enumerate(nms):
   kl = []
   klopt = []
-  for t in range(n_trials):
+  for t in trials:
     res = np.load('results_'+nm[0]+'_' + str(t)+'.npz')
     if plot_reverse_kl:
       klt = res['rklw']
@@ -43,7 +43,7 @@ for i, nm in enumerate(nms):
     fig.line(np.arange(kl.shape[1]), np.maximum(np.percentile(klopt, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='solid', legend=nm[1])
     #plot_meanstd(fig, np.arange(kl.shape[1]), klopt, pal[i], 5, 0.3, 'solid', nm)
 
-postprocess_plot(fig, '16pt')
+postprocess_plot(fig, '22pt', location=(300, 330), glyph_width=40)
 
 bkp.show(fig)
 

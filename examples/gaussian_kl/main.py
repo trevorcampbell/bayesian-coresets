@@ -10,21 +10,22 @@ from copy import deepcopy
 
 np.random.seed(1)
 
-opt_itrs = 1000
 M = 50
-N = 100
+N = 1000
+d = 30
 n_samples = 1000
-n_trials = 100
-mu0 = np.zeros(2)
-Sig0 = np.eye(2)
-Sig = np.eye(2)
-th = np.ones(2)
+trials = np.arange(100)
+mu0 = np.zeros(d)
+Sig0 = np.eye(d)
+Sig = np.eye(d)
+th = np.ones(d)
 Sig0inv = np.linalg.inv(Sig0)
 Siginv = np.linalg.inv(Sig)
 opt_itrs = 1000
 
+M = 13
 
-for t in range(n_trials):
+for t in trials:
   #gen data
   x = np.random.multivariate_normal(th, Sig, N)
   mup, Sigp = weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
@@ -53,8 +54,8 @@ for t in range(n_trials):
   algs = [erl1, erl1u, erg, ercg, egus]
   nms = ['ERL1', 'ERL1U', 'ERG', 'ERCG', 'EGUS']
 
-  algs = [egus]
-  nms = ['EGUS']
+  #algs = [egus]
+  #nms = ['EGUS']
 
 
 
@@ -64,7 +65,7 @@ for t in range(n_trials):
     w = np.zeros((M+1, x.shape[0]))
     w_opt = np.zeros((M+1, x.shape[0]))
     for m in range(1, M+1):
-      print('trial: ' + str(t+1)+'/'+str(n_trials)+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
+      print('trial: ' + str(t+1)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
       alg.build(m)
       w[m, :] = alg.weights()
       tmpalg = deepcopy(alg)
