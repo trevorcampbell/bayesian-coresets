@@ -65,7 +65,7 @@ else:
 
 N_samples = 10000
 N_per = 2000
-dnms = [(logistic_data_synth, 'lr', 'synth', X_synth.shape[1]+1, sml), (logistic_data_ds1, 'lr', 'ds1', X_ds1.shape[1]+1, sml), (logistic_data_phish, 'lr', 'phishing', X_phish.shape[1]+1, sml), (poisson_data_synth, 'poiss', 'synthp', X_synthp.shape[1]+1, smp), (poisson_data_bike, 'poiss', 'biketrips', X_bike.shape[1]+1, smp), (poisson_data_air, 'poiss', 'airportdelays', X_air.shape[1]+1, smp)]
+dnms = [(logistic_data_synth, 'lr', 'synth', X_synth.shape[1]+1, sml), (logistic_data_ds1, 'lr', 'ds1', X_ds1.shape[1]+1, sml), (logistic_data_phish, 'lr', 'phishing', X_phish.shape[1]+1, sml), (poisson_data_synth, 'poiss', 'synth', X_synthp.shape[1]+1, smp), (poisson_data_bike, 'poiss', 'biketrips', X_bike.shape[1]+1, smp), (poisson_data_air, 'poiss', 'airportdelays', X_air.shape[1]+1, smp)]
 for data, fldr, nm, d, sm in dnms:
   print('sampling posterior: ' + nm)
   t0 = time.process_time()
