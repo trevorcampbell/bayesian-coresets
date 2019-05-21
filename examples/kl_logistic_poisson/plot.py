@@ -6,6 +6,7 @@ from bokeh.models import FuncTickFormatter
 import bokeh.models as bkm
 import bokeh.palettes 
 import time
+import os
 
 logFmtr = FuncTickFormatter(code="""
 var trns = [
@@ -46,60 +47,54 @@ for (i = power_digits.length-1; i >= 0; i--){
 return ret;
 """)
 
-
-
-dnames = ['poiss/synth', 'poiss/biketrips', 'poiss/airportdelays', 'lr/synth', 'lr/ds1', 'lr/phishing']
-
-fig_cput = bkp.figure(y_axis_type='log', y_axis_label='Normalized Fisher Information Distance', x_axis_type='log', x_axis_label='Relative Total CPU Time', x_range=(.05, 1.1), plot_width=1250, plot_height=1250)
-fig_csz = bkp.figure(y_axis_type='log', y_axis_label='Normalized Fisher Information Distance', x_axis_type='log', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
-
-axis_font_size='36pt'
-legend_font_size='36pt'
-for f in [fig_cput, fig_csz]:
-  f.xaxis.axis_label_text_font_size= axis_font_size
-  f.xaxis.major_label_text_font_size= axis_font_size
-  f.yaxis.axis_label_text_font_size= axis_font_size
-  f.yaxis.major_label_text_font_size= axis_font_size
-  f.yaxis.formatter = logFmtr
-fig_cput.xaxis.ticker = bkm.tickers.FixedTicker(ticks=[.1, .5, 1])
-fig_csz.xaxis.formatter = logFmtr
-
-
 pal = bokeh.palettes.colorblind['Colorblind'][8]
 pal = [pal[0], pal[1], '#d62728', pal[3], pal[4], pal[5], pal[6], pal[7], pal[2]]
-for didx, dnm in enumerate(dnames):
-  
-  res = np.load(dnm  + '_results.npz')
 
-  Fs = res['Fs']
-  cputs = res['cputs']
-  cputs_full = res['cputs_full']
-  csizes = res['csizes']
-  anms = res['anms']
 
-  for aidx, anm in enumerate(anms):
-    if anm == 'FW':
-      clr = pal[1]
-    elif anm == 'GIGA':
-      clr = pal[0]
-    else:
-      clr = pal[2]
+dnames = ['lr_synth', 'lr_ds1', 'lr_phishing', 'poiss_synth', 'poiss_biketrips', 'poiss_airportdelays']
+algs = [('uniform', 'Uniform', pal[0]), ('hilbert','GIGA', pal[1]), ('hilbert_corr', 'Fully Corrective GIGA', pal[2]), ('riemann', 'Greedy', pal[3]), ('riemann_corr', 'Fully Corrective Greedy', pal[4])]
 
-    fig_cput.line(np.percentile(cputs[aidx,:,:], 50, axis=0)/np.percentile(cputs_full, 50, axis=0), np.percentile(Fs[aidx, :, :], 50, axis=0)/np.percentile(Fs[2, :, :], 50), line_color=clr, line_width=8, legend=anm)
-    fig_csz.line(np.percentile(csizes[aidx,:,:], 50, axis=0), np.percentile(Fs[aidx, :, :], 50, axis=0)/np.percentile(Fs[2, :, :], 50), line_color=clr, line_width=8, legend=anm)
+fig = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='Coreset Size')
+
+axis_font_size='12pt'
+legend_font_size='12pt'
+fig.xaxis.axis_label_text_font_size= axis_font_size
+fig.xaxis.major_label_text_font_size= axis_font_size
+fig.yaxis.axis_label_text_font_size= axis_font_size
+fig.yaxis.major_label_text_font_size= axis_font_size
+fig.yaxis.formatter = logFmtr
+fig.xaxis.formatter = logFmtr
+
+for idx, zppd in enumerate(zip(dnames, algs)):
+  dnm, alg = zppd
+  trials = [fn for fn in os.listdir('.') if dnm+'_'+alg[0]+'_results_' in fn]
+  if len(trials) == 0: continue
+  Ms = np.load(trials[0])['Ms']
+  kls = np.zeros((len(trials), len(Ms)))
+  for tridx, fn in enumerate(trials):
+    #np.savez(fldr+'_'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=Ms, mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
+    res = np.load(fn)
+    cputs = res['cputs']
+    wts = res['wts']
+    mu = res['mus']
+    Sig = res['Sigs']
+    kl = res['kls']
+    kls[tridx, :] = kl
     
-rndlbl = bkm.Label(x=1.0, x_offset=-10, y=700, y_units='screen', text='Full Dataset MCMC', angle=90, angle_units='deg', text_font_size='30pt')
-rndspan = bkm.Span(location = 1.0, dimension='height', line_width=8, line_color='black', line_dash='40 40')
-fig_cput.add_layout(rndspan)
-fig_cput.add_layout(rndlbl)
+  fig.line(Ms, kls.mean(axis=0), color=alg[2], legend=alg[1])
+  fig.line(Ms, kls.mean(axis=0)+kls.std(axis=0), color=alg[2], legend=alg[1], line_dash='dashed')
+  fig.line(Ms, kls.mean(axis=0)-kls.std(axis=0), color=alg[2], legend=alg[1], line_dash='dashed')
+   
+#rndlbl = bkm.Label(x=1.0, x_offset=-10, y=700, y_units='screen', text='Full Dataset MCMC', angle=90, angle_units='deg', text_font_size='30pt')
+#rndspan = bkm.Span(location = 1.0, dimension='height', line_width=8, line_color='black', line_dash='40 40')
+#fig_cput.add_layout(rndspan)
+#fig_cput.add_layout(rndlbl)
 
-for f in [fig_cput, fig_csz]:
-  f.legend.label_text_font_size= legend_font_size
-  f.legend.glyph_width=40
-  f.legend.glyph_height=80
-  f.legend.spacing=20
-  f.legend.orientation='horizontal'
+fig.legend.label_text_font_size= legend_font_size
+fig.legend.glyph_width=40
+fig.legend.glyph_height=80
+fig.legend.spacing=20
+fig.legend.orientation='horizontal'
 
-bkp.show(bkl.gridplot([[fig_cput, fig_csz]]))
-#bkp.save(bkl.gridplot([[fig_cput, fig_csz]]))
+bkp.show(fig) 
 
