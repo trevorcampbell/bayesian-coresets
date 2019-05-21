@@ -55,15 +55,17 @@ dnames = ['lr_synth', 'lr_ds1', 'lr_phishing', 'poiss_synth', 'poiss_biketrips',
 algs = [('uniform', 'Uniform', pal[0]), ('hilbert','GIGA', pal[1]), ('hilbert_corr', 'Fully Corrective GIGA', pal[2]), ('riemann', 'Greedy', pal[3]), ('riemann_corr', 'Fully Corrective Greedy', pal[4])]
 
 fig = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='Coreset Size')
+fig2 = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='CPU Time (s)')
 
-axis_font_size='12pt'
-legend_font_size='12pt'
-fig.xaxis.axis_label_text_font_size= axis_font_size
-fig.xaxis.major_label_text_font_size= axis_font_size
-fig.yaxis.axis_label_text_font_size= axis_font_size
-fig.yaxis.major_label_text_font_size= axis_font_size
-fig.yaxis.formatter = logFmtr
-fig.xaxis.formatter = logFmtr
+for f in [fig, fig2]:
+  axis_font_size='12pt'
+  legend_font_size='12pt'
+  f.xaxis.axis_label_text_font_size= axis_font_size
+  f.xaxis.major_label_text_font_size= axis_font_size
+  f.yaxis.axis_label_text_font_size= axis_font_size
+  f.yaxis.major_label_text_font_size= axis_font_size
+  f.yaxis.formatter = logFmtr
+  f.xaxis.formatter = logFmtr
 
 for idx, zppd in enumerate(zip(dnames, algs)):
   dnm, alg = zppd
@@ -71,10 +73,12 @@ for idx, zppd in enumerate(zip(dnames, algs)):
   if len(trials) == 0: continue
   Ms = np.load(trials[0])['Ms']
   kls = np.zeros((len(trials), len(Ms)))
+  cputs = np.zeros((len(trials), len(Ms)))
   for tridx, fn in enumerate(trials):
     #np.savez(fldr+'_'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=Ms, mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
     res = np.load(fn)
-    cputs = res['cputs']
+    cput = res['cputs']
+    cputs[tridx, :] = cput
     wts = res['wts']
     mu = res['mus']
     Sig = res['Sigs']
@@ -84,17 +88,22 @@ for idx, zppd in enumerate(zip(dnames, algs)):
   fig.line(Ms, kls.mean(axis=0), color=alg[2], legend=alg[1])
   fig.line(Ms, kls.mean(axis=0)+kls.std(axis=0), color=alg[2], legend=alg[1], line_dash='dashed')
   fig.line(Ms, kls.mean(axis=0)-kls.std(axis=0), color=alg[2], legend=alg[1], line_dash='dashed')
+
+  fig2.circle(cputs.mean(axis=0), kls.mean(axis=0), color=alg[2], legend=alg[1])
+  fig2.segment(x0=cputs.mean(axis=0)-cputs.std(axis=0), x1 = cputs.mean(axis=0)+cputs.std(axis=0), y0 = kls.mean(axis=0), y1 = kls.mean(axis=0), color=alg[2], legend=alg[1])
+  fig2.segment(y0=kls.mean(axis=0)-kls.std(axis=0), y1 = kls.mean(axis=0)+kls.std(axis=0), x0 = cputs.mean(axis=0), x1 = cputs.mean(axis=0), color=alg[2], legend=alg[1])
    
 #rndlbl = bkm.Label(x=1.0, x_offset=-10, y=700, y_units='screen', text='Full Dataset MCMC', angle=90, angle_units='deg', text_font_size='30pt')
 #rndspan = bkm.Span(location = 1.0, dimension='height', line_width=8, line_color='black', line_dash='40 40')
 #fig_cput.add_layout(rndspan)
 #fig_cput.add_layout(rndlbl)
 
-fig.legend.label_text_font_size= legend_font_size
-fig.legend.glyph_width=40
-fig.legend.glyph_height=80
-fig.legend.spacing=20
-fig.legend.orientation='horizontal'
+for f in [fig, fig2]:
+  f.legend.label_text_font_size= legend_font_size
+  f.legend.glyph_width=40
+  f.legend.glyph_height=80
+  f.legend.spacing=20
+  f.legend.orientation='horizontal'
 
-bkp.show(fig) 
+bkp.show(bkl.gridplot([[fig, fig2]]) )
 

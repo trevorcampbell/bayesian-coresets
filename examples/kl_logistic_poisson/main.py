@@ -158,7 +158,7 @@ adam_learning_rate = lambda itr : 1./np.sqrt(itr+1.) #ADAM learning rate in riem
 wts = np.zeros((len(Ms), Z.shape[0]))
 cputs = np.zeros(len(Ms))
 print('Building coresets via ' + alg)
-t0 = time.clock()
+t0 = time.process_time()
 if alg == 'hilbert' or alg == 'hilbert_corr':
   #get pihat via interpolation between prior/posterior + noise
   #uniformly smooth between prior and posterior
@@ -184,7 +184,7 @@ if alg == 'hilbert' or alg == 'hilbert_corr':
     if alg == 'hilbert_corr':
       giga.optimize() 
     #record time and weights
-    cputs[m] = time.clock()-t0
+    cputs[m] = time.process_time()-t0
     wts[m, :] = giga.weights()
 elif alg == 'riemann' or alg == 'riemann_corr':
   #normal dist for approx piw sampling; will use laplace throughout
@@ -205,16 +205,16 @@ elif alg == 'riemann' or alg == 'riemann_corr':
     #record the weights and cput time
     wts[m, :] = w.copy()
     #record time
-    cputs[m] = time.clock()-t0
+    cputs[m] = time.process_time()-t0
 elif alg == 'uniform':
   print(str(1)+'/'+str(len(Ms)))
   wts[0, :] = np.random.multinomial(Ms[0], np.ones(Z.shape[0])/float(Z.shape[0]))
-  cputs[0] = time.clock() - t0
+  cputs[0] = time.process_time() - t0
   for m in range(1, len(Ms)):
     print(str(m+1)+'/'+str(len(Ms)))
     wts[m, :] = wts[m-1, :] + np.random.multinomial(Ms[m]-Ms[m-1], np.ones(Z.shape[0])/float(Z.shape[0]))
     #record time
-    cputs[m] = time.clock() - t0
+    cputs[m] = time.process_time() - t0
 
 #get laplace approximations for each weight setting, and KL divergence to full posterior laplace approx mup Sigp
 #used for a quick/dirty performance comparison without expensive posterior sample comparisons (e.g. energy distance)
