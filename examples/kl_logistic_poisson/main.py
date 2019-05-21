@@ -223,7 +223,7 @@ Sigs_laplace = np.zeros((len(Ms), D, D))
 kls_laplace = np.zeros(len(Ms))
 print('Computing coreset Laplace approximation + approximate KL(posterior || coreset laplace)')
 for m in range(len(Ms)):
-  mul, Sigl = get_laplace(wts[m,:], Z, wts[m,:].dot(Z))
+  mul, Sigl = get_laplace(wts[m,:], Z, wts[m,:].dot(Z)[:D])
   mus_laplace[m,:] = mul
   Sigs_laplace[m,:,:] = Sigl
   kls_laplace[m] = gaussian_KL(mup, Sigp, mus_laplace[m,:], Sigs_laplace[m,:,:])
