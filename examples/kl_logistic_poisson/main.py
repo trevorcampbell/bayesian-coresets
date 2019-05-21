@@ -3,6 +3,7 @@ import numpy as np
 import bayesiancoresets as bc
 from scipy.optimize import minimize
 import time
+import sys
 
 #adam optimizer with lambda fcn learning rate -- pulled from autograd library
 def adam(grad, x, num_iters, learning_rate, 
@@ -23,15 +24,15 @@ def adam(grad, x, num_iters, learning_rate,
 
 #computes KL( N(mu0, Sig0) || N(mu1, Sig1) )
 def gaussian_KL(mu0, Sig0, mu1, Sig1):
-  t1 = np.dot(Sig1inv, Sig0).trace()
+  t1 = np.linalg.solve(Sig1, Sig0).trace()
   t2 = np.dot((mu1-mu0),np.linalg.solve(Sig1, mu1-mu0))
   t3 = np.linalg.slogdet(Sig1)[1] - np.linalg.slogdet(Sig0)[1]
   return 0.5*(t1+t2+t3-mu0.shape[0])
 
 
 #computes the Laplace approximation N(mu, Sig) to the posterior with weights wts
-def get_laplace(wts, Z, mu0)
-  res = minimize(lambda mu : -log_joint(Z, mu, wts[m, :]), mu0, jac=lambda mu : -grad_log_joint(Z, mu, wts[m,:]))
+def get_laplace(wts, Z, mu0):
+  res = minimize(lambda mu : -log_joint(Z, mu, wts), mu0, jac=lambda mu : -grad_log_joint(Z, mu, wts))
   mu = res.x
   Sig = -np.linalg.inv(hess_log_joint(Z, mu))
   return mu, Sig
@@ -81,7 +82,7 @@ def grad_line(ab, Z, w, one_n, n_samps, muw):
 def riemann_optimize_line(Z, w, n, muw, n_samples, adam_num_iters, adam_learning_rate):
   one_n = np.zeros(Z.shape[0])
   one_n[n] = 1.
-  grad = lambda x : grad_line(x, Z, w, one_n, n_samples, muw)
+  grad = lambda x, itr : grad_line(x, Z, w, one_n, n_samples, muw)
   ab = adam(grad, np.array([0., 1.]), adam_num_iters, adam_learning_rate)
   return ab[1]*(w+ab[0]*one_n)
 
@@ -107,7 +108,7 @@ def grad_full(w, Z, n_samps, active_idcs, muw):
 def riemann_optimize_full(Z, w, n, muw, n_samples, adam_num_iters, adam_learning_rate):
   active_idcs = w>0
   active_idcs[n] = True
-  grad = lambda x : grad_full(x, Z, n_samples, active_idcs, muw)
+  grad = lambda x, itr : grad_full(x, Z, n_samples, active_idcs, muw)
   w = adam(grad, w, adam_num_iters, adam_learning_rate)
   return w
 
@@ -127,13 +128,13 @@ if fldr == 'lr':
   print('Loading dataset '+dnm)
   Z, Zt, D = load_data('lr/'+dnm+'.npz')
   print('Loading posterior samples for '+dnm)
-  samples = np.load('lr/'+dnm+'_samples.npz')
+  samples = np.load('lr_'+dnm+'_samples.npy')
 else:
   from model_poiss import *
   print('Loading dataset '+dnm)
   Z, Zt, D = load_data('poiss/'+dnm+'.npz')
   print('Loading posterior samples for '+dnm)
-  samples = np.load('poiss/'+dnm+'_samples.npz')
+  samples = np.load('poiss_'+dnm+'_samples.npy')
 
 #fit a gaussian to the posterior samples 
 #used for pihat computation for Hilbert coresets with noise to simulate uncertainty in a good pihat
@@ -158,7 +159,7 @@ wts = np.zeros((len(Ms), Z.shape[0]))
 cputs = np.zeros(len(Ms))
 print('Building coresets via ' + alg)
 t0 = time.clock()
-if alg == 'hilbert' or 'hilbert_corr':
+if alg == 'hilbert' or alg == 'hilbert_corr':
   #get pihat via interpolation between prior/posterior + noise
   #uniformly smooth between prior and posterior
   U = np.random.rand()
@@ -185,16 +186,17 @@ if alg == 'hilbert' or 'hilbert_corr':
     #record time and weights
     cputs[m] = time.clock()-t0
     wts[m, :] = giga.weights()
-elif alg == 'riemann' or 'riemann_corr':
+elif alg == 'riemann' or alg == 'riemann_corr':
   #normal dist for approx piw sampling; will use laplace throughout
   w = np.zeros(Z.shape[0])
+  muw = np.zeros(Z.shape[1])
   for m in range(len(Ms)):
     #build up to Ms[m] one point at a time
     for j in range(Ms[m]-Ms[m-1] if m>0 else Ms[m]):
       #get laplace w-posterior approx for sampling
-      muw, Sigw = get_laplace(w, Z)
+      muw, Sigw = get_laplace(w, Z, muw)
       #select next datapoint
-      n = riemann_select(Z, w, muw, Sigw)
+      n = riemann_select(Z, w, muw, Sigw, n_samples)
       #optimize the weights
       if alg == 'riemann_corr':
         w = riemann_optimize_full(Z, w, n, muw, n_samples, adam_num_iters, adam_learning_rate)
@@ -221,12 +223,12 @@ Sigs_laplace = np.zeros((len(Ms), D, D))
 kls_laplace = np.zeros(len(Ms))
 print('Computing coreset Laplace approximation + approximate KL(posterior || coreset laplace)')
 for m in range(len(Ms)):
-  mul, Sigl = get_laplace(wts[m,:], Z)
+  mul, Sigl = get_laplace(wts[m,:], Z, wts[m,:].dot(Z))
   mus_laplace[m,:] = mul
   Sigs_laplace[m,:,:] = Sigl
   kls_laplace[m] = gaussian_KL(mup, Sigp, mus_laplace[m,:], Sigs_laplace[m,:,:])
 
 #save results
-np.savez(fldr+'_'+dnm+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=Ms, mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
+np.savez(fldr+'_'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=Ms, mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
 
 
