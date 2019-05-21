@@ -5,7 +5,7 @@ import numpy as np
 plot_reverse_kl = True
 size_x_axis = False
 trials = np.arange(6)
-nms = [('EGUS', 'Uniform'), ('ERG', 'Greedy'), ('ERCG', 'Corr. Greedy'), ('ERL1', 'L1'), ('ERL1U', 'Unsc. L1')]
+nms = [('EGUS', 'Uniform'), ('ERG', 'Greedy'), ('ERCG', 'Fully Corrective Greedy'), ('ERL1', 'L1'), ('ERL1U', 'Unscaled L1')]
 Ms = np.arange(100)
 
 #plot the KL figure
@@ -16,7 +16,7 @@ for i, nm in enumerate(nms):
   kl = []
   klopt = []
   for t in trials:
-    res = np.load('results_'+nm[0]+'_' + str(t)+'.npz')
+    res = np.load('results/results_'+nm[0]+'_' + str(t)+'.npz')
     if plot_reverse_kl:
       klt = res['rklw']
       kloptt = res['rklw_opt']
@@ -43,7 +43,9 @@ for i, nm in enumerate(nms):
     fig.line(np.arange(kl.shape[1]), np.maximum(np.percentile(klopt, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='solid', legend=nm[1])
     #plot_meanstd(fig, np.arange(kl.shape[1]), klopt, pal[i], 5, 0.3, 'solid', nm)
 
-postprocess_plot(fig, '22pt', location=(300, 330), glyph_width=40)
+postprocess_plot(fig, '22pt', location='bottom_left', glyph_width=40)
+fig.legend.background_fill_alpha=0.
+fig.legend.border_line_alpha=0.
 
 bkp.show(fig)
 

@@ -66,7 +66,7 @@ def postprocess_plot(fig, legend_font_size, orientation='vertical', location='to
   fig.legend.orientation=orientation
   fig.legend.location=location
   fig.legend.glyph_width=glyph_width
-  fig.legend.glyph_height=20
+  fig.legend.glyph_height=40
   fig.legend.spacing=5
   fig.xgrid.grid_line_color=None
   fig.ygrid.grid_line_color=None
