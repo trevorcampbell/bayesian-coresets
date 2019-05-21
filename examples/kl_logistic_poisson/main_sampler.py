@@ -65,8 +65,7 @@ else:
 
 N_samples = 10000
 N_per = 2000
-#dnms = [(logistic_data_synth, 'lr', 'synth', X_synth.shape[1]+1, sml), (logistic_data_ds1, 'lr', 'ds1', X_ds1.shape[1]+1, sml), (logistic_data_phish, 'lr', 'phish', X_phish.shape[1]+1, sml), (poisson_data_synth, 'poiss', 'synthp', X_synthp.shape[1]+1, smp), (poisson_data_bike, 'poiss', 'biketrips', X_bike.shape[1]+1, smp), (poisson_data_air, 'poiss', 'airportdelays', X_air.shape[1]+1, smp)]
-dnms = [(poisson_data_bike, 'poiss', 'biketrips', X_bike.shape[1]+1, smp), (poisson_data_air, 'poiss', 'airportdelays', X_air.shape[1]+1, smp)]
+dnms = [(logistic_data_synth, 'lr', 'synth', X_synth.shape[1]+1, sml), (logistic_data_ds1, 'lr', 'ds1', X_ds1.shape[1]+1, sml), (logistic_data_phish, 'lr', 'phish', X_phish.shape[1]+1, sml), (poisson_data_synth, 'poiss', 'synthp', X_synthp.shape[1]+1, smp), (poisson_data_bike, 'poiss', 'biketrips', X_bike.shape[1]+1, smp), (poisson_data_air, 'poiss', 'airportdelays', X_air.shape[1]+1, smp)]
 for data, fldr, nm, d, sm in dnms:
   print('sampling posterior: ' + nm)
   t0 = time.process_time()
@@ -81,7 +80,7 @@ for data, fldr, nm, d, sm in dnms:
         print('initialization failed, trying again')
         fit = sm.sampling(data=data, iter=N_per*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
     samples = np.vstack((samples, fit.extract(permuted=False)[:, 0, :d]))
-  np.save(fldr+'_'+nm+'_samples.npy', fit.extract(permuted=False))
+  np.save(fldr+'_'+nm+'_samples.npy', samples) 
   tf = time.process_time()
   np.save(fldr+'_'+nm+'_mcmc_time.npy', tf-t0)
 
