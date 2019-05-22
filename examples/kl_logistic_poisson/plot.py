@@ -54,8 +54,8 @@ pal = [pal[0], pal[1], '#d62728', pal[3], pal[4], pal[5], pal[6], pal[7], pal[2]
 dnames = ['lr_synth', 'lr_ds1', 'lr_phishing', 'poiss_synth', 'poiss_biketrips', 'poiss_airportdelays']
 algs = [('uniform', 'Uniform', pal[0]), ('hilbert','GIGA (noisy)', pal[1]), ('hilbert_corr', 'Fully Corrective GIGA (noisy)', pal[2]), ('riemann', 'Greedy', pal[3]), ('riemann_corr', 'Fully Corrective Greedy', pal[4]),('hilbert_good','GIGA (truth)', pal[5]), ('hilbert_corr_good', 'Fully Corrective GIGA (truth)', pal[6])]
 
-fig = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='Coreset Size')
-fig2 = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='CPU Time (s)')
+fig = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='Coreset Size', width=2000, height=2000)
+fig2 = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='CPU Time (s)', width=2000, height=2000)
 
 for f in [fig, fig2]:
   axis_font_size='12pt'
@@ -69,6 +69,19 @@ for f in [fig, fig2]:
 
 dnmsalgs = [(dnm, alg) for dnm in dnames for alg in algs]
 
+#get uniform median normalization
+std_kls = {}
+for didx, dnm in enumerate(dnames):
+  trials = [fn for fn in os.listdir('.') if dnm+'_uniform_results_' in fn]
+  if len(trials) == 0: 
+    print('Need to run uniform to establish baseline first')
+    quit()
+  kltot = 0.
+  for tridx, fn in enumerate(trials):
+    res = np.load(fn)
+    kltot += np.log(res['kls']).mean()
+  std_kls[dnm] = np.exp(kltot / len(trials))
+
 for idx, zppd in enumerate(dnmsalgs):
   dnm, alg = zppd
   trials = [fn for fn in os.listdir('.') if dnm+'_'+alg[0]+'_results_' in fn]
@@ -76,6 +89,7 @@ for idx, zppd in enumerate(dnmsalgs):
   Ms = np.load(trials[0])['Ms']
   kls = np.zeros((len(trials), len(Ms)))
   cputs = np.zeros((len(trials), len(Ms)))
+  kl0 = std_kls[dnm] 
   for tridx, fn in enumerate(trials):
     #np.savez(fldr+'_'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=Ms, mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
     res = np.load(fn)
@@ -85,8 +99,8 @@ for idx, zppd in enumerate(dnmsalgs):
     mu = res['mus']
     Sig = res['Sigs']
     kl = res['kls']
-    kls[tridx, :] = kl
-    
+    kls[tridx, :] = kl/kl0
+   
   fig.line(Ms, kls.mean(axis=0), color=alg[2], legend=alg[1])
   fig.line(Ms, kls.mean(axis=0)+kls.std(axis=0), color=alg[2], legend=alg[1], line_dash='dashed')
   fig.line(Ms, kls.mean(axis=0)-kls.std(axis=0), color=alg[2], legend=alg[1], line_dash='dashed')
