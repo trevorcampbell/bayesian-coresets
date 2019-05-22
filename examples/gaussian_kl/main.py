@@ -63,6 +63,13 @@ for t in trials:
   #now corrupt the smoothed pihat
   muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
   Sighat *= np.exp(2*pihat_noise*np.random.randn())
+
+
+  #super bad corruption
+  muhat = 1000*np.random.randn(d)
+  Sighat = 1000*np.random.randn(d, d)
+  Sighat = Sighat.T.dot(Sighat)
+
   samps_bad = np.random.multivariate_normal(muhat, Sighat, giga_proj_dim) 
 
   #compute log likelihood feature vectors for both
@@ -73,6 +80,11 @@ for t in trials:
     lls_good[i, :] = multivariate_normal.logpdf(samps_good, x[i,:], Sig)
   lls_bad -= lls_bad.mean(axis=1)[:,np.newaxis]
   lls_good -= lls_good.mean(axis=1)[:,np.newaxis]
+
+  #corrs = (((lls_bad - lls_bad.mean(axis=0))*(lls_good-lls_good.mean(axis=0))).mean(axis=0)/lls_bad.std(axis=0)/lls_good.std(axis=0))
+  #print('bad/good correlation: ' + str( corrs.mean()) + ' +/- ' + str(corrs.std())) 
+  #continue
+
 
   giga_bad = bc.GIGACoreset(lls_bad)
   giga_good = bc.GIGACoreset(lls_good)
