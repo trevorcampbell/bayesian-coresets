@@ -5,7 +5,7 @@ from scipy.optimize import minimize
 import time
 import sys
 
-np.seterr(over='raise', invalid='raise', divide='raise')
+#np.seterr(over='raise', invalid='raise', divide='raise')
 
 #adam optimizer with lambda fcn learning rate -- pulled from autograd library
 def adam(grad, x, num_iters, learning_rate, 
@@ -35,9 +35,11 @@ def gaussian_KL(mu0, Sig0, mu1, Sig1):
 #computes the Laplace approximation N(mu, Sig) to the posterior with weights wts
 def get_laplace(wts, Z, mu0):
   trials = 10
+  Zw = Z[wts>0, :]
+  ww = wts[wts>0]
   while True:
     try:
-      res = minimize(lambda mu : -log_joint(Z, mu, wts), mu0, jac=lambda mu : -grad_log_joint(Z, mu, wts))
+      res = minimize(lambda mu : -log_joint(Zw, mu, ww), mu0, jac=lambda mu : -grad_log_joint(Zw, mu, ww))
     except:
       mu0 = mu0.copy()
       mu0 += np.sqrt((mu0**2).sum())*0.1*np.random.randn(mu0.shape[0])
@@ -48,7 +50,7 @@ def get_laplace(wts, Z, mu0):
       continue
     break
   mu = res.x
-  Sig = -np.linalg.inv(hess_log_joint(Z, mu))
+  Sig = -np.linalg.inv(hess_log_joint_w(Zw, mu, ww))
   return mu, Sig
 
 #performs selection of the next datapoint to add to the riemann coreset

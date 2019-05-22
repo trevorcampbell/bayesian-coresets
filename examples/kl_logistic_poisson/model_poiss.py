@@ -87,5 +87,15 @@ def hess_log_joint(Z, th):
   H_log_prior = -np.eye(th.shape[0])
   return H_log_like + H_log_prior
 
+def hess_log_joint_w(Z, th, wts):
+  x = Z[:, :-1]
+  y = Z[:, -1]
+  m = compute_m(th, x)
+
+  m += 1e-100 #just to prevent zeros
+  H_log_like = (wts*(np.exp(np.log((1-np.exp(-m)*(1+m))*y + np.exp(-m)*m**2) - 2*np.log(m))*np.expm1(-m)*x.T)).dot(x)
+  H_log_prior = -np.eye(th.shape[0])
+  return H_log_like + H_log_prior
+
 
 
