@@ -6,12 +6,13 @@ from gaussian import *
 import bayesiancoresets as bc
 from copy import deepcopy
 import os
+from scipy.stats import multivariate_normal
 
 
 
 np.random.seed(1)
 
-M = 50
+M = 20
 N = 1000
 d = 30
 n_samples = 1000
@@ -23,8 +24,8 @@ th = np.ones(d)
 Sig0inv = np.linalg.inv(Sig0)
 Siginv = np.linalg.inv(Sig)
 opt_itrs = 1000
-
-M = 13
+giga_proj_dim = 500
+pihat_noise =0.15
 
 for t in trials:
   #gen data
@@ -51,15 +52,39 @@ for t in trials:
   
   #algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
   #nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
-  
-  algs = [erl1, erl1u, erg, ercg, egus]
-  nms = ['ERL1', 'ERL1U', 'ERG', 'ERCG', 'EGUS']
+
+  #get good projection samples from true posterior
+  samps_good = np.random.multivariate_normal(mup, Sigp, giga_proj_dim)
+  #get bad samples from a noisy pihat via interpolation between prior/posterior + noise
+  #uniformly smooth between prior and posterior
+  U = np.random.rand()
+  muhat = U*mup + (1.-U)*mu0
+  Sighat = U*Sigp + (1.-U)*Sig0
+  #now corrupt the smoothed pihat
+  muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
+  Sighat *= np.exp(2*pihat_noise*np.random.randn())
+  samps_bad = np.random.multivariate_normal(muhat, Sighat, giga_proj_dim) 
+
+  #compute log likelihood feature vectors for both
+  lls_bad = np.zeros((x.shape[0], giga_proj_dim))
+  lls_good = np.zeros((x.shape[0], giga_proj_dim))
+  for i in range(x.shape[0]):
+    lls_bad[i, :] = multivariate_normal.logpdf(samps_bad, x[i,:], Sig)
+    lls_good[i, :] = multivariate_normal.logpdf(samps_good, x[i,:], Sig)
+  lls_bad -= lls_bad.mean(axis=1)[:,np.newaxis]
+  lls_good -= lls_good.mean(axis=1)[:,np.newaxis]
+
+  giga_bad = bc.GIGACoreset(lls_bad)
+  giga_good = bc.GIGACoreset(lls_good)
+ 
+  algs = [erl1, erl1u, erg, ercg, egus, giga_bad, giga_good]
+  nms = ['ERL1', 'ERL1U', 'ERG', 'ERCG', 'EGUS', 'GIGAB', 'GIGAG']
 
   #algs = [egus]
   #nms = ['EGUS']
 
-
-
+  algs = [giga_bad, giga_good]
+  nms = ['GIGAB', 'GIGAG']
 
   #build coresets
   for nm, alg in zip(nms, algs):
