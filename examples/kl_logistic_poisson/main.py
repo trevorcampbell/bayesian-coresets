@@ -4,6 +4,7 @@ import bayesiancoresets as bc
 from scipy.optimize import minimize
 import time
 import sys
+from scipy.optimize import nnls
 
 #np.seterr(over='raise', invalid='raise', divide='raise')
 
@@ -54,9 +55,11 @@ def get_laplace(wts, Z, mu0):
   return mu, Sig
 
 #performs selection of the next datapoint to add to the riemann coreset
-def riemann_select(Z, w, muw, Sigw, n_samples):
-  #take samples for empirical correlation estimation 
-  samps = np.random.multivariate_normal(muw, Sigw, n_samples)
+def riemann_select(HlogZ1w, lls):
+  stds = lls.std(axis=1)
+  corrs = (lls*HlogZ1w)
+  return 
+  
   #compute log likelihoods
   lls = np.zeros((Z.shape[0], n_samples))
   for i in range(n_samples):
@@ -73,60 +76,57 @@ def riemann_select(Z, w, muw, Sigw, n_samples):
   corrs[w>0] = np.fabs(corrs[w>0])
   return corrs.argmax()
   
-#computes the gradient w.r.t. alpha, beta in the single-weight-update greedy method
-def grad_line(ab, Z, w, one_n, n_samps, muw):
-  alpha = ab[0]
-  beta = ab[1]
-  #get samples from pi_b*(w+a1n)
-  mu, Sig =  get_laplace(beta*(w+alpha*one_n), Z, muw)
-  samps = np.random.multivariate_normal(mu, Sig, n_samps)
-  #compute log likelihoods
-  lls = np.zeros((Z.shape[0], n_samples))
-  for i in range(n_samples):
-    lls[:, i] = log_likelihood(Z, samps[i,:])
-  #subtract off the mean
-  lls -= lls.mean(axis=1)[:, np.newaxis]
-  wab = beta*(w+alpha*one_n)
-  #compute gradients
-  one_f = lls.sum(axis=0)
-  wab_f = wab.dot(lls)
-  dKLdb = -1./beta*(wab_f*(one_f-wab_f)).mean()
-  dKLda = -beta*(lls[n,:]*(one_f-wab_f)).mean()
-  return np.array([dKLda, dKLdb])
+##computes the gradient w.r.t. alpha, beta in the single-weight-update greedy method
+#def grad_line(ab, Z, w, one_n, lls):
+#  alpha = ab[0]
+#  beta = ab[1]
+#  wab = beta*(w+alpha*one_n)
+#  #compute gradients
+#  one_f = lls.sum(axis=0)
+#  wab_f = wab.dot(lls)
+#  dKLdb = -1./beta*(wab_f*(one_f-wab_f)).mean()
+#  dKLda = -beta*(lls[n,:]*(one_f-wab_f)).mean()
+#  return np.array([dKLda, dKLdb])
 
 #runs the single-weight-update optimization for greedy
-def riemann_optimize_line(Z, w, n, muw, n_samples, adam_num_iters, adam_learning_rate):
-  one_n = np.zeros(Z.shape[0])
+def riemann_optimize_line(w, n, HlogZ1w, HlogZa, H3logZa):
+
+  one_n = np.zeros(w.shape[0])
   one_n[n] = 1.
-  grad = lambda x, itr : grad_line(x, Z, w, one_n, n_samples, muw)
+  grad = lambda x, itr : grad_line(x, Z, w, one_n, lls)
+  res = minimize(lambda mu : -log_joint(Zw, mu, ww), mu0, jac=lambda mu : -grad_log_joint(Zw, mu, ww))
+
+
   ab = adam(grad, np.array([0., 1.]), adam_num_iters, adam_learning_rate)
   return ab[1]*(w+ab[0]*one_n)
 
-#computes the gradient w.r.t. w (active indices only) for fully corrective greedy
-def grad_full(w, Z, n_samps, active_idcs, muw):
-  #get samples from pi_w
-  mu, Sig =  get_laplace(w, Z, muw)
-  samps = np.random.multivariate_normal(mu, Sig, n_samps)
-  #compute log likelihoods
-  lls = np.zeros((Z.shape[0], n_samples))
-  for i in range(n_samples):
-    lls[:, i] = log_likelihood(Z, samps[i,:])
-  #subtract off the mean
-  lls -= lls.mean(axis=1)[:, np.newaxis]
-  #compute residual error
-  residuals = lls.sum(axis=0) - w.dot(lls) 
-  #compute gradient
-  dKLdw = np.zeros(w.shape[0])
-  dKLdw[active_idcs] = (lls[active_idcs, :]*residuals).mean(axis=1)
-  return dKLdw
+##computes the gradient w.r.t. w (active indices only) for fully corrective greedy
+#def grad_full(w, Z, lls, active_idcs):
+#  #compute residual error
+#  residuals = lls.sum(axis=0) - w.dot(lls) 
+#  #compute gradient
+#  dKLdw = np.zeros(w.shape[0])
+#  dKLdw[active_idcs] = (lls[active_idcs, :]*residuals).mean(axis=1)
+#  return dKLdw
 
 #runs the full weight reoptimization
-def riemann_optimize_full(Z, w, n, muw, n_samples, adam_num_iters, adam_learning_rate):
-  active_idcs = w>0
-  active_idcs[n] = True
-  grad = lambda x, itr : grad_full(x, Z, n_samples, active_idcs, muw)
-  w = adam(grad, w, adam_num_iters, adam_learning_rate)
-  return w
+def riemann_optimize(w, n,  HlogZ1w, HlogZa, H3logZa, full=True):
+  lmb, V = np.linalg.eigh(HlogZa - H3logZa+1e-16*np.eye(HlogZa.shape[0]))
+  eta = 1.
+  while np.any(lmb <= 0.):
+    eta /= 2.
+    lmb, V = np.linalg.eigh(HlogZa - eta*H3logZa+1e-16*np.eye(HlogZa.shape[0]))
+  one_n = np.zeros(w.shape[0])
+  one_n[n] = 1.
+  C = (V*np.sqrt(lmb)).T
+  Cinv = (V/np.sqrt(lmb))
+  B = C.dot(w) + Cinv.T.dot(HlogZ1w)
+  if full:
+    A = C
+  else:
+    A = np.hstack((C.dot(one_n), C.dot(w)))
+  x, resid = nnls(A,B) 
+  return x
 
 
 fldr = sys.argv[1] #should be either lr or poiss
@@ -146,6 +146,8 @@ if fldr == 'lr':
   print('Loading posterior samples for '+dnm)
   samples = np.load('lr_'+dnm+'_samples.npy')
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
+  learning_rate = {'synth':20., 'ds1':0., 'phishing':0.}
+  learning_rate=learning_rate[dnm]
 else:
   from model_poiss import *
   print('Loading dataset '+dnm)
@@ -154,6 +156,8 @@ else:
   samples = np.load('poiss_'+dnm+'_samples.npy')
   #need to put intercept at the end
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
+  learning_rate = {'synth':20., 'biketrips':0., 'airportdelays':0.}
+  learning_rate=learning_rate[dnm]
 
 #fit a gaussian to the posterior samples 
 #used for pihat computation for Hilbert coresets with noise to simulate uncertainty in a good pihat
@@ -165,12 +169,12 @@ Sig0 = np.eye(mup.shape[0])
 
 ###############################
 ## TUNING PARAMETERS ##
-Ms = [1, 2, 5, 10, 20, 50, 100, 500, 1000] #coreset sizes at which we record output
+Ms = [1, 2, 5, 10, 20, 50] #, 100, 500, 1000] #coreset sizes at which we record output
 projection_dim = 500 #random projection dimension for Hilbert csts
 pihat_noise = 0.15 #noise level (relative) for corrupting pihat
-n_samples = 20 #number of samples for KL gradients in ADAM optimization for riemann csts
-adam_num_iters = 10000 #number of ADAM optimization iterations in riemann csts
-adam_learning_rate = lambda itr : 1./np.sqrt(itr+1.) #ADAM learning rate in riemann csts
+n_samples = 1000 #number of samples for KL gradients in ADAM optimization for riemann csts
+#adam_num_iters = 200 #number of ADAM optimization iterations in riemann csts
+#adam_learning_rate = lambda itr : 1./np.sqrt(itr+1.) #ADAM learning rate in riemann csts
 ###############################
 
 #initialize memory for coreset weights, laplace approx, kls
@@ -232,18 +236,52 @@ elif alg == 'riemann' or alg == 'riemann_corr':
     print('keypoint ' + str(m+1) + ' / ' + str(len(Ms))+': M = ' + str(Ms[m]))
     #build up to Ms[m] one point at a time
     for j in range(Ms[m]-Ms[m-1] if m>0 else Ms[m]):
-      print('j = ' + str(j+1) + '/' + str(Ms[m]-Ms[m-1] if m>0 else Ms[m]))
+      if j % 10 == 0:
+        print('j = ' + str(j+1) + '/' + str(Ms[m]-Ms[m-1] if m>0 else Ms[m]))
       #get laplace w-posterior approx for sampling
-      muw, Sigw = get_laplace(w, Z, muw)
-      #select next datapoint
-      n = riemann_select(Z, w, muw, Sigw, n_samples)
-      #optimize the weights
-      if alg == 'riemann_corr':
-        w = riemann_optimize_full(Z, w, n, muw, n_samples, adam_num_iters, adam_learning_rate)
+      if (w>0).sum()>0:
+        muw, Sigw = get_laplace(w, Z, muw)
       else:
-        w = riemann_optimize_line(Z, w, n, muw, n_samples, adam_num_iters, adam_learning_rate)
+        muw, Sigw = mu0, Sig0
+      print(w[w>0])
+      print('mean : ' + str(muw)+ '\n covar: ' + str(np.diagonal(Sigw)))
+      print('mean true : ' + str(mup)+ '\n covar true: ' + str(np.diagonal(Sigp)))
+      samps = np.random.multivariate_normal(muw, Sigw, n_samples)
+
+      #compute a finite dimension projection of the tangent hilbert space
+      #compute lls at this w
+      lls = np.zeros((Z.shape[0], n_samples))
+      for i in range(n_samples):
+        lls[:, i] = log_likelihood(Z, samps[i,:])
+      #subtract off the mean
+      lls -= lls.mean(axis=1)[:, np.newaxis]
+
+      #select next datapoint
+      #compute HlogZ(1-w), stds, and correlations
+      lls_1w = np.dot(np.ones(w.shape[0]) - w, lls)
+
+      HlogZ1w = (lls*lls_1w).mean(axis=1)
+      stds = lls.std(axis=1)
+      #compute correlations (w/o normalizing residual, since it doesn't affect selection)
+      corrs = HlogZ1w/stds
+      #for data in the active set, we look at abs(corr); for nonactive, only positive correlations are good
+      corrs[w>0] = np.fabs(corrs[w>0])
+      n = corrs.argmax()
+
+      #compute hessian and third derive*(1-w) at active idcs
+      active_idcs = w>0
+      active_idcs[n] = True
+      n_active = (np.cumsum(active_idcs)-1)[n]
+ 
+      lls_active = np.atleast_2d(lls[active_idcs, :])
+      HlogZa = lls_active.dot(lls_active.T)/n_samples
+      H3logZa = (lls_1w*lls_active).dot(lls_active.T)/n_samples
+      H3logZa /= (1.+learning_rate/(j+1+(Ms[m-1] if m > 0 else 0)))
+      #optimize the weights
+      w[active_idcs] = riemann_optimize(w[active_idcs], n_active, HlogZ1w[active_idcs], HlogZa, H3logZa, full= (alg == 'riemann_corr'))
     #record the weights and cput time
     wts[m, :] = w.copy()
+    print(wts[m,:][wts[m,:]>0])
     #record time
     cputs[m] = time.process_time()-t0
 elif alg == 'uniform':
