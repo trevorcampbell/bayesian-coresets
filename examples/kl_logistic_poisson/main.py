@@ -5,6 +5,8 @@ from scipy.optimize import minimize
 import time
 import sys
 
+np.seterr(over='raise', invalid='raise', divide='raise')
+
 #adam optimizer with lambda fcn learning rate -- pulled from autograd library
 def adam(grad, x, num_iters, learning_rate, 
         b1=0.9, b2=0.999, eps=10**-8,callback=None):
@@ -32,7 +34,19 @@ def gaussian_KL(mu0, Sig0, mu1, Sig1):
 
 #computes the Laplace approximation N(mu, Sig) to the posterior with weights wts
 def get_laplace(wts, Z, mu0):
-  res = minimize(lambda mu : -log_joint(Z, mu, wts), mu0, jac=lambda mu : -grad_log_joint(Z, mu, wts))
+  trials = 10
+  while True:
+    try:
+      res = minimize(lambda mu : -log_joint(Z, mu, wts), mu0, jac=lambda mu : -grad_log_joint(Z, mu, wts))
+    except:
+      mu0 = mu0.copy()
+      mu0 += np.sqrt((mu0**2).sum())*0.1*np.random.randn(mu0.shape[0])
+      trials -= 1
+      if trials <= 0:
+        print('Tried laplace opt 10 times, failed')
+        break
+      continue
+    break
   mu = res.x
   Sig = -np.linalg.inv(hess_log_joint(Z, mu))
   return mu, Sig
@@ -174,7 +188,10 @@ if alg == 'hilbert' or alg == 'hilbert_corr':
   lls = np.zeros((Z.shape[0], projection_dim))
   for i in range(proj_samps.shape[0]):
     lls[:, i] = log_likelihood(Z, proj_samps[i, :])
-  lls -= lls.mean(axis=1)[:,np.newaxis]
+  try:
+    lls -= lls.mean(axis=1)[:,np.newaxis]
+  except:
+    print(np.isinf(lls))
   #Build coreset via GIGA
   giga = bc.GIGACoreset(lls)
   for m in range(len(Ms)):
@@ -189,7 +206,7 @@ if alg == 'hilbert' or alg == 'hilbert_corr':
 elif alg == 'riemann' or alg == 'riemann_corr':
   #normal dist for approx piw sampling; will use laplace throughout
   w = np.zeros(Z.shape[0])
-  muw = np.zeros(Z.shape[1])
+  muw = np.random.randn(Z.shape[1])
   for m in range(len(Ms)):
     #build up to Ms[m] one point at a time
     for j in range(Ms[m]-Ms[m-1] if m>0 else Ms[m]):
@@ -223,7 +240,7 @@ Sigs_laplace = np.zeros((len(Ms), D, D))
 kls_laplace = np.zeros(len(Ms))
 print('Computing coreset Laplace approximation + approximate KL(posterior || coreset laplace)')
 for m in range(len(Ms)):
-  mul, Sigl = get_laplace(wts[m,:], Z, wts[m,:].dot(Z)[:D])
+  mul, Sigl = get_laplace(wts[m,:], Z, Z.mean(axis=0)[:D])
   mus_laplace[m,:] = mul
   Sigs_laplace[m,:,:] = Sigl
   kls_laplace[m] = gaussian_KL(mup, Sigp, mus_laplace[m,:], Sigs_laplace[m,:,:])

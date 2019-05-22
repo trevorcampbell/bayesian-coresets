@@ -22,18 +22,26 @@ def gen_synthetic(n):
   return np.hstack((X, y[:, np.newaxis])), np.linalg.inv((X.T).dot(X)).dot((X.T).dot(y))
 
 def log_joint(Z, th, wts):
-  return (wts*log_likelihood(Z, th)).sum() + log_prior(th)
+  ll = log_likelihood(Z, th)
+  if np.any(np.logical_and(np.isinf(ll), wts>0)):
+    return -np.inf
+  return (wts[np.isfinite(ll)]*ll[np.isfinite(ll)]).sum() + log_prior(th)
 
 def compute_m(th, x):
-  m = 0.
-  if len(x.shape) == 1:
-    m = (th*x).sum()
-    if m < 100:
-      m = np.log1p(np.exp(m))
-  else:
-    m = (th*x).sum(axis=1)
-    m[m<100] = np.log1p(np.exp(m[m<100]))
-  return m
+
+  #stable m computation:
+  m = np.atleast_2d(th*x).sum(axis=1)
+  return np.maximum(m, 0) + np.log1p(np.exp(-np.fabs(m)))
+
+  #m = 0.
+  #if len(x.shape) == 1:
+  #  m = (th*x).sum()
+  #  if m < 100:
+  #    m = np.log1p(np.exp(m))
+  #else:
+  #  m = (th*x).sum(axis=1)
+  #  m[m<100] = np.log1p(np.exp(m[m<100]))
+  #return m
 
 def log_likelihood(Z, th):
   x = Z[:, :-1]
@@ -73,7 +81,9 @@ def hess_log_joint(Z, th):
   x = Z[:, :-1]
   y = Z[:, -1]
   m = compute_m(th, x)
-  H_log_like = (np.exp(np.log((np.expm1(m) - m)*y + m**2) - m - 2*np.log(m))*np.expm1(-m)*x.T).dot(x)
+
+  m += 1e-100 #just to prevent zeros
+  H_log_like = (np.exp(np.log((1-np.exp(-m)*(1+m))*y + np.exp(-m)*m**2) - 2*np.log(m))*np.expm1(-m)*x.T).dot(x)
   H_log_prior = -np.eye(th.shape[0])
   return H_log_like + H_log_prior
 
