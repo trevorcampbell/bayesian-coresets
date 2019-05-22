@@ -145,12 +145,15 @@ if fldr == 'lr':
   Z, Zt, D = load_data('lr/'+dnm+'.npz')
   print('Loading posterior samples for '+dnm)
   samples = np.load('lr_'+dnm+'_samples.npy')
+  samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
 else:
   from model_poiss import *
   print('Loading dataset '+dnm)
   Z, Zt, D = load_data('poiss/'+dnm+'.npz')
   print('Loading posterior samples for '+dnm)
   samples = np.load('poiss_'+dnm+'_samples.npy')
+  #need to put intercept at the end
+  samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
 
 #fit a gaussian to the posterior samples 
 #used for pihat computation for Hilbert coresets with noise to simulate uncertainty in a good pihat
@@ -162,7 +165,7 @@ Sig0 = np.eye(mup.shape[0])
 
 ###############################
 ## TUNING PARAMETERS ##
-Ms = [1, 2, 5, 10, 20, 50, 100] #coreset sizes at which we record output
+Ms = [1, 2, 5, 10, 20, 50, 100, 500, 1000] #coreset sizes at which we record output
 projection_dim = 500 #random projection dimension for Hilbert csts
 pihat_noise = 0.15 #noise level (relative) for corrupting pihat
 n_samples = 20 #number of samples for KL gradients in ADAM optimization for riemann csts
@@ -190,10 +193,7 @@ if alg == 'hilbert' or alg == 'hilbert_corr':
   lls = np.zeros((Z.shape[0], projection_dim))
   for i in range(proj_samps.shape[0]):
     lls[:, i] = log_likelihood(Z, proj_samps[i, :])
-  try:
-    lls -= lls.mean(axis=1)[:,np.newaxis]
-  except:
-    print(np.isinf(lls))
+  lls -= lls.mean(axis=1)[:,np.newaxis]
   #Build coreset via GIGA
   giga = bc.GIGACoreset(lls)
   for m in range(len(Ms)):
@@ -201,6 +201,25 @@ if alg == 'hilbert' or alg == 'hilbert_corr':
     giga.build(Ms[m])
     #if we want to fully reoptimize in each step, call giga.optimize()
     if alg == 'hilbert_corr':
+      giga.optimize() 
+    #record time and weights
+    cputs[m] = time.process_time()-t0
+    wts[m, :] = giga.weights()
+if alg == 'hilbert_good' or alg == 'hilbert_corr_good':
+  #here we assume we have the true posterior samples
+  proj_samps = np.random.multivariate_normal(mup, Sigp, projection_dim)
+  #compute random projection
+  lls = np.zeros((Z.shape[0], projection_dim))
+  for i in range(proj_samps.shape[0]):
+    lls[:, i] = log_likelihood(Z, proj_samps[i, :])
+  lls -= lls.mean(axis=1)[:,np.newaxis]
+  #Build coreset via GIGA
+  giga = bc.GIGACoreset(lls)
+  for m in range(len(Ms)):
+    print(str(m+1)+'/'+str(len(Ms)))
+    giga.build(Ms[m])
+    #if we want to fully reoptimize in each step, call giga.optimize()
+    if alg == 'hilbert_corr_good':
       giga.optimize() 
     #record time and weights
     cputs[m] = time.process_time()-t0
@@ -227,11 +246,14 @@ elif alg == 'riemann' or alg == 'riemann_corr':
     cputs[m] = time.process_time()-t0
 elif alg == 'uniform':
   print(str(1)+'/'+str(len(Ms)))
-  wts[0, :] = np.random.multinomial(Ms[0], np.ones(Z.shape[0])/float(Z.shape[0]))
+  cts = np.zeros(wts.shape[1])
+  cts = np.random.multinomial(Ms[0], np.ones(Z.shape[0])/float(Z.shape[0]))
+  wts[0, :] = cts*Z.shape[0]/cts.sum()
   cputs[0] = time.process_time() - t0
   for m in range(1, len(Ms)):
     print(str(m+1)+'/'+str(len(Ms)))
-    wts[m, :] = wts[m-1, :] + np.random.multinomial(Ms[m]-Ms[m-1], np.ones(Z.shape[0])/float(Z.shape[0]))
+    cts += np.random.multinomial(Ms[m]-Ms[m-1], np.ones(Z.shape[0])/float(Z.shape[0]))
+    wts[m, :] = cts*Z.shape[0]/cts.sum()
     #record time
     cputs[m] = time.process_time() - t0
 

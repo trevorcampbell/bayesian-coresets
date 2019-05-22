@@ -52,7 +52,7 @@ pal = [pal[0], pal[1], '#d62728', pal[3], pal[4], pal[5], pal[6], pal[7], pal[2]
 
 
 dnames = ['lr_synth', 'lr_ds1', 'lr_phishing', 'poiss_synth', 'poiss_biketrips', 'poiss_airportdelays']
-algs = [('uniform', 'Uniform', pal[0]), ('hilbert','GIGA', pal[1]), ('hilbert_corr', 'Fully Corrective GIGA', pal[2]), ('riemann', 'Greedy', pal[3]), ('riemann_corr', 'Fully Corrective Greedy', pal[4])]
+algs = [('uniform', 'Uniform', pal[0]), ('hilbert','GIGA (noisy)', pal[1]), ('hilbert_corr', 'Fully Corrective GIGA (noisy)', pal[2]), ('riemann', 'Greedy', pal[3]), ('riemann_corr', 'Fully Corrective Greedy', pal[4]),('hilbert_good','GIGA (truth)', pal[5]), ('hilbert_corr_good', 'Fully Corrective GIGA (truth)', pal[6])]
 
 fig = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='Coreset Size')
 fig2 = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='CPU Time (s)')
@@ -67,7 +67,9 @@ for f in [fig, fig2]:
   f.yaxis.formatter = logFmtr
   f.xaxis.formatter = logFmtr
 
-for idx, zppd in enumerate(zip(dnames, algs)):
+dnmsalgs = [(dnm, alg) for dnm in dnames for alg in algs]
+
+for idx, zppd in enumerate(dnmsalgs):
   dnm, alg = zppd
   trials = [fn for fn in os.listdir('.') if dnm+'_'+alg[0]+'_results_' in fn]
   if len(trials) == 0: continue
