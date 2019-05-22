@@ -24,7 +24,7 @@ th = np.ones(d)
 Sig0inv = np.linalg.inv(Sig0)
 Siginv = np.linalg.inv(Sig)
 opt_itrs = 1000
-giga_proj_dim = 500
+giga_proj_dim = 200
 pihat_noise =0.15
 
 for t in trials:
@@ -53,8 +53,8 @@ for t in trials:
   #algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
   #nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
 
-  #get good projection samples from true posterior
-  samps_good = np.random.multivariate_normal(mup, Sigp, giga_proj_dim)
+  #get good projection samples from smoothed true posterior
+  samps_good = np.random.multivariate_normal(mup, 9*Sigp, giga_proj_dim)
   #get bad samples from a noisy pihat via interpolation between prior/posterior + noise
   #uniformly smooth between prior and posterior
   U = np.random.rand()
@@ -62,15 +62,14 @@ for t in trials:
   Sighat = U*Sigp + (1.-U)*Sig0
   #now corrupt the smoothed pihat
   muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
-  Sighat *= np.exp(2*pihat_noise*np.random.randn())
+  Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
 
+  ##super bad corruption
+  #muhat = 1000*np.random.randn(d)
+  #Sighat = 1000*np.random.randn(d, d)
+  #Sighat = Sighat.T.dot(Sighat)
 
-  #super bad corruption
-  muhat = 1000*np.random.randn(d)
-  Sighat = 1000*np.random.randn(d, d)
-  Sighat = Sighat.T.dot(Sighat)
-
-  samps_bad = np.random.multivariate_normal(muhat, Sighat, giga_proj_dim) 
+  samps_bad = np.ones((giga_proj_dim, muhat.shape[0])) #np.random.multivariate_normal(muhat, Sighat, giga_proj_dim) 
 
   #compute log likelihood feature vectors for both
   lls_bad = np.zeros((x.shape[0], giga_proj_dim))

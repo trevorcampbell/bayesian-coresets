@@ -229,8 +229,10 @@ elif alg == 'riemann' or alg == 'riemann_corr':
   w = np.zeros(Z.shape[0])
   muw = np.random.randn(Z.shape[1])
   for m in range(len(Ms)):
+    print('keypoint ' + str(m+1) + ' / ' + str(len(Ms))+': M = ' + str(Ms[m]))
     #build up to Ms[m] one point at a time
     for j in range(Ms[m]-Ms[m-1] if m>0 else Ms[m]):
+      print('j = ' + str(j+1) + '/' + str(Ms[m]-Ms[m-1] if m>0 else Ms[m]))
       #get laplace w-posterior approx for sampling
       muw, Sigw = get_laplace(w, Z, muw)
       #select next datapoint
