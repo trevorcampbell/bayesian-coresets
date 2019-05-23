@@ -57,6 +57,7 @@ pal = pl
 
 
 dnames = ['lr_synth', 'lr_ds1', 'lr_phishing', 'poiss_synth', 'poiss_biketrips', 'poiss_airportdelays']
+dnames = ['lr_synth', 'poiss_synth']
 algs = [('uniform', 'Uniform', pal[7]), ('hilbert','GIGA (noisy)', pal[5]), ('hilbert_corr', 'Fully Corrective GIGA (noisy)', pal[1]), ('riemann', 'Greedy', pal[3]), ('riemann_corr', 'Fully Corrective Greedy', pal[4]),('hilbert_good','GIGA (truth)', pal[2]), ('hilbert_corr_good', 'Fully Corrective GIGA (truth)', pal[0])]
 
 fig = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='Coreset Size', width=2000, height=2000)
@@ -99,20 +100,38 @@ for idx, zppd in enumerate(dnmsalgs):
     #np.savez(fldr+'_'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=Ms, mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
     res = np.load(fn)
     cput = res['cputs']
-    cputs[tridx, :] = cput
+    #if cput.shape[0] != len(Ms):
+    #  print(fn)
+    cputs[tridx, :] = cput[:len(Ms)]
     wts = res['wts']
     mu = res['mus']
     Sig = res['Sigs']
     kl = res['kls']
-    kls[tridx, :] = kl/kl0
+    kls[tridx, :] = kls[:len(Ms)]/kl0
    
-  fig.line(Ms, kls.mean(axis=0), color=alg[2], legend=alg[1], line_width=10)
+
+  cput50 = np.percentile(cputs, 50, axis=0)
+  cput25 = np.percentile(cputs, 25, axis=0)
+  cput75 = np.percentile(cputs, 75, axis=0)
+
+  kl50 = np.percentile(kls, 50, axis=0)
+  kl25 = np.percentile(kls, 25, axis=0)
+  kl75 = np.percentile(kls, 75, axis=0)
+
+
+  #fig.line(Ms, kls.mean(axis=0), color=alg[2], legend=alg[1], line_width=10)
+  fig.line(Ms, kl50, color=alg[2], legend=alg[1], line_width=10)
   #fig.line(Ms, kls.mean(axis=0)+kls.std(axis=0), color=alg[2], legend=alg[1], line_dash='dashed')
   #fig.line(Ms, kls.mean(axis=0)-kls.std(axis=0), color=alg[2], legend=alg[1], line_dash='dashed')
 
-  fig2.circle(cputs.mean(axis=0), kls.mean(axis=0), color=alg[2], legend=alg[1], size=25)
-  fig2.segment(x0=cputs.mean(axis=0)-cputs.std(axis=0), x1 = cputs.mean(axis=0)+cputs.std(axis=0), y0 = kls.mean(axis=0), y1 = kls.mean(axis=0), color=alg[2], legend=alg[1], line_width=4)
-  fig2.segment(y0=kls.mean(axis=0)-kls.std(axis=0), y1 = kls.mean(axis=0)+kls.std(axis=0), x0 = cputs.mean(axis=0), x1 = cputs.mean(axis=0), color=alg[2], legend=alg[1], line_width=4)
+  #fig2.circle(cputs.mean(axis=0), kls.mean(axis=0), color=alg[2], legend=alg[1], size=25)
+  #fig2.segment(x0=cputs.mean(axis=0)-cputs.std(axis=0), x1 = cputs.mean(axis=0)+cputs.std(axis=0), y0 = kls.mean(axis=0), y1 = kls.mean(axis=0), color=alg[2], legend=alg[1], line_width=4)
+  #fig2.segment(y0=kls.mean(axis=0)-kls.std(axis=0), y1 = kls.mean(axis=0)+kls.std(axis=0), x0 = cputs.mean(axis=0), x1 = cputs.mean(axis=0), color=alg[2], legend=alg[1], line_width=4)
+
+  fig2.circle(cput50, kl50, color=alg[2], legend=alg[1], size=25)
+  fig2.segment(x0=cput25, x1 = cput75, y0 = kl50, y1 = kl50, color=alg[2], legend=alg[1], line_width=4)
+  fig2.segment(y0=kl25, y1 = kl75, x0 = cput50, x1 = cput50, color=alg[2], legend=alg[1], line_width=4)
+
    
 #rndlbl = bkm.Label(x=1.0, x_offset=-10, y=700, y_units='screen', text='Full Dataset MCMC', angle=90, angle_units='deg', text_font_size='30pt')
 #rndspan = bkm.Span(location = 1.0, dimension='height', line_width=8, line_color='black', line_dash='40 40')

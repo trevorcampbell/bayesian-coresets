@@ -90,7 +90,6 @@ def riemann_select(HlogZ1w, lls):
 
 #runs the single-weight-update optimization for greedy
 def riemann_optimize_line(w, n, HlogZ1w, HlogZa, H3logZa):
-
   one_n = np.zeros(w.shape[0])
   one_n[n] = 1.
   grad = lambda x, itr : grad_line(x, Z, w, one_n, lls)
@@ -123,10 +122,12 @@ def riemann_optimize(w, n,  HlogZ1w, HlogZa, H3logZa, full=True):
   B = C.dot(w) + Cinv.T.dot(HlogZ1w)
   if full:
     A = C
+    w, resid = nnls(A,B) 
   else:
-    A = np.hstack((C.dot(one_n), C.dot(w)))
-  x, resid = nnls(A,B) 
-  return x
+    A = np.atleast_2d(np.hstack((C.dot(one_n[:,np.newaxis]), C.dot(w[:,np.newaxis]))))
+    x, resid = nnls(A,B) 
+    w = x[1]*w+x[0]*one_n
+  return w
 
 
 fldr = sys.argv[1] #should be either lr or poiss
@@ -146,7 +147,7 @@ if fldr == 'lr':
   print('Loading posterior samples for '+dnm)
   samples = np.load('lr_'+dnm+'_samples.npy')
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
-  learning_rate = {'synth':20., 'ds1':0., 'phishing':0.}
+  learning_rate = {'synth':10., 'ds1':0., 'phishing':0.}
   learning_rate=learning_rate[dnm]
 else:
   from model_poiss import *
@@ -156,7 +157,7 @@ else:
   samples = np.load('poiss_'+dnm+'_samples.npy')
   #need to put intercept at the end
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
-  learning_rate = {'synth':20., 'biketrips':0., 'airportdelays':0.}
+  learning_rate = {'synth':10., 'biketrips':0., 'airportdelays':0.}
   learning_rate=learning_rate[dnm]
 
 #fit a gaussian to the posterior samples 
@@ -169,10 +170,10 @@ Sig0 = np.eye(mup.shape[0])
 
 ###############################
 ## TUNING PARAMETERS ##
-Ms = [1, 2, 5, 10, 20, 50] #, 100, 500, 1000] #coreset sizes at which we record output
-projection_dim = 500 #random projection dimension for Hilbert csts
+Ms = [1, 2, 5, 10, 20, 50, 100, 500]# , 1000] #coreset sizes at which we record output
+projection_dim = 200 #random projection dimension for Hilbert csts
 pihat_noise = 0.15 #noise level (relative) for corrupting pihat
-n_samples = 1000 #number of samples for KL gradients in ADAM optimization for riemann csts
+n_samples = 2000 #number of samples for KL gradients in ADAM optimization for riemann csts
 #adam_num_iters = 200 #number of ADAM optimization iterations in riemann csts
 #adam_learning_rate = lambda itr : 1./np.sqrt(itr+1.) #ADAM learning rate in riemann csts
 ###############################
@@ -231,7 +232,10 @@ if alg == 'hilbert_good' or alg == 'hilbert_corr_good':
 elif alg == 'riemann' or alg == 'riemann_corr':
   #normal dist for approx piw sampling; will use laplace throughout
   w = np.zeros(Z.shape[0])
-  muw = np.random.randn(Z.shape[1])
+  muw = np.random.randn(mu0.shape[0])
+  
+  std_samps = np.random.randn(n_samples, mu0.shape[0])
+
   for m in range(len(Ms)):
     print('keypoint ' + str(m+1) + ' / ' + str(len(Ms))+': M = ' + str(Ms[m]))
     #build up to Ms[m] one point at a time
@@ -246,7 +250,8 @@ elif alg == 'riemann' or alg == 'riemann_corr':
       print(w[w>0])
       print('mean : ' + str(muw)+ '\n covar: ' + str(np.diagonal(Sigw)))
       print('mean true : ' + str(mup)+ '\n covar true: ' + str(np.diagonal(Sigp)))
-      samps = np.random.multivariate_normal(muw, Sigw, n_samples)
+      samps = muw + np.linalg.cholesky(Sigw).dot(std_samps.T).T
+      #samps = np.random.multivariate_normal(muw, Sigw, n_samples)
 
       #compute a finite dimension projection of the tangent hilbert space
       #compute lls at this w
@@ -281,7 +286,6 @@ elif alg == 'riemann' or alg == 'riemann_corr':
       w[active_idcs] = riemann_optimize(w[active_idcs], n_active, HlogZ1w[active_idcs], HlogZa, H3logZa, full= (alg == 'riemann_corr'))
     #record the weights and cput time
     wts[m, :] = w.copy()
-    print(wts[m,:][wts[m,:]>0])
     #record time
     cputs[m] = time.process_time()-t0
 elif alg == 'uniform':
