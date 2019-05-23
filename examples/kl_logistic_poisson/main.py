@@ -39,7 +39,7 @@ def get_laplace(wts, Z, mu0):
   ww = wts[wts>0]
   while True:
     try:
-      res = minimize(lambda mu : -log_joint(Zw, mu, ww), mu0, jac=lambda mu : -grad_log_joint(Zw, mu, ww), options={'disp':True})
+      res = minimize(lambda mu : -log_joint(Zw, mu, ww), mu0, jac=lambda mu : -grad_log_joint(Zw, mu, ww))
     except:
       mu0 = mu0.copy()
       mu0 += np.sqrt((mu0**2).sum())*0.1*np.random.randn(mu0.shape[0])
@@ -146,7 +146,7 @@ if fldr == 'lr':
   samples = np.load('lr_'+dnm+'_samples.npy')
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
   # THESE WORK FOR RIEMANN_CORR
-  tuning = {'synth':(10., 500, 1.5), 'ds1':(5., 200, 2.), 'phishing':(5., 100, 2.)}
+  tuning = {'synth': (1000, lambda itr : 10./(1.+itr)), 'ds1': (2000, lambda itr : 10./(1.+itr)), 'phishing': (2000, lambda itr : 10./(1.+itr)**0.8)}
 else:
   from model_poiss import *
   print('Loading dataset '+dnm)
@@ -156,7 +156,8 @@ else:
   #need to put intercept at the end
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
   # THESE WORK FOR RIEMANN_CORR
-  tuning = {'synth':(10., 700, 1.8), 'biketrips':(1., 400, 2), 'airportdelays':(1., 300., 2.)}
+  #tuning = {'synth':(10., 700, 1.8,8000), 'biketrips':(1., 100, 2, 32000), 'airportdelays':(1., 100., 2., 32000)}
+  tuning = {'synth': (1000, lambda itr : 10./(1.+itr)), 'biketrips': (2000, lambda itr : 5./(1.+itr)**0.8), 'airportdelays': (2000, lambda itr : 4./(1.+itr)**0.75)}
 
 #fit a gaussian to the posterior samples 
 #used for pihat computation for Hilbert coresets with noise to simulate uncertainty in a good pihat
@@ -167,12 +168,15 @@ Sigp = np.cov(samples, rowvar=False)
 mu0 = np.zeros(mup.shape[0])
 Sig0 = np.eye(mup.shape[0])
 
-learning_rate=tuning[dnm][0]
-n_samples=tuning[dnm][1]
-eta=tuning[dnm][2]
+#learning_rate=tuning[dnm][0]
+#n_samples=tuning[dnm][1]
+#eta=tuning[dnm][2]
+#n_samples_max = tuning[dnm][3]
+n_samples = tuning[dnm][0]
+learning_rate = tuning[dnm][1]
 
-print('learning rate ' + str(learning_rate))
-print('n_samples ' + str(n_samples))
+#print('learning rate ' + str(learning_rate))
+#print('n_samples ' + str(n_samples))
 ###############################
 ## TUNING PARAMETERS ##
 Ms = [1, 2, 5, 10, 20, 50, 100, 500]# , 1000] #coreset sizes at which we record output
@@ -240,10 +244,10 @@ elif alg == 'riemann' or alg == 'riemann_corr':
   
   for m in range(len(Ms)):
     print('keypoint ' + str(m+1) + ' / ' + str(len(Ms))+': M = ' + str(Ms[m]))
-    n_samples*=eta
-    n_samples = int(n_samples)
-    n_samples = min(n_samples, 30000)
-    print('setting n_samples = ' + str(n_samples))
+    #n_samples*=eta
+    #n_samples = int(n_samples)
+    #n_samples = min(n_samples, n_samples_max)
+    #print('setting n_samples = ' + str(n_samples))
     
     std_samps = np.random.randn(n_samples, mu0.shape[0])
     lls = np.zeros((Z.shape[0], n_samples))
@@ -297,14 +301,16 @@ elif alg == 'riemann' or alg == 'riemann_corr':
       lls_active = np.atleast_2d(lls[active_idcs, :])
       HlogZa = lls_active.dot(lls_active.T)/n_samples
       H3logZa = (lls_1w*lls_active).dot(lls_active.T)/n_samples
-      H3logZa /= (1.+learning_rate/(j+1+(Ms[m-1] if m > 0 else 0)))
+      #H3logZa /= (1.+learning_rate/(j+1+(Ms[m-1] if m > 0 else 0)))
       print('MAGNITUDES')
       print(np.fabs(HlogZa).mean())
       print(np.fabs(H3logZa).mean())
       print(np.fabs(HlogZ1w).mean())
       wprev = w.copy()
       #optimize the weights
-      w[active_idcs] = riemann_optimize(w[active_idcs], n_active, HlogZ1w[active_idcs], HlogZa, H3logZa, full= (alg == 'riemann_corr'))
+      w_new  = riemann_optimize(w[active_idcs], n_active, HlogZ1w[active_idcs], HlogZa, H3logZa, full= (alg == 'riemann_corr'))
+      gamma = learning_rate(j + (Ms[m]-Ms[m-1] if m>0 else 0))
+      w[active_idcs] = (1. - gamma)*w[active_idcs] + gamma*w_new
       ##threshold to make sure things aren't getting too crazy; no datapoint should be weighted more than the entire dataset
       #w[active_idcs] = np.random.multinomial(Z.shape[0], np.ones(active_idcs.sum())/(active_idcs.sum()))
       #w[w > Z.shape[0]] = Z.shape[0]
