@@ -5,7 +5,6 @@ from scipy.optimize import minimize
 import time
 import sys
 from scipy.optimize import nnls
-
 #np.seterr(over='raise', invalid='raise', divide='raise')
 
 #adam optimizer with lambda fcn learning rate -- pulled from autograd library
@@ -40,7 +39,7 @@ def get_laplace(wts, Z, mu0):
   ww = wts[wts>0]
   while True:
     try:
-      res = minimize(lambda mu : -log_joint(Zw, mu, ww), mu0, jac=lambda mu : -grad_log_joint(Zw, mu, ww))
+      res = minimize(lambda mu : -log_joint(Zw, mu, ww), mu0, jac=lambda mu : -grad_log_joint(Zw, mu, ww), options={'disp':True})
     except:
       mu0 = mu0.copy()
       mu0 += np.sqrt((mu0**2).sum())*0.1*np.random.randn(mu0.shape[0])
@@ -138,7 +137,6 @@ ID = sys.argv[4] #just a number to denote trial #, any nonnegative integer
 #e.g.  python3 main.py lr phishing riemann_corr 2 
 #  will run fully corrective riemann coresets on logistic regression with the phishing dataset, trial # 2
 
-
 #load the logistic or poisson regression model depending on selected folder
 if fldr == 'lr':
   from model_lr import *
@@ -147,8 +145,8 @@ if fldr == 'lr':
   print('Loading posterior samples for '+dnm)
   samples = np.load('lr_'+dnm+'_samples.npy')
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
-  learning_rate = {'synth':10., 'ds1':0., 'phishing':0.}
-  learning_rate=learning_rate[dnm]
+  # THESE WORK FOR RIEMANN_CORR
+  tuning = {'synth':(10., 500, 1.5), 'ds1':(5., 200, 2.), 'phishing':(5., 100, 2.)}
 else:
   from model_poiss import *
   print('Loading dataset '+dnm)
@@ -157,23 +155,29 @@ else:
   samples = np.load('poiss_'+dnm+'_samples.npy')
   #need to put intercept at the end
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
-  learning_rate = {'synth':10., 'biketrips':0., 'airportdelays':0.}
-  learning_rate=learning_rate[dnm]
+  # THESE WORK FOR RIEMANN_CORR
+  tuning = {'synth':(10., 700, 1.8), 'biketrips':(5., 300, 2.), 'airportdelays':(5., 100., 2.)}
 
 #fit a gaussian to the posterior samples 
 #used for pihat computation for Hilbert coresets with noise to simulate uncertainty in a good pihat
 mup = samples.mean(axis=0)
 Sigp = np.cov(samples, rowvar=False)
+
 #create the prior -- also used for the above purpose
 mu0 = np.zeros(mup.shape[0])
 Sig0 = np.eye(mup.shape[0])
 
+learning_rate=tuning[dnm][0]
+n_samples=tuning[dnm][1]
+eta=tuning[dnm][2]
+
+print('learning rate ' + str(learning_rate))
+print('n_samples ' + str(n_samples))
 ###############################
 ## TUNING PARAMETERS ##
 Ms = [1, 2, 5, 10, 20, 50, 100, 500]# , 1000] #coreset sizes at which we record output
 projection_dim = 200 #random projection dimension for Hilbert csts
 pihat_noise = 0.15 #noise level (relative) for corrupting pihat
-n_samples = 2000 #number of samples for KL gradients in ADAM optimization for riemann csts
 #adam_num_iters = 200 #number of ADAM optimization iterations in riemann csts
 #adam_learning_rate = lambda itr : 1./np.sqrt(itr+1.) #ADAM learning rate in riemann csts
 ###############################
@@ -234,28 +238,38 @@ elif alg == 'riemann' or alg == 'riemann_corr':
   w = np.zeros(Z.shape[0])
   muw = np.random.randn(mu0.shape[0])
   
-  std_samps = np.random.randn(n_samples, mu0.shape[0])
-
   for m in range(len(Ms)):
     print('keypoint ' + str(m+1) + ' / ' + str(len(Ms))+': M = ' + str(Ms[m]))
+    n_samples*=eta
+    n_samples = int(n_samples)
+    print('setting n_samples = ' + str(n_samples))
+    std_samps = np.random.randn(n_samples, mu0.shape[0])
+    lls = np.zeros((Z.shape[0], n_samples))
     #build up to Ms[m] one point at a time
     for j in range(Ms[m]-Ms[m-1] if m>0 else Ms[m]):
       if j % 10 == 0:
         print('j = ' + str(j+1) + '/' + str(Ms[m]-Ms[m-1] if m>0 else Ms[m]))
+      print('n_samples = ' + str(n_samples))
+
       #get laplace w-posterior approx for sampling
       if (w>0).sum()>0:
         muw, Sigw = get_laplace(w, Z, muw)
       else:
         muw, Sigw = mu0, Sig0
+
+      print(float(Z.shape[0]))
       print(w[w>0])
-      print('mean : ' + str(muw)+ '\n covar: ' + str(np.diagonal(Sigw)))
-      print('mean true : ' + str(mup)+ '\n covar true: ' + str(np.diagonal(Sigp)))
+      mn_err = np.sqrt(((muw-mup)**2).sum())/np.sqrt(((mup**2).sum()))
+      cv_err = np.sqrt(((Sigw-Sigp)**2).sum())/np.sqrt(((Sigp)**2).sum())
+      print('mean error : ' + str(mn_err)+ '\n covar error: ' + str(cv_err))
+      #print('mean : ' + str(muw)+ '\n covar: ' + str(np.diagonal(Sigw)))
+      #print('mean true : ' + str(mup)+ '\n covar true: ' + str(np.diagonal(Sigp)))
+
       samps = muw + np.linalg.cholesky(Sigw).dot(std_samps.T).T
       #samps = np.random.multivariate_normal(muw, Sigw, n_samples)
 
       #compute a finite dimension projection of the tangent hilbert space
       #compute lls at this w
-      lls = np.zeros((Z.shape[0], n_samples))
       for i in range(n_samples):
         lls[:, i] = log_likelihood(Z, samps[i,:])
       #subtract off the mean
@@ -282,8 +296,16 @@ elif alg == 'riemann' or alg == 'riemann_corr':
       HlogZa = lls_active.dot(lls_active.T)/n_samples
       H3logZa = (lls_1w*lls_active).dot(lls_active.T)/n_samples
       H3logZa /= (1.+learning_rate/(j+1+(Ms[m-1] if m > 0 else 0)))
+      print('MAGNITUDES')
+      print(np.fabs(HlogZa).mean())
+      print(np.fabs(H3logZa).mean())
+      print(np.fabs(HlogZ1w).mean())
+      wprev = w.copy()
       #optimize the weights
       w[active_idcs] = riemann_optimize(w[active_idcs], n_active, HlogZ1w[active_idcs], HlogZa, H3logZa, full= (alg == 'riemann_corr'))
+      ##threshold to make sure things aren't getting too crazy; no datapoint should be weighted more than the entire dataset
+      #w[active_idcs] = np.random.multinomial(Z.shape[0], np.ones(active_idcs.sum())/(active_idcs.sum()))
+      #w[w > Z.shape[0]] = Z.shape[0]
     #record the weights and cput time
     wts[m, :] = w.copy()
     #record time
