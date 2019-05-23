@@ -14,7 +14,7 @@ do
     for alg in "riemann_corr"
     do
         #for fldrdnm in "lr synth" "lr phishing" "lr ds1" "poiss synth" "poiss biketrips" "poiss airportdelays"
-        for fldrdnm in "poiss biketrips"
+        for fldrdnm in "lr ds1"
 	do
 		python3 main.py $fldrdnm $alg $ID
 	done

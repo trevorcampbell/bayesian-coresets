@@ -156,7 +156,7 @@ else:
   #need to put intercept at the end
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
   # THESE WORK FOR RIEMANN_CORR
-  tuning = {'synth':(10., 700, 1.8), 'biketrips':(5., 300, 2.), 'airportdelays':(5., 100., 2.)}
+  tuning = {'synth':(10., 700, 1.8), 'biketrips':(1., 400, 2), 'airportdelays':(1., 300., 2.)}
 
 #fit a gaussian to the posterior samples 
 #used for pihat computation for Hilbert coresets with noise to simulate uncertainty in a good pihat
@@ -242,7 +242,9 @@ elif alg == 'riemann' or alg == 'riemann_corr':
     print('keypoint ' + str(m+1) + ' / ' + str(len(Ms))+': M = ' + str(Ms[m]))
     n_samples*=eta
     n_samples = int(n_samples)
+    n_samples = min(n_samples, 30000)
     print('setting n_samples = ' + str(n_samples))
+    
     std_samps = np.random.randn(n_samples, mu0.shape[0])
     lls = np.zeros((Z.shape[0], n_samples))
     #build up to Ms[m] one point at a time
