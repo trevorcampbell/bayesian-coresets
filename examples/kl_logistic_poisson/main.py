@@ -210,7 +210,7 @@ if alg == 'hilbert' or alg == 'hilbert_corr':
     #record time and weights
     cputs[m] = time.process_time()-t0
     wts[m, :] = giga.weights()
-if alg == 'hilbert_good' or alg == 'hilbert_corr_good':
+elif alg == 'hilbert_good' or alg == 'hilbert_corr_good':
   #here we assume we have the true posterior samples
   proj_samps = np.random.multivariate_normal(mup, Sigp, projection_dim)
   #compute random projection
@@ -300,6 +300,9 @@ elif alg == 'uniform':
     wts[m, :] = cts*Z.shape[0]/cts.sum()
     #record time
     cputs[m] = time.process_time() - t0
+elif alg == 'prior':
+  #do nothing to weights and cputs, always prior + 0
+  pass
 
 #get laplace approximations for each weight setting, and KL divergence to full posterior laplace approx mup Sigp
 #used for a quick/dirty performance comparison without expensive posterior sample comparisons (e.g. energy distance)
