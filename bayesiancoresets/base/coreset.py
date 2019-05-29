@@ -8,19 +8,20 @@ class Coreset(object):
     self.N = N
     self.M = 0
     self.reached_numeric_limit = False
-    self.all_data_wts = np.ones(self.N)
-    self.wts = np.zeros(N)
+    self.wts = []
+    self.idcs = []
     
   def reset(self):
     self.M = 0
-    self.wts = np.zeros(self.N)
+    self.wts = []
+    self.idcs = []
     self.reached_numeric_limit = False
 
   def size(self):
-    return (self.wts > 0).sum()
+    return len(self.wts)
 
   def weights(self):
-    raise NotImplementedError()
+    return np.array(self.idcs, dtype=np.int64), np.array(self.wts)
 
   def error(self):
     raise NotImplementedError()
@@ -32,6 +33,7 @@ class Coreset(object):
       return self.M
 
     if self.reached_numeric_limit:
+      warnings.warn(self.alg_name+'.build(): the numeric limit has been reached. No more points will be added. M = ' + str(self.M) + ', error = ' +str(self.error()))
       return self.M
 
     if self.N == 0:
@@ -40,13 +42,18 @@ class Coreset(object):
 
     #if we requested M >= N, just give all ones and return
     if M >= self.N and self.auto_above_N:
-      self._update_weights(self.all_data_wts)
+      warnings.warn(self.alg_name+'.build(): reached a number of points >= the dataset size. Returning full weights')
+      self.wts = [1]*self.N
+      self.idcs = list(range(self.N))
       self.M = self.N
       return self.M
 
     #initialize optimization
     if self.M == 0:
-      self._prebuild()
+      Mnew = self._initialize()
+      if Mnew != int(Mnew):
+        raise ValueError(self.alg_name + '.build(): ._initialize(M) must return the initial number of steps taken. type = ' + str(type(Mnew)) + ' val = ' + str(Mnew))
+      self.M = Mnew
     
     #build the coreset with size at most M
     Mnew = self._build(M)
@@ -62,17 +69,9 @@ class Coreset(object):
   def optimize(self):
     raise NotImplementedError()
 
-  def _update_weights(self, w):
-    self.wts = w
-    self._update_cache()
-
-  #gets called when wts updated
-  def _update_cache(self):
-    pass
-    
   #runs once on first call to .build()
-  def _prebuild(self):
-    pass #implementation optional
+  def _initialize(self):
+    return 0 #special implementation optional; default do nothing and keep coreset size at 0
 
   def _build(self, M):
     raise NotImplementedError()
