@@ -3,21 +3,18 @@ from .coreset import Coreset
 
 class FullDataCoreset(Coreset):
 
-  def _prebuild(self):
-    self.wts = np.ones(self.N)
+  def _initialize(self):
+    self.wts = [1]*self.N
+    self.idcs = list(range(self.N))
     self.M = self.N
 
-  def weights(self):
-    return self.wts
-
   def error(self):
-    if self.M < self.N:
+    if self.size() < self.N:
       raise NotImplementedError(self.alg_name+'.error(): Error on full data coreset = 0 after build, but undefined beforehand.')
     return 0.
 
   def _build(self, M):
-    return self.N
-
+    pass
 
   def optimize(self):
     pass
