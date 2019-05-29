@@ -4,16 +4,17 @@ from scipy.special import erfc
 import bisect
 from .coreset import Coreset
 import sys
+from .. import TOL
 
+#TODO make scalable, sparse wts
 class OptimizationCoreset(Coreset):
 
-  def __init__(self, tol=1e-9, adam_a1 = 1., adam_a2 = 1., **kw):
+  def __init__(self, adam_a1 = 1., adam_a2 = 1., **kw):
     super().__init__(**kw)
     self.adam_a1 = adam_a1
     self.adam_a2 = adam_a2
-    self.tol = tol
 
-  def _prebuild(self):
+  def _initialize(self):
     self.M_cache = [0, self.N]
 
     self.lmb_cache = {}
@@ -24,7 +25,6 @@ class OptimizationCoreset(Coreset):
     self.w_cache[0] = np.zeros(self.N)
     self.w_cache[self.N] = self.all_data_wts
     
-    
 
   def _build(self, M): 
     if M > self.N:
@@ -32,7 +32,7 @@ class OptimizationCoreset(Coreset):
     #if we previously cached a relevant result, return
     cache_hit = self._cache_weight_update(M)
     if cache_hit:
-      return M
+      return
 
     #otherwise do bisection search on regularization
     
@@ -50,7 +50,7 @@ class OptimizationCoreset(Coreset):
     # 2) the upper/lower reg bounds are far apart in a relative sense, and
     # 3) the upper/lower reg bounds are far apart in an abolute sense (only check if lmbl == 0.)
 
-    while nnz != M and (lmbu-lmbl)/lmbu > self.tol and (lmbu > self.tol or lmbl > 0.):
+    while nnz != M and (lmbu-lmbl)/lmbu > TOL and (lmbu > TOL or lmbl > 0.):
       #pick new lambda
       lmb = (lmbu+lmbl)/2.
 
@@ -58,7 +58,7 @@ class OptimizationCoreset(Coreset):
       w = self._optimize(w, lmb)
  
       #threshold to 0
-      w[w < self.tol] = 0.
+      w[w < TOL] = 0.
       
       #add to the cache
       nnz = (w > 0).sum()
