@@ -1,5 +1,7 @@
 
 
+#handle subsample of vectors in tangent space
+#and larger subsample for sum computation
 class TangentSpace(object):
   #return the tangent vector for datapoint k
   def __getitem__(self, k):

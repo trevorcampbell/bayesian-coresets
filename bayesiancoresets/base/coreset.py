@@ -26,6 +26,22 @@ class Coreset(object):
   def error(self):
     raise NotImplementedError()
 
+  
+  #Tangent space:
+  #GIGA: M = # iterations
+  #L1: M = coreset size
+
+  #Riemann Exact (i.e. constant tangent space updates):
+  #Greedy Exact grads: M = # iters
+  #Greedy Stochastic grads: same
+  #L1 stochastic grads: M = coreset size
+
+  #Riemann Infrequent Tangent Updates
+  #Sequential Hilbert (in each round, run hilbert coreset in a tangent space. Move to new space from output w. Do some decayed step): M = coreset size. Specify # iterations specially in the object. Default to running to convergence.
+  #Greedy Hilbert + Quadratic: (in each round, pick vec greedily, minimize quadratic approx of KL): M = #iters 
+
+  #attempt to build a coreset of size M
+  #guaranteed to output a coreset of size <= M
   def build(self, M):
     #if M is not greater than self.M, just return 
     if M <= self.M:
