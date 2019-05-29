@@ -7,14 +7,11 @@
 
 
 #for ID in {1..100}
-for ID in {1..100}
+for ID in {101..200}
 do
-    #for alg in "uniform" "hilbert" "hilbert_corr" "riemann" "riemann_corr" "prior"
-    #for alg in "uniform" "hilbert" "hilbert_corr"
-    for alg in "riemann_corr"
+    for alg in "uniform" "hilbert" "hilbert_good" "riemann_corr" "prior"
     do
-        #for fldrdnm in "lr synth" "lr phishing" "lr ds1" "poiss synth" "poiss biketrips" "poiss airportdelays"
-        for fldrdnm in "lr phishing"
+        for fldrdnm in "lr synth" "lr phishing" "lr ds1" "poiss synth" "poiss biketrips" "poiss airportdelays"
 	do
 		python3 main.py $fldrdnm $alg $ID
 	done

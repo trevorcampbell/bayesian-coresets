@@ -180,7 +180,7 @@ learning_rate = tuning[dnm][1]
 ###############################
 ## TUNING PARAMETERS ##
 Ms = [1, 2, 5, 10, 20, 50, 100, 500]# , 1000] #coreset sizes at which we record output
-projection_dim = 200 #random projection dimension for Hilbert csts
+projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = 0.15 #noise level (relative) for corrupting pihat
 #adam_num_iters = 200 #number of ADAM optimization iterations in riemann csts
 #adam_learning_rate = lambda itr : 1./np.sqrt(itr+1.) #ADAM learning rate in riemann csts
