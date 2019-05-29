@@ -4,32 +4,38 @@ from .. import TOL
 
 class TangentSpace(object):
   #keep track of a set of idcs (the tangent space subsample) and an optional "large" set of indices for more accurate vector sum computations
-  def __init__(self, idcs, subsample_sz):
+  def __init__(self, w, d):
     self.alg_name = self.__class__.__name__
-    self.idcs = np.sort(idcs)
-    self.idcs_to_k = {self.idcs[k] : k for k in range(self.idcs.shape[0])}
-    if subsample_sz is None:
-      self.subsample_sz = idcs.shape[0]
-    elif subsample_sz > idcs.shape[0] or subsample_sz < 0:
-      warnings.warn(self.alg_name+'.__init__(): subsample_sz must be between 0 and idcs.shape[0]; setting to idcs.shape[0]. self.idcs = '+str(self.idcs) + ' subsample_sz = '+str(subsample_sz))
-      self.subsample_sz = idcs.shape[0]
-    else:
-      self.subsample_sz = subsample_sz
+    self.refw = w
+    self.d = d
       
   #return the tangent vector for datapoint k (or slice)
   def __getitem__(self, k):
     if isinstance(k, (np.integer)):
-      self._getsingle(self.idcs[k])
+      self._getslice([k,:])
     elif isinstance(k, slice):
       self._getslice(k)
     else:
       raise KeyError
 
+  def update(self, w=None, d=None):
+    #TODO check if d is none/ w is none
+    if w != self.refw:
+      self.d = d
+      self.refw = w
+      self._w_and_dim_changed()
+    elif d != self.d:
+      self.d = d
+      self._dim_changed()
+     
   #methods to be implemented
-  def _getsingle(self, k):
+  def _getslice(self, k):
     raise NotImplementedError
 
-  def _getslice(self, k):
+  def _w_and_dim_changed(self):
+    raise NotImplementedError
+
+  def _dim_changed(self):
     raise NotImplementedError
 
   def sum(self):
@@ -38,40 +44,45 @@ class TangentSpace(object):
   def sum_w(self, w):
     raise NotImplementedError
 
+  def residual(self, w):
+    return self.sum_w(w) - self.sum()
+
 
 #store fixed vectors, init takes vectors, get/set just returns np slices
 #warnings if many are 0 vectors (< TOL)
 #update dimension as an unimplemented method
 class ProjectedTangentSpace(TangentSpace):
-  def __init__(self, vecs, idcs, subsample_sz=None):
-    super().__init__(idcs, subsample_sz)
+  def __init__(self, vecs):
+    super().__init__()
     if len(vecs.shape) != 2:
       raise ValueError(self.alg_name+'.__init__(): vecs must be a 2d array, otherwise the expected behaviour is ambiguous')
     self.vecs = vecs
+    self.vsum = vecs.sum(axis=0)
     if ( np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum() > self.vecs.shape[0]*0.25:
       warnings.warn(self.alg_name+'.__init__(): more than 25% of the vectors have norm less than TOL. # = ' + str(np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum())
 
-  def _getsingle(self, k):
-    return self._getslice(k)
-
   def _getslice(self, k):
-    return vecs[k, :]
+    return vecs[k]
 
   def sum(self):
-    return vecs.sum(axis=0)
+    return self.vsum
   
-  def sum_w(self, w, idcs):
-    return 
+  def sum_w(self, w):
+    return w.dot(vecs[:w.shape[0], :])
+
+  def update_dimension(self):
+    raise NotImplementedError
 
 #run random feature projection to start, call parent init, then get/set
 #update dim via projection code below
 class RandomProjectedTangentSpace(ProjectedTangentSpace):
-  def __init__(self):
+  def __init__(self, ):
     pass
 
 #rather than random sampling for projection, do something smarter...
 class OptimizedProjectedTangentSpace(ProjectedTangentSpace):
-  pass
+  def __init__(self):
+    raise NotImplementedError
 
 #noisy estimates of vectors, new random proj each time (avoids fixed error from above proj)
 #update dim just sets a fixed member d that tells random proj how many components to sample
