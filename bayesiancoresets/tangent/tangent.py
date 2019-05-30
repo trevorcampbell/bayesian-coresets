@@ -68,11 +68,12 @@ class TangentSpace(object):
     return xsn/xwn*max(0., (xw/xwn).dot(xs/xsn))
 
 
-#TODO projected tangent space where you don't store the vectors
-class TangentSpaceProjection(TangentSpace):
+class FiniteTangentSpace(TangentSpace):
   def _set_vecs(self, vecs):
     if len(vecs.shape) != 2:
       raise ValueError(self.alg_name+'._set_vecs(): vecs must be a 2d array, otherwise the expected behaviour is ambiguous')
+    if vecs.shape[1] != self.d:
+      raise ValueError(self.alg_name+'._set_vecs(): vecs must have the correct dimension')
     self.vecs = vecs
     self.vsum = vecs.sum(axis=0)
     self.vsum_norm = np.sqrt((self.vsum**2).sum())
@@ -99,8 +100,16 @@ class TangentSpaceProjection(TangentSpace):
   def sum_norm(self):
     return self.vsum_norm
 
+class FixedFiniteTangentSpace(FiniteTangentSpace):
+  def __init__(self, vecs):
+    super().__init__(vecs.shape[1])
+    self._set_vecs(vecs)
 
-class MonteCarloTangentSpaceProjection(TangentSpaceProjection):
+  def _dim_changed(self):
+    raise NotImplementedError(self.alg_name+'._dim_changed(): Cannot change the dimension of a fixed tangent space')
+
+
+class MonteCarloFiniteTangentSpace(FiniteTangentSpace):
   def __init__(self, log_likelihood, sampler, d):
     super().__init__(d)
     self.log_likelihood = log_likelihood
@@ -121,30 +130,31 @@ class MonteCarloTangentSpaceProjection(TangentSpaceProjection):
       self._set_vecs(v)
     return
 
-#rather than random sampling for projection, do something smarter...
-class OptimizedTangentSpaceProjection(TangentSpaceProjection):
-  def __init__(self):
-    raise NotImplementedError
-
-
-#noisy estimates of vectors, new random proj each time (avoids fixed error from above proj)
-#update dim just sets a fixed member d that tells random proj how many components to sample
-#TODO implement new funcs above
-class MonteCarloTangentSpace(TangentSpace):
-  def __init__(self, log_likelihood, sampler, d):
-    super().__init__(d)
-    self.log_likelihood = log_likelihood
-    self.sampler = sampler
-    self._dim_changed()
-
-  def _dim_changed(self):
-    pass #do nothing in the MC tangent space, since vecs are always created fresh
-
-  def _getslice(self, k):
-    return self.log_likelihood(self.sampler(self.d), idcs=k)
-
-  def sum(self):
-    return self.log_likelihood(self.sampler(self.d)).sum(axis=0)
-  
-  def sum_w(self, w):
-    return w.dot(self.log_likelihood(self.sampler(self.d)))
+##TODO
+##rather than random sampling for projection, do something smarter...
+#class OptimizedFiniteTangentSpace(TangentSpaceProjection):
+#  def __init__(self):
+#    raise NotImplementedError
+#
+#
+##noisy estimates of vectors, new random proj each time (avoids fixed error from above proj)
+##update dim just sets a fixed member d that tells random proj how many components to sample
+##TODO implement new funcs above
+#class MonteCarloTangentSpace(TangentSpace):
+#  def __init__(self, log_likelihood, sampler, d):
+#    super().__init__(d)
+#    self.log_likelihood = log_likelihood
+#    self.sampler = sampler
+#    self._dim_changed()
+#
+#  def _dim_changed(self):
+#    pass #do nothing in the MC tangent space, since vecs are always created fresh
+#
+#  def _getslice(self, k):
+#    return self.log_likelihood(self.sampler(self.d), idcs=k)
+#
+#  def sum(self):
+#    return self.log_likelihood(self.sampler(self.d)).sum(axis=0)
+#  
+#  def sum_w(self, w):
+#    return w.dot(self.log_likelihood(self.sampler(self.d)))

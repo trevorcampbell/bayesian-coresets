@@ -9,8 +9,13 @@ warnings.filterwarnings('ignore', category=UserWarning) #tests will generate lot
 
 n_trials = 20
 Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
-anms = ['GIGA', 'FW', 'MP', 'FSW', 'OMP', 'LAR', 'IS', 'RND']
-algs = [bc.GIGACoreset, bc.FrankWolfeCoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.LARCoreset, bc.VectorImportanceSamplingCoreset, bc.VectorUniformSamplingCoreset]
+#anms = ['GIGA', 'FW', 'MP', 'FSW', 'OMP', 'LAR', 'IS', 'RND']
+#algs = [bc.GIGACoreset, bc.FrankWolfeCoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.LARCoreset, bc.VectorImportanceSamplingCoreset, bc.VectorUniformSamplingCoreset]
+
+
+
+anms = ['FW']
+algs = [bc.FrankWolfeCoreset]
 
 
 ##########################################
@@ -26,10 +31,11 @@ csize = np.zeros((len(anms), n_trials, Ms.shape[0]))
 cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   X = np.random.randn(N, D)
+  T = bc.tangent.FixedFiniteTangentSpace(X)
   XS = X.sum(axis=0)
   for aidx, anm in enumerate(anms):
     print('data: gauss, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm)
-    alg = algs[aidx](X)
+    alg = algs[aidx](T)
 
     for m, M in enumerate(Ms):
       t0 = time.time()
