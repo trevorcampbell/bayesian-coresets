@@ -6,7 +6,7 @@ from .coreset import Coreset
 import sys
 from .. import TOL
 
-#TODO make scalable, sparse wts
+#TODO make scalable, sparse wts, update for new _set method
 class OptimizationCoreset(Coreset):
 
   def __init__(self, adam_a1 = 1., adam_a2 = 1., **kw):

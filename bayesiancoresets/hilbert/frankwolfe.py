@@ -10,7 +10,7 @@ class FrankWolfeCoreset(GreedySingleUpdateCoreset):
     return (self.T.residual(self.wts, self.idcs).dot(self.T[:]) / self.T.norms()).argmax()
 
   def _step_coeffs(self, f):
-    nsum = self.T.norm_sum()
+    nsum = self.T.norms_sum()
     nf = self.T.norms()[f]
     xw = self.T.sum_w(self.wts, self.idcs)
     xs = self.T.sum()
@@ -19,10 +19,10 @@ class FrankWolfeCoreset(GreedySingleUpdateCoreset):
     gammadenom = ((nsum/nf*xf-xw)**2).sum()
     if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
       raise NumericalPrecisionError
-    return 1. - gammanum/gammadenom, nsum*gammanum/gammadenom
+    return 1. - gammanum/gammadenom, nsum/nf*gammanum/gammadenom
   
   def _initialize(self):
     f = self._search()
-    self._add(f, self.T.norm_sum())
+    self._set(f, self.T.norms_sum())
 
 

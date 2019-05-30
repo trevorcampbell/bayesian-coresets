@@ -2,7 +2,7 @@ import numpy as np
 from .coreset import Coreset
 
 
-#TODO FIX for new riemann structure
+#TODO FIX for new riemann structure, _set method, etc
 #also make useful in the large N setting (cts cannot all be stored)
 class SamplingCoreset(Coreset):
 

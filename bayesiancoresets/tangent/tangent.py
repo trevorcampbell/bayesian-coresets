@@ -44,7 +44,10 @@ class TangentSpace(object):
   def norms(self):
     raise NotImplementedError
 
-  def norm_sum(self):
+  def norms_sum(self):
+    raise NotImplementedError
+
+  def sum_norm(self):
     raise NotImplementedError
 
   def residual(self, w, idcs):
@@ -72,8 +75,9 @@ class TangentSpaceProjection(TangentSpace):
       raise ValueError(self.alg_name+'._set_vecs(): vecs must be a 2d array, otherwise the expected behaviour is ambiguous')
     self.vecs = vecs
     self.vsum = vecs.sum(axis=0)
+    self.vsum_norm = np.sqrt((self.vsum**2).sum())
     self.norms = np.sqrt((self.vecs**2).sum(axis=1))
-    self.norm_sum = self.norms.sum()
+    self.norms_sum = self.norms.sum()
     if ( np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum() > self.vecs.shape[0]*0.25:
       warnings.warn(self.alg_name+'.__init__(): more than 25% of the vectors have norm less than TOL. # = ' + str(np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum())
 
@@ -89,8 +93,12 @@ class TangentSpaceProjection(TangentSpace):
   def norms(self):
     return self.norms
  
-  def norm_sum(self):
-    return self.norm_sum
+  def norms_sum(self):
+    return self.norms_sum
+
+  def sum_norm(self):
+    return self.vsum_norm
+
 
 class MonteCarloTangentSpaceProjection(TangentSpaceProjection):
   def __init__(self, log_likelihood, sampler, d):

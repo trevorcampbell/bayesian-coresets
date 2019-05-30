@@ -76,10 +76,8 @@ class GreedySingleUpdateCoreset(GreedyCoreset):
     alpha, beta = self._step_coeffs(f)
     #update the weights
     self.wts *= alpha
-    self._add(self.wts[f]
     #it's possible wts[f] becomes negative if beta approx -wts[f], so threshold
-    self.wts[f] = max(self.wts[f]+beta, 0)
-    self._update_cache_single(alpha, beta, f)
+    self._set(f, max(self.wts[f]+beta, 0))
 
   def _step_coeffs(self, f):
     raise NotImplementedError
