@@ -4,9 +4,7 @@ from .coreset import Coreset
 class FullDataCoreset(Coreset):
 
   def _initialize(self):
-    self.wts = [1]*self.N
-    self.idcs = list(range(self.N))
-    self.M = self.N
+    self._set(np.arange(self.N), np.ones(self.N))
 
   def error(self):
     if self.size() < self.N:
