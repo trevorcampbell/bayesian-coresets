@@ -38,7 +38,7 @@ class TangentSpace(object):
   def sum(self):
     raise NotImplementedError
   
-  def sum_w(self, w):
+  def sum_w(self, w, idcs):
     raise NotImplementedError
 
   def norms(self):
@@ -47,14 +47,14 @@ class TangentSpace(object):
   def norm_sum(self):
     raise NotImplementedError
 
-  def residual(self, w):
-    return self.sum_w(w) - self.sum()
+  def residual(self, w, idcs):
+    return self.sum_w(w, idcs) - self.sum()
 
-  def error(self, w):
-    return np.sqrt((self.residual(w)**2).sum())
+  def error(self, w, idcs):
+    return np.sqrt((self.residual(w, idcs)**2).sum())
 
-  def optimal_scaling(self, w):
-    xw = self.sum_w(w)
+  def optimal_scaling(self, w, idcs):
+    xw = self.sum_w(w, idcs)
     xwn = np.sqrt((xw**2).sum())
     xs = self.sum()
     xsn = np.sqrt((xs**2).sum())
@@ -83,8 +83,8 @@ class TangentSpaceProjection(TangentSpace):
   def sum(self):
     return self.vsum
   
-  def sum_w(self, w):
-    return w.dot(vecs)
+  def sum_w(self, w, idcs):
+    return w.dot(vecs[idcs,:])
 
   def norms(self):
     return self.norms

@@ -1,4 +1,5 @@
-from ..base.iterative import NumericalPrecisionError, GreedySingleUpdateCoreset
+from ..base.iterative import GreedySingleUpdateCoreset
+from ..base.errors import NumericalPrecisionError
 
 class FrankWolfeCoreset(GreedySingleUpdateCoreset):
 
@@ -6,12 +7,12 @@ class FrankWolfeCoreset(GreedySingleUpdateCoreset):
     self.T = tangent_space
 
   def _search(self):
-    return (self.T.residual(self.wts).dot(self.T[:]) / self.T.norms()).argmax()
+    return (self.T.residual(self.wts, self.idcs).dot(self.T[:]) / self.T.norms()).argmax()
 
   def _step_coeffs(self, f):
     nsum = self.T.norm_sum()
     nf = self.T.norms()[f]
-    xw = self.T.sum_w(self.wts)
+    xw = self.T.sum_w(self.wts, self.idcs)
     xs = self.T.sum()
     xf = self.T[f]
     gammanum = (nsum/nf*xf - xw).dot(xs-xw)
@@ -22,8 +23,6 @@ class FrankWolfeCoreset(GreedySingleUpdateCoreset):
   
   def _initialize(self):
     f = self._search()
-    self.wts[f] = self.T.norm_sum()
-    self.xw = self.norm_sum*self.x[f, :]
-    self.M = 1
+    self._add(f, self.T.norm_sum())
 
 

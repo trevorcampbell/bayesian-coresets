@@ -32,39 +32,32 @@ class Coreset(object):
     self.wts = self._wts[:self.nwts]
     self.idcs = self._idcs[:self.nwts]
 
-  def _resize_internal(self, sz):
-    self._wts.resize(sz)
-    self._idcs.resize(sz)
+  def _double_internal(self):
+    self._wts.resize(self._wts.shape[0]*2)
+    self._idcs.resize(self._idcs.shape[0]*2)
 
-  def _set(self, _idcs, _wts):
-    if _idcs.shape[0] != _wts.shape[0]:
+  #overwrite any wts at __idcs, append any new ones
+  def _set(self, __idcs, __wts):
+    __idcs = np.atleast_1d(__idcs)
+    __wts = np.atleast_1d(__wts)
+    if __idcs.shape[0] != __wts.shape[0]:
       raise ValueError(self.alg_name + '._set(): new idcs and wts must have the same shape')
-    if np.any(_wts < 0) or np.any(_idcs < 0) or not np.issubdtype(_idcs.dtype, np.integer):
+    if np.any(__wts < 0) or np.any(__idcs < 0) or not np.issubdtype(__idcs.dtype, np.integer):
       raise ValueError(self.alg_name+'._set(): new weights + idcs must be nonnegative, and new idcs must have integer type')
-    #reuse old memory if possible
-    if self._wts.shape[0] < _wts.shape[0]:
-      self._wts.resize(_wts.shape[0])
-      self._idcs.resize(_idcs.shape[0])
-    #update internal rep
-    self.nwts = _wts.shape[0]
-    self._wts[:_wts.shape[0]] = _wts
-    self._idcs[:_idcs.shape[0]] = _idcs
+    #get intersection, overwrite
+    inter, i1, i2 = np.intersect1d(self.idcs, __idcs, return_indices=True)
+    self.wts[i1] = __wts[i2]
+
+    #get difference, append, resize if necessary
+    idiff = np.setdiff(np.arange(__idcs.shape[0]), i2)
+    if self.nwts + idiff.shape[0] > self._wts.shape[0]:
+      self._double_internal()
+    self._wts[self.nwts:idiffshape] = __wts[etc]
+    self._idcs[...]
+
     #create views
     self._refresh_views()
     
-  def _add(self, idx):
-    if not isinstance(idx, np.integer) or idx < 0:
-      raise ValueError(self.alg_name+'._set(): new coreset point must have nonnegative integer index')
-    #expand memory if necessary
-    if self.nwts == self._wts.shape[0]:
-      self._resize_internal(self._wts.shape[0]*2)
-    #set the new index internally
-    self._idcs[self.nwts] = idx
-    self._wts[self.nwts] = 0.
-    self.nwts += 1
-    #create new views
-    self._refresh_views()
-
   def error(self):
     raise NotImplementedError()
 
