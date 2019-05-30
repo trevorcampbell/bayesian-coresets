@@ -1,27 +1,28 @@
-from .vector import SingleGreedyVectorCoreset
-from ..base.iterative import NumericalPrecisionError
+from ..base.iterative import NumericalPrecisionError, GreedySingleUpdateCoreset
 
-class FrankWolfeCoreset(SingleGreedyVectorCoreset):
+class FrankWolfeCoreset(GreedySingleUpdateCoreset):
 
-  def __init__(self, x, use_cached_xw=False):
-    super().__init__(x=x, use_cached_xw=use_cached_xw, N=x.shape[0])
+  def __init__(self, tangent_space):
+    self.T = tangent_space
 
   def _search(self):
-    return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()
-
-  def _xw_unscaled(self):
-    return False
+    return (self.T.residual(self.wts).dot(self.T[:]) / self.T.norms()).argmax()
 
   def _step_coeffs(self, f):
-    gammanum = (self.norm_sum*self.x[f, :] - self.xw).dot(self.snorm*self.xs - self.xw)
-    gammadenom = ((self.norm_sum*self.x[f, :] - self.xw)**2).sum()
+    nsum = self.T.norm_sum()
+    nf = self.T.norms()[f]
+    xw = self.T.sum_w(self.wts)
+    xs = self.T.sum()
+    xf = self.T[f]
+    gammanum = (nsum/nf*xf - xw).dot(xs-xw)
+    gammadenom = ((nsum/nf*xf-xw)**2).sum()
     if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
       raise NumericalPrecisionError
-    return 1. - gammanum/gammadenom, self.norm_sum*gammanum/gammadenom
+    return 1. - gammanum/gammadenom, nsum*gammanum/gammadenom
   
-  def _prebuild(self):
+  def _initialize(self):
     f = self._search()
-    self.wts[f] = self.norm_sum
+    self.wts[f] = self.T.norm_sum()
     self.xw = self.norm_sum*self.x[f, :]
     self.M = 1
 

@@ -2,6 +2,7 @@ import numpy as np
 import warnings
 from .. import TOL
 
+#TODO implement result caching on sumw
 class TangentSpace(object):
   def __init__(self, d):
     self.alg_name = self.__class__.__name__
@@ -40,16 +41,39 @@ class TangentSpace(object):
   def sum_w(self, w):
     raise NotImplementedError
 
+  def norms(self):
+    raise NotImplementedError
+
+  def norm_sum(self):
+    raise NotImplementedError
+
   def residual(self, w):
     return self.sum_w(w) - self.sum()
 
+  def error(self, w):
+    return np.sqrt((self.residual(w)**2).sum())
 
+  def optimal_scaling(self, w):
+    xw = self.sum_w(w)
+    xwn = np.sqrt((xw**2).sum())
+    xs = self.sum()
+    xsn = np.sqrt((xs**2).sum())
+    if xwn == 0. or xsn == 0.:
+      return 0.
+    if xwn < TOL or xsn < TOL:
+        warnings.warn(self.alg_name+'._optimal_scaling(): the norm of xs or xw is small; optimal scaling might be unstable. ||xs|| = ' + str(xsn) + ' ||xw|| = ' + str(xwn))
+    return xsn/xwn*max(0., (xw/xwn).dot(xs/xsn))
+
+
+#TODO projected tangent space where you don't store the vectors
 class TangentSpaceProjection(TangentSpace):
   def _set_vecs(self, vecs):
     if len(vecs.shape) != 2:
       raise ValueError(self.alg_name+'._set_vecs(): vecs must be a 2d array, otherwise the expected behaviour is ambiguous')
     self.vecs = vecs
     self.vsum = vecs.sum(axis=0)
+    self.norms = np.sqrt((self.vecs**2).sum(axis=1))
+    self.norm_sum = self.norms.sum()
     if ( np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum() > self.vecs.shape[0]*0.25:
       warnings.warn(self.alg_name+'.__init__(): more than 25% of the vectors have norm less than TOL. # = ' + str(np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum())
 
@@ -60,7 +84,13 @@ class TangentSpaceProjection(TangentSpace):
     return self.vsum
   
   def sum_w(self, w):
-    return w.dot(vecs[:w.shape[0], :])
+    return w.dot(vecs)
+
+  def norms(self):
+    return self.norms
+ 
+  def norm_sum(self):
+    return self.norm_sum
 
 class MonteCarloTangentSpaceProjection(TangentSpaceProjection):
   def __init__(self, log_likelihood, sampler, d):
@@ -88,8 +118,10 @@ class OptimizedTangentSpaceProjection(TangentSpaceProjection):
   def __init__(self):
     raise NotImplementedError
 
+
 #noisy estimates of vectors, new random proj each time (avoids fixed error from above proj)
 #update dim just sets a fixed member d that tells random proj how many components to sample
+#TODO implement new funcs above
 class MonteCarloTangentSpace(TangentSpace):
   def __init__(self, log_likelihood, sampler, d):
     super().__init__(d)

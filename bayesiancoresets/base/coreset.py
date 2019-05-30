@@ -2,24 +2,68 @@ import numpy as np
 import warnings
 
 class Coreset(object):
-  def __init__(self, N, auto_above_N = True, **kw):
+  def __init__(self, N, auto_above_N = True, initial_wts_sz=10000, **kw):
     self.alg_name = self.__class__.__name__
     self.auto_above_N = auto_above_N
     self.N = N
     self.reached_numeric_limit = False
-    self.wts = []
-    self.idcs = []
+    self.nwts = 0
+    #internal reps of wts and idcs
+    self._wts = np.zeros(initial_wts_sz)
+    self._idcs = np.zeros(initial_wts_sz, dtype=np.int64)
+    #outward facing views
+    self.wts = self._wts[:self.nwts]
+    self.idcs = self._idcs[:self.nwts]
     
   def reset(self):
-    self.wts = []
-    self.idcs = []
+    #don't bother resetting wts, just set the nwts to 0
+    self.nwts = 0
+    self.wts = self._wts[:self.nwts]
+    self.idcs = self._idcs[:self.nwts]
     self.reached_numeric_limit = False
 
   def size(self):
-    return len(self.wts)
+    return (self.wts > 0).sum()
 
   def weights(self):
-    return np.array(self.idcs, dtype=np.int64), np.array(self.wts)
+    return self.idcs[self.wts > 0], self.wts[self.wts > 0]
+
+  def _refresh_views(self):
+    self.wts = self._wts[:self.nwts]
+    self.idcs = self._idcs[:self.nwts]
+
+  def _resize_internal(self, sz):
+    self._wts.resize(sz)
+    self._idcs.resize(sz)
+
+  def _set(self, _idcs, _wts):
+    if _idcs.shape[0] != _wts.shape[0]:
+      raise ValueError(self.alg_name + '._set(): new idcs and wts must have the same shape')
+    if np.any(_wts < 0) or np.any(_idcs < 0) or not np.issubdtype(_idcs.dtype, np.integer):
+      raise ValueError(self.alg_name+'._set(): new weights + idcs must be nonnegative, and new idcs must have integer type')
+    #reuse old memory if possible
+    if self._wts.shape[0] < _wts.shape[0]:
+      self._wts.resize(_wts.shape[0])
+      self._idcs.resize(_idcs.shape[0])
+    #update internal rep
+    self.nwts = _wts.shape[0]
+    self._wts[:_wts.shape[0]] = _wts
+    self._idcs[:_idcs.shape[0]] = _idcs
+    #create views
+    self._refresh_views()
+    
+  def _add(self, idx):
+    if not isinstance(idx, np.integer) or idx < 0:
+      raise ValueError(self.alg_name+'._set(): new coreset point must have nonnegative integer index')
+    #expand memory if necessary
+    if self.nwts == self._wts.shape[0]:
+      self._resize_internal(self._wts.shape[0]*2)
+    #set the new index internally
+    self._idcs[self.nwts] = idx
+    self._wts[self.nwts] = 0.
+    self.nwts += 1
+    #create new views
+    self._refresh_views()
 
   def error(self):
     raise NotImplementedError()
@@ -42,8 +86,11 @@ class Coreset(object):
     #if we requested M >= N, just give all ones and return
     if M >= self.N and self.auto_above_N:
       warnings.warn(self.alg_name+'.build(): reached a number of points >= the dataset size. Returning full weights')
-      self.wts = [1]*self.N
-      self.idcs = list(range(self.N))
+      self._wts = np.ones(self.N)
+      self._idcs = np.arange(self.N)
+      self.nwts = self.N
+      #create views
+      self._refresh_views()
       return
 
     #initialize optimization
