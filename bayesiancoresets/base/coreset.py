@@ -48,12 +48,12 @@ class Coreset(object):
     inter, i1, i2 = np.intersect1d(self.idcs, __idcs, return_indices=True)
     self.wts[i1] = __wts[i2]
 
-    #get difference, append, resize if necessary
+    #get difference, append, resizing if necessary
     idiff = np.setdiff(np.arange(__idcs.shape[0]), i2)
-    if self.nwts + idiff.shape[0] > self._wts.shape[0]:
+    while self.nwts + idiff.shape[0] > self._wts.shape[0]:
       self._double_internal()
-    self._wts[self.nwts:idiffshape] = __wts[etc]
-    self._idcs[...]
+    self._idcs[self.nwts:self.nwts+idiff.shape[0]] = __idcs[idiff]
+    self._wts[self.nwts:self.nwts+idiff.shape[0]] = __wts[idiff]
 
     #create views
     self._refresh_views()
