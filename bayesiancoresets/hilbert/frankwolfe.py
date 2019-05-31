@@ -1,12 +1,21 @@
+import numpy as np
 from ..base.iterative import GreedySingleUpdateCoreset
 from ..base.errors import NumericalPrecisionError
 
-import numpy as np
 class FrankWolfeCoreset(GreedySingleUpdateCoreset):
 
   def __init__(self, tangent_space):
     super().__init__(N=tangent_space.num_vectors()) 
     self.T = tangent_space
+    if np.any(self.T.norms() == 0):
+      raise ValueError(self.alg_name+'.__init__(): tangent space must not have any 0 vectors')
+
+  def error(self):
+    return self.T.error(self.wts, self.idcs)
+
+  def _initialize(self):
+    f = self._search()
+    self._set(f, self.T.norms_sum()/self.T.norms()[f])
 
   def _search(self):
     return (self.T[:].dot(self.T.residual(self.wts, self.idcs)) / self.T.norms()).argmax()
@@ -25,11 +34,4 @@ class FrankWolfeCoreset(GreedySingleUpdateCoreset):
       raise NumericalPrecisionError
     return 1. - gammanum/gammadenom, nsum/nf*gammanum/gammadenom
   
-  def _initialize(self):
-    f = self._search()
-    self._set(f, self.T.norms_sum()/self.T.norms()[f])
-
-  def error(self):
-    return self.T.error(self.wts, self.idcs)
-
 

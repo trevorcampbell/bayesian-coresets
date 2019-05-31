@@ -1,6 +1,6 @@
 import numpy as np
 import warnings
-from bayesiancoresets import TOL
+from .. import TOL
 
 #TODO implement result caching on sumw
 class TangentSpace(object):
@@ -42,6 +42,9 @@ class TangentSpace(object):
     raise NotImplementedError
 
   def sum_norm(self):
+    raise NotImplementedError
+
+  def sum_w_norm(self):
     raise NotImplementedError
 
   def residual(self, w, idcs):
