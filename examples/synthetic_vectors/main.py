@@ -23,7 +23,7 @@ algs = [bc.FrankWolfeCoreset]
 ## Test 1: gaussian data
 ##########################################
 N = 10000
-D = 50
+D = 100
 
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 scaled_err = np.zeros((len(anms), n_trials, Ms.shape[0]))
@@ -38,14 +38,13 @@ for tr in range(n_trials):
     alg = algs[aidx](T)
 
     for m, M in enumerate(Ms):
-      print('iteration ' + str(m) + ' at M = ' + str(M))
+      #print('iteration ' + str(m) + ' at M = ' + str(M))
       t0 = time.time()
       alg.build(M)
       tf = time.time()
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts, idcs = alg.weights()
       err[aidx, tr, m] = np.sqrt((((wts[:, np.newaxis]*X[idcs,:]).sum(axis=0) - XS)**2).sum())
-      print('errherh: ' + str(err[aidx,tr,m]))
       alpha = T.optimal_scaling(wts, idcs)
       scaled_err[aidx, tr, m] = np.sqrt((((alpha*wts[:, np.newaxis]*X[idcs,:]).sum(axis=0) - XS)**2).sum())
       csize[aidx, tr, m] = (wts > 0).sum()

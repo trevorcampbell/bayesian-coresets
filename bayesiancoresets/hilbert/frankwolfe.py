@@ -20,7 +20,7 @@ class FrankWolfeCoreset(GreedySingleUpdateCoreset):
 
     gammanum = (nsum/nf*xf - xw).dot(xs-xw)
     gammadenom = ((nsum/nf*xf-xw)**2).sum()
-    #print('gammanum : ' + str(gammanum) + ' gammadenom: ' + str(gammadenom) + ' step size: ' + str(gammanum/gammadenom))
+
     if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
       raise NumericalPrecisionError
     return 1. - gammanum/gammadenom, nsum/nf*gammanum/gammadenom

@@ -85,10 +85,12 @@ class GreedySingleUpdateCoreset(GreedyCoreset):
     preverror = self.error()
     self.wts *= alpha
     #it's possible wts[f] becomes negative if beta approx -wts[f], so threshold
-    self._set(f, max((self.wts[f] if f < self.wts.shape[0] else 0.)+beta, 0))
-    print(self.error())
+    idx = np.where(self.idcs == f)[0]
+    self._set(f, max((self.wts[idx] if idx.shape[0] > 0 else 0.)+beta, 0))
+    
     if self.error() > preverror:
-      print('ARGH')
+      raise NumericalPrecisionError
+
 
   def _step_coeffs(self, f):
     raise NotImplementedError

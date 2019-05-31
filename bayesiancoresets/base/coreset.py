@@ -100,11 +100,8 @@ class Coreset(object):
         return #jump out early if initialization created at least M points 
       
 
-    print('before build: ' +str(self.size()))
-    
     #build the coreset with size at most M
     self._build(M)
-    print('after build: ' +str(self.size()))
 
     #if we reached numeric limit during the current build, warn immediately
     if self.reached_numeric_limit:
