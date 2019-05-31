@@ -7,12 +7,18 @@ class IterativeCoreset(Coreset):
   def __init__(self, **kw):
     super().__init__(**kw)
     self.itrs = 0
+    self.has_initialized = False
 
   def reset(self):
     super().reset()
     self.itrs = 0
+    self.has_initialized = False
 
   def _build(self, M):
+    if not self.has_initialized:
+      self.itrs = self.size() #set the itrs to the initialized size of M
+      self.has_initialized = True
+    #print('currently ' + str(self.size()) + ' coreset pts')
     self._set_stop_point(M)
     retried_already = False
     while not self._stop():
@@ -62,6 +68,7 @@ class GreedyCoreset(IterativeCoreset):
       raise ValueError(self.alg_name+'._step(): _search() must return a nonnegative integer. type = ' + str(type(f)) + ' val = ' + str(f))
     #update weights, adding the new point
     self._update_weights(f)
+    
 
   def _search(self):
     raise NotImplementedError
@@ -75,9 +82,13 @@ class GreedySingleUpdateCoreset(GreedyCoreset):
   def _update_weights(self, f):
     alpha, beta = self._step_coeffs(f)
     #update the weights
+    preverror = self.error()
     self.wts *= alpha
     #it's possible wts[f] becomes negative if beta approx -wts[f], so threshold
-    self._set(f, max(self.wts[f]+beta, 0))
+    self._set(f, max((self.wts[f] if f < self.wts.shape[0] else 0.)+beta, 0))
+    print(self.error())
+    if self.error() > preverror:
+      print('ARGH')
 
   def _step_coeffs(self, f):
     raise NotImplementedError

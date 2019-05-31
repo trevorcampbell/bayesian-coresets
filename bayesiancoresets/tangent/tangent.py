@@ -1,6 +1,6 @@
 import numpy as np
 import warnings
-from .. import TOL
+from bayesiancoresets import TOL
 
 #TODO implement result caching on sumw
 class TangentSpace(object):
@@ -10,12 +10,7 @@ class TangentSpace(object):
       
   #return the tangent vector for datapoint k (or slice)
   def __getitem__(self, k):
-    if isinstance(k, (np.integer)):
-      self._getslice([k,:])
-    elif isinstance(k, slice):
-      self._getslice(k)
-    else:
-      raise KeyError
+    raise NotImplementedError
 
   #update the tangent space dimension
   def change_dimension(self, d):
@@ -28,8 +23,7 @@ class TangentSpace(object):
     self.change_dimension(dim)
     return
 
-  #methods to be implemented
-  def _getslice(self, k):
+  def num_vectors(self):
     raise NotImplementedError
 
   def _dim_changed(self):
@@ -51,7 +45,7 @@ class TangentSpace(object):
     raise NotImplementedError
 
   def residual(self, w, idcs):
-    return self.sum_w(w, idcs) - self.sum()
+    return self.sum() - self.sum_w(w, idcs)
 
   def error(self, w, idcs):
     return np.sqrt((self.residual(w, idcs)**2).sum())
@@ -77,25 +71,28 @@ class FiniteTangentSpace(TangentSpace):
     self.vecs = vecs
     self.vsum = vecs.sum(axis=0)
     self.vsum_norm = np.sqrt((self.vsum**2).sum())
-    self.norms = np.sqrt((self.vecs**2).sum(axis=1))
-    self.norms_sum = self.norms.sum()
+    self.vnorms = np.sqrt((self.vecs**2).sum(axis=1))
+    self.vnorms_sum = self.vnorms.sum()
     if ( np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum() > self.vecs.shape[0]*0.25:
       warnings.warn(self.alg_name+'.__init__(): more than 25% of the vectors have norm less than TOL. # = ' + str(np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum())
 
-  def _getslice(self, k):
-    return vecs[k, :]
+  def __getitem__(self, k):
+    return self.vecs[k]
 
   def sum(self):
     return self.vsum
   
   def sum_w(self, w, idcs):
-    return w.dot(vecs[idcs,:])
+    return w.dot(self.vecs[idcs,:])
+
+  def num_vectors(self):
+    return self.vecs.shape[0]
 
   def norms(self):
-    return self.norms
+    return self.vnorms
  
   def norms_sum(self):
-    return self.norms_sum
+    return self.vnorms_sum
 
   def sum_norm(self):
     return self.vsum_norm
@@ -129,6 +126,13 @@ class MonteCarloFiniteTangentSpace(FiniteTangentSpace):
       v /= np.sqrt(self.d)
       self._set_vecs(v)
     return
+
+##TODO
+##use compression (SVD, GIGA) to shrink an oversampled space
+#class CompressedFiniteTangentSpace(TangentSpaceProjection):
+#  def __init__(self):
+#    raise NotImplementedError
+#
 
 ##TODO
 ##rather than random sampling for projection, do something smarter...

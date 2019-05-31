@@ -2,7 +2,7 @@ import numpy as np
 import warnings
 
 class Coreset(object):
-  def __init__(self, N, auto_above_N = True, initial_wts_sz=10000, **kw):
+  def __init__(self, N, auto_above_N = True, initial_wts_sz=1000, **kw):
     self.alg_name = self.__class__.__name__
     self.auto_above_N = auto_above_N
     self.N = N
@@ -26,18 +26,22 @@ class Coreset(object):
     return (self.wts > 0).sum()
 
   def weights(self):
-    return self.idcs[self.wts > 0], self.wts[self.wts > 0]
+    return self.wts[self.wts > 0], self.idcs[self.wts > 0] 
 
   def _refresh_views(self):
     self.wts = self._wts[:self.nwts]
     self.idcs = self._idcs[:self.nwts]
 
   def _double_internal(self):
+    self.wts = None
+    self.idcs = None
     self._wts.resize(self._wts.shape[0]*2)
     self._idcs.resize(self._idcs.shape[0]*2)
+    self._refresh_views()
 
   #overwrite any wts at __idcs, append any new ones
   def _set(self, __idcs, __wts):
+
     __idcs = np.atleast_1d(__idcs)
     __wts = np.atleast_1d(__wts)
     if __idcs.shape[0] != __wts.shape[0]:
@@ -49,15 +53,16 @@ class Coreset(object):
     self.wts[i1] = __wts[i2]
 
     #get difference, append, resizing if necessary
-    idiff = np.setdiff(np.arange(__idcs.shape[0]), i2)
+    idiff = np.setdiff1d(np.arange(__idcs.shape[0]), i2)
     while self.nwts + idiff.shape[0] > self._wts.shape[0]:
       self._double_internal()
     self._idcs[self.nwts:self.nwts+idiff.shape[0]] = __idcs[idiff]
     self._wts[self.nwts:self.nwts+idiff.shape[0]] = __wts[idiff]
+    self.nwts += idiff.shape[0]
 
     #create views
     self._refresh_views()
-    
+
   def error(self):
     raise NotImplementedError()
 
@@ -89,9 +94,17 @@ class Coreset(object):
     #initialize optimization
     if self.size() == 0:
       self._initialize()
+      if M <= self.size():
+        if M < self.size():
+          warnings.warn(self.alg_name+'.build(): initialization created more than M = ' + str(M) + ' points: size = ' + str(self.size()))
+        return #jump out early if initialization created at least M points 
+      
+
+    print('before build: ' +str(self.size()))
     
     #build the coreset with size at most M
     self._build(M)
+    print('after build: ' +str(self.size()))
 
     #if we reached numeric limit during the current build, warn immediately
     if self.reached_numeric_limit:
