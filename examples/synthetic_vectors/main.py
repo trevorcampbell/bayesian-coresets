@@ -4,7 +4,7 @@ import bayesiancoresets as bc
 import time
 import warnings
 
-warnings.filterwarnings('ignore', category=UserWarning) #tests will generate lots of warnings re: reaching numeric limits; ignore those here
+#warnings.filterwarnings('ignore', category=UserWarning) #tests will generate lots of warnings re: reaching numeric limits; ignore those here
 
 
 n_trials = 5
@@ -13,8 +13,8 @@ Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 #algs = [bc.GIGACoreset, bc.FrankWolfeCoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.LARCoreset, bc.VectorImportanceSamplingCoreset, bc.VectorUniformSamplingCoreset]
 
 
-anms = ['FW']
-algs = [bc.FrankWolfeCoreset]
+anms = ['FW', 'GIGA']
+algs = [bc.FrankWolfeCoreset, bc.GIGACoreset]
 
 #print(Ms)
 

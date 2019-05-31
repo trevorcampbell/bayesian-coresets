@@ -16,7 +16,7 @@ class GIGACoreset(GreedySingleUpdateCoreset):
 
   def _search(self):
     xw = self.T.sum_w(self.wts, self.idcs)
-    nw = self.T.sum_w_norm()
+    nw = self.T.sum_w_norm(self.wts, self.idcs)
     xs = self.T.sum()
     ns = self.T.sum_norm()
 
@@ -32,23 +32,26 @@ class GIGACoreset(GreedySingleUpdateCoreset):
     if cdirnrm < TOL:
       raise NumericalPrecisionError
     cdir /= cdirnrm
-    scorends = (self.T[:]/self.T.norms()[:,np.newaxis]).dot(np.hstack((cdir[:,np.newaxis], xw))) 
+    scorends = (self.T[:]/self.T.norms()[:,np.newaxis]).dot(np.hstack((cdir[:,np.newaxis], xw[:,np.newaxis]))) 
     #extract points for which the geodesic direction is stable (1st condition) and well defined (2nd)
-    idcs = np.logical_and(scoredns[:,1] > -1.+1e-14,  1.-scoredns[:,1]**2 > 0.)
+    idcs = np.logical_and(scorends[:,1] > -1.+1e-14,  1.-scorends[:,1]**2 > 0.)
     #compute the norm 
-    scoredns[idcs, 1] = np.sqrt(1.-scoredns[idcs,1]**2)
-    scoredns[np.logical_not(idcs),1] = np.inf
+    scorends[idcs, 1] = np.sqrt(1.-scorends[idcs,1]**2)
+    scorends[np.logical_not(idcs),1] = np.inf
     #compute the scores and argmax
-    return (scoredns[:,0]/scoredns[:,1]).argmax()
+    print('giga chose ' + str((scorends[:,0]/scorends[:,1]).argmax()))
+
+    return (scorends[:,0]/scorends[:,1]).argmax()
  
   def _step_coeffs(self, f):
     xw = self.T.sum_w(self.wts, self.idcs)
-    nw = self.T.sum_w_norm()
+    nw = self.T.sum_w_norm(self.wts, self.idcs)
     xs = self.T.sum()
     ns = self.T.sum_norm()
     xf = self.T[f]
     nf = self.T.norms()[f]
 
+    nw = 1. if nw == 0. else nw
     xw /= nw
     xs /= ns
     xf /= nf

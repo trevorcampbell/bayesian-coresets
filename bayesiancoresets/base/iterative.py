@@ -1,5 +1,5 @@
 import numpy as np
-import warnings
+import ..utils.warn
 from .coreset import Coreset
 from .errors import NumericalPrecisionError
 
@@ -28,11 +28,11 @@ class IterativeCoreset(Coreset):
         self.itrs += 1
       except NumericalPrecisionError: #a special error type for this library denoting possibly reaching numeric precision limit
         if retried_already:
-          warnings.warn(self.alg_name+'._step(): iterative step failed a second time. Assuming numeric limit reached.')
+          warn.warn(self.alg_name+'._step(): iterative step failed a second time. Assuming numeric limit reached.')
           self.reached_numeric_limit = True
           break
         else:
-          warnings.warn(self.alg_name+'._step(): iterative step failed. Stabilizing and retrying...')
+          warn.warn(self.alg_name+'._step(): iterative step failed. Stabilizing and retrying...')
           retried_already = True
           self._stabilize()
       if self.reached_numeric_limit:

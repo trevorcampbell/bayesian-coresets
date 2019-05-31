@@ -1,5 +1,5 @@
 import numpy as np
-import warnings
+import ..utils.warn
 
 class Coreset(object):
   def __init__(self, N, auto_above_N = True, initial_wts_sz=1000, **kw):
@@ -70,20 +70,20 @@ class Coreset(object):
   def build(self, M):
     #if M is not greater than self.size, just return 
     if M <= self.size():
-      warnings.warn(self.alg_name+'.build(): coreset size must be increasing; returning. size = '+str(self.size()) + ' M = '+str(M))
+      warn.warn(self.alg_name+'.build(): coreset size must be increasing; returning. size = '+str(self.size()) + ' M = '+str(M))
       return
 
     if self.reached_numeric_limit:
-      warnings.warn(self.alg_name+'.build(): the numeric limit has been reached. No more points will be added. size = ' + str(self.size()) + ', error = ' +str(self.error()))
+      warn.warn(self.alg_name+'.build(): the numeric limit has been reached. No more points will be added. size = ' + str(self.size()) + ', error = ' +str(self.error()))
       return
 
     if self.N == 0:
-      warnings.warn(self.alg_name+'.build(): there are no data, returning.')
+      warn.warn(self.alg_name+'.build(): there are no data, returning.')
       return
 
     #if we requested M >= N, just give all ones and return
     if M >= self.N and self.auto_above_N:
-      warnings.warn(self.alg_name+'.build(): reached a number of points >= the dataset size. Returning full weights')
+      warn.warn(self.alg_name+'.build(): reached a number of points >= the dataset size. Returning full weights')
       self._wts = np.ones(self.N)
       self._idcs = np.arange(self.N)
       self.nwts = self.N
@@ -96,7 +96,7 @@ class Coreset(object):
       self._initialize()
       if M <= self.size():
         if M < self.size():
-          warnings.warn(self.alg_name+'.build(): initialization created more than M = ' + str(M) + ' points: size = ' + str(self.size()))
+          warn.warn(self.alg_name+'.build(): initialization created more than M = ' + str(M) + ' points: size = ' + str(self.size()))
         return #jump out early if initialization created at least M points 
       
 
@@ -105,7 +105,7 @@ class Coreset(object):
 
     #if we reached numeric limit during the current build, warn immediately
     if self.reached_numeric_limit:
-      warnings.warn(self.alg_name+'.build(): the numeric limit has been reached. No more points will be added. size = ' + str(self.size()) + ', error = ' +str(self.error()))
+      warn.warn(self.alg_name+'.build(): the numeric limit has been reached. No more points will be added. size = ' + str(self.size()) + ', error = ' +str(self.error()))
     #done
 
   #can run after building coreset to re-solve only the weight opt, not the combinatorial selection problem
