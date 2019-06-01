@@ -16,6 +16,11 @@ Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 anms = ['FW', 'GIGA']
 algs = [bc.FrankWolfeCoreset, bc.GIGACoreset]
 
+anms = ['FW']
+algs = [bc.FrankWolfeCoreset]
+
+
+
 #print(Ms)
 
 
