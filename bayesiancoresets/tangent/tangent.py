@@ -1,12 +1,16 @@
 import numpy as np
 from .. import TOL
 import logging
-log = logging.getLogger(__name__)
+import secrets
+from ..util import add_no_repeat_handler
 
 #TODO implement result caching on sumw
 class TangentSpace(object):
-  def __init__(self, d):
-    self.alg_name = self.__class__.__name__
+  def __init__(self, d, repeat_logs=False):
+    self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
+    self.log = logging.Logger(self.alg_name)
+    if not repeat_logs:
+      add_no_repeat_handler(self.log)
     self.d = d
       
   #return the tangent vector for datapoint k (or slice)
@@ -62,7 +66,7 @@ class TangentSpace(object):
     if xwn == 0. or xsn == 0.:
       return 0.
     if xwn < TOL or xsn < TOL:
-        log.warning(self.alg_name+'._optimal_scaling(): the norm of xs or xw is small; optimal scaling might be unstable. ||xs|| = ' + str(xsn) + ' ||xw|| = ' + str(xwn))
+        self.log.warning('the norm of xs or xw is small; optimal scaling might be unstable. ||xs|| = ' + str(xsn) + ' ||xw|| = ' + str(xwn))
     return xsn/xwn*max(0., (xw/xwn).dot(xs/xsn))
 
 
@@ -78,7 +82,7 @@ class FiniteTangentSpace(TangentSpace):
     self.vnorms = np.sqrt((self.vecs**2).sum(axis=1))
     self.vnorms_sum = self.vnorms.sum()
     if ( np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum() > self.vecs.shape[0]*0.25:
-      log.warning(self.alg_name+'.__init__(): more than 25% of the vectors have norm less than TOL. # = ' + str(np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum())
+      self.log.warning('more than 25% of the vectors have norm less than TOL. # = ' + str(np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum())
 
   def __getitem__(self, k):
     return self.vecs[k]

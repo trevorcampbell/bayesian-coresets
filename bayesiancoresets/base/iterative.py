@@ -1,6 +1,8 @@
 import numpy as np
 from .coreset import Coreset
 from .errors import NumericalPrecisionError
+import sys
+import traceback
 
 class IterativeCoreset(Coreset):
   def __init__(self, **kw):
@@ -20,6 +22,7 @@ class IterativeCoreset(Coreset):
     #print('currently ' + str(self.size()) + ' coreset pts')
     self._set_stop_point(M)
     retried_already = False
+
     while not self._stop():
       try:
         self._step()
@@ -27,11 +30,11 @@ class IterativeCoreset(Coreset):
         self.itrs += 1
       except NumericalPrecisionError: #a special error type for this library denoting possibly reaching numeric precision limit
         if retried_already:
-          self.log.warning(self.alg_name+'._step(): iterative step failed a second time. Assuming numeric limit reached.')
+          self.log.warning('iterative step failed a second time. Assuming numeric limit reached.')
           self.reached_numeric_limit = True
           break
         else:
-          self.log.warning(self.alg_name+'._step(): iterative step failed. Stabilizing and retrying...')
+          self.log.warning('iterative step failed. Stabilizing and retrying...')
           retried_already = True
           self._stabilize()
       if self.reached_numeric_limit:
