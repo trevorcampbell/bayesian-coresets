@@ -1,9 +1,6 @@
 import numpy as np
 from .coreset import Coreset
 
-
-#TODO FIX for new riemann structure, _set method, etc
-#also make useful in the large N setting (cts cannot all be stored)
 class SamplingCoreset(Coreset):
 
   def __init__(self, sampling_probabilities=None, **kw):
@@ -22,10 +19,12 @@ class SamplingCoreset(Coreset):
     self.cts = np.zeros(self.N)
     
   def _build(self, M):
-    self.cts += np.random.multinomial(M - self.M, self.ps)
-    self._update_weights(self._weight_scaling()*self.cts/self.ps/M)
-    return M
+    self.cts += np.random.multinomial(M - self.cts.sum(), self.ps)
+    active = np.where(self.cts > 0)[0]
+    self._set(active, self.cts[active]/self.ps[active]/M)
 
+  #defaults to uniform sampling
   def _compute_sampling_probabilities(self):
-    raise NotImplementedError()
-  
+    raise NotImplementedError
+
+

@@ -1,28 +1,29 @@
 import numpy as np
-from .vector import VectorCoreset
 from ..base.sampling import SamplingCoreset
+from ..util.errors import NumericalPrecisionError
+from .. import TOL
 
-class VectorSamplingCoreset(SamplingCoreset, VectorCoreset):
 
-  def __init__(self, x, use_cached_xw=False):
-    super().__init__(x=x, use_cached_xw=use_cached_xw, N=x.shape[0])
+class ImportanceSamplingCoreset(SamplingCoreset):
 
-  def _xw_unscaled(self):
-    return False
+  def __init__(self, tangent_space):
+    self.T = tangent_space
+    if np.any(self.T.norms() == 0):
+      raise ValueError(self.alg_name+'.__init__(): tangent space must not have any 0 vectors')
+    super().__init__(N=tangent_space.num_vectors()) 
+
+  def error(self):
+    return self.T.error(self.wts, self.idcs)
 
   def _compute_sampling_probabilities(self):
-    if self.norm_sum > 0.:
-      return self.norms.copy()
+    if self.T.norms_sum() > 0.:
+      return self.T.norms()
     else:
       return np.ones(self.N)
 
-  def _weight_scaling(self):
-    return self.norms
-
-
-class VectorUniformSamplingCoreset(VectorSamplingCoreset):
-
+class UniformSamplingCoreset(ImportanceSamplingCoreset):
   def _compute_sampling_probabilities(self):
     return np.ones(self.N)
+
 
 

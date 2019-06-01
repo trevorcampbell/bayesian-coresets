@@ -36,6 +36,8 @@ class MatchingPursuitCoreset(GreedySingleUpdateCoreset):
     nf = self.T.norms()[f]
     beta = self.T.residual(self.wts, self.idcs).dot(xf/nf)/nf
     fidx = np.where(self.idcs == f)[0]
+    if fidx.shape[0] > 1:
+      raise ValueError('self.idcs == f in multiple locations: np.where(idcs==f) = ' + str(fidx) + ' f = ' + str(f))
     if fidx.shape[0] > 0 and beta < -self.wts[fidx]:
       beta = -self.wts[f]
     return alpha, beta
