@@ -1,45 +1,60 @@
-import numpy as np
 from scipy.optimize import nnls
-import warnings
-from .vector import VectorCoreset
-from ..base.iterative import IterativeCoreset
+import numpy as np
+from ..base.iterative import GreedyCoreset
+from ..util.errors import NumericalPrecisionError
+from .. import TOL
 
-class OrthoPursuitCoreset(VectorCoreset, IterativeCoreset):
 
-  def __init__(self, x, use_cached_xw=False):
-    super().__init__(x=x, use_cached_xw=use_cached_xw, N=x.shape[0])
 
-  def _xw_unscaled(self):
-    return False
+class OrthoPursuitCoreset(GreedyCoreset):
+  def __init__(self, tangent_space):
+    super().__init__(N=tangent_space.num_vectors()) 
+    self.T = tangent_space
+    if np.any(self.T.norms() == 0):
+      raise ValueError(self.alg_name+'.__init__(): tangent space must not have any 0 vectors')
 
   def _search(self):
-    return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()
-  
-  def _step(self):
-    #search for FW vertex and compute line search
-    f = self._search()
+    dots = (self.T[:]/self.T.norms()[:,np.newaxis]).dot(self.T.residual(self.wts, self.idcs))
+
+    #if no active indices, just output argmax
+    if self.idcs.shape[0] == 0:
+      return dots.argmax()
+    
+    #search positive direction on whole dataset, negative direction on active set
+    fpos = dots.argmax()
+    pos = dots[fpos]
+    fneg = (-dots[self.idcs]).argmax()
+    neg = (-dots[self.idcs])[fneg]
+
+    if pos >= neg:
+      return fpos
+    else:
+      return self.idcs[fneg]
+
+  def _update_weights(self, f):
+
+    f_already = np.where(self.idcs == f)[0].shape[0] > 0
 
     #check to make sure value to add is not in the current set (error should be ortho to current subspace)
-    if self.wts[f] > 0:
-      warnings.warn(self.alg_name+'.run(): search selected a nonzero weight to update')
-
+    if f_already:
+      self.log.warning('search selected a nonzero weight to update.')
+    else:
+      self._set(f, 1.)
+      
     #run least squares optimal weight update
-    active_idcs = self.wts > 0
-    active_idcs[f] = True
-    X = self.x[active_idcs, :]
-    res = nnls(X.T, self.snorm*self.xs)
+    X = self.T[self.idcs]
+    res = nnls(X.T, self.T.sum())
  
     #if the optimizer failed or our cost increased, stop
     prev_cost = self.error()
     if res[1] >= prev_cost:
-      self.reached_numeric_limit = True
-      return False
+      raise NumericalPrecisionError('nnls returned a solution with increasing error. Numeric limit reached: preverr = ' + str(prev_cost) + ' err = ' + str(res[1]))
 
     #update weights, xw, and prev_cost
-    self.wts[active_idcs] = res[0]
-    self.xw = self.wts.dot(self.x)
+    self.wts = res[0]
     
-    return True
+    return
+    
 
   
 
