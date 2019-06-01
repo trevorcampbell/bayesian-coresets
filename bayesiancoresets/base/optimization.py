@@ -64,7 +64,7 @@ class OptimizationCoreset(Coreset):
       idx = idx[w > TOL]
       w = w[w>TOL]
       
-      print('output: w = ' + str(w) + ' idx = ' + str(idx))
+      print('nnz = ' + str(idx.shape[0]))
       
       #add to the cache
       nnz = idx.shape[0]
@@ -82,9 +82,8 @@ class OptimizationCoreset(Coreset):
       else:
         lmbl = lmb
  
-    print('done bisection search, attempting a cache weight update')
     self._cache_weight_update(M, lower_fallback=True)
-    print('final w = ' +str(self.wts) + ' idcs = ' + str(self.idcs))
+    print('final nnz = ' + str(self.idcs.shape[0]) + ' error = ' + str(self.error()))
     return
 
   def _cache_weight_update(self, M, lower_fallback=False):
