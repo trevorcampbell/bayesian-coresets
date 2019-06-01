@@ -2,15 +2,15 @@ import numpy as np
 from .. import TOL
 import logging
 import secrets
-from ..util import add_no_repeat_handler
+from .. import util
 
 #TODO implement result caching on sumw
 class TangentSpace(object):
   def __init__(self, d, repeat_logs=False):
     self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
-    self.log = logging.Logger(self.alg_name)
-    if not repeat_logs:
-      add_no_repeat_handler(self.log)
+    self.log = logging.getLogger(self.alg_name)
+    self.log.setLevel(util.LOGLEVEL)
+    util.add_handler(self.log, repeat_logs)
     self.d = d
       
   #return the tangent vector for datapoint k (or slice)

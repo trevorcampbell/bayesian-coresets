@@ -1,6 +1,6 @@
 import numpy as np
 from ..base.iterative import GreedySingleUpdateCoreset
-from ..base.errors import NumericalPrecisionError
+from ..util.errors import NumericalPrecisionError
 
 class FrankWolfeCoreset(GreedySingleUpdateCoreset):
 
@@ -31,7 +31,7 @@ class FrankWolfeCoreset(GreedySingleUpdateCoreset):
     gammadenom = ((nsum/nf*xf-xw)**2).sum()
 
     if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
-      raise NumericalPrecisionError
+      raise NumericalPrecisionError('precision loss in gammanum/gammadenom: num = ' + str(gammanum) + ' denom = ' + str(gammadenom))
     return 1. - gammanum/gammadenom, nsum/nf*gammanum/gammadenom
   
 

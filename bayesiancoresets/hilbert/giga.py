@@ -1,6 +1,6 @@
 import numpy as np
 from ..base.iterative import GreedySingleUpdateCoreset
-from ..base.errors import NumericalPrecisionError
+from ..util.errors import NumericalPrecisionError
 from .. import TOL
 
 class GIGACoreset(GreedySingleUpdateCoreset):
@@ -22,7 +22,7 @@ class GIGACoreset(GreedySingleUpdateCoreset):
 
     nw = 1. if nw == 0. else nw
     if ns == 0.:
-      raise NumericalPrecisionError
+      raise NumericalPrecisionError('norm of sum = 0')
 
     xw /= nw
     xs /= ns
@@ -30,7 +30,7 @@ class GIGACoreset(GreedySingleUpdateCoreset):
     cdir = xs - xs.dot(xw)*xw
     cdirnrm =np.sqrt((cdir**2).sum()) 
     if cdirnrm < TOL:
-      raise NumericalPrecisionError
+      raise NumericalPrecisionError('cdirnrm < TOL: cdirnrm = ' + str(cdirnrm))
     cdir /= cdirnrm
     scorends = (self.T[:]/self.T.norms()[:,np.newaxis]).dot(np.hstack((cdir[:,np.newaxis], xw[:,np.newaxis]))) 
     #extract points for which the geodesic direction is stable (1st condition) and well defined (2nd)

@@ -1,4 +1,0 @@
-class NumericalPrecisionError(Exception):
-  pass
-
-

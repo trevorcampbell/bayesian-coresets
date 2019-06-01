@@ -1,6 +1,6 @@
 import numpy as np
 from .coreset import Coreset
-from .errors import NumericalPrecisionError
+from ..util.errors import NumericalPrecisionError 
 import sys
 import traceback
 
@@ -28,7 +28,8 @@ class IterativeCoreset(Coreset):
         self._step()
         retried_already = False #refresh retried flag after a successful step
         self.itrs += 1
-      except NumericalPrecisionError: #a special error type for this library denoting possibly reaching numeric precision limit
+      except NumericalPrecisionError as e: #a special error type for this library denoting possibly reaching numeric precision limit
+        self.log.warning('numerical precision error: ' + str(e))
         if retried_already:
           self.log.warning('iterative step failed a second time. Assuming numeric limit reached.')
           self.reached_numeric_limit = True
@@ -83,15 +84,22 @@ class GreedySingleUpdateCoreset(GreedyCoreset):
 
   def _update_weights(self, f):
     alpha, beta = self._step_coeffs(f)
-    #update the weights
+    #keep a record of previous setting in case the below update fails
     preverror = self.error()
+    prevwts = self.wts.copy()
+    previdcs = self.idcs.copy()
+    #update the weights
     self.wts *= alpha
     #it's possible wts[f] becomes negative if beta approx -wts[f], so threshold
     idx = np.where(self.idcs == f)[0]
     self._set(f, max((self.wts[idx] if idx.shape[0] > 0 else 0.)+beta, 0))
     
-    if self.error() > preverror:
-      raise NumericalPrecisionError
+    error = self.error()
+    if error > preverror:
+      #revert
+      self.wts = prevwts
+      self.idcs = previdcs
+      raise NumericalPrecisionError('Error not monotone: curr error = ' + str(error) + ' prev error = ' + str(preverror))
 
 
   def _step_coeffs(self, f):

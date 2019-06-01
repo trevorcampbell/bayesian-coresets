@@ -1,15 +1,15 @@
 import numpy as np
 import logging
 import secrets
-from ..util import add_no_repeat_handler
+from .. import util
 
 class Coreset(object):
   def __init__(self, N, auto_above_N = True, initial_wts_sz=1000, repeat_logs=False, **kw):
     #self.alg_name = '.'.join([b.__name__ for b in self.__class__.__bases__]) + '.' + self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
-    self.log = logging.Logger(self.alg_name)
-    if not repeat_logs:
-      add_no_repeat_handler(self.log)
+    self.log = logging.getLogger(self.alg_name)
+    self.log.setLevel(util.LOGLEVEL)
+    util.add_handler(self.log, repeat_logs)
     self.auto_above_N = auto_above_N
     self.N = N
     self.reached_numeric_limit = False
@@ -80,7 +80,7 @@ class Coreset(object):
       return
 
     if self.reached_numeric_limit:
-      self.log.warning('the numeric limit has been reached. No more points will be added. size = ' + str(self.size()) + ', error = ' +str(self.error()))
+      self.log.warning('the numeric limit was already reached; returning. size = ' + str(self.size()) + ', error = ' +str(self.error()))
       return
 
     if self.N == 0:
@@ -89,7 +89,7 @@ class Coreset(object):
 
     #if we requested M >= N, just give all ones and return
     if M >= self.N and self.auto_above_N:
-      self.log.warning('reached a number of points >= the dataset size. Returning full weights')
+      self.log.warning('reached a number of points >= the dataset size. Returning full weights. M = ' + str(M) + ' N = ' + str(self.N))
       self._wts = np.ones(self.N)
       self._idcs = np.arange(self.N)
       self.nwts = self.N

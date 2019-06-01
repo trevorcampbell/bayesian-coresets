@@ -2,10 +2,8 @@ from __future__ import print_function
 import numpy as np
 import bayesiancoresets as bc
 import time
-import warnings
 
-#warnings.filterwarnings('ignore', category=UserWarning) #tests will generate lots of warnings re: reaching numeric limits; ignore those here
-
+bc.util.verbosity('warning')
 
 n_trials = 5
 Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
@@ -15,14 +13,6 @@ Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 
 anms = ['FW', 'GIGA']
 algs = [bc.FrankWolfeCoreset, bc.GIGACoreset]
-
-anms = ['FW']
-algs = [bc.FrankWolfeCoreset]
-
-
-
-#print(Ms)
-
 
 ##########################################
 ## Test 1: gaussian data
