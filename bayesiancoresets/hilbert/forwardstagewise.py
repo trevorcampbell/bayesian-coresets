@@ -1,19 +1,15 @@
 from .pursuit import MatchingPursuitCoreset
 
 class ForwardStagewiseCoreset(MatchingPursuitCoreset):
-  def __init__(self, x, use_cached_xw=False, step_fraction=0.05):
-    super().__init__(x=x, use_cached_xw=use_cached_xw, N=x.shape[0])
+  def __init__(self, tangent_space, step_fraction=0.05):
+    super().__init__(tangent_space) 
     self.step_fraction = step_fraction
     if self.step_fraction <= 0 or self.step_fraction >= 1:
       raise ValueError(self.alg_name+'.__init__(): step_fraction must be in (0, 1)')
 
   def _step_coeffs(self, f):
-    alpha = 1.0
-    beta = (self.snorm*self.xs - self.xw).dot(self.x[f,:])
-    if beta < -self.wts[f]:
-      beta = -self.wts[f]
+    alpha, beta = super()._step_coeffs(f)
     return alpha, self.step_fraction*beta
-
 
 #old code before using MP as a parent
 #from .coreset import GreedySingleUpdate

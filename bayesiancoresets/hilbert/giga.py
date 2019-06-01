@@ -29,14 +29,14 @@ class GIGACoreset(GreedySingleUpdateCoreset):
     if cdirnrm < TOL:
       raise NumericalPrecisionError('cdirnrm < TOL: cdirnrm = ' + str(cdirnrm))
     cdir /= cdirnrm
-    print('cdirnrm ' + str(cdirnrm))
-    scorends = (self.T[:]/self.T.norms()[:,np.newaxis]).dot(np.hstack((cdir[:,np.newaxis], xw[:,np.newaxis]))) 
+    scorends = (self.T[:]/self.T.norms()[:,np.newaxis]).dot(np.hstack((cdir[:,np.newaxis], xw[:,np.newaxis]/nw))) 
     #extract points for which the geodesic direction is stable (1st condition) and well defined (2nd)
     idcs = np.logical_and(scorends[:,1] > -1.+1e-14,  1.-scorends[:,1]**2 > 0.)
     #compute the norm 
     scorends[idcs, 1] = np.sqrt(1.-scorends[idcs,1]**2)
     scorends[np.logical_not(idcs),1] = np.inf
     #compute the scores and argmax
+
     return (scorends[:,0]/scorends[:,1]).argmax()
  
   def _step_coeffs(self, f):
@@ -54,34 +54,13 @@ class GIGACoreset(GreedySingleUpdateCoreset):
     if gA <= 0. or gB < 0:
       raise NumericalPrecisionError
 
-    #print('error ' + str(self.error()))
-    print('giga picked ' + str(f))
-    #print('nw ' + str(nw))
-    #print('ns ' + str(ns))
-    #print('nf ' + str(nf))
-    #print('norm of xs/ns ' + str( ( (xs/ns)**2).sum()))
-    #print('norm of xf/nf ' + str( ( (xf/nf)**2).sum()))
-    #print('dot xf/nf . xs/ns ' + str((xf/nf).dot(xs/ns)))
-    #print('dot xw/nw . xs/ns ' + str((xw/nw).dot(xs/ns)))
-
-    #print('gA: ' + str(gA) + ' gB: ' + str(gB))
-
     a = gB/(gA+gB)/nw
     b = gA/(gA+gB)/nf
     
-    #print('a: ' + str(a) + ' b: ' + str(b))
-
     x = a*xw + b*xf
     nx = np.sqrt((x**2).sum())
     scale = ns/nx*(x/nx).dot(xs/ns)
     
-    #print('scale: ' + str(scale))
-
-    print('ascale : ' + str(a*scale) + ' bscale: ' + str(b*scale))
-    print('err ' +   str(np.sqrt(((xw*a*scale + xf*b*scale - xs)**2).sum())))
-
-
-    #a = gB/(gA+gB), b = gA/(gA+gB);   w = a (w/nw) + b/nf 1_f; then renormalize
-
     return a*scale, b*scale
+
 

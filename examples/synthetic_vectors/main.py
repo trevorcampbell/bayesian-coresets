@@ -11,8 +11,8 @@ Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 #algs = [bc.GIGACoreset, bc.FrankWolfeCoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.LARCoreset, bc.VectorImportanceSamplingCoreset, bc.VectorUniformSamplingCoreset]
 
 
-anms = ['FW', 'GIGA']
-algs = [bc.FrankWolfeCoreset, bc.GIGACoreset]
+anms = ['FW', 'GIGA', 'MP', 'FSW']
+algs = [bc.FrankWolfeCoreset, bc.GIGACoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset]
 
 ##########################################
 ## Test 1: gaussian data
