@@ -101,7 +101,6 @@ class GreedySingleUpdateCoreset(GreedyCoreset):
       self.idcs = previdcs
       raise NumericalPrecisionError('Error not monotone: curr error = ' + str(error) + ' prev error = ' + str(preverror))
 
-
   def _step_coeffs(self, f):
     raise NotImplementedError
 
