@@ -1,0 +1,4 @@
+class NumericalPrecisionError(Exception):
+  pass
+
+
