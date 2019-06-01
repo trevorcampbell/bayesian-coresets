@@ -1,8 +1,6 @@
 import numpy as np
 from .coreset import Coreset
 from ..util.errors import NumericalPrecisionError 
-import sys
-import traceback
 
 class IterativeCoreset(Coreset):
   def __init__(self, **kw):

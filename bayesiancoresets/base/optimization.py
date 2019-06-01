@@ -1,12 +1,10 @@
 import numpy as np
-import warnings
-from scipy.special import erfc
-import bisect
 from .coreset import Coreset
-import sys
+from ..util.errors import NumericalPrecisionError 
 from .. import TOL
+import bisect
+import sys
 
-#TODO make scalable, sparse wts, update for new _set method
 class OptimizationCoreset(Coreset):
 
   def __init__(self, adam_a1 = 1., adam_a2 = 1., **kw):
@@ -22,9 +20,12 @@ class OptimizationCoreset(Coreset):
     self.lmb_cache[self.N] = [0., 0.]
 
     self.w_cache = {} 
-    self.w_cache[0] = np.zeros(self.N)
-    self.w_cache[self.N] = self.all_data_wts
-    
+    self.w_cache[0] = np.array([])
+    self.w_cache[self.N] = np.ones(self.N)
+
+    self.idx_cache = {} 
+    self.idx_cache[0] = np.array([], dtype=np.int64)
+    self.idx_cache[self.N] = np.arange(self.N)
 
   def _build(self, M): 
     if M > self.N:
@@ -44,6 +45,7 @@ class OptimizationCoreset(Coreset):
     #set min lambda = the maximum val of lambda s.t. M > desired M
     lmbl = self.lmb_cache[Mr][1]
     w = self.w_cache[Mr] if abs(Mr - M) < abs(Ml - M) else self.w_cache[Ml]
+    idx = self.idx_cache[Mr] if abs(Mr - M) < abs(Ml - M) else self.idx_cache[Ml]
     nnz = -1
     #keep searching if 
     # 1) we haven't found M, and
@@ -55,15 +57,17 @@ class OptimizationCoreset(Coreset):
       lmb = (lmbu+lmbl)/2.
 
       #optimize weights 
-      w = self._optimize(w, lmb)
+      w, idx = self._optimize(w, idx, lmb)
  
       #threshold to 0
-      w[w < TOL] = 0.
+      idx = idx[w > TOL]
+      w = w[w>TOL]
       
       #add to the cache
-      nnz = (w > 0).sum()
+      nnz = idx.shape[0]
       bisect.insort(self.M_cache, nnz)
       self.w_cache[nnz] = w
+      self.idx_cache[nnz] = idx
       if nnz in self.lmb_cache:
         self.lmb_cache[nnz][0] = min(lmb, self.lmb_cache[nnz][0])
         self.lmb_cache[nnz][1] = max(lmb, self.lmb_cache[nnz][1])
@@ -81,15 +85,14 @@ class OptimizationCoreset(Coreset):
 
   def _cache_weight_update(self, M, lower_fallback=False):
     if M in self.M_cache:
-        self.M = M
-        self._update_weights(self.w_cache[M])
+        self._set(self.w_cache[M], self.idx_cache[M])
         #optimize weights without regularization
         self.optimize()
         return True
     elif lower_fallback:
         #find closest entry in M_cache s.t. <= M
-        self.M = self.M_cache[bisect.bisect_left(self.M_cache, M)-1]
-        self._update_weights(self.w_cache[self.M])
+        M = self.M_cache[bisect.bisect_left(self.M_cache, M)-1]
+        self._set(self.w_cache[M], self.idx_cache[M])
         self.optimize()
         return True
     else:
@@ -97,15 +100,15 @@ class OptimizationCoreset(Coreset):
 
   def _mrc(self):
     if not hasattr(self, 'mrcoeff'):
-      if not np.all(self.wts == 0):
-        raise ValueError()
+      if not np.isempty(self.idcs)
+        raise ValueError('Tried to initialize max_reg_coeff with nonempty weights (after already building)')
       self.mrcoeff = self._max_reg_coeff()
     return self.mrcoeff
       
   def _max_reg_coeff(self):
     raise NotImplementedError()
   
-  def _optimize(self, w0, reg_coeff):
+  def _optimize(self, w0, idcs, reg_coeff):
     raise NotImplementedError()
 
 
