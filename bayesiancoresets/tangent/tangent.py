@@ -1,6 +1,7 @@
 import numpy as np
-import ..utils.warn
 from .. import TOL
+import logging
+log = logging.getLogger(__name__)
 
 #TODO implement result caching on sumw
 class TangentSpace(object):
@@ -61,7 +62,7 @@ class TangentSpace(object):
     if xwn == 0. or xsn == 0.:
       return 0.
     if xwn < TOL or xsn < TOL:
-        warn.warn(self.alg_name+'._optimal_scaling(): the norm of xs or xw is small; optimal scaling might be unstable. ||xs|| = ' + str(xsn) + ' ||xw|| = ' + str(xwn))
+        log.warning(self.alg_name+'._optimal_scaling(): the norm of xs or xw is small; optimal scaling might be unstable. ||xs|| = ' + str(xsn) + ' ||xw|| = ' + str(xwn))
     return xsn/xwn*max(0., (xw/xwn).dot(xs/xsn))
 
 
@@ -77,7 +78,7 @@ class FiniteTangentSpace(TangentSpace):
     self.vnorms = np.sqrt((self.vecs**2).sum(axis=1))
     self.vnorms_sum = self.vnorms.sum()
     if ( np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum() > self.vecs.shape[0]*0.25:
-      warn.warn(self.alg_name+'.__init__(): more than 25% of the vectors have norm less than TOL. # = ' + str(np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum())
+      log.warning(self.alg_name+'.__init__(): more than 25% of the vectors have norm less than TOL. # = ' + str(np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum())
 
   def __getitem__(self, k):
     return self.vecs[k]
