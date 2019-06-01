@@ -11,14 +11,16 @@ Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 #algs = [bc.GIGACoreset, bc.FrankWolfeCoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.LARCoreset, bc.VectorImportanceSamplingCoreset, bc.VectorUniformSamplingCoreset]
 
 
-anms = ['FW', 'GIGA', 'MP', 'FSW', 'OMP', 'IS', 'US']
-algs = [bc.FrankWolfeCoreset, bc.GIGACoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.ImportanceSamplingCoreset, bc.UniformSamplingCoreset]
+anms = ['FW', 'GIGA', 'MP', 'FSW', 'OMP', 'IS', 'US', 'LASSO']
+algs = [bc.FrankWolfeCoreset, bc.GIGACoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.ImportanceSamplingCoreset, bc.UniformSamplingCoreset, bc.LassoCoreset]
 
 ##########################################
 ## Test 1: gaussian data
 ##########################################
 N = 10000
 D = 100
+
+Ms = Ms[:-3]
 
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 scaled_err = np.zeros((len(anms), n_trials, Ms.shape[0]))

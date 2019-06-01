@@ -55,6 +55,7 @@ class OptimizationCoreset(Coreset):
     while nnz != M and (lmbu-lmbl)/lmbu > TOL and (lmbu > TOL or lmbl > 0.):
       #pick new lambda
       lmb = (lmbu+lmbl)/2.
+      print('trying lmb = ' + str(lmb))
 
       #optimize weights 
       w, idx = self._optimize(w, idx, lmb)
@@ -62,6 +63,8 @@ class OptimizationCoreset(Coreset):
       #threshold to 0
       idx = idx[w > TOL]
       w = w[w>TOL]
+      
+      print('output: w = ' + str(w) + ' idx = ' + str(idx))
       
       #add to the cache
       nnz = idx.shape[0]
@@ -79,13 +82,14 @@ class OptimizationCoreset(Coreset):
       else:
         lmbl = lmb
  
+    print('done bisection search, attempting a cache weight update')
     self._cache_weight_update(M, lower_fallback=True)
-
-    return self.M
+    print('final w = ' +str(self.wts) + ' idcs = ' + str(self.idcs))
+    return
 
   def _cache_weight_update(self, M, lower_fallback=False):
     if M in self.M_cache:
-        self._set(self.w_cache[M], self.idx_cache[M])
+        self._set(self.idx_cache[M], self.w_cache[M])
         #optimize weights without regularization
         self.optimize()
         return True
@@ -100,7 +104,7 @@ class OptimizationCoreset(Coreset):
 
   def _mrc(self):
     if not hasattr(self, 'mrcoeff'):
-      if not np.isempty(self.idcs)
+      if not self.idcs.size == 0:
         raise ValueError('Tried to initialize max_reg_coeff with nonempty weights (after already building)')
       self.mrcoeff = self._max_reg_coeff()
     return self.mrcoeff

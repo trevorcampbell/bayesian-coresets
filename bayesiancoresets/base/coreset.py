@@ -55,9 +55,9 @@ class Coreset(object):
     __idcs = np.atleast_1d(__idcs)
     __wts = np.atleast_1d(__wts)
     if __idcs.shape[0] != __wts.shape[0]:
-      raise ValueError(self.alg_name + '._set(): new idcs and wts must have the same shape')
+      raise ValueError(self.alg_name + '._set(): new idcs and wts must have the same shape. idcs.shape = ' + str(__idcs.shape[0]) + ' wts.shape = ' + str(__wts.shape[0]))
     if np.any(__wts < 0) or np.any(__idcs < 0) or not np.issubdtype(__idcs.dtype, np.integer):
-      raise ValueError(self.alg_name+'._set(): new weights + idcs must be nonnegative, and new idcs must have integer type')
+      raise ValueError(self.alg_name+'._set(): new weights + idcs must be nonnegative, and new idcs must have integer type. any(wts < 0) = ' + str(np.any(__wts < 0)) + ' any(idcs < 0) = ' + str(np.any(__idcs<0)) + ' is int subtype' + str( np.issubdtype(__idcs.dtype, np.integer)))
     #get intersection, overwrite
     inter, i1, i2 = np.intersect1d(self.idcs, __idcs, return_indices=True)
     self.wts[i1] = __wts[i2]
