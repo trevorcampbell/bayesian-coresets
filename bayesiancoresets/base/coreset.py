@@ -20,6 +20,10 @@ class Coreset(object):
     #outward facing views
     self.wts = self._wts[:self.nwts]
     self.idcs = self._idcs[:self.nwts]
+
+  def __del__(self):
+    if self.log.handlers[0].n_suppressed > 0:
+      self.log.warning('suppressed ' + str(self.log.handlers[0].n_suppressed) + ' warnings')
     
   def reset(self):
     #don't bother resetting wts, just set the nwts to 0

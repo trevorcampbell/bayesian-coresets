@@ -8,11 +8,14 @@ def add_handler(log, repeat=False, HandlerClass=logging.StreamHandler, handler_i
     def __init__(self, *args, **kwargs):
       super().__init__(*args, **kwargs)
       self.prevmsgs = set()
+      self.n_suppressed = 0
     def emit(self, record):
       if not repeat: 
         if record.msg not in self.prevmsgs:
           self.prevmsgs.add(record.msg)
           super().emit(record)
+        else:
+          self.n_suppressed += 1 
       else: 
         super().emit(record)
   nrh = CustomHandler(**handler_inits)

@@ -33,11 +33,14 @@ class OrthoPursuitCoreset(GreedyCoreset):
 
   def _update_weights(self, f):
 
+    old_wts = self.wts.copy()
+    old_idcs = self.idcs.copy()
+
     f_already = np.where(self.idcs == f)[0].shape[0] > 0
 
     #check to make sure value to add is not in the current set (error should be ortho to current subspace)
     if f_already:
-      self.log.warning('search selected a nonzero weight to update.')
+      raise NumericalPrecisionError('search selected a nonzero weight to update.')
     else:
       self._set(f, 1.)
       
@@ -48,6 +51,8 @@ class OrthoPursuitCoreset(GreedyCoreset):
     #if the optimizer failed or our cost increased, stop
     prev_cost = self.error()
     if res[1] >= prev_cost:
+      self.wts = old_wts
+      self.idcs = old_idcs
       raise NumericalPrecisionError('nnls returned a solution with increasing error. Numeric limit reached: preverr = ' + str(prev_cost) + ' err = ' + str(res[1]))
 
     #update weights, xw, and prev_cost
@@ -55,6 +60,8 @@ class OrthoPursuitCoreset(GreedyCoreset):
     
     return
     
+  def error(self):
+    return self.T.error(self.wts, self.idcs)
 
   
 
