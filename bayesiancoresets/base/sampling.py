@@ -21,7 +21,7 @@ class SamplingCoreset(Coreset):
   def _build(self, M):
     self.cts += np.random.multinomial(M - self.cts.sum(), self.ps)
     active = np.where(self.cts > 0)[0]
-    self._set(active, self.cts[active]/self.ps[active]/M)
+    self._overwrite(active, self.cts[active]/self.ps[active]/M)
 
   #defaults to uniform sampling
   def _compute_sampling_probabilities(self):
