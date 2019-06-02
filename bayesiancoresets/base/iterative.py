@@ -90,7 +90,7 @@ class GreedySingleUpdateCoreset(GreedyCoreset):
     self.wts *= alpha
     #it's possible wts[f] becomes negative if beta approx -wts[f], so threshold
     idx = np.where(self.idcs == f)[0]
-    self._set(f, max((self.wts[idx] if idx.shape[0] > 0 else 0.)+beta, 0))
+    self._update(f, max((self.wts[idx] if idx.shape[0] > 0 else 0.)+beta, 0))
     
     error = self.error()
     if error > preverror:

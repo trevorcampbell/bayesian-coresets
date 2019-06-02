@@ -3,6 +3,7 @@ import numpy as np
 from scipy.optimize import nnls
 from sklearn.linear_model import Lasso
 from .. import TOL
+import warnings
 
 
 #run lasso on normalized vectors
@@ -23,9 +24,11 @@ class LassoCoreset(OptimizationCoreset):
   #  return 0.5*((w.dot(self.x)-self.snorm*self.xs)**2).sum()/self.N + reg_coeff*w.sum()
   
   def _optimize(self, w0, idx, reg_coeff):
-    lasso = Lasso(reg_coeff, positive=True, fit_intercept=False, tol=TOL)
-    lasso.fit((self.T[:]/self.T.norms()[:,np.newaxis]).T, self.T.sum())
-    return lasso.coef_[lasso.coef_ > TOL]/self.T.norms()[lasso.coef_ > TOL], np.where(lasso.coef_ > TOL)[0]
+    with warnings.catch_warnings():
+      warnings.simplefilter("ignore")
+      lasso = Lasso(reg_coeff, positive=True, fit_intercept=False, tol=TOL)
+      lasso.fit((self.T[:]/self.T.norms()[:,np.newaxis]).T, self.T.sum())
+      return lasso.coef_[lasso.coef_ > TOL]/self.T.norms()[lasso.coef_ > TOL], np.where(lasso.coef_ > TOL)[0]
 
   def optimize(self):
     #run least squares optimal weight update
@@ -38,7 +41,7 @@ class LassoCoreset(OptimizationCoreset):
       raise NumericalPrecisionError('nnls returned a solution with increasing error. Numeric limit reached: preverr = ' + str(prev_cost) + ' err = ' + str(res[1]))
 
     #update weights, xw, and prev_cost
-    self._set(self.idcs, res[0])
+    self._overwrite(self.idcs.copy(), res[0])
     return
 
   def error(self):

@@ -4,7 +4,7 @@ import secrets
 from .. import util
 
 class Coreset(object):
-  def __init__(self, N, auto_above_N = True, initial_wts_sz=1000, repeat_logs=False, **kw):
+  def __init__(self, N, auto_above_N = True, initial_wts_sz=1000, repeat_logs=True, **kw):
     #self.alg_name = '.'.join([b.__name__ for b in self.__class__.__bases__]) + '.' + self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.log = logging.getLogger(self.alg_name)
@@ -50,14 +50,13 @@ class Coreset(object):
     self._refresh_views()
 
   #overwrite any wts at __idcs, append any new ones
-  def _set(self, __idcs, __wts):
-
+  def _update(self, __idcs, __wts):
     __idcs = np.atleast_1d(__idcs)
     __wts = np.atleast_1d(__wts)
     if __idcs.shape[0] != __wts.shape[0]:
       raise ValueError(self.alg_name + '._set(): new idcs and wts must have the same shape. idcs.shape = ' + str(__idcs.shape[0]) + ' wts.shape = ' + str(__wts.shape[0]))
     if np.any(__wts < 0) or np.any(__idcs < 0) or not np.issubdtype(__idcs.dtype, np.integer):
-      raise ValueError(self.alg_name+'._set(): new weights + idcs must be nonnegative, and new idcs must have integer type. any(wts < 0) = ' + str(np.any(__wts < 0)) + ' any(idcs < 0) = ' + str(np.any(__idcs<0)) + ' is int subtype' + str( np.issubdtype(__idcs.dtype, np.integer)))
+      raise ValueError(self.alg_name+'._set(): new weights + idcs must be nonnegative, and new idcs must have integer type. any(wts < 0) = ' + str(np.any(__wts < 0)) + ' any(idcs < 0) = ' + str(np.any(__idcs<0)) + ' dtype = ' + str(__idcs.dtype) + ' idcs = ' + str(__idcs))
     #get intersection, overwrite
     inter, i1, i2 = np.intersect1d(self.idcs, __idcs, return_indices=True)
     self.wts[i1] = __wts[i2]
@@ -72,6 +71,22 @@ class Coreset(object):
 
     #create views
     self._refresh_views()
+
+  def _overwrite(self, __idcs, __wts):
+    __idcs = np.atleast_1d(__idcs)
+    __wts = np.atleast_1d(__wts)
+    if __idcs.shape[0] != __wts.shape[0]:
+      raise ValueError(self.alg_name + '._set(): new idcs and wts must have the same shape. idcs.shape = ' + str(__idcs.shape[0]) + ' wts.shape = ' + str(__wts.shape[0]))
+    if np.any(__wts < 0) or np.any(__idcs < 0) or not np.issubdtype(__idcs.dtype, np.integer):
+      raise ValueError(self.alg_name+'._set(): new weights + idcs must be nonnegative, and new idcs must have integer type. any(wts < 0) = ' + str(np.any(__wts < 0)) + ' any(idcs < 0) = ' + str(np.any(__idcs<0)) + ' dtype = ' + str(__idcs.dtype) + ' idcs = ' + str(__idcs))
+    #full overwrite
+    while __wts.shape[0] > self._wts.shape[0]:
+      self._double_internal()
+    self._wts[:__wts.shape[0]] = __wts
+    self._idcs[:__idcs.shape[0]] = __idcs
+    self.nwts = __wts.shape[0]
+    self._refresh_views()
+    
 
   def error(self):
     raise NotImplementedError()

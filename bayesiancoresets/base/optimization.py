@@ -55,7 +55,6 @@ class OptimizationCoreset(Coreset):
     while nnz != M and (lmbu-lmbl)/lmbu > TOL and (lmbu > TOL or lmbl > 0.):
       #pick new lambda
       lmb = (lmbu+lmbl)/2.
-      print('trying lmb = ' + str(lmb))
 
       #optimize weights 
       w, idx = self._optimize(w, idx, lmb)
@@ -64,7 +63,6 @@ class OptimizationCoreset(Coreset):
       idx = idx[w > TOL]
       w = w[w>TOL]
       
-      print('nnz = ' + str(idx.shape[0]))
       
       #add to the cache
       nnz = idx.shape[0]
@@ -83,7 +81,6 @@ class OptimizationCoreset(Coreset):
         lmbl = lmb
  
     self._cache_weight_update(M, lower_fallback=True)
-    print('final nnz = ' + str(self.idcs.shape[0]) + ' error = ' + str(self.error()))
     return
 
   def _cache_weight_update(self, M, lower_fallback=False):
@@ -95,7 +92,7 @@ class OptimizationCoreset(Coreset):
     elif lower_fallback:
         #find closest entry in M_cache s.t. <= M
         M = self.M_cache[bisect.bisect_left(self.M_cache, M)-1]
-        self._set(self.w_cache[M], self.idx_cache[M])
+        self._set(self.idx_cache[M], self.w_cache[M])
         self.optimize()
         return True
     else:
