@@ -4,7 +4,7 @@ import secrets
 from .. import util
 
 class Coreset(object):
-  def __init__(self, N, auto_above_N = True, initial_wts_sz=1000, repeat_logs=True, **kw):
+  def __init__(self, N, auto_above_N = True, initial_wts_sz=1000, repeat_logs=False, **kw):
     #self.alg_name = '.'.join([b.__name__ for b in self.__class__.__bases__]) + '.' + self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.log = logging.getLogger(self.alg_name)
