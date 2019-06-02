@@ -4,7 +4,7 @@ from .coreset import Coreset
 class FullDataCoreset(Coreset):
 
   def _initialize(self):
-    self._set(np.arange(self.N), np.ones(self.N))
+    self._overwrite(np.arange(self.N), np.ones(self.N))
 
   def error(self):
     if self.size() < self.N:
