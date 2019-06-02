@@ -85,14 +85,14 @@ class OptimizationCoreset(Coreset):
 
   def _cache_weight_update(self, M, lower_fallback=False):
     if M in self.M_cache:
-        self._set(self.idx_cache[M], self.w_cache[M])
+        self._overwrite(self.idx_cache[M], self.w_cache[M])
         #optimize weights without regularization
         self.optimize()
         return True
     elif lower_fallback:
         #find closest entry in M_cache s.t. <= M
         M = self.M_cache[bisect.bisect_left(self.M_cache, M)-1]
-        self._set(self.idx_cache[M], self.w_cache[M])
+        self._overwrite(self.idx_cache[M], self.w_cache[M])
         self.optimize()
         return True
     else:

@@ -15,7 +15,7 @@ class FrankWolfeCoreset(GreedySingleUpdateCoreset):
 
   def _initialize(self):
     f = self._search()
-    self._set(f, self.T.norms_sum()/self.T.norms()[f])
+    self._overwrite(f, self.T.norms_sum()/self.T.norms()[f])
 
   def _search(self):
     return (self.T[:].dot(self.T.residual(self.wts, self.idcs)) / self.T.norms()).argmax()
