@@ -5,8 +5,6 @@ from sklearn.linear_model import Lasso
 from .. import TOL
 import warnings
 
-#TODO just run once and use ordered list of decreasing magnitude
-
 #run lasso on normalized vectors
 class LassoCoreset(OptimizationCoreset):
   def __init__(self, tangent_space):

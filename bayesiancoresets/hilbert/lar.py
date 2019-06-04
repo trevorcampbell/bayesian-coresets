@@ -1,3 +1,5 @@
+#TODO: fix for new riemann repo structure
+
 import numpy as np
 from .vector import VectorCoreset
 from ..base.iterative import IterativeCoreset

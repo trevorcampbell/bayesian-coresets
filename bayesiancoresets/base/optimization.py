@@ -9,6 +9,7 @@ class OptimizationCoreset(Coreset):
 
   def __init__(self, adam_a1 = 1., adam_a2 = 1., **kw):
     super().__init__(**kw)
+    self.log.warning('OptimizationCoreset implementation is not yet stable. Be wary of results!')
     self.adam_a1 = adam_a1
     self.adam_a2 = adam_a2
 

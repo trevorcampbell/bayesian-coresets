@@ -1,4 +1,4 @@
-# NOTE: This readme is out of date. It will be updated soon.
+# NOTE: There is an upcoming major update (next few weeks) to this code based on a new arXiv preprint.
 
 # Bayesian Coresets: Automated, Scalable Inference
 
@@ -83,8 +83,11 @@ idcs = wts > 0 #pull out the indices of datapoints that were included in the cor
 
 Below are some papers to cite if you find the algorithms in this repository useful in your own research:
 
-* T. Campbell and T. Broderick, "[Automated scalable Bayesian inference via Hilbert coresets](http://arxiv.org/abs/1710.05053)," arXiv:1710.05053, 2017,
+
+* T. Campbell and B. Beronov, "[Sparse variational inference: Bayesian coresets from scratch](http://arxiv.org/abs/1710.05053)," arXiv:XX.
+* T. Campbell and T. Broderick, "[Automated scalable Bayesian inference via Hilbert coresets](http://arxiv.org/abs/1710.05053)," Journal of Machine Learning Research 20(15):1-38, 2019.
 * T. Campbell and T. Broderick, "[Bayesian coreset construction via Greedy Iterative Geodesic Ascent](https://arxiv.org/abs/1802.01737)," International Conference on Machine Learning (ICML), 2018.
+* T. Campbell and T. Broderick, "[Coresets for scalable Bayesian logistic regression](https://arxiv.org/abs/1605.06423)," Advances in Neural Information Processing Systems, 2016.
 
 ### License Info
 
