@@ -3,6 +3,12 @@ import numpy as np
 import bayesiancoresets as bc
 from scipy.optimize import minimize
 
+#computes KL( N(mu0, Sig0) || N(mu1, Sig1) )
+def gaussian_KL(mu0, Sig0, mu1, Sig1):
+  t1 = np.linalg.solve(Sig1, Sig0).trace()
+  t2 = np.dot((mu1-mu0),np.linalg.solve(Sig1, mu1-mu0))
+  t3 = np.linalg.slogdet(Sig1)[1] - np.linalg.slogdet(Sig0)[1]
+  return 0.5*(t1+t2+t3-mu0.shape[0])
 
 #######################################
 #######################################
@@ -29,40 +35,43 @@ Z = y[:, np.newaxis]*X
 
 ###########################
 ###########################
-## Step 1: Define the Model
+## Step 1: Define the model
 ###########################
 ###########################
 
 from model import *
 
-#################################################
-#################################################
-## Step 2: Obtain a Cheap Posterior Approximation
-#################################################
-#################################################
+###############################################################
+###############################################################
+## Step 2: Pick a location for the coreset tangent space
+###############################################################
+###############################################################
 
-#Here we use the laplace approximation
+#Here we use the laplace approximation of the posterior
 #first, optimize the log joint to find the mode:
 res = minimize(lambda mu : -log_joint(Z, mu, np.ones(Z.shape[0])), Z.mean(axis=0), jac=lambda mu : -grad_log_joint(Z, mu, np.ones(Z.shape[0])))
 #then find a quadratic expansion around the mode, and assume the distribution is Gaussian
-cov = -np.linalg.inv(hess_log_joint(Z, res.x))
+mu = res.x
+cov = -np.linalg.inv(hess_log_joint(Z, mu))
 
-#we can call post_approx() to sample from the approximate posterior
-post_approx = lambda : np.random.multivariate_normal(res.x, cov)
+#we can call sampler(n) to take n  samples from the approximate posterior
+sampler = lambda sz : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 
-#you can replace this step with almost any inference alg: subset MCMC, variational inference, INLA, SGLD, etc
+#you can replace this step with a lot of different things: e.g.
+# - choose a subset of data uniformly and weight uniformly, run MCMC
+# - same thing with var inf, INLA, SGLD, etc 
 
-########################################
-########################################
-## Step 3: Discretize the Log Likelihood
-########################################
-########################################
+##########################################################################
+##########################################################################
+## Step 3: Compute a random finite projection of the tangent space  
+##########################################################################
+##########################################################################
 
-projection_dim = 500 #random projection dimension, K
-#build the discretization of all the log-likelihoods based on random projection
-proj = bc.ProjectionF(Z, grad_log_likelihood, projection_dim, post_approx) 
-#construct the N x K discretized log-likelihood matrix; each row represents the discretized LL func for one datapoint
-vecs = proj.get()
+projection_dim = 500 #random projection dimension
+#the below calculates a matrix N x S of log likelihoods for N datapoints and S samples from sampler
+loglik = lambda th : np.hstack( [log_likelihood(Z, th[i,:])[:,np.newaxis] for i in range(th.shape[0])])
+mct = bc.MonteCarloFiniteTangentSpace(loglik, sampler, projection_dim)
+
 
 ############################
 ############################
@@ -71,30 +80,42 @@ vecs = proj.get()
 ############################
 
 #build the coreset
-M = 100 # use 100 datapoints
-giga = bc.GIGACoreset(vecs) #do coreset construction using the discretized log-likelihood functions
+M = 500 # use up to 500 datapoints (run 500 itrs)
+giga = bc.GIGACoreset(mct) #do coreset construction using the discretized log-likelihood functions
 giga.build(M) #build the coreset
-wts = giga.weights() #get the output weights
-idcs = wts > 0 #pull out the indices of datapoints that were included in the coreset
+wts, idcs = giga.weights() #get the output weights
+print('weights:')
+print(wts)
+print('idcs:')
+print(idcs)
 
-########################
-########################
-## Step 5: Run Inference
-########################
-########################
 
-#example:
-#from inference import hmc
-#mcmc_steps = 5000 #total number of MH steps
-#mcmc_burn = 1000
-#step_size_init = 0.001
-#n_leap = 15
-#target_a = 0.8
-#var_scales=np.ones(cov.shape[0])
-#pbar = True #progress bar display flag
-#logpZ = lambda th : log_joint(Z[idcs, :], th, wts[idcs])
-#glogpZ = lambda th : grad_log_joint(Z[idcs, :], th, wts[idcs])
-#mcmc_param_init = np.random.multivariate_normal(mu, cov)
-#th_samples = hmc(logp=logpZ, gradlogp=glogpZ, 
-#             x0 = mcmc_param_init, sample_steps=mcmc_steps, burn_steps=mcmc_burn, adapt_steps=mcmc_burn, 
-#             n_leapfrogs= n_leap, scale=var_scales, progress_bar=pbar, step_size=step_size_init, target_accept=target_a)
+##############################
+##############################
+## Step 5: Evaluate coreset
+##############################
+##############################
+
+#Normally at this point we'd run posterior inference on the coreset
+
+#But for this (illustrative) example we will evaluate quality via Laplace posterior approx
+
+w = np.zeros(N)
+w[idcs] = wts
+
+#compute error using laplace approx
+res = minimize(lambda mu : -log_joint(Z, mu, w), Z.mean(axis=0), jac=lambda mu : -grad_log_joint(Z, mu, w))
+muw = res.x
+#then find a quadratic expansion around the mode, and assume the distribution is Gaussian
+covw = -np.linalg.inv(hess_log_joint_w(Z, muw, w))
+
+
+#compare posterior and coreset
+np.set_printoptions(linewidth=10000)
+print('Posterior requires ' + str(N) + ' data')
+print('mu, cov = ' + str(mu) + '\n' + str(cov))
+print('Coreset requires ' + str(idcs.shape[0]) + ' data')
+print('muw, covw = ' + str(muw) + '\n' + str(covw))
+
+print('KL(coreset || posterior) = ' + str(gaussian_KL(muw, covw, mu, cov)))
+

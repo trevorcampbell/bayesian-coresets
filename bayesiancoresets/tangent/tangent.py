@@ -71,6 +71,9 @@ class TangentSpace(object):
 
 
 class FiniteTangentSpace(TangentSpace):
+  def __init__(self, d):
+    super().__init__(d)
+    self.vecs = np.empty((0, d))
   def _set_vecs(self, vecs):
     if len(vecs.shape) != 2:
       raise ValueError(self.alg_name+'._set_vecs(): vecs must be a 2d array, otherwise the expected behaviour is ambiguous')
@@ -122,18 +125,19 @@ class MonteCarloFiniteTangentSpace(FiniteTangentSpace):
     super().__init__(d)
     self.log_likelihood = log_likelihood
     self.sampler = sampler
-    self._set_vecs(self.log_likelihood(sampler.sample(1)))
     self._dim_changed()
 
   def _dim_changed(self):
-    if self.d < self.vecs.shape[1]:
-      self._set_vecs(self.vecs[:, :self.d])
+    if self.vecs.shape[0] == 0 and self.d > 0:
+      self._set_vecs(self.log_likelihood(self.sampler(self.d))/np.sqrt(self.d))
+    elif self.d < self.vecs.shape[1]:
+      self._set_vecs(np.sqrt(self.vecs.shape[1]/self.d)*self.vecs[:, :self.d])
     elif self.d > self.vecs.shape[1]:
       old_dim = self.vecs.shape[1]
       v = np.zeros((self.vecs.shape[0], self.d))
       v[:, :old_dim] = self.vecs
       v *= np.sqrt(old_dim)
-      v[:, old_dim:] = self.log_likelihood(sampler.sample(self.d-old_dim))
+      v[:, old_dim:] = self.log_likelihood(self.sampler(self.d-old_dim))
       v /= np.sqrt(self.d)
       self._set_vecs(v)
     return

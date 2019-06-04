@@ -1,8 +1,7 @@
 import sys
 import logging
 
-#TODO: add a repeating handler for a log file,
-#TODO and set repeat to false by default for the console
+#TODO: add a repeating handler for a log file, set default repeat to console = False, default repeat to log = True
 def add_handler(log, repeat=False, HandlerClass=logging.StreamHandler, handler_inits={'stream':sys.stderr}, format_string = '%(levelname)s - %(name)s.%(funcName)s(): %(message)s'):
   class CustomHandler(HandlerClass):
     def __init__(self, *args, **kwargs):
@@ -23,8 +22,4 @@ def add_handler(log, repeat=False, HandlerClass=logging.StreamHandler, handler_i
   nrh.setFormatter(fmt)
   log.addHandler(nrh)
 
-#TODO allow user to log to file
-#%def set_logfile(fname):
-#%  fh = logging.FileHandler(fname, mode='w')
-#%  logging.basicConfig(stream=
-  
+ 
