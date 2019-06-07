@@ -72,8 +72,6 @@ for t in trials:
   Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
   T_noisy = bc.MonteCarloFiniteTangentSpace(log_likelihood, lambda sz : np.random.multivariate_normal(muhat, Sighat, sz), proj_dim)
 
-  
-
   #create exact tangent space factory for Riemann coresets
   def tangent_space_factory(wts, idcs):
     w = np.zeros(x.shape[0])
