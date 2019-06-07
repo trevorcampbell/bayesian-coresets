@@ -69,17 +69,31 @@ class TangentSpace(object):
         self.log.warning('the norm of xs or xw is small; optimal scaling might be unstable. ||xs|| = ' + str(xsn) + ' ||xw|| = ' + str(xwn))
     return xsn/xwn*max(0., (xw/xwn).dot(xs/xsn))
 
+  def kl_gradient(self, wref, idcsref):
+    r = self.sum() - self.sum_w(wref, idcsref)
+    D = -self[:].dot(r)/self.d
+    return D
+
+  def kl_quadratic_expansion(self, wref, idcsref):
+    r = self.sum() - self.sum_w(wref, idcsref)
+    D = -self[:].dot(r)/self.d
+    H = (self[:] * (1. - r)).dot(self[:].T) / self.d
+    return D, H
+
 
 class FiniteTangentSpace(TangentSpace):
   def __init__(self, d):
     super().__init__(d)
     self.vecs = np.empty((0, d))
+    self.vecmeans = np.empty(0)
   def _set_vecs(self, vecs):
     if len(vecs.shape) != 2:
       raise ValueError(self.alg_name+'._set_vecs(): vecs must be a 2d array, otherwise the expected behaviour is ambiguous')
     if vecs.shape[1] != self.d:
       raise ValueError(self.alg_name+'._set_vecs(): vecs must have the correct dimension')
     self.vecs = vecs
+    self.vecmeans = vecs.mean(axis=1)
+    self.vecs -= self.vecmeans[:, np.newaxis]
     self.vsum = vecs.sum(axis=0)
     self.vsum_norm = np.sqrt((self.vsum**2).sum())
     self.vnorms = np.sqrt((self.vecs**2).sum(axis=1))
@@ -111,6 +125,7 @@ class FiniteTangentSpace(TangentSpace):
   def sum_norm(self):
     return self.vsum_norm
 
+
 class FixedFiniteTangentSpace(FiniteTangentSpace):
   def __init__(self, vecs):
     super().__init__(vecs.shape[1])
@@ -118,6 +133,9 @@ class FixedFiniteTangentSpace(FiniteTangentSpace):
 
   def _dim_changed(self):
     raise NotImplementedError(self.alg_name+'._dim_changed(): Cannot change the dimension of a fixed tangent space')
+
+  #have abst "generate more vecs"
+  #impl dim changed
 
 
 class MonteCarloFiniteTangentSpace(FiniteTangentSpace):
@@ -129,17 +147,15 @@ class MonteCarloFiniteTangentSpace(FiniteTangentSpace):
 
   def _dim_changed(self):
     if self.vecs.shape[0] == 0 and self.d > 0:
-      self._set_vecs(self.log_likelihood(self.sampler(self.d))/np.sqrt(self.d))
+      v = self.log_likelihood(self.sampler(self.d))
     elif self.d < self.vecs.shape[1]:
-      self._set_vecs(np.sqrt(self.vecs.shape[1]/self.d)*self.vecs[:, :self.d])
+      v = (self.vecs + self.vecmeans[:,np.newaxis])[:, :self.d]
     elif self.d > self.vecs.shape[1]:
       old_dim = self.vecs.shape[1]
       v = np.zeros((self.vecs.shape[0], self.d))
-      v[:, :old_dim] = self.vecs
-      v *= np.sqrt(old_dim)
+      v[:, :old_dim] = self.vecs+ self.vecmeans[:,np.newaxis]
       v[:, old_dim:] = self.log_likelihood(self.sampler(self.d-old_dim))
-      v /= np.sqrt(self.d)
-      self._set_vecs(v)
+    self._set_vecs(v)
     return
 
 ##TODO
