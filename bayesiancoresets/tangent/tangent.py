@@ -69,10 +69,10 @@ class TangentSpace(object):
         self.log.warning('the norm of xs or xw is small; optimal scaling might be unstable. ||xs|| = ' + str(xsn) + ' ||xw|| = ' + str(xwn))
     return xsn/xwn*max(0., (xw/xwn).dot(xs/xsn))
 
-  def kl_gradient(self, wref, idcsref):
+  def kl_residual_correlations(self, wref, idcsref):
     r = self.sum() - self.sum_w(wref, idcsref)
-    D = -self[:].dot(r)/self.d
-    return D
+    c = (-self[:].dot(r)/self.d) / self.norms()
+    return c
 
   def kl_quadratic_expansion(self, wref, idcsref):
     r = self.sum() - self.sum_w(wref, idcsref)
