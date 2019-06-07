@@ -1,17 +1,15 @@
 import numpy as np
 from ..base.iterative import GreedySingleUpdateCoreset
 from ..util.errors import NumericalPrecisionError
+from .hilbert import HilbertCoreset
 
-class FrankWolfeCoreset(GreedySingleUpdateCoreset):
+class FrankWolfeCoreset(GreedySingleUpdateCoreset, HilbertCoreset):
 
   def __init__(self, tangent_space):
     super().__init__(N=tangent_space.num_vectors()) 
     self.T = tangent_space
     if np.any(self.T.norms() == 0):
       raise ValueError(self.alg_name+'.__init__(): tangent space must not have any 0 vectors')
-
-  def error(self):
-    return self.T.error(self.wts, self.idcs)
 
   def _initialize(self):
     f = self._search()

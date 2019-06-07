@@ -1,11 +1,12 @@
 import numpy as np
 from ..base.iterative import GreedySingleUpdateCoreset
 from ..util.errors import NumericalPrecisionError
+from .hilbert import HilbertCoreset
 from .. import TOL
 
 
 
-class MatchingPursuitCoreset(GreedySingleUpdateCoreset):
+class MatchingPursuitCoreset(GreedySingleUpdateCoreset, HilbertCoreset):
   def __init__(self, tangent_space):
     super().__init__(N=tangent_space.num_vectors()) 
     self.T = tangent_space
@@ -41,7 +42,4 @@ class MatchingPursuitCoreset(GreedySingleUpdateCoreset):
     if fidx.shape[0] > 0 and beta < -self.wts[fidx]:
       beta = -self.wts[f]
     return alpha, beta
-
-  def error(self):
-    return self.T.error(self.wts, self.idcs)
 
