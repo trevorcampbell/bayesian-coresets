@@ -71,7 +71,7 @@ class TangentSpace(object):
 
   def kl_residual_correlations(self, wref, idcsref):
     r = self.sum() - self.sum_w(wref, idcsref)
-    c = (-self[:].dot(r)/self.d) / self.norms()
+    c = (self[:].dot(r)/self.d) / self.norms()
     return c
 
   def kl_quadratic_expansion(self, wref, idcsref):

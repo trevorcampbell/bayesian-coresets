@@ -6,13 +6,10 @@ from ..tangent.tangent import MonteCarloFiniteTangentSpace
 
 class GreedyKLCoreset(GreedyCoreset):
 
-  def __init__(self, N, log_likelihood, sampler, projection_dim, update_single = True):
+  def __init__(self, N, tangent_space_factory, update_single = True):
     super().__init__(N=N) 
-    self.log_likelihood = log_likelihood
-    self.sampler = sampler
+    self.tsf = tangent_space_factory
     self.update_single = update_single
-    self.projection_dim = projection_dim
-    self.T = None
 
   def error(self):
     #TODO KL divergence estimate
@@ -20,10 +17,12 @@ class GreedyKLCoreset(GreedyCoreset):
 
   def _search(self):
     #construct a new tangent space for this search iteration
-    self.T = MonteCarloFiniteTangentSpace(self.log_likelihood, lambda n_samps : self.sampler(self.wts, self.idcs, n_samps), self.projection_dim)
+    self.T = self.tsf(self.wts, self.idcs)
+    #compute the correlations
     corrs = self.T.kl_residual_correlations(self.wts, self.idcs)
-    #TODO output
-    raise NotImplementedError
+    #for any in the active set, just look at corr mag
+    corrs[self.idcs] = np.fabs(corrs[self.idcs]) 
+    return np.argmax(corrs)
 
   def _update_weights(self, f):
     raise NotImplementedError
