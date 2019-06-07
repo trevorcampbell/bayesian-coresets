@@ -1,13 +1,31 @@
 import numpy as np
-from exact import *
-from stochastic import *
-from sampling import *
-from gaussian import *
 import bayesiancoresets as bc
 from copy import deepcopy
 import os
 from scipy.stats import multivariate_normal
 
+
+def gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples):
+  return -x.shape[1]/2*np.log(2*np.pi) - 1./2.*logdetSig - 1./2.*(xSiginvx[:, np.newaxis] - 2.*np.dot(xSiginv, samples.T) + (np.dot(samples, Siginv)*samples).sum(axis=1))
+ 
+def gaussian_KL(mu0, Sig0, mu1, Sig1inv):
+  t1 = np.dot(Sig1inv, Sig0).trace()
+  t2 = np.dot((mu1-mu0),np.dot(Sig1inv, mu1-mu0))
+  t3 = -np.linalg.slogdet(Sig1inv)[1] - np.linalg.slogdet(Sig0)[1]
+  return 0.5*(t1+t2+t3-mu0.shape[0])
+
+def weighted_post(th0, Sig0inv, Siginv, x, w): 
+  Sigp = np.linalg.inv(Sig0inv + w.sum()*Siginv)
+  mup = np.dot(Sigp,  np.dot(Sig0inv,th0) + np.dot(Siginv, (w[:, np.newaxis]*x).sum(axis=0)))
+  return mup, Sigp
+
+def weighted_post_KL(th0, Sig0inv, Siginv, x, w, reverse=True):
+  muw, Sigw = weighted_post(th0, Sig0inv, Siginv, x, w)
+  mup, Sigp = weighted_post(th0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
+  if reverse:
+    return gaussian_KL(muw, Sigw, mup, np.linalg.inv(Sigp))
+  else:
+    return gaussian_KL(mup, Sigp, muw, np.linalg.inv(Sigw))
 
 
 np.random.seed(1)
@@ -20,82 +38,64 @@ trials = np.arange(100)
 mu0 = np.zeros(d)
 Sig0 = np.eye(d)
 Sig = np.eye(d)
+SigL = np.linalg.cholesky(Sig)
 th = np.ones(d)
 Sig0inv = np.linalg.inv(Sig0)
 Siginv = np.linalg.inv(Sig)
+SigLInv = np.linalg.inv(SigL)
 opt_itrs = 1000
-giga_proj_dim = 200
+proj_dim = 100
 pihat_noise =0.15
 
 for t in trials:
-  #gen data
+  #generate data and compute true posterior
   x = np.random.multivariate_normal(th, Sig, N)
   mup, Sigp = weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
   Sigpinv = np.linalg.inv(Sigp)
 
-  #create coreset objects
-  erl1 = EGL1Reverse(x, mu0, Sig0, Sig, 20., 1., opt_itrs, scaled=True)
-  erl1u = EGL1Reverse(x, mu0, Sig0, Sig, 1., 1., opt_itrs, scaled=False)
-  #efl1 = EGL1Forward(x, mu0, Sig0, Sig, scaled=scaled)
-  erg = EGGreedyReverse(x, mu0, Sig0, Sig, 1., 1., opt_itrs)
-  #efg = EGGreedyForward(x, mu0, Sig0, Sig, scaled=scaled)
-  ercg = EGCorrectiveGreedyReverse(x, mu0, Sig0, Sig, 10., 1., opt_itrs)
-  
-  #srl1 = SGL1Reverse(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-  #sfl1 = SGL1Forward(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-  #srg = SGGreedyReverse(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-  #sfg = SGGreedyForward(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-  
-  #sgs = SGS(x, mu0, Sig0, Sig, n_samples, scaled=scaled)
-  #egs = EGS(x, mu0, Sig0, Sig, scaled=scaled)
-  egus = EGUS(x, mu0, Sig0, Sig, 10., 1., opt_itrs)
-  
-  #algs = [erl1, efl1, erg, efg, srl1, sfl1, srg, sfg, sgs, egs, egus]
-  #nms = ['ERL1', 'EFL1', 'ERG', 'EFG', 'SRL1', 'SFL1', 'SRG', 'SFG', 'SGS', 'EGS', 'EGUS']
+  #compute constants for log likelihood function
+  xSiginv = x.dot(Siginv)
+  xSiginvx = (xSiginv*x).sum(axis=1)
+  logdetSig = np.linalg.slogdet(Sig)[1]
 
-  #get good projection samples from smoothed true posterior
-  samps_good = np.random.multivariate_normal(mup, 9*Sigp, giga_proj_dim)
-  #get bad samples from a noisy pihat via interpolation between prior/posterior + noise
-  #uniformly smooth between prior and posterior
+  log_likelihood = lambda samples : gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples):
+
+  #create tangent space for well-tuned Hilbert coreset alg
+  T_true = bc.MonteCarloFiniteTangentSpace(log_likelihood, lambda sz : np.random.multivariate_normal(mup, 9*Sigp, sz), proj_dim)
+
+  #create tangent space for poorly-tuned Hilbert coreset alg
   U = np.random.rand()
   muhat = U*mup + (1.-U)*mu0
   Sighat = U*Sigp + (1.-U)*Sig0
   #now corrupt the smoothed pihat
   muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
   Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
+  T_noisy = bc.MonteCarloFiniteTangentSpace(log_likelihood, lambda sz : np.random.multivariate_normal(muhat, Sighat, sz), proj_dim)
 
-  ##super bad corruption
-  #muhat = 1000*np.random.randn(d)
-  #Sighat = 1000*np.random.randn(d, d)
-  #Sighat = Sighat.T.dot(Sighat)
+  
 
-  samps_bad = np.ones((giga_proj_dim, muhat.shape[0])) #np.random.multivariate_normal(muhat, Sighat, giga_proj_dim) 
+  #create exact tangent space factory for Riemann coresets
+  def tangent_space_factory(wts, idcs):
+    w = np.zeros(x.shape[0])
+    w[idcs] = wts
+    muw, Sigw = weighted_post(mu0, Sig0inv, Siginv, x, w)
+    nu = (x - muw).dot(SigLInv.T)
+    Psi = np.dot(SigLInv, np.dot(Sigw, SigLInv.T))
+    
+    exact_cov = np.dot(nu, np.dot(Psi, nu.T)) + 0.5*np.trace(np.dot(Psi.T, Psi))
 
-  #compute log likelihood feature vectors for both
-  lls_bad = np.zeros((x.shape[0], giga_proj_dim))
-  lls_good = np.zeros((x.shape[0], giga_proj_dim))
-  for i in range(x.shape[0]):
-    lls_bad[i, :] = multivariate_normal.logpdf(samps_bad, x[i,:], Sig)
-    lls_good[i, :] = multivariate_normal.logpdf(samps_good, x[i,:], Sig)
-  lls_bad -= lls_bad.mean(axis=1)[:,np.newaxis]
-  lls_good -= lls_good.mean(axis=1)[:,np.newaxis]
-
-  #corrs = (((lls_bad - lls_bad.mean(axis=0))*(lls_good-lls_good.mean(axis=0))).mean(axis=0)/lls_bad.std(axis=0)/lls_good.std(axis=0))
-  #print('bad/good correlation: ' + str( corrs.mean()) + ' +/- ' + str(corrs.std())) 
-  #continue
-
-
-  giga_bad = bc.GIGACoreset(lls_bad)
-  giga_good = bc.GIGACoreset(lls_good)
+    return bc.FixedTangentSpace(np.linalg.cholesky(exact_cov), wts, idcs)
+    
+   
+  #create coreset construction objects
+  riemann_one = bc.SparseVICoreset(x.shape[0], tangent_space_factory, step_size = 1., update_single=True)
+  riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, step_size = 1., update_single=False)
+  giga_true = bc.GIGACoreset(T_true)
+  giga_noisy = bc.GIGACoreset(T_noisy)
+  unif = bc.UniformCoreset(T_true) #tangent space unimportant here
  
-  algs = [erl1, erl1u, erg, ercg, egus, giga_bad, giga_good]
-  nms = ['ERL1', 'ERL1U', 'ERG', 'ERCG', 'EGUS', 'GIGAB', 'GIGAG']
-
-  #algs = [egus]
-  #nms = ['EGUS']
-
-  algs = [giga_bad, giga_good]
-  nms = ['GIGAB', 'GIGAG']
+  algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif]
+  nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND']
 
   #build coresets
   for nm, alg in zip(nms, algs):
@@ -104,10 +104,12 @@ for t in trials:
     for m in range(1, M+1):
       print('trial: ' + str(t+1)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
       alg.build(m)
-      w[m, :] = alg.weights()
+      wts, idcs = alg.weights()
+      w[m, idcs] = wts
       tmpalg = deepcopy(alg)
       tmpalg.optimize()
-      w_opt[m, :] = tmpalg.weights()
+      wts, idcs = tmpalg.weights()
+      w_opt[m, idcs] = wts
       #print('reverse KL: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
       #print('reverse KL opt: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
 

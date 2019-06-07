@@ -1,8 +1,8 @@
 import numpy as np
-from ..util.opt import nn_opt
 from ..base.iterative import GreedyCoreset
+from ..util.opt import nn_opt
 
-class GreedyKLCoreset(GreedyCoreset):
+class SparseVICoreset(GreedyCoreset):
 
   def __init__(self, N, tangent_space_factory, step_size = 1., update_single = True):
     super().__init__(N=N) 
