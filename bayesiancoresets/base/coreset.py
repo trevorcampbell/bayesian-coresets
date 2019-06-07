@@ -49,7 +49,7 @@ class Coreset(object):
     self._idcs.resize(self._idcs.shape[0]*2)
     self._refresh_views()
 
-  #overwrite any wts at __idcs, append any new ones
+  #overwrite any wts at __idcs (keeping old values if unmodified), append any new ones
   def _update(self, __idcs, __wts):
     __idcs = np.atleast_1d(__idcs)
     __wts = np.atleast_1d(__wts)
@@ -72,6 +72,7 @@ class Coreset(object):
     #create views
     self._refresh_views()
 
+  #completely overwrite; forget any previous weight settings
   def _overwrite(self, __idcs, __wts):
     __idcs = np.atleast_1d(__idcs)
     __wts = np.atleast_1d(__wts)

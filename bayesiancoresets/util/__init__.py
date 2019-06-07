@@ -7,4 +7,5 @@ def verbosity(verb):
   LOGLEVEL = LOGLEVELS[verb]
 
 from .log import add_handler
+from .opt import nn_opt
 

@@ -6,12 +6,14 @@ from .. import util
 
 #TODO implement result caching on sumw
 class TangentSpace(object):
-  def __init__(self, d, repeat_logs=False):
+  def __init__(self, d, wref, idcsref, repeat_logs=False):
     self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.log = logging.getLogger(self.alg_name)
     self.log.setLevel(util.LOGLEVEL)
     util.add_handler(self.log, repeat_logs)
     self.d = d
+    self.wref = wref
+    self.idcsref = idcsref
       
   #return the tangent vector for datapoint k (or slice)
   def __getitem__(self, k):
@@ -69,21 +71,27 @@ class TangentSpace(object):
         self.log.warning('the norm of xs or xw is small; optimal scaling might be unstable. ||xs|| = ' + str(xsn) + ' ||xw|| = ' + str(xwn))
     return xsn/xwn*max(0., (xw/xwn).dot(xs/xsn))
 
-  def kl_residual_correlations(self, wref, idcsref):
-    r = self.sum() - self.sum_w(wref, idcsref)
-    c = (self[:].dot(r)/self.d) / self.norms()
-    return c
+  def kl_grad(self, grad_idcs = None):
+    r = self.residual(self.wref, self.idcsref)
+    if grad_idcs is None:
+      return -self[:].dot(r)/self.d
+    else:
+      return -self[grad_idcs].dot(r)/self.d
 
-  def kl_quadratic_expansion(self, wref, idcsref):
-    r = self.sum() - self.sum_w(wref, idcsref)
+  #(not actually correlations, proportional to them; good enough)
+  def kl_residual_correlations(self):
+    return -self.kl_grad(self.wref, self.idcsref)/self.norms()
+
+  def kl_quadratic_expansion(self):
+    r = self.residual(self.wref, self.idcsref)
     D = -self[:].dot(r)/self.d
     H = (self[:] * (1. - r)).dot(self[:].T) / self.d
     return D, H
 
 
 class FiniteTangentSpace(TangentSpace):
-  def __init__(self, d):
-    super().__init__(d)
+  def __init__(self, d, wref=None, idcsref=None):
+    super().__init__(d, wref, idcsref)
     self.vecs = np.empty((0, d))
     self.vecmeans = np.empty(0)
   def _set_vecs(self, vecs):
@@ -127,8 +135,8 @@ class FiniteTangentSpace(TangentSpace):
 
 
 class FixedFiniteTangentSpace(FiniteTangentSpace):
-  def __init__(self, vecs):
-    super().__init__(vecs.shape[1])
+  def __init__(self, vecs, wref=None, idcsref=None):
+    super().__init__(vecs.shape[1], wref, idcsref)
     self._set_vecs(vecs)
 
   def _dim_changed(self):
@@ -139,8 +147,8 @@ class FixedFiniteTangentSpace(FiniteTangentSpace):
 
 
 class MonteCarloFiniteTangentSpace(FiniteTangentSpace):
-  def __init__(self, log_likelihood, sampler, d):
-    super().__init__(d)
+  def __init__(self, log_likelihood, sampler, d, wref=None, idcsref=None):
+    super().__init__(d, wref, idcsref)
     self.log_likelihood = log_likelihood
     self.sampler = sampler
     self._dim_changed()
