@@ -137,13 +137,28 @@ class Coreset(object):
 
   #can run after building coreset to re-solve only the weight opt, not the combinatorial selection problem
   def optimize(self):
-    raise NotImplementedError()
+    try:
+      prev_cost = self.error()
+      old_wts = self.wts.copy()
+      old_idcs = self.idcs.copy()
+      self._optimize()
+      new_cost = self.error()
+      if new_cost > prev_cost:
+        raise NumericalPrecisionError('self.optimize() returned a solution with increasing error. Numeric limit reached: preverr = ' + str(prev_cost) + ' err = ' + str(new_cost))
+    except NumericalPrecisionError as e:
+      print(e)
+      self._overwrite(old_idcs, old_wts)
+      self.reached_numeric_limit = True
+      return
+  
+  def _optimize(self):
+    raise NotImplementedError
 
   #runs once on first call to .build() but after init (since it may add pt(s) to the coreset)
   def _initialize(self):
     pass #optional
 
   def _build(self, M):
-    raise NotImplementedError()
+    raise NotImplementedError
 
   

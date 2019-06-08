@@ -47,7 +47,7 @@ class OrthoPursuitCoreset(HilbertCoreset,GreedyCoreset):
    
     #run nnls, catch a numerical precision error, reset to old wts/idcs if needed, reraise to tell outer algorithms we failed
     try:
-      self.optimize()
+      self._optimize()
     except NumericalPrecisionError as e:
       self._overwrite(old_idcs, old_wts)
       raise

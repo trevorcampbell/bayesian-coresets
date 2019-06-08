@@ -1,8 +1,9 @@
 import numpy as np
 from ..base.iterative import GreedyCoreset
 from ..util.opt import nn_opt
+from .kl import KLCoreset
 
-class SparseVICoreset(GreedyCoreset):
+class SparseVICoreset(KLCoreset,GreedyCoreset):
 
   def __init__(self, N, tangent_space_factory, step_size = 1., update_single = True):
     super().__init__(N=N) 
@@ -44,7 +45,7 @@ class SparseVICoreset(GreedyCoreset):
     else:
       x0 = self.wts
       def grd(w):
-        T = self.tsf(ab[0]*self.wts + ab[1]*onef, self.idcs)
+        T = self.tsf(w, self.idcs)
         g = T.kl_grad(grad_idcs=self.idcs)
         return g
       x = nn_opt(x0, grd, opt_itrs=1000, step_sched = self.step_sched)

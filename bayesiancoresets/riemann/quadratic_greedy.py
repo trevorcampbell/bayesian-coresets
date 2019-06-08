@@ -1,8 +1,9 @@
 import numpy as np
 from ..base.iterative import GreedyCoreset
 from scipy.optimize import nnls
+from .kl import KLCoreset
 
-class QuadraticSparseVICoreset(GreedyCoreset):
+class QuadraticSparseVICoreset(KLCoreset,GreedyCoreset):
 
   def __init__(self, N, tangent_space_factory, step_size = 1., update_single = True):
     super().__init__(N=N) 

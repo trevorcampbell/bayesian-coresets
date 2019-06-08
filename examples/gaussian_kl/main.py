@@ -1,6 +1,6 @@
 import numpy as np
 import bayesiancoresets as bc
-from copy import deepcopy
+from copy import deepcopy, copy
 import os
 from scipy.stats import multivariate_normal
 
@@ -58,7 +58,7 @@ for t in trials:
   xSiginvx = (xSiginv*x).sum(axis=1)
   logdetSig = np.linalg.slogdet(Sig)[1]
 
-  log_likelihood = lambda samples : gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples):
+  log_likelihood = lambda samples : gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples)
 
   #create tangent space for well-tuned Hilbert coreset alg
   T_true = bc.MonteCarloFiniteTangentSpace(log_likelihood, lambda sz : np.random.multivariate_normal(mup, 9*Sigp, sz), proj_dim)
@@ -80,9 +80,9 @@ for t in trials:
     nu = (x - muw).dot(SigLInv.T)
     Psi = np.dot(SigLInv, np.dot(Sigw, SigLInv.T))
 
-    nu = np.hstack((nu.dot(np.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
+    nu = np.hstack((nu.dot(np.linalg.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
     
-    return bc.FixedTangentSpace(nu, wts, idcs)
+    return bc.FixedFiniteTangentSpace(nu, wts, idcs)
     
    
   #create coreset construction objects
@@ -90,7 +90,7 @@ for t in trials:
   riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, step_size = 1., update_single=False)
   giga_true = bc.GIGACoreset(T_true)
   giga_noisy = bc.GIGACoreset(T_noisy)
-  unif = bc.UniformCoreset(T_true) #tangent space unimportant here
+  unif = bc.UniformSamplingCoreset(T_true) #tangent space unimportant here
  
   algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif]
   nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND']
@@ -104,7 +104,7 @@ for t in trials:
       alg.build(m)
       wts, idcs = alg.weights()
       w[m, idcs] = wts
-      tmpalg = deepcopy(alg)
+      tmpalg = copy(alg)
       tmpalg.optimize()
       wts, idcs = tmpalg.weights()
       w_opt[m, idcs] = wts

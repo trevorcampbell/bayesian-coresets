@@ -80,7 +80,7 @@ class TangentSpace(object):
 
   #(not actually correlations, proportional to them; good enough)
   def kl_residual_correlations(self):
-    return -self.kl_grad(self.wref, self.idcsref)/self.norms()
+    return -self.kl_grad()/self.norms()
 
   def kl_quadratic_expansion(self):
     r = self.residual(self.wref, self.idcsref)

@@ -5,9 +5,10 @@ import numpy as np
 plot_reverse_kl = True
 size_x_axis = False
 trials = np.arange(100)
-nms = [('EGUS', 'Uniform'), ('ERG', 'Greedy'), ('ERCG', 'Fully Corrective Greedy'), ('ERL1', 'L1'), ('ERL1U', 'Unscaled L1'), ('GIGAG', 'GIGA (Truth)'), ('GIGAB', 'GIGA (Noisy)')]
-nms = [('EGUS', 'Uniform'), ('ERG', 'Greedy'), ('ERCG', 'Fully Corrective Greedy'), ('GIGAG', 'GIGA (Truth)'), ('GIGAB', 'GIGA (Noisy)')]
+trials = np.arange(1)
 Ms = np.arange(20)
+nms = [('SVI1', 'SparseVI-1'), ('SVIF', 'SparseVI-Full'), ('GIGAT', 'GIGA (Truth)'), ('GIGAN', 'GIGA (Noisy)'), ('RAND', 'Uniform')]
+
 
 #plot the KL figure
 fig = bkp.figure(y_axis_type='log', plot_width=750, plot_height=750, x_axis_label=('Coreset Size' if size_x_axis else 'Coreset Size'), y_axis_label=('Reverse KL' if plot_reverse_kl else 'Forward KL') )
