@@ -37,7 +37,6 @@ class OrthoPursuitCoreset(HilbertCoreset,GreedyCoreset):
     old_wts = self.wts.copy()
     old_idcs = self.idcs.copy()
 
-    
     #check to make sure value to add is not in the current set (error should be ortho to current subspace)
     #otherwise add a 0 entry to enable nnls below to use f
     f_already = np.where(self.idcs == f)[0].shape[0] > 0
@@ -45,7 +44,7 @@ class OrthoPursuitCoreset(HilbertCoreset,GreedyCoreset):
       raise NumericalPrecisionError('search selected a nonzero weight to update.')
     else:
       self._update(f, 0.)
-    
+   
     #run nnls, catch a numerical precision error, reset to old wts/idcs if needed, reraise to tell outer algorithms we failed
     try:
       self.optimize()
