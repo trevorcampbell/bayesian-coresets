@@ -93,15 +93,12 @@ class FiniteTangentSpace(TangentSpace):
   def __init__(self, d, wref=None, idcsref=None):
     super().__init__(d, wref, idcsref)
     self.vecs = np.empty((0, d))
-    self.vecmeans = np.empty(0)
   def _set_vecs(self, vecs):
     if len(vecs.shape) != 2:
       raise ValueError(self.alg_name+'._set_vecs(): vecs must be a 2d array, otherwise the expected behaviour is ambiguous')
     if vecs.shape[1] != self.d:
       raise ValueError(self.alg_name+'._set_vecs(): vecs must have the correct dimension')
     self.vecs = vecs
-    self.vecmeans = vecs.mean(axis=1)
-    self.vecs -= self.vecmeans[:, np.newaxis]
     self.vsum = vecs.sum(axis=0)
     self.vsum_norm = np.sqrt((self.vsum**2).sum())
     self.vnorms = np.sqrt((self.vecs**2).sum(axis=1))
@@ -163,6 +160,8 @@ class MonteCarloFiniteTangentSpace(FiniteTangentSpace):
       v = np.zeros((self.vecs.shape[0], self.d))
       v[:, :old_dim] = self.vecs+ self.vecmeans[:,np.newaxis]
       v[:, old_dim:] = self.log_likelihood(self.sampler(self.d-old_dim))
+    self.vecmeans = v.mean(axis=1)
+    v -= self.vecmeans[:, np.newaxis]
     self._set_vecs(v)
     return
 
