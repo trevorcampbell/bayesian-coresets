@@ -5,7 +5,7 @@ from .. import TOL
 from .hilbert import HilbertCoreset
 
 
-class ImportanceSamplingCoreset(SamplingCoreset, HilbertCoreset):
+class ImportanceSamplingCoreset(HilbertCoreset,SamplingCoreset):
 
   def __init__(self, tangent_space):
     self.T = tangent_space

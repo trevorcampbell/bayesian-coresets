@@ -3,7 +3,7 @@ from ..base.iterative import GreedySingleUpdateCoreset
 from ..util.errors import NumericalPrecisionError
 from .hilbert import HilbertCoreset
 
-class FrankWolfeCoreset(GreedySingleUpdateCoreset, HilbertCoreset):
+class FrankWolfeCoreset(HilbertCoreset,GreedySingleUpdateCoreset):
 
   def __init__(self, tangent_space):
     super().__init__(N=tangent_space.num_vectors()) 

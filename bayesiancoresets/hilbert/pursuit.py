@@ -6,7 +6,7 @@ from .. import TOL
 
 
 
-class MatchingPursuitCoreset(GreedySingleUpdateCoreset, HilbertCoreset):
+class MatchingPursuitCoreset(HilbertCoreset,GreedySingleUpdateCoreset):
   def __init__(self, tangent_space):
     super().__init__(N=tangent_space.num_vectors()) 
     self.T = tangent_space

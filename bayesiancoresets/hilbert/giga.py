@@ -4,7 +4,7 @@ from ..util.errors import NumericalPrecisionError
 from .. import TOL
 from .hilbert import HilbertCoreset
 
-class GIGACoreset(GreedySingleUpdateCoreset, HilbertCoreset):
+class GIGACoreset(HilbertCoreset,GreedySingleUpdateCoreset):
 
   def __init__(self, tangent_space):
     super().__init__(N=tangent_space.num_vectors()) 
