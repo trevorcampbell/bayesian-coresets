@@ -79,10 +79,10 @@ for t in trials:
     muw, Sigw = weighted_post(mu0, Sig0inv, Siginv, x, w)
     nu = (x - muw).dot(SigLInv.T)
     Psi = np.dot(SigLInv, np.dot(Sigw, SigLInv.T))
-    
-    exact_cov = np.dot(nu, np.dot(Psi, nu.T)) + 0.5*np.trace(np.dot(Psi.T, Psi))
 
-    return bc.FixedTangentSpace(np.linalg.cholesky(exact_cov), wts, idcs)
+    nu = np.hstack((nu.dot(np.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
+    
+    return bc.FixedTangentSpace(nu, wts, idcs)
     
    
   #create coreset construction objects
