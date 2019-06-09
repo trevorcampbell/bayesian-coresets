@@ -93,8 +93,6 @@ for t in trials:
  
   algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif]
   nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND']
-  algs = [unif]
-  nms = ['RAND']
 
   #build coresets
   for nm, alg in zip(nms, algs):

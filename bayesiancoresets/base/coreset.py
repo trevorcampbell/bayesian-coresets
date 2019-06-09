@@ -2,6 +2,7 @@ import numpy as np
 import logging
 import secrets
 from .. import util
+from ..util.errors import NumericalPrecisionError
 
 class Coreset(object):
   def __init__(self, N, auto_above_N = True, initial_wts_sz=1000, repeat_logs=False, **kw):
