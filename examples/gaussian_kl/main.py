@@ -44,7 +44,7 @@ Siginv = np.linalg.inv(Sig)
 SigLInv = np.linalg.inv(SigL)
 opt_itrs = 1000
 proj_dim = 100
-pihat_noise =1.
+pihat_noise =5.
 
 for t in trials:
   #generate data and compute true posterior

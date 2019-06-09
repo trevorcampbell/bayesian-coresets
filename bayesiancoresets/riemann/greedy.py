@@ -11,10 +11,6 @@ class SparseVICoreset(KLCoreset,GreedyCoreset):
     self.update_single = update_single
     self.step_sched = lambda i : step_size*np.sqrt(1./(1.+i))
 
-  def error(self):
-    #TODO KL divergence estimate
-    return 0.
-
   def _search(self):
     #construct a new tangent space for this search iteration
     T = self.tsf(self.wts, self.idcs)
