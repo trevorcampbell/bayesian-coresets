@@ -1,5 +1,5 @@
 from .frankwolfe import FrankWolfeCoreset
-from .sampling import ImportanceSamplingCoreset, UniformSamplingCoreset
+from .sampling import ImportanceSamplingHilbertCoreset, UniformSamplingHilbertCoreset
 from .giga import GIGACoreset
 from .forwardstagewise import ForwardStagewiseCoreset
 from .pursuit import MatchingPursuitCoreset
