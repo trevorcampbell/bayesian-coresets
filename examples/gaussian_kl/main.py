@@ -1,6 +1,5 @@
 import numpy as np
 import bayesiancoresets as bc
-from copy import deepcopy, copy
 import os
 from scipy.stats import multivariate_normal
 
@@ -45,7 +44,7 @@ Siginv = np.linalg.inv(Sig)
 SigLInv = np.linalg.inv(SigL)
 opt_itrs = 1000
 proj_dim = 100
-pihat_noise =0.15
+pihat_noise =1.
 
 for t in trials:
   #generate data and compute true posterior
@@ -102,12 +101,15 @@ for t in trials:
     for m in range(1, M+1):
       print('trial: ' + str(t+1)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
       alg.build(m)
+      #store weights
       wts, idcs = alg.weights()
       w[m, idcs] = wts
-      tmpalg = copy(alg)
-      tmpalg.optimize()
-      wts, idcs = tmpalg.weights()
-      w_opt[m, idcs] = wts
+      #store optimized weights
+      alg.optimize()
+      wts_opt, idcs_opt = alg.weights()
+      w_opt[m, idcs_opt] = wts_opt
+      #restore pre-opt weights
+      alg._overwrite(idcs, wts)
       #print('reverse KL: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
       #print('reverse KL opt: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
 
