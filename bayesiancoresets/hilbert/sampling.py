@@ -19,7 +19,7 @@ class ImportanceSamplingHilbertCoreset(HilbertCoreset,SamplingCoreset):
     else:
       return np.ones(self.N)
 
-class UniformSamplingHilbertCoreset(ImportanceSamplingCoreset):
+class UniformSamplingHilbertCoreset(ImportanceSamplingHilbertCoreset):
   def _compute_sampling_probabilities(self):
     return np.ones(self.N)
 

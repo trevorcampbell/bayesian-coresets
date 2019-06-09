@@ -89,10 +89,12 @@ for t in trials:
   riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, step_size = 1., update_single=False)
   giga_true = bc.GIGACoreset(T_true)
   giga_noisy = bc.GIGACoreset(T_noisy)
-  unif = bc.UniformSamplingCoreset(T_true) #tangent space unimportant here
+  unif = bc.UniformSamplingKLCoreset(x.shape[0], tangent_space_factory, step_size=1.)
  
   algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif]
   nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND']
+  algs = [unif]
+  nms = ['RAND']
 
   #build coresets
   for nm, alg in zip(nms, algs):

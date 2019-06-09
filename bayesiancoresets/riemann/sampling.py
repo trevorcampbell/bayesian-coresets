@@ -14,7 +14,7 @@ class ImportanceSamplingKLCoreset(KLCoreset,SamplingCoreset):
   def _compute_sampling_probabilities(self):
     return np.ones(self.N) #TODO something better here
 
-class UniformSamplingKLCoreset(ImportanceSamplingCoreset):
+class UniformSamplingKLCoreset(ImportanceSamplingKLCoreset):
   def _compute_sampling_probabilities(self):
     return np.ones(self.N)
 
