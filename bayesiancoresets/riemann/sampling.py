@@ -6,7 +6,7 @@ from .kl import KLCoreset
 
 
 class ImportanceSamplingKLCoreset(KLCoreset,SamplingCoreset):
-  def __init__(self, N, tangent_space_factory, step_size = 1.):
+  def __init__(self, N, tangent_space_factory):
     super().__init__(N=N) 
     self.tsf = tangent_space_factory
     self.step_sched = lambda i : step_size*np.sqrt(1./(1.+i))

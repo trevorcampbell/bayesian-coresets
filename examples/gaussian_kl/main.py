@@ -43,7 +43,7 @@ th = np.ones(d)
 Sig0inv = np.linalg.inv(Sig0)
 Siginv = np.linalg.inv(Sig)
 SigLInv = np.linalg.inv(SigL)
-opt_itrs = 1000
+opt_itrs = 3000
 proj_dim = 100
 pihat_noise =5.
 
@@ -86,11 +86,11 @@ for t in trials:
     
    
   #create coreset construction objects
-  riemann_one = bc.SparseVICoreset(x.shape[0], tangent_space_factory, step_size = 1., opt_itrs=3000, update_single=True)
-  riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, step_size = 1., opt_itrs=3000, update_single=False)
+  riemann_one = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=True)
+  riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=False)
   giga_true = bc.GIGACoreset(T_true)
   giga_noisy = bc.GIGACoreset(T_noisy)
-  unif = bc.UniformSamplingKLCoreset(x.shape[0], tangent_space_factory, step_size=1.)
+  unif = bc.UniformSamplingKLCoreset(x.shape[0], tangent_space_factory)
  
   algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif]
   nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND']

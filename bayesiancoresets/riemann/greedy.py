@@ -5,11 +5,11 @@ from .kl import KLCoreset
 
 class SparseVICoreset(KLCoreset,GreedyCoreset):
 
-  def __init__(self, N, tangent_space_factory, step_size = 1., opt_itrs=1000, update_single = True):
+  def __init__(self, N, tangent_space_factory, step_sched = lambda i : np.sqrt(1./(1.+i)), opt_itrs=1000, update_single = True):
     super().__init__(N=N) 
     self.tsf = tangent_space_factory
     self.update_single = update_single
-    self.step_sched = lambda i : step_size*np.sqrt(1./(1.+i))
+    self.step_sched = step_sched
     self.opt_itrs = opt_itrs
 
   def _search(self):
