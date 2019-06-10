@@ -54,8 +54,8 @@ if fldr == 'lr':
   print('Loading posterior samples for '+dnm)
   samples = np.load('results/lr_'+dnm+'_samples.npy')
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
-  # THESE WORK FOR RIEMANN_CORR
-  tuning = {'synth': (1000, lambda itr : 10./(1.+itr)), 'ds1': (2000, lambda itr : 10./(1.+itr)), 'phishing': (2000, lambda itr : 10./(1.+itr)**0.8)}
+  #tuning = {'synth': (1000, lambda itr : 10./(1.+itr)), 'ds1': (2000, lambda itr : 10./(1.+itr)), 'phishing': (2000, lambda itr : 10./(1.+itr)**0.8)}
+  tuning = {'synth': (1000, lambda itr : 1./(1.+itr)), 'ds1': (2000, lambda itr : 1./(1.+itr)), 'phishing': (2000, lambda itr : 1./(1.+itr)**0.8)}
 else:
   from model_poiss import *
   print('Loading dataset '+dnm)
@@ -64,9 +64,8 @@ else:
   samples = np.load('results/poiss_'+dnm+'_samples.npy')
   #need to put intercept at the end
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
-  # THESE WORK FOR RIEMANN_CORR
-  #tuning = {'synth':(10., 700, 1.8,8000), 'biketrips':(1., 100, 2, 32000), 'airportdelays':(1., 100., 2., 32000)}
-  tuning = {'synth': (1000, lambda itr : 10./(1.+itr)), 'biketrips': (2000, lambda itr : 5./(1.+itr)**0.8), 'airportdelays': (2000, lambda itr : 4./(1.+itr)**0.75)}
+  #tuning = {'synth': (1000, lambda itr : 10./(1.+itr)), 'biketrips': (2000, lambda itr : 5./(1.+itr)**0.8), 'airportdelays': (2000, lambda itr : 4./(1.+itr)**0.75)}
+  tuning = {'synth': (1000, lambda itr : 1./(1.+itr)), 'biketrips': (2000, lambda itr : 1./(1.+itr)**0.8), 'airportdelays': (2000, lambda itr : 1./(1.+itr)**0.75)}
 
 #fit a gaussian to the posterior samples 
 #used for pihat computation for Hilbert coresets with noise to simulate uncertainty in a good pihat
@@ -83,7 +82,7 @@ learning_rate = tuning[dnm][1]
 
 ###############################
 ## TUNING PARAMETERS ##
-Ms = [1, 2, 5, 10, 20, 50, 100, 400] #coreset sizes at which we record output
+Ms = [1, 2, 5, 10, 20, 50, 100] #coreset sizes at which we record output
 projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = 2. #noise level (relative) for corrupting pihat
 ###############################

@@ -86,12 +86,17 @@ class TangentSpace(object):
     r = self.residual(self.wref, self.idcsref)
     if exp_idcs is None:
       D = -self[:].dot(r)/self.d
-      H = (self[:]*(1.-r)).dot(self[:].T) / self.d
-      return D, H
+      H = (self[:]).dot(self[:].T) / self.d
+      Hn = (self[:]*r).dot(self[:].T) / self.d
     else:
       D = -self[exp_idcs].dot(r)/self.d
-      H = (self[exp_idcs]*(1.-r)).dot(self[exp_idcs].T) / self.d
-      return D, H
+      H = (self[exp_idcs]).dot(self[exp_idcs].T) / self.d
+      Hn = (self[exp_idcs]*r).dot(self[exp_idcs].T) / self.d
+    eta = 1.
+    c = 1e-16*np.eye(H.shape[0])
+    while( np.any(np.linalg.eigvalsh(H-eta*Hn+c) < 0)):
+      eta /= 2.
+    return D, H-eta*Hn+c
 
 class FiniteTangentSpace(TangentSpace):
   def __init__(self, d, wref=None, idcsref=None):

@@ -8,8 +8,7 @@
 
 for ID in {1..100}
 do
-    #for alg in "uniform" "hilbert" "hilbert_good" "riemann_corr" "prior"
-    for alg in "riemann_corr"
+    for alg in "uniform" "hilbert" "hilbert_good" "riemann_corr" "prior"
     do
         for fldrdnm in "lr synth" "lr phishing" "lr ds1" "poiss synth" "poiss biketrips" "poiss airportdelays"
 	do
