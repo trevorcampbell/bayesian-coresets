@@ -3,6 +3,8 @@ import numpy as np
 import bayesiancoresets as bc
 import time
 
+np.random.seed(3)
+
 bc.util.verbosity('warning')
 
 n_trials = 5
@@ -12,7 +14,7 @@ Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 
 
 anms = ['FW', 'GIGA', 'MP', 'FSW', 'OMP', 'IS', 'US']
-algs = [bc.FrankWolfeCoreset, bc.GIGACoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.ImportanceSamplingCoreset, bc.UniformSamplingCoreset]
+algs = [bc.FrankWolfeCoreset, bc.GIGACoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.ImportanceSamplingHilbertCoreset, bc.UniformSamplingHilbertCoreset]
 
 ##########################################
 ## Test 1: gaussian data
