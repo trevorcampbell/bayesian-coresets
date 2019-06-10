@@ -82,12 +82,16 @@ class TangentSpace(object):
   def kl_residual_correlations(self):
     return -self.kl_grad()/self.norms()
 
-  def kl_quadratic_expansion(self):
+  def kl_quadratic_expansion(self, exp_idcs=None):
     r = self.residual(self.wref, self.idcsref)
-    D = -self[:].dot(r)/self.d
-    H = (self[:] * (1. - r)).dot(self[:].T) / self.d
-    return D, H
-
+    if exp_idcs is None:
+      D = -self[:].dot(r)/self.d
+      H = (self[:]*(1.-r)).dot(self[:].T) / self.d
+      return D, H
+    else:
+      D = -self[exp_idcs].dot(r)/self.d
+      H = (self[exp_idcs]*(1.-r)).dot(self[exp_idcs].T) / self.d
+      return D, H
 
 class FiniteTangentSpace(TangentSpace):
   def __init__(self, d, wref=None, idcsref=None):

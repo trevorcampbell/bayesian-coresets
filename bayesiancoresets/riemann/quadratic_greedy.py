@@ -29,7 +29,7 @@ class QuadraticSparseVICoreset(KLCoreset,GreedyCoreset):
     onef[fidx] = 1.
 
     T = self.tsf(self.wts, self.idcs)
-    D, H = T.kl_quadratic_expansion()
+    D, H = T.kl_quadratic_expansion(self.idcs)
     L = np.linalg.cholesky(H)
 
     gamma = self.step_sched(self.itrs)
