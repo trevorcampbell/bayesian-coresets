@@ -104,7 +104,7 @@ class FiniteTangentSpace(TangentSpace):
     self.vnorms = np.sqrt((self.vecs**2).sum(axis=1))
     self.vnorms_sum = self.vnorms.sum()
     if ( np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum() > self.vecs.shape[0]*0.25:
-      self.log.warning('more than 25% of the vectors have norm less than TOL. # = ' + str(np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum())
+      self.log.warning('more than 25% of the vectors have norm less than TOL. # = ' + str((np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum()))
 
   def __getitem__(self, k):
     return self.vecs[k]

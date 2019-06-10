@@ -104,8 +104,8 @@ Sighat = U*Sigp + (1.-U)*Sig0
 muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
 Sighat *= np.exp(-2.*pihat_noise*np.fabs(np.random.randn()))
 
-T_noisy = bc.MonteCarloFiniteTangentSpace(log_likelihood_2d2d, lambda sz : np.random.multivariate_normal(muhat, Sighat, sz), projection_dim)
-T_true = bc.MonteCarloFiniteTangentSpace(log_likelihood_2d2d, lambda sz : np.random.multivariate_normal(mup, 9*Sigp, sz), projection_dim)
+T_noisy = bc.MonteCarloFiniteTangentSpace(lambda th : log_likelihood_2d2d(Z, th), lambda sz : np.random.multivariate_normal(muhat, Sighat, sz), projection_dim)
+T_true = bc.MonteCarloFiniteTangentSpace(lambda th : log_likelihood_2d2d(Z, th), lambda sz : np.random.multivariate_normal(mup, 9*Sigp, sz), projection_dim)
 def tangent_space_factory(wts, idcs):
   if idcs.shape[0] > 0:
     w = np.zeros(Z.shape[0])
@@ -113,7 +113,7 @@ def tangent_space_factory(wts, idcs):
     muw, Sigw = get_laplace(w, Z, mu0)
   else:
     muw, Sigw = mu0, Sig0
-  return bc.MonteCarloFiniteTangentSpace(log_likelihood_2d2d, lambda sz : np.random.multivariate_normal(muw, Sigw, sz), n_samples)
+  return bc.MonteCarloFiniteTangentSpace(lambda th : log_likelihood_2d2d(Z, th), lambda sz : np.random.multivariate_normal(muw, Sigw, sz), n_samples)
  
 #coreset objects
 if alg == 'hilbert' or alg=='hilbert_corr':
