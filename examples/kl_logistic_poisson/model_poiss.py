@@ -43,6 +43,12 @@ def compute_m(th, x):
   #  m[m<100] = np.log1p(np.exp(m[m<100]))
   #return m
 
+def log_likelihood_2d2d(z, th):
+  lls = np.zeros(th.shape[0])
+  for i in range(th.shape[0]):
+    lls[i] = log_likelihood(z, th[i,:]).sum()
+  return lls
+
 def log_likelihood(Z, th):
   x = Z[:, :-1]
   y = Z[:, -1]

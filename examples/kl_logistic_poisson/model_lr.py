@@ -26,6 +26,12 @@ def gen_synthetic(n):
 def log_joint(Z, th, wts):
   return (wts*log_likelihood(Z, th)).sum() + log_prior(th)
 
+def log_likelihood_2d2d(z, th):
+  lls = np.zeros(th.shape[0])
+  for i in range(th.shape[0]):
+    lls[i] = log_likelihood(z, th[i,:]).sum()
+  return lls
+
 def log_likelihood(z, th):
   if len(z.shape) == 1:
     m = -(th*z).sum()
