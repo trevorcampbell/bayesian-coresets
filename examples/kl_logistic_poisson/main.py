@@ -113,7 +113,7 @@ def tangent_space_factory(wts, idcs):
     muw, Sigw = get_laplace(w, Z, mu0)
   else:
     muw, Sigw = mu0, Sig0
-  return bc.MonteCarloFiniteTangentSpace(lambda th : log_likelihood_2d2d(Z, th), lambda sz : np.random.multivariate_normal(muw, Sigw, sz), n_samples)
+  return bc.MonteCarloFiniteTangentSpace(lambda th : log_likelihood_2d2d(Z, th), lambda sz : np.random.multivariate_normal(muw, Sigw, sz), n_samples, wref=wts, idcsref=idcs)
  
 #coreset objects
 if alg == 'hilbert' or alg=='hilbert_corr':
