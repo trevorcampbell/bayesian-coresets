@@ -40,9 +40,11 @@ for i, nm in enumerate(nms):
   else:
     kl = np.array(kl)
     klopt = np.array(klopt)
+    #for j in range(kl.shape[0]):
+    #  fig.line(np.arange(kl.shape[1]), kl[j, :], color=pal[i], line_width=5, line_dash='dashed', legend=nm[1])
+    #  fig.line(np.arange(kl.shape[1]), klopt[j, :], color=pal[i], line_width=5, line_dash='solid', legend=nm[1])
     fig.line(np.arange(kl.shape[1]), np.maximum(np.percentile(kl, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='dashed', legend=nm[1])
     fig.line(np.arange(kl.shape[1]), np.maximum(np.percentile(klopt, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='solid', legend=nm[1])
-    #plot_meanstd(fig, np.arange(kl.shape[1]), klopt, pal[i], 5, 0.3, 'solid', nm)
 
 postprocess_plot(fig, '22pt', location='bottom_left', glyph_width=40)
 fig.legend.background_fill_alpha=0.

@@ -3,6 +3,7 @@ import bayesiancoresets as bc
 import os
 from scipy.stats import multivariate_normal
 
+bc.util.verbosity('info')
 
 def gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples):
   return -x.shape[1]/2*np.log(2*np.pi) - 1./2.*logdetSig - 1./2.*(xSiginvx[:, np.newaxis] - 2.*np.dot(xSiginv, samples.T) + (np.dot(samples, Siginv)*samples).sum(axis=1))
@@ -85,8 +86,8 @@ for t in trials:
     
    
   #create coreset construction objects
-  riemann_one = bc.SparseVICoreset(x.shape[0], tangent_space_factory, step_size = 1., update_single=True)
-  riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, step_size = 1., update_single=False)
+  riemann_one = bc.SparseVICoreset(x.shape[0], tangent_space_factory, step_size = 1., opt_itrs=3000, update_single=True)
+  riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, step_size = 1., opt_itrs=3000, update_single=False)
   giga_true = bc.GIGACoreset(T_true)
   giga_noisy = bc.GIGACoreset(T_noisy)
   unif = bc.UniformSamplingKLCoreset(x.shape[0], tangent_space_factory, step_size=1.)

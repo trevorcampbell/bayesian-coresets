@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 
 def nn_opt(x0, grd, opt_itrs=1000, step_sched = lambda i : 1./(i+1), b1=0.9, b2=0.99, eps=1e-8, verbose=False):
   x = x0.copy()

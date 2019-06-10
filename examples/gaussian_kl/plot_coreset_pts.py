@@ -21,6 +21,11 @@ Ms = np.arange(20)
 
 Ms = [0, 1, 2, 5, 8, 12]
 
+nm = ('SVI1', 'SparseVI-1')
+Ms = np.arange(20)
+
+
+
 
 np.random.seed(5)
 #plot the KL figure
