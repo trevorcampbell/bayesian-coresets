@@ -101,28 +101,28 @@ dnmsalgs = [(dnm, alg) for dnm in dnames for alg in algs]
 #get uniform median normalization
 std_kls = {}
 for didx, dnm in enumerate(dnames):
-  trials = [fn for fn in os.listdir('.') if dnm+'_prior_results_' in fn]
+  trials = [fn for fn in os.listdir('results/') if dnm+'_prior_results_' in fn]
   if len(trials) == 0: 
     print('Need to run uniform to establish baseline first')
     quit()
   kltot = 0.
   for tridx, fn in enumerate(trials):
-    res = np.load(fn)
+    res = np.load('results/'+fn)
     kltot += np.log(res['kls']).mean()
   std_kls[dnm] = np.exp(kltot / len(trials))
 
 for idx, zppd in enumerate(dnmsalgs):
   dnm, alg = zppd
-  trials = [fn for fn in os.listdir('.') if dnm+'_'+alg[0]+'_results_' in fn]
+  trials = [fn for fn in os.listdir('results/') if dnm+'_'+alg[0]+'_results_' in fn]
   if len(trials) == 0: continue
-  Ms = np.load(trials[0])['Ms']
+  Ms = np.load('results/'+trials[0])['Ms']
   kls = np.zeros((len(trials), len(Ms)))
   cputs = np.zeros((len(trials), len(Ms)))
   cszs = np.zeros((len(trials), len(Ms)))
   kl0 = std_kls[dnm] 
   for tridx, fn in enumerate(trials):
     #np.savez(fldr+'_'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=Ms, mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
-    res = np.load(fn)
+    res = np.load('results/'+fn)
     cput = res['cputs']
     #if cput.shape[0] != len(Ms):
     #  print(fn)

@@ -25,7 +25,7 @@ class MatchingPursuitCoreset(HilbertCoreset,GreedySingleUpdateCoreset):
     pos = dots[fpos]
     fneg = (-dots[self.idcs]).argmax()
     neg = (-dots[self.idcs])[fneg]
-
+   
     if pos >= neg:
       return fpos
     else:

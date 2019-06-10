@@ -43,30 +43,32 @@ poisson_data_synth = {'x': X_synthp, 'y':Y_synthp.astype(int), 'd': X_synthp.sha
 poisson_data_bike = {'x': X_bike, 'y':Y_bike.astype(int), 'd': X_bike.shape[1], 'n': X_bike.shape[0]}
 poisson_data_air = {'x': X_air, 'y':Y_air.astype(int), 'd': X_air.shape[1], 'n': X_air.shape[0]}
 
-if not os.path.exists('pystan_model_logistic.pk'): 
+if not os.path.exists('results/'):
+  os.mkdir('results')
+
+if not os.path.exists('results/pystan_model_logistic.pk'): 
   sml = pystan.StanModel(model_code=logistic_code)
-  f = open('pystan_model_logistic.pk','wb')
+  f = open('results/pystan_model_logistic.pk','wb')
   pk.dump(sml, f)
   f.close()
 else:
-  f = open('pystan_model_logistic.pk','rb')
+  f = open('results/pystan_model_logistic.pk','rb')
   sml = pk.load(f)
   f.close()
 
-if not os.path.exists('pystan_model_poisson.pk'): 
+if not os.path.exists('results/pystan_model_poisson.pk'): 
   smp = pystan.StanModel(model_code=poisson_code)
-  f = open('pystan_model_poisson.pk','wb')
+  f = open('results/pystan_model_poisson.pk','wb')
   pk.dump(smp, f)
   f.close()
 else:
-  f = open('pystan_model_poisson.pk','rb')
+  f = open('results/pystan_model_poisson.pk','rb')
   smp = pk.load(f)
   f.close()
 
 N_samples = 10000
 N_per = 2000
-#dnms = [(logistic_data_synth, 'lr', 'synth', X_synth.shape[1]+1, sml), (logistic_data_ds1, 'lr', 'ds1', X_ds1.shape[1]+1, sml), (logistic_data_phish, 'lr', 'phishing', X_phish.shape[1]+1, sml), (poisson_data_synth, 'poiss', 'synth', X_synthp.shape[1]+1, smp), (poisson_data_bike, 'poiss', 'biketrips', X_bike.shape[1]+1, smp), (poisson_data_air, 'poiss', 'airportdelays', X_air.shape[1]+1, smp)]
-dnms = [(logistic_data_synth, 'lr', 'synth', X_synth.shape[1]+1, sml), (poisson_data_synth, 'poiss', 'synth', X_synthp.shape[1]+1, smp)]
+dnms = [(logistic_data_synth, 'lr', 'synth', X_synth.shape[1]+1, sml), (logistic_data_ds1, 'lr', 'ds1', X_ds1.shape[1]+1, sml), (logistic_data_phish, 'lr', 'phishing', X_phish.shape[1]+1, sml), (poisson_data_synth, 'poiss', 'synth', X_synthp.shape[1]+1, smp), (poisson_data_bike, 'poiss', 'biketrips', X_bike.shape[1]+1, smp), (poisson_data_air, 'poiss', 'airportdelays', X_air.shape[1]+1, smp)]
 for data, fldr, nm, d, sm in dnms:
   print('sampling posterior: ' + nm)
   t0 = time.process_time()
@@ -81,8 +83,8 @@ for data, fldr, nm, d, sm in dnms:
         print('initialization failed, trying again')
         fit = sm.sampling(data=data, iter=N_per*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
     samples = np.vstack((samples, fit.extract(permuted=False)[:, 0, :d]))
-  np.save(fldr+'_'+nm+'_samples.npy', samples) 
+  np.save('results/'+fldr+'_'+nm+'_samples.npy', samples) 
   tf = time.process_time()
-  np.save(fldr+'_'+nm+'_mcmc_time.npy', tf-t0)
+  np.save('results/'+fldr+'_'+nm+'_mcmc_time.npy', tf-t0)
 
 

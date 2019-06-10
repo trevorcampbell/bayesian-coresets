@@ -86,17 +86,19 @@ class GreedySingleUpdateCoreset(GreedyCoreset):
     preverror = self.error()
     prevwts = self.wts.copy()
     previdcs = self.idcs.copy()
+    prevnwts = self.nwts
     #update the weights
     self.wts *= alpha
     #it's possible wts[f] becomes negative if beta approx -wts[f], so threshold
     idx = np.where(self.idcs == f)[0]
     self._update(f, max((self.wts[idx] if idx.shape[0] > 0 else 0.)+beta, 0))
-    
     error = self.error()
     if error > preverror:
       #revert
-      self.wts = prevwts
-      self.idcs = previdcs
+      self._overwrite(previdcs, prevwts)
+      #self.wts = prevwts
+      #self.idcs = previdcs
+      #self.nwts = prevnwts
       raise NumericalPrecisionError('Error not monotone: curr error = ' + str(error) + ' prev error = ' + str(preverror))
 
   def _step_coeffs(self, f):

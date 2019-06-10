@@ -5,6 +5,7 @@ from scipy.optimize import minimize
 import time
 import sys
 from scipy.optimize import nnls
+import os
 #np.seterr(over='raise', invalid='raise', divide='raise')
 
 #adam optimizer with lambda fcn learning rate -- pulled from autograd library
@@ -129,6 +130,9 @@ def riemann_optimize(w, n,  HlogZ1w, HlogZa, H3logZa, full=True):
   return w
 
 
+if not os.path.exists('results/'):
+  os.mkdir('results')
+
 fldr = sys.argv[1] #should be either lr or poiss
 dnm = sys.argv[2] #if above is lr, should be synth / phishing / ds1; if above is poiss, should be synth, biketrips, or airportdelays
 alg = sys.argv[3] #should be hilbert / hilbert_corr / riemann / riemann_corr / uniform 
@@ -143,7 +147,7 @@ if fldr == 'lr':
   print('Loading dataset '+dnm)
   Z, Zt, D = load_data('lr/'+dnm+'.npz')
   print('Loading posterior samples for '+dnm)
-  samples = np.load('lr_'+dnm+'_samples.npy')
+  samples = np.load('results/lr_'+dnm+'_samples.npy')
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
   # THESE WORK FOR RIEMANN_CORR
   tuning = {'synth': (1000, lambda itr : 10./(1.+itr)), 'ds1': (2000, lambda itr : 10./(1.+itr)), 'phishing': (2000, lambda itr : 10./(1.+itr)**0.8)}
@@ -152,7 +156,7 @@ else:
   print('Loading dataset '+dnm)
   Z, Zt, D = load_data('poiss/'+dnm+'.npz')
   print('Loading posterior samples for '+dnm)
-  samples = np.load('poiss_'+dnm+'_samples.npy')
+  samples = np.load('results/poiss_'+dnm+'_samples.npy')
   #need to put intercept at the end
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
   # THESE WORK FOR RIEMANN_CORR
@@ -347,6 +351,6 @@ for m in range(len(Ms)):
   kls_laplace[m] = gaussian_KL(mup, Sigp, mus_laplace[m,:], Sigs_laplace[m,:,:])
 
 #save results
-np.savez(fldr+'_'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=Ms, mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
+np.savez('results/'+fldr+'_'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=Ms, mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
 
 

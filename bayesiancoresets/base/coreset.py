@@ -60,11 +60,13 @@ class Coreset(object):
       raise ValueError(self.alg_name+'._set(): new weights + idcs must be nonnegative, and new idcs must have integer type. any(wts < 0) = ' + str(np.any(__wts < 0)) + ' any(idcs < 0) = ' + str(np.any(__idcs<0)) + ' dtype = ' + str(__idcs.dtype) + ' idcs = ' + str(__idcs))
     #get intersection, overwrite
     inter, i1, i2 = np.intersect1d(self.idcs, __idcs, return_indices=True)
+
     self.wts[i1] = __wts[i2]
 
     #get difference, append, resizing if necessary
     idiff = np.setdiff1d(np.arange(__idcs.shape[0]), i2)
     while self.nwts + idiff.shape[0] > self._wts.shape[0]:
+      ##print('doubling')
       self._double_internal()
     self._idcs[self.nwts:self.nwts+idiff.shape[0]] = __idcs[idiff]
     self._wts[self.nwts:self.nwts+idiff.shape[0]] = __wts[idiff]
@@ -72,6 +74,7 @@ class Coreset(object):
 
     #create views
     self._refresh_views()
+
 
   #completely overwrite; forget any previous weight settings
   def _overwrite(self, __idcs, __wts):
