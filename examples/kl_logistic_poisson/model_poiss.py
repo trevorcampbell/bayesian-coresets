@@ -28,7 +28,7 @@ def log_joint(Z, th, wts):
   return (wts[np.isfinite(ll)]*ll[np.isfinite(ll)]).sum() + log_prior(th)
 
 def compute_m(th, x):
-
+  
   #stable m computation:
   m = np.atleast_2d(th*x).sum(axis=1)
   return np.maximum(m, 0) + np.log1p(np.exp(-np.fabs(m)))

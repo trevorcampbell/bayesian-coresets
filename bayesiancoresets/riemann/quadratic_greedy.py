@@ -9,6 +9,7 @@ class QuadraticSparseVICoreset(KLCoreset,GreedyCoreset):
     super().__init__(N=N) 
     self.tsf = tangent_space_factory
     self.update_single = update_single
+    self.step_sched = step_sched
 
   def _search(self):
     #construct a new tangent space for this search iteration
@@ -31,13 +32,14 @@ class QuadraticSparseVICoreset(KLCoreset,GreedyCoreset):
     D, H = T.kl_quadratic_expansion()
     L = np.linalg.cholesky(H)
 
+    gamma = self.step_sched(self.itrs)
     if self.update_single:
       wtmp = self.wts.copy()
       wtmp[fidx] = 0.
       ab, resid = nnls(np.hstack((L.T.dot(wtmp)[:,np.newaxis], L.T.dot(onef)[:,np.newaxis])) , (L.T.dot(wtmp) - np.linalg.solve(L, D)))
-      self._update(self.idcs, ab[0]*wtmp + ab[1]*onef)
+      self._update(self.idcs, (1.-gamma)*self.wts + gamma*(ab[0]*wtmp + ab[1]*onef))
       #ab, resid = nnls(np.hstack((L.T.dot(self.wts)[:,np.newaxis], L.T.dot(onef)[:,np.newaxis])) , (L.T.dot(self.wts) - np.linalg.solve(L, D)))
       #self._update(self.idcs, ab[0]*self.wts + ab[1]*onef)
     else:
       w, resid = nnls(L.T, (L.T.dot(self.wts) - np.linalg.solve(L, D)))
-      self._update(self.idcs, w)
+      self._update(self.idcs, (1.-gamma)*self.wts + gamma*w)

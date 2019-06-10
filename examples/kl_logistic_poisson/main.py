@@ -83,9 +83,9 @@ learning_rate = tuning[dnm][1]
 
 ###############################
 ## TUNING PARAMETERS ##
-Ms = [1, 2, 5, 10, 20, 50, 100, 500]# , 1000] #coreset sizes at which we record output
+Ms = [1, 2, 5, 10, 20, 50, 100, 400] #coreset sizes at which we record output
 projection_dim = 100 #random projection dimension for Hilbert csts
-pihat_noise = 5. #noise level (relative) for corrupting pihat
+pihat_noise = 2. #noise level (relative) for corrupting pihat
 ###############################
 
 #initialize memory for coreset weights, laplace approx, kls
