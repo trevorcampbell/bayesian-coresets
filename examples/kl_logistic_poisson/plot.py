@@ -88,8 +88,6 @@ dnames = ['lr_synth', 'lr_ds1', 'lr_phishing', 'poiss_synth', 'poiss_biketrips',
 #algs = [('uniform', 'Uniform', pal[7]), ('hilbert','GIGA (noisy)', pal[5]), ('hilbert_corr', 'Fully Corrective GIGA (noisy)', pal[1]), ('riemann', 'Greedy', pal[3]), ('riemann_corr', 'Fully Corrective Greedy', pal[4]),('hilbert_good','GIGA (truth)', pal[2]), ('hilbert_corr_good', 'Fully Corrective GIGA (truth)', pal[0])]
 algs = [('uniform', 'Uniform', pal[7]),  ('riemann_corr', 'Fully Corrective Greedy', pal[2]),('hilbert','GIGA (Noisy)', pal[1]),('hilbert_good','GIGA (Truth)', pal[0]), ('prior','Prior', 'black')]
 
-algs = [('uniform', 'Uniform', pal[7]),  ('hilbert','GIGA (Noisy)', pal[1]),('hilbert_good','GIGA (Truth)', pal[0]), ('prior','Prior', 'black')]
-
 fig = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL',  x_axis_label='# Iterations', width=2000, height=2000)
 fig2 = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='CPU Time (s)', width=2000, height=2000)
 fig3 = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Reverse KL',  x_axis_label='Coreset Size', width=2000, height=2000)
