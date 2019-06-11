@@ -45,7 +45,7 @@ Siginv = np.linalg.inv(Sig)
 SigLInv = np.linalg.inv(SigL)
 opt_itrs = 3000
 proj_dim = 100
-pihat_noise =5.
+pihat_noise =0.15
 
 for t in trials:
   #generate data and compute true posterior
@@ -95,6 +95,10 @@ for t in trials:
   algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif]
   nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND']
 
+  algs = [giga_true, giga_noisy, unif]
+  nms = ['GIGAT', 'GIGAN', 'RAND']
+
+
   #build coresets
   for nm, alg in zip(nms, algs):
     w = np.zeros((M+1, x.shape[0]))
@@ -104,6 +108,7 @@ for t in trials:
       alg.build(m)
       #store weights
       wts, idcs = alg.weights()
+      print(idcs)
       w[m, idcs] = wts
       #store optimized weights
       alg.optimize()
