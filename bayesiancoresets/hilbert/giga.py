@@ -1,7 +1,7 @@
 import numpy as np
 from ..base.iterative import GreedySingleUpdateCoreset
 from ..util.errors import NumericalPrecisionError
-from .. import TOL
+from .. import util
 from .hilbert import HilbertCoreset
 
 class GIGACoreset(HilbertCoreset,GreedySingleUpdateCoreset):
@@ -24,7 +24,7 @@ class GIGACoreset(HilbertCoreset,GreedySingleUpdateCoreset):
 
     cdir = xs/ns - (xs/ns).dot((xw/nw))*(xw/nw)
     cdirnrm =np.sqrt((cdir**2).sum()) 
-    if cdirnrm < TOL:
+    if cdirnrm < util.TOL:
       raise NumericalPrecisionError('cdirnrm < TOL: cdirnrm = ' + str(cdirnrm))
     cdir /= cdirnrm
     scorends = (self.T[:]/self.T.norms()[:,np.newaxis]).dot(np.hstack((cdir[:,np.newaxis], xw[:,np.newaxis]/nw))) 

@@ -3,7 +3,6 @@ import logging
 import secrets
 from .. import util
 from ..util.errors import NumericalPrecisionError
-from .. import TOL
 
 class Coreset(object):
   def __init__(self, N, auto_above_N = True, initial_wts_sz=1000, repeat_logs=False, **kw):
@@ -148,8 +147,9 @@ class Coreset(object):
       old_idcs = self.idcs.copy()
       self._optimize()
       new_cost = self.error()
-      if new_cost > prev_cost*(1.+TOL):
-        raise NumericalPrecisionError('self.optimize() returned a solution with increasing error. Numeric limit reached: preverr = ' + str(prev_cost) + ' err = ' + str(new_cost))
+      if new_cost > prev_cost*(1.+util.TOL):
+        raise NumericalPrecisionError('self.optimize() returned a solution with increasing error. Numeric limit possibly reached: preverr = ' + str(prev_cost) + ' err = ' + str(new_cost) + '.\n \
+                                        If the two errors are very close, try running bc.util.tolerance(tol) with tol > current tol = ' + str(util.TOL) + ' before running')
     except NumericalPrecisionError as e:
       print(e)
       self._overwrite(old_idcs, old_wts)

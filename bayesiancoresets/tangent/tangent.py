@@ -1,5 +1,4 @@
 import numpy as np
-from .. import TOL
 import logging
 import secrets
 from .. import util
@@ -67,7 +66,7 @@ class TangentSpace(object):
     xsn = np.sqrt((xs**2).sum())
     if xwn == 0. or xsn == 0.:
       return 0.
-    if xwn < TOL or xsn < TOL:
+    if xwn < util.TOL or xsn < util.TOL:
         self.log.warning('the norm of xs or xw is small; optimal scaling might be unstable. ||xs|| = ' + str(xsn) + ' ||xw|| = ' + str(xwn))
     return xsn/xwn*max(0., (xw/xwn).dot(xs/xsn))
 
@@ -112,8 +111,8 @@ class FiniteTangentSpace(TangentSpace):
     self.vsum_norm = np.sqrt((self.vsum**2).sum())
     self.vnorms = np.sqrt((self.vecs**2).sum(axis=1))
     self.vnorms_sum = self.vnorms.sum()
-    if ( np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum() > self.vecs.shape[0]*0.25:
-      self.log.warning('more than 25% of the vectors have norm less than TOL. # = ' + str((np.sqrt((self.vecs**2).sum(axis=1)) < TOL).sum()))
+    if ( np.sqrt((self.vecs**2).sum(axis=1)) < util.TOL).sum() > self.vecs.shape[0]*0.25:
+      self.log.warning('more than 25% of the vectors have norm less than TOL. # = ' + str((np.sqrt((self.vecs**2).sum(axis=1)) < util.TOL).sum()))
 
   def __getitem__(self, k):
     return self.vecs[k]

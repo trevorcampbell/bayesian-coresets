@@ -1,7 +1,7 @@
 import numpy as np
 from .coreset import Coreset
 from ..util.errors import NumericalPrecisionError 
-from .. import TOL
+from .. import util
 import bisect
 import sys
 
@@ -53,7 +53,7 @@ class OptimizationCoreset(Coreset):
     # 2) the upper/lower reg bounds are far apart in a relative sense, and
     # 3) the upper/lower reg bounds are far apart in an abolute sense (only check if lmbl == 0.)
 
-    while nnz != M and (lmbu-lmbl)/lmbu > TOL and (lmbu > TOL or lmbl > 0.):
+    while nnz != M and (lmbu-lmbl)/lmbu > util.TOL and (lmbu > util.TOL or lmbl > 0.):
       #pick new lambda
       lmb = (lmbu+lmbl)/2.
 
@@ -61,8 +61,8 @@ class OptimizationCoreset(Coreset):
       w, idx = self._optimize(w, idx, lmb)
  
       #threshold to 0
-      idx = idx[w > TOL]
-      w = w[w>TOL]
+      idx = idx[w > util.TOL]
+      w = w[w>util.TOL]
       
       
       #add to the cache

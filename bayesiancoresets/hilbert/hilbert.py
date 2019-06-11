@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.optimize import nnls
 from ..util.errors import NumericalPrecisionError
-from .. import TOL
 
 class HilbertCoreset(object):
   

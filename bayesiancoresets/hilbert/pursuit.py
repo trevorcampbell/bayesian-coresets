@@ -2,7 +2,6 @@ import numpy as np
 from ..base.iterative import GreedySingleUpdateCoreset
 from ..util.errors import NumericalPrecisionError
 from .hilbert import HilbertCoreset
-from .. import TOL
 
 
 

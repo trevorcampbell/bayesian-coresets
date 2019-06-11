@@ -1,4 +1,3 @@
-TOL = 1e-12
 from .tangent import FixedFiniteTangentSpace, MonteCarloFiniteTangentSpace
 from .base import FullDataCoreset
 from .hilbert import FrankWolfeCoreset, GIGACoreset, MatchingPursuitCoreset, ForwardStagewiseCoreset, OrthoPursuitCoreset, ImportanceSamplingHilbertCoreset, UniformSamplingHilbertCoreset, LassoCoreset

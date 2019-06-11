@@ -1,7 +1,6 @@
 import numpy as np
 from ..base.sampling import SamplingCoreset
 from ..util.errors import NumericalPrecisionError
-from .. import TOL
 from .kl import KLCoreset
 
 

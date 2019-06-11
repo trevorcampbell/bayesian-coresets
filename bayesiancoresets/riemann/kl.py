@@ -1,6 +1,5 @@
 import numpy as np
 from ..util.errors import NumericalPrecisionError
-from .. import TOL
 from ..util.opt import nn_opt
 
 class KLCoreset(object):

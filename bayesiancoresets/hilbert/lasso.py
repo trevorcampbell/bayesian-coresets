@@ -1,8 +1,8 @@
 from ..base.optimization import OptimizationCoreset
+from .. import util
 import numpy as np
 from scipy.optimize import nnls
 from sklearn.linear_model import Lasso
-from .. import TOL
 import warnings
 
 #run lasso on normalized vectors
@@ -25,9 +25,9 @@ class LassoCoreset(OptimizationCoreset):
   def _optimize(self, w0, idx, reg_coeff):
     with warnings.catch_warnings():
       warnings.simplefilter("ignore")
-      lasso = Lasso(reg_coeff, positive=True, fit_intercept=False, tol=TOL)
+      lasso = Lasso(reg_coeff, positive=True, fit_intercept=False, tol=util.TOL)
       lasso.fit((self.T[:]/self.T.norms()[:,np.newaxis]).T, self.T.sum())
-      return lasso.coef_[lasso.coef_ > TOL]/self.T.norms()[lasso.coef_ > TOL], np.where(lasso.coef_ > TOL)[0]
+      return lasso.coef_[lasso.coef_ > util.TOL]/self.T.norms()[lasso.coef_ > util.TOL], np.where(lasso.coef_ > util.TOL)[0]
 
   def optimize(self):
     #run least squares optimal weight update
