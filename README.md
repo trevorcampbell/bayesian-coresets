@@ -1,3 +1,5 @@
+# Note: This repository will be updated shortly with code for https://arxiv.org/abs/1906.03329
+
 # Bayesian Coresets: Automated, Scalable Inference
 
 This repository provides a python package that can be used to construct [Bayesian coresets](http://arxiv.org/abs/1710.05053). It also contains all the code used to run the experiments in [Bayesian Coreset Construction via Greedy Iterative Geodesic Ascent](https://arxiv.org/abs/1802.01737) in the `bayesian-coresets/examples/` folder.
