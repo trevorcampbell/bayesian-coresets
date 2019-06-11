@@ -3,8 +3,6 @@ import bayesiancoresets as bc
 import os
 from scipy.stats import multivariate_normal
 
-bc.util.verbosity('info')
-
 def gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples):
   return -x.shape[1]/2*np.log(2*np.pi) - 1./2.*logdetSig - 1./2.*(xSiginvx[:, np.newaxis] - 2.*np.dot(xSiginv, samples.T) + (np.dot(samples, Siginv)*samples).sum(axis=1))
  
@@ -45,7 +43,7 @@ Siginv = np.linalg.inv(Sig)
 SigLInv = np.linalg.inv(SigL)
 opt_itrs = 3000
 proj_dim = 100
-pihat_noise =0.15
+pihat_noise =0.75
 
 for t in trials:
   #generate data and compute true posterior
@@ -95,8 +93,9 @@ for t in trials:
   algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif]
   nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND']
 
-  algs = [giga_true, giga_noisy, unif]
-  nms = ['GIGAT', 'GIGAN', 'RAND']
+  algs = [riemann_one, riemann_full]
+  nms = ['SVI1', 'SVIF']
+
 
 
   #build coresets
@@ -108,7 +107,6 @@ for t in trials:
       alg.build(m)
       #store weights
       wts, idcs = alg.weights()
-      print(idcs)
       w[m, idcs] = wts
       #store optimized weights
       alg.optimize()

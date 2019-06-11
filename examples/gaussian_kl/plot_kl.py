@@ -1,4 +1,3 @@
-from utils import *
 import bokeh.plotting as bkp
 import numpy as np
 
