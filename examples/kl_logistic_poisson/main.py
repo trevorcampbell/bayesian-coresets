@@ -82,7 +82,7 @@ learning_rate = tuning[dnm][1]
 
 ###############################
 ## TUNING PARAMETERS ##
-Ms = [1, 2, 5, 10, 20, 50, 100] #coreset sizes at which we record output
+Ms = [1, 2, 5, 10, 20, 50, 100, 500, 1000] #coreset sizes at which we record output
 projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = .75 #noise level (relative) for corrupting pihat
 ###############################
@@ -142,6 +142,12 @@ for m in range(len(Ms)):
     cputs[m] = time.process_time()-t0
     w, idcs = coreset.weights()
     wts[m, idcs] = w
+    
+    muw, Sigw = get_laplace(wts[m,:], Z, mu0)
+    mn_err = np.sqrt(((muw-mup)**2).sum())/np.sqrt(((mup**2).sum()))
+    cv_err = np.sqrt(((Sigw-Sigp)**2).sum())/np.sqrt(((Sigp)**2).sum())
+    print('mean error : ' + str(mn_err)+ '\n covar error: ' + str(cv_err))
+
 
 #get laplace approximations for each weight setting, and KL divergence to full posterior laplace approx mup Sigp
 #used for a quick/dirty performance comparison without expensive posterior sample comparisons (e.g. energy distance)
