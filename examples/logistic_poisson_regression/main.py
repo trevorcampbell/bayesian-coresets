@@ -6,15 +6,15 @@ from inference import nuts, rhat, hmc
 import time
 
 
-### FOR LOGISTIC REGRESSION
-#from model_lr import *
-#dnames = ['synth', 'ds1', 'phishing']
-#fldr = 'lr'
+## FOR LOGISTIC REGRESSION
+from model_lr import *
+dnames = ['synth', 'ds1', 'phishing']
+fldr = 'lr'
 
-# FOR POISSON REGRESSION
-from model_poiss import *
-dnames = ['synth', 'airportdelays', 'biketrips']
-fldr = 'poiss'
+## FOR POISSON REGRESSION
+#from model_poiss import *
+#dnames = ['synth', 'airportdelays', 'biketrips']
+#fldr = 'poiss'
 
 
 n_trials = 20

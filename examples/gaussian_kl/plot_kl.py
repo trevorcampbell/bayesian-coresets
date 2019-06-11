@@ -1,5 +1,6 @@
 import bokeh.plotting as bkp
 import numpy as np
+from utils import *
 
 plot_reverse_kl = True
 size_x_axis = False
