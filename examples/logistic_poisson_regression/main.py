@@ -24,14 +24,6 @@ projection_dim = 500 #random projection dimension
 Ms = np.unique(np.logspace(0, 3, 10, dtype=int))
 
 
-n_trials = 3
-mcmc_steps = 100 #total number of MH steps
-mcmc_burn = 20
-projection_dim = 100 #random projection dimension
-Ms = np.unique(np.logspace(0, 2, 3, dtype=int))
-
-
-
 pbar = True #progress bar display flag
 step_size_init = 0.001
 n_leap = 15

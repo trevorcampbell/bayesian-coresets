@@ -5,27 +5,9 @@ import numpy as np
 
 size_x_axis = False
 trial_num = 0
-nm = ('EGUS', 'Uniform')
-Ms = [0, 1, 2, 5, 10, 20, 50, 99]
-
-nm = ('ERL1', 'L1')
-Ms = np.arange(14)
-
-#nm = ('ERL1U', 'L1U')
-#Ms = np.arange(20)
-nm = ('ERG', 'Greedy')
-Ms = np.arange(14)
-
-nm = ('ERCG', 'Fully Corrective Greedy')
-Ms = np.arange(20)
-
-Ms = [0, 1, 2, 5, 8, 12]
 
 nm = ('SVI1', 'SparseVI-1')
-Ms = np.arange(20)
-
-
-
+Ms = [0, 1, 2, 5, 8, 12]
 
 np.random.seed(5)
 #plot the KL figure

@@ -6,10 +6,9 @@ import numpy as np
 size_x_axis = True
 scaled = True
 trial_num = 0
-nm = ('EGUS', 'Uniform')
+nm = ('RAND', 'Uniform')
 Ms = [0, 1, 2, 5, 10, 20, 50, 99]
 
-#plot the KL figure
 
 #plot the sequence of coreset pts and comparison of nonopt + opt
 res = np.load('results/results_'+nm[0] + '_' + str(trial_num)+'.npz')
@@ -24,7 +23,7 @@ Sigwt = res['Sigw']
 muwt_opt = res['muw_opt']
 Sigwt_opt = res['Sigw_opt']
 
-nms = [('EGUS', 'Uniform'), ('ERG', 'Greedy'), ('ERCG', 'CorrectiveGreedy'), ('ERL1', 'L1'), ('ERL1U', 'L1 Unscaled')]
+nms = [('SVI1', 'SparseVI-1'), ('SVIF', 'SparseVI-Full'), ('GIGAT', 'GIGA (Truth)'), ('GIGAN', 'GIGA (Noisy)'), ('RAND', 'Uniform')]
 
 
 #plot the example set of 3-sigma ellipses
