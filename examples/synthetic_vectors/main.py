@@ -5,7 +5,7 @@ import time
 
 np.random.seed(3)
 
-bc.util.set_verbosity('warning')
+bc.util.set_verbosity('error')
 
 n_trials = 5
 Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))

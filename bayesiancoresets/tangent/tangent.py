@@ -12,10 +12,10 @@ class TangentSpace(object):
     self.wref = wref
     self.idcsref = idcsref
 
-  def __del__(self):
-    n_removed = logging.getLogger().handlers[0].remove_all(self.alg_name)
-    if n_removed > 0:
-      self.log.warning('suppressed ' + str(n_removed) + ' warnings')
+  #def __del__(self):
+  #  n_removed = logging.getLogger().handlers[0].remove_all(self.alg_name)
+  #  if n_removed > 0:
+  #    self.log.warning('suppressed ' + str(n_removed) + ' warnings')
 
       
   #return the tangent vector for datapoint k (or slice)

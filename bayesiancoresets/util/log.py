@@ -12,11 +12,12 @@ def set_repeat(repeat):
 #TODO: add a repeating handler for a log file, set default repeat to console = False, default repeat to log = True
 def add_handler(log, repeat_flag, HandlerClass=logging.StreamHandler, handler_inits={'stream':sys.stderr}, format_string = '%(levelname)s - %(id)s.%(funcName)s(): %(message)s'):
   class CustomHandler(HandlerClass):
-    def __init__(self, *args, **kwargs):
-      super().__init__(*args, **kwargs)
-      self.prevmsgs = {}
-      self.repeat_flag = False
-    #TODO make emit take logger id into account
+    pass
+    #def __init__(self, *args, **kwargs):
+    #  super().__init__(*args, **kwargs)
+    #  self.prevmsgs = {}
+    #  self.repeat_flag = False
+
     #def emit(self, record):
     #  if not self.repeat_flag:
     #    if record.msg not in self.prevmsgs.keys():
@@ -27,10 +28,10 @@ def add_handler(log, repeat_flag, HandlerClass=logging.StreamHandler, handler_in
     #  else: 
     #    super().emit(record)
 
-    def remove_all(self, nm):
-      n_removed = sum([self.prevmsgs[key] for key in self.prevmsgs.keys() if nm in key])
-      self.prevmsgs = {key : self.prevmsgs[key] for key in self.prevmsgs.keys() if nm not in key}
-      return n_removed
+    #def remove_all(self, nm):
+    #  n_removed = sum([self.prevmsgs[key] for key in self.prevmsgs.keys() if nm in key])
+    #  self.prevmsgs = {key : self.prevmsgs[key] for key in self.prevmsgs.keys() if nm not in key}
+    #  return n_removed
    
   nrh = CustomHandler(**handler_inits)
   fmt = logging.Formatter(format_string)

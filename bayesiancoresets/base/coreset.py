@@ -20,10 +20,10 @@ class Coreset(object):
     self.wts = self._wts[:self.nwts]
     self.idcs = self._idcs[:self.nwts]
 
-  def __del__(self):
-    n_removed = logging.getLogger().handlers[0].remove_all(self.alg_name)
-    if n_removed > 0:
-      self.log.warning('suppressed ' + str(n_removed) + ' warnings')
+  #def __del__(self):
+  #  n_removed = logging.getLogger().handlers[0].remove_all(self.alg_name)
+  #  if n_removed > 0:
+  #    self.log.warning('suppressed ' + str(n_removed) + ' warnings')
     
   def reset(self):
     #don't bother resetting wts, just set the nwts to 0
