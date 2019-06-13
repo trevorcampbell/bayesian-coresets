@@ -16,15 +16,16 @@ def add_handler(log, repeat_flag, HandlerClass=logging.StreamHandler, handler_in
       super().__init__(*args, **kwargs)
       self.prevmsgs = {}
       self.repeat_flag = False
-    def emit(self, record):
-      if not self.repeat_flag:
-        if record.msg[:30] not in self.prevmsgs.keys():
-          self.prevmsgs[record.msg[:30]] = 0
-          super().emit(record)
-        else:
-          self.prevmsgs[record.msg[:30]] += 1
-      else: 
-        super().emit(record)
+    #TODO make emit take logger id into account
+    #def emit(self, record):
+    #  if not self.repeat_flag:
+    #    if record.msg not in self.prevmsgs.keys():
+    #      self.prevmsgs[record.msg] = 0
+    #      super().emit(record)
+    #    else:
+    #      self.prevmsgs[record.msg] += 1
+    #  else: 
+    #    super().emit(record)
 
     def remove_all(self, nm):
       n_removed = sum([self.prevmsgs[key] for key in self.prevmsgs.keys() if nm in key])
