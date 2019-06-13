@@ -107,7 +107,7 @@ for t in trials:
       #print('******************')
       #print('MEMORY STATISTICS')
       #print('******************')
-      #print('Basic memory usage = ' + str(psutil.Process(os.getpid()).memory_info().rss/1000000000.) + 'GB')
+      print('Basic memory usage = ' + str(psutil.Process(os.getpid()).memory_info().rss/1000000000.) + 'GB')
       #snapshot = tracemalloc.take_snapshot()
       #top_stats = snapshot.statistics('lineno')
       #for stat in top_stats[:3]:
