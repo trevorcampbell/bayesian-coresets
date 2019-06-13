@@ -5,12 +5,10 @@ from .. import util
 from ..util.errors import NumericalPrecisionError
 
 class Coreset(object):
-  def __init__(self, N, auto_above_N = True, initial_wts_sz=1000, repeat_logs=False, **kw):
+  def __init__(self, N, auto_above_N = True, initial_wts_sz=1000, **kw):
     #self.alg_name = '.'.join([b.__name__ for b in self.__class__.__bases__]) + '.' + self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
-    self.log = logging.getLogger(self.alg_name)
-    self.log.setLevel(util.LOGLEVEL)
-    util.add_handler(self.log, repeat_logs)
+    self.log = logging.LoggerAdapter(logging.getLogger(), {"id" : self.alg_name})
     self.auto_above_N = auto_above_N
     self.N = N
     self.reached_numeric_limit = False

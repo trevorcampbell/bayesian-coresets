@@ -2,6 +2,8 @@ import numpy as np
 import bayesiancoresets as bc
 import os
 from scipy.stats import multivariate_normal
+import tracemalloc
+import psutil
 
 def gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples):
   return -x.shape[1]/2*np.log(2*np.pi) - 1./2.*logdetSig - 1./2.*(xSiginvx[:, np.newaxis] - 2.*np.dot(xSiginv, samples.T) + (np.dot(samples, Siginv)*samples).sum(axis=1))
@@ -24,6 +26,8 @@ def weighted_post_KL(th0, Sig0inv, Siginv, x, w, reverse=True):
     return gaussian_KL(muw, Sigw, mup, np.linalg.inv(Sigp))
   else:
     return gaussian_KL(mup, Sigp, muw, np.linalg.inv(Sigw))
+
+tracemalloc.start()
 
 
 np.random.seed(1)
@@ -93,18 +97,38 @@ for t in trials:
   algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif]
   nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND']
 
+  algs = [riemann_one, riemann_full]
+  nms = ['SVI1', 'SVIF']
+
+
   #build coresets
   for nm, alg in zip(nms, algs):
+    #create coreset construction objects
     w = np.zeros((M+1, x.shape[0]))
     w_opt = np.zeros((M+1, x.shape[0]))
     for m in range(1, M+1):
       print('trial: ' + str(t+1)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
+     
+      print('building coreset up to size ' + str(m))
+     
+      print('******************')
+      print('MEMORY STATISTICS')
+      print('******************')
+      print('Basic memory usage = ' + str(psutil.Process(os.getpid()).memory_info().rss/1000000000.) + 'GB')
+      snapshot = tracemalloc.take_snapshot()
+      top_stats = snapshot.statistics('lineno')
+      for stat in top_stats[:3]:
+        print(stat)
+
       alg.build(m)
       #store weights
+      print('done building')
       wts, idcs = alg.weights()
       w[m, idcs] = wts
       #store optimized weights
+      print('optimizing')
       alg.optimize()
+      print('done optimizing')
       wts_opt, idcs_opt = alg.weights()
       w_opt[m, idcs_opt] = wts_opt
       #restore pre-opt weights
@@ -134,3 +158,4 @@ for t in trials:
     np.savez('results/results_'+nm+'_' + str(t)+'.npz', x=x, mu0=mu0, Sig0=Sig0, Sig=Sig, mup=mup, Sigp=Sigp, w=w, w_opt=w_opt,
                                    muw=muw, Sigw=Sigw, rklw=rklw, fklw=fklw,
                                    muw_opt=muw_opt, Sigw_opt=Sigw_opt, rklw_opt=rklw_opt, fklw_opt=fklw_opt)
+  

@@ -7,9 +7,7 @@ from .. import util
 class TangentSpace(object):
   def __init__(self, d, wref, idcsref, repeat_logs=False):
     self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
-    self.log = logging.getLogger(self.alg_name)
-    self.log.setLevel(util.LOGLEVEL)
-    util.add_handler(self.log, repeat_logs)
+    self.log = logging.LoggerAdapter(logging.getLogger(), {"id" : self.alg_name})
     self.d = d
     self.wref = wref
     self.idcsref = idcsref
