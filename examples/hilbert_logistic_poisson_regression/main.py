@@ -9,6 +9,7 @@ import time
 ## FOR LOGISTIC REGRESSION
 from model_lr import *
 dnames = ['synth', 'ds1', 'phishing']
+dnames = ['phishing']
 fldr = 'lr'
 
 ## FOR POISSON REGRESSION
