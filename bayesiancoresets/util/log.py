@@ -28,7 +28,7 @@ def add_handler(log, repeat_flag, HandlerClass=logging.StreamHandler, handler_in
 
     def remove_all(self, nm):
       n_removed = sum([self.prevmsgs[key] for key in self.prevmsgs.keys() if nm in key])
-      self.prevmsgs = {key : ct for key in self.prevmsgs.keys() if nm not in key}
+      self.prevmsgs = {key : self.prevmsgs[key] for key in self.prevmsgs.keys() if nm not in key}
       return n_removed
    
   nrh = CustomHandler(**handler_inits)
