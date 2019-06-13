@@ -14,18 +14,23 @@ def add_handler(log, repeat_flag, HandlerClass=logging.StreamHandler, handler_in
   class CustomHandler(HandlerClass):
     def __init__(self, *args, **kwargs):
       super().__init__(*args, **kwargs)
-      self.prevmsgs = set()
-      self.n_suppressed = 0
+      self.prevmsgs = {}
       self.repeat_flag = False
     def emit(self, record):
-        if not self.repeat_flag:
-        if record.msg not in self.prevmsgs:
-          self.prevmsgs.add(record.msg)
+      if not self.repeat_flag:
+        if record.msg[:30] not in self.prevmsgs.keys():
+          self.prevmsgs[record.msg[:30]] = 0
           super().emit(record)
         else:
-          self.n_suppressed += 1 
+          self.prevmsgs[record.msg[:30]] += 1
       else: 
         super().emit(record)
+
+    def remove_all(self, nm):
+      n_removed = sum([self.prevmsgs[key] for key in self.prevmsgs.keys() if nm in key])
+      self.prevmsgs = {key : ct for key in self.prevmsgs.keys() if nm not in key}
+      return n_removed
+   
   nrh = CustomHandler(**handler_inits)
   fmt = logging.Formatter(format_string)
   nrh.setFormatter(fmt)

@@ -21,8 +21,9 @@ class Coreset(object):
     self.idcs = self._idcs[:self.nwts]
 
   def __del__(self):
-    if self.log.handlers[0].n_suppressed > 0:
-      self.log.warning('suppressed ' + str(self.log.handlers[0].n_suppressed) + ' warnings')
+    n_removed = logging.getLogger().handlers[0].remove_all(self.alg_name)
+    if n_removed > 0:
+      self.log.warning('suppressed ' + str(n_removed) + ' warnings')
     
   def reset(self):
     #don't bother resetting wts, just set the nwts to 0
