@@ -1,20 +1,18 @@
-# NOTE: There is an upcoming major update (next few weeks) to this code based on a new arXiv preprint.
-
 # Bayesian Coresets: Automated, Scalable Inference
 
 This repository provides a python package that can be used to construct [Bayesian coresets](http://arxiv.org/abs/1710.05053). It also contains all the code used to run the experiments in [Bayesian Coreset Construction via Greedy Iterative Geodesic Ascent](https://arxiv.org/abs/1802.01737) and [Sparse Variational Inference: Bayesian Coresets from Scratch](https://arxiv.org/abs/1906.03329) in the `bayesian-coresets/examples/` folder.
 
 A **coreset** (i.e. the "core of a dataset") is a small, weighted subset of a dataset that can be used in place of the original dataset when learning a statistical model. If the coreset is much smaller than the original dataset, generally this makes learning faster; but if the coreset is too small, it doesn't represent the original dataset well. Building a coreset that is both small and a good approximation for the purposes of Bayesian inference is what the code in this repository does.
 
+### Repository Status
+
+After the recent update (June 2019) implementing [Sparse Variational Inference](https://arxiv.org/abs/1906.03329), the repository is no longer thoroughly tested. Examples run and generate verified output using Python 3. Python 2 is not tested. Unit tests have not yet been updated. Work is in progress.
+
 ### Installation and Dependencies
 
 To install with pip, download the repository and run `pip3 install . --user` in the repository's root folder.
 If you are using python 2, run `pip install . --user` instead. Note: this package depends on [NumPy](http://www.numpy.org), [SciPy](https://www.scipy.org), and [SciKit Learn](https://scikit-learn.org).
 The examples also depend on [Bokeh](https://bokeh.pydata.org/en/latest) for plotting.
-
-### Repository Status
-
-After the recent update (June 2019) implementing [Sparse Variational Inference](https://arxiv.org/abs/1906.03329), the repository is no longer thoroughly tested. Examples run and generate verified output using Python 3. Python 2 is not tested. Unit tests have not yet been updated. Work is in progress.
 
 ### Examples - Sparse Regression
 
