@@ -2,27 +2,31 @@
 
 # Bayesian Coresets: Automated, Scalable Inference
 
-This repository provides a python package that can be used to construct [Bayesian coresets](http://arxiv.org/abs/1710.05053). It also contains all the code used to run the experiments in [Bayesian Coreset Construction via Greedy Iterative Geodesic Ascent](https://arxiv.org/abs/1802.01737) in the `bayesian-coresets/examples/` folder.
+This repository provides a python package that can be used to construct [Bayesian coresets](http://arxiv.org/abs/1710.05053). It also contains all the code used to run the experiments in [Bayesian Coreset Construction via Greedy Iterative Geodesic Ascent](https://arxiv.org/abs/1802.01737) and [Sparse Variational Inference: Bayesian Coresets from Scratch](https://arxiv.org/abs/1906.03329) in the `bayesian-coresets/examples/` folder.
 
 A **coreset** (i.e. the "core of a dataset") is a small, weighted subset of a dataset that can be used in place of the original dataset when learning a statistical model. If the coreset is much smaller than the original dataset, generally this makes learning faster; but if the coreset is too small, it doesn't represent the original dataset well. Building a coreset that is both small and a good approximation for the purposes of Bayesian inference is what the code in this repository does.
 
 ### Installation and Dependencies
 
-To install with pip, download the repository and run `pip install .` in the repository's root folder.
-If you are using python 3.x, run `pip3 install .` instead. Note: this package depends on [NumPy](http://www.numpy.org) and [SciPy](https://www.scipy.org).
+To install with pip, download the repository and run `pip3 install . --user` in the repository's root folder.
+If you are using python 2, run `pip install . --user` instead. Note: this package depends on [NumPy](http://www.numpy.org), [SciPy](https://www.scipy.org), and [SciKit Learn](https://scikit-learn.org).
 The examples also depend on [Bokeh](https://bokeh.pydata.org/en/latest) for plotting.
 
 ### Repository Status
 
-The code for this package has been tested and is compatible with both python 2.7 and 3.5.
+After the recent update (June 2019) implementing [Sparse Variational Inference](https://arxiv.org/abs/1906.03329), the repository is no longer thoroughly tested. Examples run and generate verified output using Python 3. Python 2 is not tested. Unit tests have not yet been updated. Work is in progress.
 
-Unit tests are written for `nose`. To run the tests, install the package, navigate to the `tests` subfolder, and run `nosetests`.
+### Examples - Sparse Regression
 
-All unit tests currently pass. 
+The simplest way of doing coresets is via sparse regression. Come up with some vec rep of your likelihood then SR.
 
-### Example Usage: Bayesian Logistic Regression
+#### Example 0: Synthetic Vectors, Sparse Regression
 
-The code to follow along with this example may be found in `examples/simple_logistic_regression/`. Calling `python main.py` runs the example code, but currently there's no visualization / usage of the output.
+In this example, we build a coreset abstract vecs. The code to follow along with this example may be found in `examples/synthetic_vectors/`. Calling `python main.py` runs the example code and outputs a coreset size and posterior mean.
+
+#### Example 1: Bayesian Logistic Regression, Sparse Regression
+
+The code to follow along with this example may be found in `examples/simple_logistic_regression/`. Calling `python main.py` runs the example code and outputs a coreset size and posterior mean.
 
 **Setup:** In Bayesian logistic regression, we have a dataset `x` of `N` input vectors `x[n, :]` in `D` dimensions along with `N` responses `y[n]` equal to -1 or 1, and we want to predict the response at an arbitrary input. The model is that there is a latent `D`-dimensional parameter `theta` such that `y[n] | theta ~ Bernoulli(1/(1+np.exp(-np.dot(theta, x[n, :]))))` independently across the data. We take a Bayesian approach to learning `theta`, and place a standard prior on it: `theta ~ Normal(0, I)`. When `N` is large, MCMC and variational inference run slowly; instead, we will first "compress" / "summarize" the dataset by building a coreset, and then run inference on that.
 
@@ -79,15 +83,30 @@ wts = giga.weights() #get the output weights
 idcs = wts > 0 #pull out the indices of datapoints that were included in the coreset
 ```
 
+### Examples - Sparse Variational Inference
+
+Can also build coresets via sparse VI
+
+#### Example 1: Bayesian Gaussian Model, Sparse Variational Inference
+
+This is one of the examples from [Sparse Variational Inference: Bayesian Coresets from Scratch](https://arxiv.org/abs/1906.03329). The code to follow along with this example may be found in `examples/riemann_gaussian/`. Calling `python main.py` runs the example code and outputs a coreset size and posterior mean.
+
+
+
+
+#### Example 4: Bayesian Logistic Regression, Sparse Variational Inference
+
+[Sparse Variational Inference: Bayesian Coresets from Scratch](https://arxiv.org/abs/1906.03329)
+
 ### Citations
 
 Below are some papers to cite if you find the algorithms in this repository useful in your own research:
 
 
-* T. Campbell and B. Beronov, "[Sparse variational inference: Bayesian coresets from scratch](http://arxiv.org/abs/1710.05053)," arXiv:XX.
-* T. Campbell and T. Broderick, "[Automated scalable Bayesian inference via Hilbert coresets](http://arxiv.org/abs/1710.05053)," Journal of Machine Learning Research 20(15):1-38, 2019.
+* T. Campbell and B. Beronov, "[Sparse variational inference: Bayesian coresets from scratch](https://arxiv.org/abs/1906.03329)," arXiv:1906.03329.
+* T. Campbell and T. Broderick, "[Automated scalable Bayesian inference via Hilbert coresets](https://arxiv.org/abs/1710.05053)," Journal of Machine Learning Research 20(15):1-38, 2019.
 * T. Campbell and T. Broderick, "[Bayesian coreset construction via Greedy Iterative Geodesic Ascent](https://arxiv.org/abs/1802.01737)," International Conference on Machine Learning (ICML), 2018.
-* T. Campbell and T. Broderick, "[Coresets for scalable Bayesian logistic regression](https://arxiv.org/abs/1605.06423)," Advances in Neural Information Processing Systems, 2016.
+* J. Huggins, T. Campbell and T. Broderick, "[Coresets for scalable Bayesian logistic regression](https://arxiv.org/abs/1605.06423)," Advances in Neural Information Processing Systems, 2016.
 
 ### License Info
 
