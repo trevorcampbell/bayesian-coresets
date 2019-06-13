@@ -32,7 +32,7 @@ tracemalloc.start()
 
 np.random.seed(1)
 
-M = 20
+M = 50
 N = 1000
 d = 30
 n_samples = 1000

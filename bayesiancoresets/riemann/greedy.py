@@ -40,7 +40,7 @@ class SparseVICoreset(KLCoreset,GreedyCoreset):
         ga = wtmp.dot(g)
         gb = g[fidx]
         return np.array([ga, gb])
-      x = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched, verbose=True)
+      x = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched)
       self._update(self.idcs, x[0]*wtmp + x[1]*onef)
 
       #closer to notation from paper (but since nn_opt, wrong constraints)
@@ -59,7 +59,7 @@ class SparseVICoreset(KLCoreset,GreedyCoreset):
         T = self.tsf(w, self.idcs)
         g = T.kl_grad(grad_idcs=self.idcs)
         return g
-      x = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched, verbose=True)
+      x = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched)
       self._update(self.idcs, x)
     return
 
