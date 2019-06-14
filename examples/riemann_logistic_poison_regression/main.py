@@ -55,7 +55,7 @@ if fldr == 'lr':
   samples = np.load('results/lr_'+dnm+'_samples.npy')
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
   #tuning = {'synth': (1000, lambda itr : 10./(1.+itr)), 'ds1': (2000, lambda itr : 10./(1.+itr)), 'phishing': (2000, lambda itr : 10./(1.+itr)**0.8)}
-  tuning = {'synth': (1000, lambda itr : 1./(1.+itr)**0.5), 'ds1': (2000, lambda itr : 1./(1.+itr)**0.5), 'phishing': (2000, lambda itr : 1./(1.+itr)**0.5)}
+  tuning = {'synth': (50, lambda itr : 1./(1.+itr)**0.5), 'ds1': (50, lambda itr : 1./(1.+itr)**0.5), 'phishing': (50, lambda itr : 1./(1.+itr)**0.5)}
 else:
   from model_poiss import *
   print('Loading dataset '+dnm)
@@ -65,7 +65,7 @@ else:
   #need to put intercept at the end
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
   #tuning = {'synth': (1000, lambda itr : 10./(1.+itr)), 'biketrips': (2000, lambda itr : 5./(1.+itr)**0.8), 'airportdelays': (2000, lambda itr : 4./(1.+itr)**0.75)}
-  tuning = {'synth': (1000, lambda itr : 1./(1.+itr)), 'biketrips': (2000, lambda itr : 1./(1.+itr)**0.8), 'airportdelays': (2000, lambda itr : 1./(1.+itr)**0.75)}
+  tuning = {'synth': (50, lambda itr : 1./(1.+itr)**0.5), 'biketrips': (200, lambda itr : 1./(1.+itr)**0.5), 'airportdelays': (200, lambda itr : 1./(1.+itr)**0.5)}
 
 #fit a gaussian to the posterior samples 
 #used for pihat computation for Hilbert coresets with noise to simulate uncertainty in a good pihat
@@ -82,7 +82,7 @@ learning_rate = tuning[dnm][1]
 
 ###############################
 ## TUNING PARAMETERS ##
-Ms = [1, 2, 5, 10, 20, 50, 100, 500, 1000] #coreset sizes at which we record output
+Ms = [1, 2, 5, 10, 20, 50, 100, 500] #coreset sizes at which we record output
 projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = .75 #noise level (relative) for corrupting pihat
 ###############################
@@ -130,44 +130,41 @@ elif alg == 'prior':
 else:
   raise Exception
 
-##build
-#for m in range(len(Ms)):
-#  print(str(m+1)+'/'+str(len(Ms)))
-#  if alg != 'prior':
-#    coreset.build(Ms[m])
-#    #if we want to fully reoptimize in each step, call giga.optimize()
-#    if alg == 'hilbert_corr' or alg == 'hilbert_corr_good':
-#      coreset.optimize() 
-#    #record time and weights
-#    cputs[m] = time.process_time()-t0
-#    w, idcs = coreset.weights()
-#    wts[m, idcs] = w
-#    
-#    muw, Sigw = get_laplace(wts[m,:], Z, mu0)
-#    mn_err = np.sqrt(((muw-mup)**2).sum())/np.sqrt(((mup**2).sum()))
-#    cv_err = np.sqrt(((Sigw-Sigp)**2).sum())/np.sqrt(((Sigp)**2).sum())
-#    print('mean error : ' + str(mn_err)+ '\n covar error: ' + str(cv_err))
-
 #build
-w = np.zeros(Z.shape[0])
 for m in range(len(Ms)):
-  for j in range(Ms[m-1] if m > 0 else 0, Ms[m]):
-    if alg != 'prior':
-      if j%10 == 0:
-        print(str(j)+ '/' + str(Ms[-1]))
-        muw, Sigw = get_laplace(w, Z, mu0)
-        mn_err = np.sqrt(((muw-mup)**2).sum())/np.sqrt(((mup**2).sum()))
-        cv_err = np.sqrt(((Sigw-Sigp)**2).sum())/np.sqrt(((Sigp)**2).sum())
-        print('mean error : ' + str(mn_err)+ '\n covar error: ' + str(cv_err))
-      coreset.build(j)
-      #if we want to fully reoptimize in each step, call giga.optimize()
-      if alg == 'hilbert_corr' or alg == 'hilbert_corr_good':
-        coreset.optimize() 
-      #record time and weights
-      wtmp, idcs = coreset.weights()
-      #fill in 
-      w = np.zeros(Z.shape[0])
-      w[idcs] = wtmp
+  print(str(m+1)+'/'+str(len(Ms)))
+  if alg != 'prior':
+    coreset.build(Ms[m])
+    #if we want to fully reoptimize in each step, call giga.optimize()
+    if alg == 'hilbert_corr' or alg == 'hilbert_corr_good':
+      coreset.optimize() 
+    #record time and weights
+    cputs[m] = time.process_time()-t0
+    w, idcs = coreset.weights()
+    wts[m, idcs] = w
+    
+##FOR TUNING ONLY
+#w = np.zeros(Z.shape[0])
+#for m in range(len(Ms)):
+#  if alg != 'prior':
+#    for j in range(Ms[m-1] if m > 0 else 0, Ms[m]):
+#      if j%10 == 0:
+#        print(str(j)+ '/' + str(Ms[-1]))
+#        muw, Sigw = get_laplace(w, Z, mu0)
+#        mn_err = np.sqrt(((muw-mup)**2).sum())/np.sqrt(((mup**2).sum()))
+#        cv_err = np.sqrt(((Sigw-Sigp)**2).sum())/np.sqrt(((Sigp)**2).sum())
+#        print('mean error : ' + str(mn_err)+ '\n covar error: ' + str(cv_err))
+#      coreset.build(j)
+#      #if we want to fully reoptimize in each step, call giga.optimize()
+#      if alg == 'hilbert_corr' or alg == 'hilbert_corr_good':
+#        coreset.optimize() 
+#      #record time and weights
+#      wtmp, idcs = coreset.weights()
+#      #fill in 
+#      w = np.zeros(Z.shape[0])
+#      w[idcs] = wtmp
+#      wts[m,idcs] = wtmp
+#      cputs[m] = time.process_time()-t0
       
 
 #get laplace approximations for each weight setting, and KL divergence to full posterior laplace approx mup Sigp

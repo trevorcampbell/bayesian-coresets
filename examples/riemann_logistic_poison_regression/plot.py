@@ -102,13 +102,14 @@ std_kls = {}
 for didx, dnm in enumerate(dnames):
   trials = [fn for fn in os.listdir('results/') if dnm+'_prior_results_' in fn]
   if len(trials) == 0: 
-    print('Need to run uniform to establish baseline first')
+    print('Need to run prior to establish baseline first')
     quit()
   kltot = 0.
   for tridx, fn in enumerate(trials):
     res = np.load('results/'+fn)
-    kltot += np.log(res['kls']).mean()
-  std_kls[dnm] = np.exp(kltot / len(trials))
+    assert np.all(res['kls'] == res['kls'][0]) #make sure prior doesn't change...
+    kltot += res['kls'][0]
+  std_kls[dnm] = kltot / len(trials)
 
 for idx, zppd in enumerate(dnmsalgs):
   dnm, alg = zppd
@@ -133,7 +134,8 @@ for idx, zppd in enumerate(dnmsalgs):
     kls[tridx, :] = kl[:len(Ms)]/kl0
     if 'prior' in fn:
       kls[tridx, :] = np.median(kls[tridx,:])
-   
+
+  print(cputs)
   cput50 = np.percentile(cputs, 50, axis=0)
   cput25 = np.percentile(cputs, 25, axis=0)
   cput75 = np.percentile(cputs, 75, axis=0)

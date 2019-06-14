@@ -49,16 +49,29 @@ def log_likelihood_2d2d(z, th):
     lls[:, i] = log_likelihood(z, th[i,:])
   return lls
 
+
 def log_likelihood(Z, th):
   x = Z[:, :-1]
   y = Z[:, -1]
-  m = compute_m(th, x)
-  ll = np.zeros(m.shape[0])
-  ll[np.logical_and(m==0, y>0)] = -np.inf
-  idcs = m>0
-  ll[idcs] = y[idcs]*np.log(m[idcs]) - gammaln(y[idcs]+1)-m[idcs]
+  dots = np.atleast_2d(th*x).sum(axis=1)
+  m = np.maximum(dots, 0) + np.log1p(np.exp(-np.fabs(dots)))
+  ll = np.zeros(dots.shape[0])
+  ll[m>0] = y[m>0]*np.log(m[m>0]) - gammaln(y[m>0]+1)-m[m>0]
+  ll[m==0] = y[m==0]*dots[m==0] - gammaln(y[m==0]+1)
   return ll
   #return y*np.log(m) - gammaln(y+1) - m
+
+#
+#def log_likelihood(Z, th):
+#  x = Z[:, :-1]
+#  y = Z[:, -1]
+#  m = compute_m(th, x)
+#  ll = np.zeros(m.shape[0])
+#  ll[np.logical_and(m==0, y>0)] = -np.inf
+#  idcs = m>0
+#  ll[idcs] = y[idcs]*np.log(m[idcs]) - gammaln(y[idcs]+1)-m[idcs]
+#  return ll
+#  #return y*np.log(m) - gammaln(y+1) - m
 
 def log_prior(th):
   return -0.5*th.shape[0]*np.log(2.*np.pi) - 0.5*(th**2).sum()
