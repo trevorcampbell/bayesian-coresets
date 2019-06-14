@@ -124,7 +124,6 @@ for idx, zppd in enumerate(dnmsalgs):
     res = np.load('results/'+fn)
     cput = res['cputs']
     #if cput.shape[0] != len(Ms):
-    #  print(fn)
     cputs[tridx, :] = cput[:len(Ms)]
     wts = res['wts']
     mu = res['mus']
@@ -178,5 +177,5 @@ for f in [fig, fig2, fig3]:
   f.legend.spacing=20
 #  f.legend.visible = False
 
-bkp.show(bkl.gridplot([[fig3]]) )
+bkp.show(bkl.gridplot([[fig, fig2, fig3]]) )
 
