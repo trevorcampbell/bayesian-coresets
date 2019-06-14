@@ -96,7 +96,7 @@ class TangentSpace(object):
       H = (self[exp_idcs]).dot(self[exp_idcs].T) / self.d
       Hn = (self[exp_idcs]*r).dot(self[exp_idcs].T) / self.d
     eta = 1.
-    c = 1e-16*np.eye(H.shape[0])
+    c = util.TOL*np.eye(H.shape[0])
     while( np.any(np.linalg.eigvalsh(H-eta*Hn+c) < 0)):
       eta /= 2.
     return D, H-eta*Hn+c

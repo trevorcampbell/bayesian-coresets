@@ -2,6 +2,7 @@ import numpy as np
 from ..base.iterative import GreedyCoreset
 from scipy.optimize import nnls
 from .kl import KLCoreset
+from ..util.errors import NumericalPrecisionError 
 
 class QuadraticSparseVICoreset(KLCoreset,GreedyCoreset):
 
@@ -33,6 +34,8 @@ class QuadraticSparseVICoreset(KLCoreset,GreedyCoreset):
     #L = np.linalg.cholesky(H)
 
     lmb, V = np.linalg.eigh(H)
+    if np.any(lmb<0):
+      raise NumericalPrecisionError
     C = (V*np.sqrt(lmb)).T
     Cinv = (V/np.sqrt(lmb))
 
