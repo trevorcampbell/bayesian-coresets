@@ -4,7 +4,8 @@ import bayesiancoresets as bc
 from scipy.optimize import minimize
 import sys, os
 #make it so we can import models/etc from parent folder
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+sys.path.insert(1, os.path.join(sys.path[0], '../common'))
+import gaussian
 
 #######################################
 #######################################
@@ -113,6 +114,5 @@ print('mu, cov = ' + str(mu) + '\n' + str(cov))
 print('Coreset requires ' + str(idcs.shape[0]) + ' data')
 print('muw, covw = ' + str(muw) + '\n' + str(covw))
 
-#TODO call ../gaussian.gaussian_KL, but use covInv for 2nd arg
-print('KL(coreset || posterior) = ' + str(gaussian_KL(muw, covw, mu, cov)))
+print('KL(coreset || posterior) = ' + str(gaussian.gaussian_KL(muw, covw, mu, np.linalg.inv(cov))))
 
