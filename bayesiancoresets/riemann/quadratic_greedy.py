@@ -42,9 +42,9 @@ class QuadraticSparseVICoreset(KLCoreset,GreedyCoreset):
     if self.update_single:
       wtmp = self.wts.copy()
       wtmp[fidx] = 0.
-      A = np.atleast_2d(np.hstack((C.dot(one_f[:,np.newaxis]), C.dot(wtmp[:,np.newaxis]))))
+      A = np.atleast_2d(np.hstack((C.dot(onef[:,np.newaxis]), C.dot(wtmp[:,np.newaxis]))))
       ab, resid = nnls(A,B) 
-      w = ab[0]*one_f+ab[1]*wtmp
+      w = ab[0]*onef+ab[1]*wtmp
     else:
       A = C
       w, resid = nnls(A,B) 
