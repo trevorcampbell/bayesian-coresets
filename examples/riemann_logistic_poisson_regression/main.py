@@ -3,20 +3,11 @@ import numpy as np
 import bayesiancoresets as bc
 from scipy.optimize import minimize
 import time
-import sys
 from scipy.optimize import nnls
-import os
+import os, sys
 
 #make it so we can import models/etc from parent folder
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-
-
-#computes KL( N(mu0, Sig0) || N(mu1, Sig1) )
-def gaussian_KL(mu0, Sig0, mu1, Sig1):
-  t1 = np.linalg.solve(Sig1, Sig0).trace()
-  t2 = np.dot((mu1-mu0),np.linalg.solve(Sig1, mu1-mu0))
-  t3 = np.linalg.slogdet(Sig1)[1] - np.linalg.slogdet(Sig0)[1]
-  return 0.5*(t1+t2+t3-mu0.shape[0])
+sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 
 #computes the Laplace approximation N(mu, Sig) to the posterior with weights wts
 def get_laplace(wts, Z, mu0):
@@ -39,35 +30,38 @@ def get_laplace(wts, Z, mu0):
   Sig = -np.linalg.inv(hess_log_joint_w(Zw, mu, ww))
   return mu, Sig
 
+dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips / airportdelays
+alg = sys.argv[2] #should be hilbert / hilbert_corr / riemann / riemann_corr / uniform 
+ID = sys.argv[3] #just a number to denote trial #, any nonnegative integer
+
 if not os.path.exists('results/'):
   os.mkdir('results')
 
-fldr = sys.argv[1] #should be either lr or poiss
-dnm = sys.argv[2] #if above is lr, should be synth / phishing / ds1; if above is poiss, should be synth, biketrips, or airportdelays
-alg = sys.argv[3] #should be hilbert / hilbert_corr / riemann / riemann_corr / uniform 
-ID = sys.argv[4] #just a number to denote trial #, any nonnegative integer
+if not os.path.exists('results/'+dnm+'_samples.npy'):
+  #run sampler
+  #TODO
 
-#e.g.  python3 main.py lr phishing riemann_corr 2 
-#  will run fully corrective riemann coresets on logistic regression with the phishing dataset, trial # 2
 
 #load the logistic or poisson regression model depending on selected folder
-if fldr == 'lr':
+tuning = {'synth_lr': (50, lambda itr : 1./(1.+itr)**0.5), 
+          'ds1': (50, lambda itr : 1./(1.+itr)**0.5), 
+          'phishing': (50, lambda itr : 1./(1.+itr)**0.5), 
+          'synth_poiss': (50, lambda itr : 1./(1.+itr)**0.5), 
+          'biketrips': (200, lambda itr : 1./(1.+itr)**0.5), 
+          'airportdelays': (200, lambda itr : 1./(1.+itr)**0.5)}
+
+lrdnms = ['synth_lr', 'phishing', 'ds1']
+prdnms = ['synth_poiss', 'biketrips', 'airportdelays']
+if dnm in lrdnms:
   from model_lr import *
-  print('Loading dataset '+dnm)
-  Z, Zt, D = load_data('lr/'+dnm+'.npz')
-  print('Loading posterior samples for '+dnm)
-  samples = np.load('results/lr_'+dnm+'_samples.npy')
-  samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
-  tuning = {'synth': (50, lambda itr : 1./(1.+itr)**0.5), 'ds1': (50, lambda itr : 1./(1.+itr)**0.5), 'phishing': (50, lambda itr : 1./(1.+itr)**0.5)}
 else:
   from model_poiss import *
-  print('Loading dataset '+dnm)
-  Z, Zt, D = load_data('poiss/'+dnm+'.npz')
-  print('Loading posterior samples for '+dnm)
-  samples = np.load('results/poiss_'+dnm+'_samples.npy')
-  #need to put intercept at the end; Stan defaults to it being at the first col
-  samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
-  tuning = {'synth': (50, lambda itr : 1./(1.+itr)**0.5), 'biketrips': (200, lambda itr : 1./(1.+itr)**0.5), 'airportdelays': (200, lambda itr : 1./(1.+itr)**0.5)}
+print('Loading dataset '+dnm)
+Z, Zt, D = load_data('../data/'+dnm+'.npz')
+print('Loading posterior samples for '+dnm)
+samples = np.load('results/'+dnm+'_samples.npy')
+#TODO FIX SAMPLER TO NOT HAVE TO DO THIS
+samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
 
 #fit a gaussian to the posterior samples 
 #used for pihat computation for Hilbert coresets with noise to simulate uncertainty in a good pihat
