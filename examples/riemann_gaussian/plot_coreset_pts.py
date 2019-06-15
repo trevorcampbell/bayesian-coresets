@@ -1,8 +1,9 @@
 import bokeh.layouts as bkl
 import bokeh.plotting as bkp
 import numpy as np
+import sys,os
 #make it so we can import models/etc from parent folder
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
 
 
@@ -71,7 +72,7 @@ for m in Ms:
   fig_opt = bkp.figure(x_range=x_range, y_range=y_range, plot_width=750, plot_height=750)
   #for f in [fig, fig_opt]:
   for f in [fig]:
-    preprocess_plot(f, '24pt', False)
+    preprocess_plot(f, '24pt', False, False)
 
   #for (f, w, muw, Sigw) in [(fig, wt, muwt, Sigwt), (fig_opt, wt_opt, muwt_opt, Sigwt_opt)]:
   for (f, w, muw, Sigw) in [(fig, wt, muwt, Sigwt)]:

@@ -1,7 +1,12 @@
 import numpy as np
 import bayesiancoresets as bc
-import os
+import os, sys
 from scipy.stats import multivariate_normal
+#make it so we can import models/etc from parent folder
+sys.path.insert(1, os.path.join(sys.path[0], '../common'))
+import gaussian
+
+
 
 np.random.seed(1)
 
@@ -26,7 +31,7 @@ pihat_noise =0.75
 for t in trials:
   #generate data and compute true posterior
   x = np.random.multivariate_normal(th, Sig, N)
-  mup, Sigp = weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
+  mup, Sigp = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
   Sigpinv = np.linalg.inv(Sigp)
 
   #compute constants for log likelihood function
@@ -34,7 +39,7 @@ for t in trials:
   xSiginvx = (xSiginv*x).sum(axis=1)
   logdetSig = np.linalg.slogdet(Sig)[1]
 
-  log_likelihood = lambda samples : gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples)
+  log_likelihood = lambda samples : gaussian.gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples)
 
   #create tangent space for well-tuned Hilbert coreset alg
   T_true = bc.MonteCarloFiniteTangentSpace(log_likelihood, lambda sz : np.random.multivariate_normal(mup, 9*Sigp, sz), proj_dim)
@@ -52,7 +57,7 @@ for t in trials:
   def tangent_space_factory(wts, idcs):
     w = np.zeros(x.shape[0])
     w[idcs] = wts
-    muw, Sigw = weighted_post(mu0, Sig0inv, Siginv, x, w)
+    muw, Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w)
     nu = (x - muw).dot(SigLInv.T)
     Psi = np.dot(SigLInv, np.dot(Sigw, SigLInv.T))
 
@@ -98,17 +103,17 @@ for t in trials:
     rklw = np.zeros(M+1)
     fklw = np.zeros(M+1)
     for m in range(M+1):
-      muw[m, :], Sigw[m, :, :] = weighted_post(mu0, Sig0inv, Siginv, x, w[m, :])
-      rklw[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=True)
-      fklw[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=False)
+      muw[m, :], Sigw[m, :, :] = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w[m, :])
+      rklw[m] = gaussian.weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=True)
+      fklw[m] = gaussian.weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=False)
     muw_opt = np.zeros((M+1, mu0.shape[0]))
     Sigw_opt = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
     rklw_opt = np.zeros(M+1)
     fklw_opt = np.zeros(M+1)
     for m in range(M+1):
-      muw_opt[m, :], Sigw_opt[m, :, :] = weighted_post(mu0, Sig0inv, Siginv, x, w_opt[m, :])
-      rklw_opt[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)
-      fklw_opt[m] = weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=False)
+      muw_opt[m, :], Sigw_opt[m, :, :] = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w_opt[m, :])
+      rklw_opt[m] = gaussian.weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)
+      fklw_opt[m] = gaussian.weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=False)
 
     if not os.path.exists('results/'):
       os.mkdir('results')

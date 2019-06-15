@@ -2,7 +2,7 @@ import bokeh.plotting as bkp
 import numpy as np
 import sys, os
 #make it so we can import models/etc from parent folder
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
 
 
@@ -15,7 +15,7 @@ nms = [('SVI1', 'SparseVI-1'), ('SVIF', 'SparseVI-Full'), ('GIGAT', 'GIGA (Truth
 
 #plot the KL figure
 fig = bkp.figure(y_axis_type='log', plot_width=750, plot_height=750, x_axis_label=('Coreset Size' if size_x_axis else 'Coreset Size'), y_axis_label=('Reverse KL' if plot_reverse_kl else 'Forward KL') )
-preprocess_plot(fig, '32pt', True)
+preprocess_plot(fig, '32pt', False, True)
 
 for i, nm in enumerate(nms):
   kl = []
