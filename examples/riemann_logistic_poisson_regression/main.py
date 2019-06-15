@@ -7,6 +7,10 @@ import sys
 from scipy.optimize import nnls
 import os
 
+#make it so we can import models/etc from parent folder
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+
+
 #computes KL( N(mu0, Sig0) || N(mu1, Sig1) )
 def gaussian_KL(mu0, Sig0, mu1, Sig1):
   t1 = np.linalg.solve(Sig1, Sig0).trace()
@@ -54,7 +58,6 @@ if fldr == 'lr':
   print('Loading posterior samples for '+dnm)
   samples = np.load('results/lr_'+dnm+'_samples.npy')
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
-  #tuning = {'synth': (1000, lambda itr : 10./(1.+itr)), 'ds1': (2000, lambda itr : 10./(1.+itr)), 'phishing': (2000, lambda itr : 10./(1.+itr)**0.8)}
   tuning = {'synth': (50, lambda itr : 1./(1.+itr)**0.5), 'ds1': (50, lambda itr : 1./(1.+itr)**0.5), 'phishing': (50, lambda itr : 1./(1.+itr)**0.5)}
 else:
   from model_poiss import *
@@ -62,9 +65,8 @@ else:
   Z, Zt, D = load_data('poiss/'+dnm+'.npz')
   print('Loading posterior samples for '+dnm)
   samples = np.load('results/poiss_'+dnm+'_samples.npy')
-  #need to put intercept at the end
+  #need to put intercept at the end; Stan defaults to it being at the first col
   samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
-  #tuning = {'synth': (1000, lambda itr : 10./(1.+itr)), 'biketrips': (2000, lambda itr : 5./(1.+itr)**0.8), 'airportdelays': (2000, lambda itr : 4./(1.+itr)**0.75)}
   tuning = {'synth': (50, lambda itr : 1./(1.+itr)**0.5), 'biketrips': (200, lambda itr : 1./(1.+itr)**0.5), 'airportdelays': (200, lambda itr : 1./(1.+itr)**0.5)}
 
 #fit a gaussian to the posterior samples 
@@ -130,41 +132,41 @@ elif alg == 'prior':
 else:
   raise Exception
 
-##build
-#for m in range(len(Ms)):
-#  print(str(m+1)+'/'+str(len(Ms)))
-#  if alg != 'prior':
-#    coreset.build(Ms[m])
-#    #if we want to fully reoptimize in each step, call giga.optimize()
-#    if alg == 'hilbert_corr' or alg == 'hilbert_corr_good':
-#      coreset.optimize() 
-#    #record time and weights
-#    cputs[m] = time.process_time()-t0
-#    w, idcs = coreset.weights()
-#    wts[m, idcs] = w
-    
-#FOR TUNING ONLY
-w = np.zeros(Z.shape[0])
+#build
 for m in range(len(Ms)):
+  print(str(m+1)+'/'+str(len(Ms)))
   if alg != 'prior':
-    for j in range(Ms[m-1] if m > 0 else 0, Ms[m]):
-      if j%10 == 0:
-        print(str(j)+ '/' + str(Ms[-1]))
-        muw, Sigw = get_laplace(w, Z, mu0)
-        mn_err = np.sqrt(((muw-mup)**2).sum())/np.sqrt(((mup**2).sum()))
-        cv_err = np.sqrt(((Sigw-Sigp)**2).sum())/np.sqrt(((Sigp)**2).sum())
-        print('mean error : ' + str(mn_err)+ '\n covar error: ' + str(cv_err))
-      coreset.build(j)
-      #if we want to fully reoptimize in each step, call giga.optimize()
-      if alg == 'hilbert_corr' or alg == 'hilbert_corr_good':
-        coreset.optimize() 
-      #record time and weights
-      wtmp, idcs = coreset.weights()
-      #fill in 
-      w = np.zeros(Z.shape[0])
-      w[idcs] = wtmp
-      wts[m,idcs] = wtmp
-      cputs[m] = time.process_time()-t0
+    coreset.build(Ms[m])
+    #if we want to fully reoptimize in each step, call giga.optimize()
+    if alg == 'hilbert_corr' or alg == 'hilbert_corr_good':
+      coreset.optimize() 
+    #record time and weights
+    cputs[m] = time.process_time()-t0
+    w, idcs = coreset.weights()
+    wts[m, idcs] = w
+    
+##old build code for debugging
+#w = np.zeros(Z.shape[0])
+#for m in range(len(Ms)):
+#  if alg != 'prior':
+#    for j in range(Ms[m-1] if m > 0 else 0, Ms[m]):
+#      if j%10 == 0:
+#        print(str(j)+ '/' + str(Ms[-1]))
+#        muw, Sigw = get_laplace(w, Z, mu0)
+#        mn_err = np.sqrt(((muw-mup)**2).sum())/np.sqrt(((mup**2).sum()))
+#        cv_err = np.sqrt(((Sigw-Sigp)**2).sum())/np.sqrt(((Sigp)**2).sum())
+#        print('mean error : ' + str(mn_err)+ '\n covar error: ' + str(cv_err))
+#      coreset.build(j)
+#      #if we want to fully reoptimize in each step, call giga.optimize()
+#      if alg == 'hilbert_corr' or alg == 'hilbert_corr_good':
+#        coreset.optimize() 
+#      #record time and weights
+#      wtmp, idcs = coreset.weights()
+#      #fill in 
+#      w = np.zeros(Z.shape[0])
+#      w[idcs] = wtmp
+#      wts[m,idcs] = wtmp
+#      cputs[m] = time.process_time()-t0
       
 
 #get laplace approximations for each weight setting, and KL divergence to full posterior laplace approx mup Sigp

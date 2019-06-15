@@ -2,13 +2,9 @@ from __future__ import print_function
 import numpy as np
 import bayesiancoresets as bc
 from scipy.optimize import minimize
-
-#computes KL( N(mu0, Sig0) || N(mu1, Sig1) )
-def gaussian_KL(mu0, Sig0, mu1, Sig1):
-  t1 = np.linalg.solve(Sig1, Sig0).trace()
-  t2 = np.dot((mu1-mu0),np.linalg.solve(Sig1, mu1-mu0))
-  t3 = np.linalg.slogdet(Sig1)[1] - np.linalg.slogdet(Sig0)[1]
-  return 0.5*(t1+t2+t3-mu0.shape[0])
+import sys, os
+#make it so we can import models/etc from parent folder
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 #######################################
 #######################################
@@ -39,7 +35,7 @@ Z = y[:, np.newaxis]*X
 ###########################
 ###########################
 
-from model import *
+from model_lr import *
 
 ###############################################################
 ###############################################################
@@ -117,5 +113,6 @@ print('mu, cov = ' + str(mu) + '\n' + str(cov))
 print('Coreset requires ' + str(idcs.shape[0]) + ' data')
 print('muw, covw = ' + str(muw) + '\n' + str(covw))
 
+#TODO call ../gaussian.gaussian_KL, but use covInv for 2nd arg
 print('KL(coreset || posterior) = ' + str(gaussian_KL(muw, covw, mu, cov)))
 

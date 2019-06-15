@@ -2,33 +2,6 @@ import numpy as np
 import bayesiancoresets as bc
 import os
 from scipy.stats import multivariate_normal
-import tracemalloc
-import psutil
-
-def gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples):
-  return -x.shape[1]/2*np.log(2*np.pi) - 1./2.*logdetSig - 1./2.*(xSiginvx[:, np.newaxis] - 2.*np.dot(xSiginv, samples.T) + (np.dot(samples, Siginv)*samples).sum(axis=1))
- 
-def gaussian_KL(mu0, Sig0, mu1, Sig1inv):
-  t1 = np.dot(Sig1inv, Sig0).trace()
-  t2 = np.dot((mu1-mu0),np.dot(Sig1inv, mu1-mu0))
-  t3 = -np.linalg.slogdet(Sig1inv)[1] - np.linalg.slogdet(Sig0)[1]
-  return 0.5*(t1+t2+t3-mu0.shape[0])
-
-def weighted_post(th0, Sig0inv, Siginv, x, w): 
-  Sigp = np.linalg.inv(Sig0inv + w.sum()*Siginv)
-  mup = np.dot(Sigp,  np.dot(Sig0inv,th0) + np.dot(Siginv, (w[:, np.newaxis]*x).sum(axis=0)))
-  return mup, Sigp
-
-def weighted_post_KL(th0, Sig0inv, Siginv, x, w, reverse=True):
-  muw, Sigw = weighted_post(th0, Sig0inv, Siginv, x, w)
-  mup, Sigp = weighted_post(th0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
-  if reverse:
-    return gaussian_KL(muw, Sigw, mup, np.linalg.inv(Sigp))
-  else:
-    return gaussian_KL(mup, Sigp, muw, np.linalg.inv(Sigw))
-
-tracemalloc.start()
-
 
 np.random.seed(1)
 
@@ -37,6 +10,7 @@ N = 1000
 d = 30
 n_samples = 1000
 trials = np.arange(100)
+
 mu0 = np.zeros(d)
 Sig0 = np.eye(d)
 Sig = np.eye(d)
@@ -104,14 +78,6 @@ for t in trials:
     w_opt = np.zeros((M+1, x.shape[0]))
     for m in range(1, M+1):
       print('trial: ' + str(t+1)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
-      #print('******************')
-      #print('MEMORY STATISTICS')
-      #print('******************')
-      print('Basic memory usage = ' + str(psutil.Process(os.getpid()).memory_info().rss/1000000000.) + 'GB')
-      #snapshot = tracemalloc.take_snapshot()
-      #top_stats = snapshot.statistics('lineno')
-      #for stat in top_stats[:3]:
-      #  print(stat)
 
       alg.build(m)
       #store weights
@@ -123,6 +89,7 @@ for t in trials:
       w_opt[m, idcs_opt] = wts_opt
       #restore pre-opt weights
       alg._overwrite(idcs, wts)
+      #printouts for debugging purposes
       #print('reverse KL: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
       #print('reverse KL opt: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
 

@@ -9,9 +9,6 @@ bc.util.set_verbosity('error')
 
 n_trials = 5
 Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
-#anms = ['GIGA', 'FW', 'MP', 'FSW', 'OMP', 'LAR', 'IS', 'RND']
-#algs = [bc.GIGACoreset, bc.FrankWolfeCoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.LARCoreset, bc.VectorImportanceSamplingCoreset, bc.VectorUniformSamplingCoreset]
-
 
 anms = ['FW', 'GIGA', 'MP', 'FSW', 'OMP', 'IS', 'US']
 algs = [bc.FrankWolfeCoreset, bc.GIGACoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.ImportanceSamplingHilbertCoreset, bc.UniformSamplingHilbertCoreset]
@@ -36,7 +33,6 @@ for tr in range(n_trials):
     alg = algs[aidx](T)
 
     for m, M in enumerate(Ms):
-      #print('iteration ' + str(m) + ' at M = ' + str(M))
       t0 = time.time()
       alg.build(M)
       tf = time.time()

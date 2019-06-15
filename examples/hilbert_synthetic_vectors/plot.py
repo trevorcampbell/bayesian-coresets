@@ -5,49 +5,10 @@ import bokeh.layouts as bkl
 from bokeh.models import FuncTickFormatter
 import bokeh.palettes 
 import time
-
-logFmtr = FuncTickFormatter(code="""
-var trns = [
-'\u2070',
-'\u00B9',
-'\u00B2',
-'\u00B3',
-'\u2074',
-'\u2075',
-'\u2076',
-'\u2077',
-'\u2078',
-'\u2079'];
-if (tick <= 0){
-  return '';
-}
-var tick_power = Math.floor(Math.log10(tick));
-var tick_mult = Math.pow(10, Math.log10(tick) - tick_power);
-var ret = '';
-if (tick_mult > 1.) {
-  if (Math.abs(tick_mult - Math.round(tick_mult)) > 0.05){
-    ret = tick_mult.toFixed(1) + '\u22C5';
-  } else {
-    ret = tick_mult.toFixed(0) +'\u22C5';
-  }
-}
-ret += '10';
-if (tick_power < 0) {
-  ret += '\u207B';
-  tick_power = tick_power*(-1);
-}
-power_digits = [];
-while (tick_power > 9){
-  power_digits.push( tick_power - Math.floor(tick_power/10)*10 );
-  tick_power = Math.floor(tick_power/10);
-}
-
-power_digits.push(tick_power);
-for (i = power_digits.length-1; i >= 0; i--){
-  ret += trns[power_digits[i]];
-}
-return ret;
-""")
+import os, sys
+#make it so we can import models/etc from parent folder
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+from plotting import *
 
 
 fig_err_g = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Error', x_axis_label='Coreset Construction Iterations', plot_width=1250, plot_height=1250)
@@ -102,7 +63,6 @@ err = aa['err']
 scaled_err = aa['scaled_err']
 cput = aa['cput']
 csize = aa['csize']
-#pal = bokeh.palettes.colorblind['Colorblind'][len(anms)]
 for aidx, anm in enumerate(anms):
   fig_err_a.line(Ms, np.percentile(err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, legend=anm, line_dash=[20, 30], line_dash_offset=np.random.randint(50))
   fig_err_a.line(Ms, np.percentile(scaled_err[aidx,:,:], 50, axis=0), line_color=pal[aidx], line_width=8, line_dash='dotted')

@@ -4,7 +4,13 @@ import bayesiancoresets as bc
 from scipy.optimize import minimize
 from inference import nuts, rhat, hmc
 import time
+import sys
+import os
 
+
+
+#make it so we can import models/etc from parent folder
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 ## FOR LOGISTIC REGRESSION
 from model_lr import *

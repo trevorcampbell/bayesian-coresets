@@ -1,6 +1,10 @@
 import bokeh.plotting as bkp
 import numpy as np
-from utils import *
+import sys, os
+#make it so we can import models/etc from parent folder
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+from plotting import *
+
 
 plot_reverse_kl = True
 size_x_axis = False

@@ -26,6 +26,12 @@ def gen_synthetic(n):
 def log_joint(Z, th, wts):
   return (wts*log_likelihood(Z, th)).sum() + log_prior(th)
 
+def log_likelihood_2d2d(z, th):
+  lls = np.zeros((z.shape[0], th.shape[0]))
+  for i in range(th.shape[0]):
+    lls[:, i] = log_likelihood(z, th[i,:])
+  return lls
+
 def log_likelihood(z, th):
   if len(z.shape) == 1:
     m = -(th*z).sum()
@@ -34,14 +40,12 @@ def log_likelihood(z, th):
     else:
       m = -m
     return m 
-    #-np.log1p(np.exp(-(th*z).sum()))
   else:
     m = -(th*z).sum(axis=1)
     idcs = m < 100
     m[idcs] = -np.log1p(np.exp(m[idcs]))
     m[np.logical_not(idcs)] = -m[np.logical_not(idcs)]
     return m
-    #return -np.log1p(np.exp(-(th*z).sum(axis=1)))
 
 def log_prior(th):
   return -0.5*th.shape[0]*np.log(2.*np.pi) - 0.5*(th**2).sum()
@@ -54,8 +58,6 @@ def grad_log_likelihood(z, th, idx=None):
     else:
       m = 1.
     return m*z
-    #es = np.exp(-(th*z).sum())
-    #return es/(1.+es)*z
   else:
     m = -(th*z).sum(axis=1)
     idcs = m < 100
@@ -64,8 +66,6 @@ def grad_log_likelihood(z, th, idx=None):
     if idx is None:
       return m[:, np.newaxis]*z
     return m*z[:, idx]
-    #es = np.exp(-(th*z).sum(axis=1))
-    #return (es/(1.+es))[:, np.newaxis]*z
 
 def grad_log_prior(th):
   return -th
@@ -74,13 +74,14 @@ def grad_log_joint(z, th, wts):
   return grad_log_prior(th) + (wts[:, np.newaxis]*grad_log_likelihood(z, th)).sum(axis=0)
 
 def hess_log_joint(z, th):
-  #m = -(th*z).sum(axis=1)
-  #idcs = m < 100
-  #m[idcs] = np.exp(m[idcs])/(1.+np.exp(m[idcs]))
-  #m[np.logical_not(idcs)] = 1.
-  #H_log_like = -(z.T).dot((m**2)[:, np.newaxis]*z)
   es = np.exp(-(th*z).sum(axis=1))
   H_log_like = -(z.T).dot((es/(1.+es)**2)[:, np.newaxis]*z)
+  H_log_prior = -np.eye(th.shape[0])
+  return H_log_like + H_log_prior
+
+def hess_log_joint_w(z, th, wts):
+  es = np.exp(-(th*z).sum(axis=1))
+  H_log_like = -(wts*z.T).dot((es/(1.+es)**2)[:, np.newaxis]*z)
   H_log_prior = -np.eye(th.shape[0])
   return H_log_like + H_log_prior
 

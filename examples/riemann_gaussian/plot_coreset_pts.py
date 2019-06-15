@@ -1,7 +1,10 @@
 import bokeh.layouts as bkl
-from utils import *
 import bokeh.plotting as bkp
 import numpy as np
+#make it so we can import models/etc from parent folder
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+from plotting import *
+
 
 size_x_axis = False
 trial_num = 0

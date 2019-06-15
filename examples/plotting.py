@@ -23,34 +23,6 @@ def plot_medianquartiles(plot, x, ys, color, linewidth, alpha, line_dash, name):
   #plot.patch(np.hstack((x, x[::-1])), np.hstack(( ys25, ys75[::-1] )), color=color, line_width=linewidth/2, line_dash=line_dash, alpha=alpha, legend=nm)
 
 
-logFmtr = FuncTickFormatter(code="""
-var trns = [
-'\u2070',
-'\u00B9',
-'\u00B2',
-'\u00B3',
-'\u2074',
-'\u2075',
-'\u2076',
-'\u2077',
-'\u2078',
-'\u2079'];
-tens = Math.floor(Math.abs(Math.log10(tick))/10.);
-ones = Math.floor(Math.abs(Math.log10(tick))) - tens*10;
-ret = '';
-if (Math.log10(tick) < 0){
-  ret = ret + '10\u207B';
-} else {
-  ret = ret+'10';
-}
-if (tens == 0){
-  ret = ret + trns[ones];
-} else {
-  ret = ret + trns[tens] + trns[ones];
-}
-return ret;
-""")
-
 def preprocess_plot(fig, axis_font_size, log_scale):
   fig.xaxis.axis_label_text_font_size= axis_font_size
   fig.xaxis.major_label_text_font_size= axis_font_size
@@ -71,10 +43,50 @@ def postprocess_plot(fig, legend_font_size, orientation='vertical', location='to
   fig.xgrid.grid_line_color=None
   fig.ygrid.grid_line_color=None
 
-
+logFmtr = FuncTickFormatter(code="""
+var trns = [
+'\u2070',
+'\u00B9',
+'\u00B2',
+'\u00B3',
+'\u2074',
+'\u2075',
+'\u2076',
+'\u2077',
+'\u2078',
+'\u2079'];
+var tick_power = Math.floor(Math.log10(tick));
+var tick_mult = Math.pow(10, Math.log10(tick) - tick_power);
+var ret = '';
+if (tick_mult > 1.) {
+  if (Math.abs(tick_mult - Math.round(tick_mult)) > 0.05){
+    ret = tick_mult.toFixed(1) + '\u22C5';
+  } else {
+    ret = tick_mult.toFixed(0) +'\u22C5';
+  }
+}
+ret += '10';
+if (tick_power < 0){
+  ret += '\u207B';
+  tick_power = -tick_power;
+}
+power_digits = []
+while (tick_power > 9){
+  power_digits.push( tick_power - Math.floor(tick_power/10)*10 )
+  tick_power = Math.floor(tick_power/10)
+}
+power_digits.push(tick_power)
+for (i = power_digits.length-1; i >= 0; i--){
+  ret += trns[power_digits[i]];
+}
+return ret;
+""")
 
 
 pal = bokeh.palettes.colorblind['Colorblind'][8]
 pl = [pal[0], pal[1], pal[3]]
 pl.extend(pal[4:8])
+pl.append('#d62728')
 pal = pl
+
+

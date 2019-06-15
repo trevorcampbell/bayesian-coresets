@@ -5,10 +5,11 @@ from .kl import KLCoreset
 
 
 class ImportanceSamplingKLCoreset(KLCoreset,SamplingCoreset):
-  def __init__(self, N, tangent_space_factory, step_sched = lambda i : np.sqrt(1./(1.+i))):
+  def __init__(self, N, tangent_space_factory, step_sched = lambda i : np.sqrt(1./(1.+i)), opt_itrs=1000):
     super().__init__(N=N) 
     self.tsf = tangent_space_factory
     self.step_sched = step_sched
+    self.opt_itrs = opt_itrs
 
   def _compute_sampling_probabilities(self):
     return np.ones(self.N) #TODO something better here
