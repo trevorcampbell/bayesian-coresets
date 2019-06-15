@@ -18,7 +18,7 @@ class IterativeCoreset(Coreset):
       self.itrs = self.size() #set the itrs to the initialized size of M
       self.has_initialized = True
     #print('currently ' + str(self.size()) + ' coreset pts')
-    self._set_stop_point(M)
+    self._set_desired_coreset_size(M)
     retried_already = False
 
     while not self._stop():
@@ -43,7 +43,7 @@ class IterativeCoreset(Coreset):
   def _stop(self):
     raise NotImplementedError()
  
-  def _set_stop_point(self, M):
+  def _set_desired_coreset_size(self, M):
     raise NotImplementedError()
 
   def _step(self):
@@ -55,7 +55,7 @@ class IterativeCoreset(Coreset):
 class GreedyCoreset(IterativeCoreset):
 
   #for greedy constructions, run itrs up to M
-  def _set_stop_point(self, M):
+  def _set_desired_coreset_size(self, M):
     self.itr_end = M
 
   def _stop(self):
