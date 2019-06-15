@@ -82,7 +82,7 @@ learning_rate = tuning[dnm][1]
 
 ###############################
 ## TUNING PARAMETERS ##
-Ms = [1, 2, 5, 10, 20, 50, 100, 500] #coreset sizes at which we record output
+Ms = [1, 2, 5, 10, 20, 50, 100, 200, 499] #coreset sizes at which we record output
 projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = .75 #noise level (relative) for corrupting pihat
 ###############################
@@ -148,12 +148,12 @@ for m in range(len(Ms)):
 #for m in range(len(Ms)):
 #  if alg != 'prior':
 #    for j in range(Ms[m-1] if m > 0 else 0, Ms[m]):
-#      if j%10 == 0:
-#        print(str(j)+ '/' + str(Ms[-1]))
-#        muw, Sigw = get_laplace(w, Z, mu0)
-#        mn_err = np.sqrt(((muw-mup)**2).sum())/np.sqrt(((mup**2).sum()))
-#        cv_err = np.sqrt(((Sigw-Sigp)**2).sum())/np.sqrt(((Sigp)**2).sum())
-#        print('mean error : ' + str(mn_err)+ '\n covar error: ' + str(cv_err))
+#      #if j%10 == 0:
+#      #  print(str(j)+ '/' + str(Ms[-1]))
+#      #  muw, Sigw = get_laplace(w, Z, mu0)
+#      #  mn_err = np.sqrt(((muw-mup)**2).sum())/np.sqrt(((mup**2).sum()))
+#      #  cv_err = np.sqrt(((Sigw-Sigp)**2).sum())/np.sqrt(((Sigp)**2).sum())
+#      #  print('mean error : ' + str(mn_err)+ '\n covar error: ' + str(cv_err))
 #      coreset.build(j)
 #      #if we want to fully reoptimize in each step, call giga.optimize()
 #      if alg == 'hilbert_corr' or alg == 'hilbert_corr_good':

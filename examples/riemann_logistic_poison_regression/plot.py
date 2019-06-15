@@ -135,7 +135,6 @@ for idx, zppd in enumerate(dnmsalgs):
     if 'prior' in fn:
       kls[tridx, :] = np.median(kls[tridx,:])
 
-  print(cputs)
   cput50 = np.percentile(cputs, 50, axis=0)
   cput25 = np.percentile(cputs, 25, axis=0)
   cput75 = np.percentile(cputs, 75, axis=0)
