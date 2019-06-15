@@ -7,7 +7,7 @@ import bokeh.palettes
 import time
 import os, sys
 #make it so we can import models/etc from parent folder
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
 
 
