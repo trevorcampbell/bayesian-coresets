@@ -31,7 +31,6 @@ class QuadraticSparseVICoreset(KLCoreset,GreedyCoreset):
 
     T = self.tsf(self.wts, self.idcs)
     D, H = T.kl_quadratic_expansion(self.idcs)
-    #L = np.linalg.cholesky(H)
 
     lmb, V = np.linalg.eigh(H)
     if np.any(lmb<0):
@@ -41,44 +40,14 @@ class QuadraticSparseVICoreset(KLCoreset,GreedyCoreset):
 
     B = C.dot(self.wts) - Cinv.T.dot(D)
     if self.update_single:
-      A = np.atleast_2d(np.hstack((C.dot(one_f[:,np.newaxis]), C.dot(self.wts[:,np.newaxis]))))
+      wtmp = self.wts.copy()
+      wtmp[fidx] = 0.
+      A = np.atleast_2d(np.hstack((C.dot(one_f[:,np.newaxis]), C.dot(wtmp[:,np.newaxis]))))
+      ab, resid = nnls(A,B) 
+      w = ab[0]*one_f+ab[1]*wtmp
     else:
       A = C
-    w, resid = nnls(A,B) 
+      w, resid = nnls(A,B) 
     gamma = self.step_sched(self.itrs)
     self._update(self.idcs, (1.-gamma)*self.wts + gamma*w)
-    
-    #lmb, V = np.linalg.eigh(HlogZa - H3logZa+1e-16*np.eye(HlogZa.shape[0]))
-    #eta = 1.
-    #while np.any(lmb <= 0.):
-    #  eta /= 2.
-    #  lmb, V = np.linalg.eigh(HlogZa - eta*H3logZa+1e-16*np.eye(HlogZa.shape[0]))
-    #one_n = np.zeros(w.shape[0])
-    #one_n[n] = 1.
-    #C = (V*np.sqrt(lmb)).T
-    #Cinv = (V/np.sqrt(lmb))
-    #B = C.dot(w) + Cinv.T.dot(HlogZ1w)
-    #if full:
-    #  A = C
-    #  w, resid = nnls(A,B) 
-    #else:
-    #  A = np.atleast_2d(np.hstack((C.dot(one_n[:,np.newaxis]), C.dot(w[:,np.newaxis]))))
-    #  x, resid = nnls(A,B) 
-    #  w = x[1]*w+x[0]*one_n
-    #return w
-
-
-
-    #if self.update_single:
-    #  wtmp = self.wts.copy()
-    #  wtmp[fidx] = 0.
-    #  ab, resid = nnls(np.hstack((L.T.dot(wtmp)[:,np.newaxis], L.T.dot(onef)[:,np.newaxis])) , (L.T.dot(wtmp) - np.linalg.solve(L, D)))
-    #  w = (ab[0]*wtmp + ab[1]*onef)
-    #  self._update(self.idcs, (1.-gamma)*self.wts + gamma*)
-    #  #ab, resid = nnls(np.hstack((L.T.dot(self.wts)[:,np.newaxis], L.T.dot(onef)[:,np.newaxis])) , (L.T.dot(self.wts) - np.linalg.solve(L, D)))
-    #  #self._update(self.idcs, ab[0]*self.wts + ab[1]*onef)
-    #else:
-    #  w, resid = nnls(L.T, (L.T.dot(self.wts) - np.linalg.solve(L, D)))
-
-    #gamma = self.step_sched(self.itrs)
-    #self._update(self.idcs, (1.-gamma)*self.wts + gamma*w)
+   
