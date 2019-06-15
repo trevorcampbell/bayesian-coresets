@@ -8,6 +8,7 @@ import os, sys
 
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
+from mcmc import sampler
 
 #computes the Laplace approximation N(mu, Sig) to the posterior with weights wts
 def get_laplace(wts, Z, mu0):
@@ -34,12 +35,15 @@ dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips
 alg = sys.argv[2] #should be hilbert / hilbert_corr / riemann / riemann_corr / uniform 
 ID = sys.argv[3] #just a number to denote trial #, any nonnegative integer
 
+
 if not os.path.exists('results/'):
   os.mkdir('results')
 
 if not os.path.exists('results/'+dnm+'_samples.npy'):
   #run sampler
-  #TODO
+  N_samples = 10000
+  N_per = 2000
+  sampler(dnm, '../data/', 'results/', N_samples, N_per)
 
 
 #load the logistic or poisson regression model depending on selected folder
@@ -56,6 +60,7 @@ if dnm in lrdnms:
   from model_lr import *
 else:
   from model_poiss import *
+
 print('Loading dataset '+dnm)
 Z, Zt, D = load_data('../data/'+dnm+'.npz')
 print('Loading posterior samples for '+dnm)
