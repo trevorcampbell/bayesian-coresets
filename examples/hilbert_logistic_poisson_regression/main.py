@@ -4,24 +4,17 @@ import bayesiancoresets as bc
 from scipy.optimize import minimize
 from inference import nuts, rhat, hmc
 import time
-import sys
-import os
-
-
-
+import sys, os
 #make it so we can import models/etc from parent folder
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 
 ## FOR LOGISTIC REGRESSION
 from model_lr import *
-dnames = ['synth', 'ds1', 'phishing']
-dnames = ['phishing']
-fldr = 'lr'
+dnames = ['synth_lr', 'ds1', 'phishing']
 
 ## FOR POISSON REGRESSION
 #from model_poiss import *
-#dnames = ['synth', 'airportdelays', 'biketrips']
-#fldr = 'poiss'
+#dnames = ['synth_poiss', 'airportdelays', 'biketrips']
 
 
 n_trials = 20
@@ -41,7 +34,7 @@ mcmc_alg = hmc #nuts
 
 for dnm in dnames:
   print('Loading dataset '+dnm)
-  Z, Zt, D = load_data(fldr+'/'+dnm+'.npz')
+  Z, Zt, D = load_data('../data/'+dnm+'.npz')
 
   print('Computing Laplace approximation')
   t0 = time.time()
@@ -115,4 +108,6 @@ for dnm in dnames:
         gfs = np.array([ grad_log_joint(Z, full_samples[i, :], np.ones(Z.shape[0])) for i in range(full_samples.shape[0]) ])
         Fs[aidx, tr, m] = (((gcs - gfs)**2).sum(axis=1)).mean()
   #print(rhat(chains))
-  np.savez_compressed(fldr+'/'+dnm+'_results.npz', Ms=Ms, Fs=Fs, cputs=cputs, cputs_full=cputs_full, csizes=csizes, anms=anms)
+  if not os.path.exists('results/'):
+    os.mkdir('results')  
+  np.savez_compressed('results/'+dnm+'_results.npz', Ms=Ms, Fs=Fs, cputs=cputs, cputs_full=cputs_full, csizes=csizes, anms=anms)
