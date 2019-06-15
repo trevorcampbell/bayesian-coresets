@@ -9,6 +9,7 @@ import os, sys
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from mcmc import sampler
+import gaussian
 
 #computes the Laplace approximation N(mu, Sig) to the posterior with weights wts
 def get_laplace(wts, Z, mu0):
@@ -31,15 +32,20 @@ def get_laplace(wts, Z, mu0):
   Sig = -np.linalg.inv(hess_log_joint_w(Zw, mu, ww))
   return mu, Sig
 
+
+
 dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips / airportdelays
 alg = sys.argv[2] #should be hilbert / hilbert_corr / riemann / riemann_corr / uniform 
 ID = sys.argv[3] #just a number to denote trial #, any nonnegative integer
+
+print('running ' + str(dnm)+ ' ' + str(alg)+ ' ' + str(ID))
 
 
 if not os.path.exists('results/'):
   os.mkdir('results')
 
 if not os.path.exists('results/'+dnm+'_samples.npy'):
+  print('No MCMC samples found -- running STAN')
   #run sampler
   N_samples = 10000
   N_per = 2000
@@ -178,9 +184,9 @@ for m in range(len(Ms)):
   mul, Sigl = get_laplace(wts[m,:], Z, Z.mean(axis=0)[:D])
   mus_laplace[m,:] = mul
   Sigs_laplace[m,:,:] = Sigl
-  kls_laplace[m] = gaussian_KL(mup, Sigp, mus_laplace[m,:], Sigs_laplace[m,:,:])
+  kls_laplace[m] = gaussian.gaussian_KL(mup, Sigp, mul, np.linalg.inv(Sigl))
 
 #save results
-np.savez('results/'+fldr+'_'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=Ms, mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
+np.savez('results/'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=Ms, mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
 
 

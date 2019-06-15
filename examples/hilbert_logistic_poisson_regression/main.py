@@ -8,13 +8,13 @@ import sys, os
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 
-## FOR LOGISTIC REGRESSION
-from model_lr import *
-dnames = ['synth_lr', 'ds1', 'phishing']
+### FOR LOGISTIC REGRESSION
+#from model_lr import *
+#dnames = ['synth_lr', 'ds1', 'phishing']
 
-## FOR POISSON REGRESSION
-#from model_poiss import *
-#dnames = ['synth_poiss', 'airportdelays', 'biketrips']
+# FOR POISSON REGRESSION
+from model_poiss import *
+dnames = ['synth_poiss', 'airportdelays', 'biketrips']
 
 
 n_trials = 20
