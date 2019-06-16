@@ -7,6 +7,9 @@ import sys, os
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import gaussian
 
+
+np.random.seed(1)
+
 #######################################
 #######################################
 ## Step 0: Generate a Synthetic Dataset
