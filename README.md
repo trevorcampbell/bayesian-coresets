@@ -10,8 +10,7 @@ After the recent update (June 2019) implementing [Sparse Variational Inference](
 
 ### Installation and Dependencies
 
-To install with pip, download the repository and run `pip3 install . --user` in the repository's root folder.
-This code has not yet been verified with Python 2, so use `pip` at your own risk. Note: this package depends on [NumPy](http://www.numpy.org), [SciPy](https://www.scipy.org), and [SciKit Learn](https://scikit-learn.org).
+To install with pip, download the repository and run `pip3 install . --user` in the repository's root folder. Note: this package depends on [NumPy](http://www.numpy.org), [SciPy](https://www.scipy.org), and [SciKit Learn](https://scikit-learn.org).
 The examples also depend on [Bokeh](https://bokeh.pydata.org/en/latest) for plotting.
 
 ### Examples 
