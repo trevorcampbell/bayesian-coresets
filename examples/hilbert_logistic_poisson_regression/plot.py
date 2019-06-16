@@ -45,15 +45,15 @@ for idx, zppd in enumerate(dnmsalgs):
   if len(trials) == 0: continue
   cputs = np.zeros((len(trials), NMs))
   cszs = np.zeros((len(trials), NMs))
-  kl0 = std_kls[dnm] 
+  Fs = np.zeros((len(trials), NMs))
   for tridx, fn in enumerate(trials):
     res = np.load('results/'+fn)
     cputs[tridx, :] = res['cputs']
     Fs[tridx, :] = res['Fs']
     cszs[tridx, :] = res['csizes']
 
-    fig_cput.line(np.percentile(cputs, 50, axis=0)/std_ts[dnm], np.percentile(Fs, 50, axis=0)/std_Fs[dnm], line_color=alg[2], line_width=8, legend=alg[1])
-    fig_csz.line(np.percentile(csizes, 50, axis=0), np.percentile(Fs, 50, axis=0)/std_Fs[dnm], line_color=alg[2], line_width=8, legend=alg[1])
+  fig_cput.line(np.percentile(cputs, 50, axis=0)/std_ts[dnm], np.percentile(Fs, 50, axis=0)/std_Fs[dnm], line_color=alg[2], line_width=8, legend=alg[1])
+  fig_csz.line(np.percentile(cszs, 50, axis=0), np.percentile(Fs, 50, axis=0)/std_Fs[dnm], line_color=alg[2], line_width=8, legend=alg[1])
 
 rndlbl = bkm.Label(x=1.0, x_offset=-10, y=700, y_units='screen', text='Full Dataset MCMC', angle=90, angle_units='deg', text_font_size='30pt')
 rndspan = bkm.Span(location = 1.0, dimension='height', line_width=8, line_color='black', line_dash='40 40')
