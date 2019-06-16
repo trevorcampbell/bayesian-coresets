@@ -2,8 +2,6 @@ This text is no longer applicable to the repo as of the 2019 sparse VI update. W
 
 #### Example 0: Synthetic Vectors, Sparse Regression
 
-In this example, we build a coreset abstract vecs. The code to follow along with this example may be found in `examples/synthetic_vectors/`. Calling `python main.py` runs the example code and outputs a coreset size and posterior mean.
-
 #### Example 1: Bayesian Logistic Regression, Sparse Regression
 
 The code to follow along with this example may be found in `examples/simple_logistic_regression/`. Calling `python main.py` runs the example code and outputs a coreset size and posterior mean.
