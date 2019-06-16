@@ -6,7 +6,7 @@ A **coreset** (i.e. the "core of a dataset") is a small, weighted subset of a da
 
 ### Repository Status
 
-After the recent update (June 2019) implementing [Sparse Variational Inference](https://arxiv.org/abs/1906.03329), the repository is *no longer thoroughly tested*. Examples run and generate verified output using Python 3. Python 2 is not tested. Unit tests have not yet been updated. Work is in progress.
+After the recent update (June 2019) implementing [Sparse Variational Inference](https://arxiv.org/abs/1906.03329), the repository is **no longer thoroughly tested**. Examples run and generate verified output using Python 3. Python 2 is not tested. Unit tests have not yet been updated. Work is in progress.
 
 ### Installation and Dependencies
 
