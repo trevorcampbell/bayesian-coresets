@@ -14,89 +14,17 @@ To install with pip, download the repository and run `pip3 install . --user` in 
 This code has not yet been verified with Python 2, so use `pip` at your own risk. Note: this package depends on [NumPy](http://www.numpy.org), [SciPy](https://www.scipy.org), and [SciKit Learn](https://scikit-learn.org).
 The examples also depend on [Bokeh](https://bokeh.pydata.org/en/latest) for plotting.
 
-### Examples - Sparse Regression
+### Examples 
 
-The simplest way of building a coreset is to discretize your data log-likelihoods and solve a sparse linear regression problem with the discretized log-likelihood vectors. 
+#### Sparse Regression
+
+The computationally least expensive way of building a coreset is often to discretize your data log-likelihoods and solve a sparse linear regression problem with the discretized log-likelihood vectors. 
 The folders named `examples/hilbert_[name]` contain examples using this technique. The primary drawback of this sort of technique is that the user must select/design
-discretization points for the log-likelihoods, e.g., using samples from some weighting distribution.
+discretization points for the log-likelihoods. The examples in this repository achieve this by using samples from a weighting distribution based on the Laplace posterior approximation. 
 
-#### Example 0: Synthetic Vectors, Sparse Regression
+#### Sparse Variational Inference
 
-In this example, we build a coreset abstract vecs. The code to follow along with this example may be found in `examples/synthetic_vectors/`. Calling `python main.py` runs the example code and outputs a coreset size and posterior mean.
-
-#### Example 1: Bayesian Logistic Regression, Sparse Regression
-
-The code to follow along with this example may be found in `examples/simple_logistic_regression/`. Calling `python main.py` runs the example code and outputs a coreset size and posterior mean.
-
-**Setup:** In Bayesian logistic regression, we have a dataset `x` of `N` input vectors `x[n, :]` in `D` dimensions along with `N` responses `y[n]` equal to -1 or 1, and we want to predict the response at an arbitrary input. The model is that there is a latent `D`-dimensional parameter `theta` such that `y[n] | theta ~ Bernoulli(1/(1+np.exp(-np.dot(theta, x[n, :]))))` independently across the data. We take a Bayesian approach to learning `theta`, and place a standard prior on it: `theta ~ Normal(0, I)`. When `N` is large, MCMC and variational inference run slowly; instead, we will first "compress" / "summarize" the dataset by building a coreset, and then run inference on that.
-
-**Step 0 - Obtain/Generate Data:** In the example, we generate synthetic data.
-```
-#10,000 datapoints, 10-dimensional
-N = 10000
-D = 10
-#generate input vectors from standard normal
-mu = np.zeros(D)
-cov = np.eye(D)
-X = np.random.multivariate_normal(mu, cov, N)
-#set the true parameter to [3,3,3,..3]
-th = 3.*np.ones(D)
-#generate responses given inputs
-ps = 1.0/(1.0+np.exp(-(X*th).sum(axis=1)))
-y =(np.random.rand(N) <= ps).astype(int)
-#format data for (grad/hess) log (likelihood/prior/joint)
-Z = y[:, np.newaxis]*X
-
-```
-
-**Step 1 - Define the Model:** The Bayesian logistic regression model, including log-prior/likelihood/joint functions and their derivatives, is defined in  `examples/simple_logistic_regression/model.py`. 
-```
-from model import *
-```
-
-**Step 2 - Obtain a Cheap Posterior Approximation:** We use the Laplace approximation to find a cheap Gaussian approximation to the posterior.
-```
-#first, optimize the log joint to find the mode:
-res = minimize(lambda mu : -log_joint(Z, mu, np.ones(Z.shape[0])), Z.mean(axis=0), jac=lambda mu : -grad_log_joint(Z, mu, np.ones(Z.shape[0])))
-#then find a quadratic expansion around the mode, and assume the distribution is Gaussian
-cov = -np.linalg.inv(hess_log_joint(Z, res.x))
-
-#we can call post_approx() to sample from the approximate posterior
-post_approx = lambda : np.random.multivariate_normal(res.x, cov)
-```
-
-**Step 3 - Discretize the Log-Likelihood Functions:** The coreset construction algorithms in this repository require a finite-dimensional approximation of the log-likelihood functions for each datapoint.  
-```
-projection_dim = 500 #random projection dimension, K
-#build the discretization of all the log-likelihoods based on random projection
-proj = bc.ProjectionF(Z, grad_log_likelihood, projection_dim, post_approx) 
-#construct the N x K discretized log-likelihood matrix; each row represents the discretized LL func for one datapoint
-vecs = proj.get()
-```
-
-**Step 4 - Build the Coreset:** GIGA takes the discretized log-likelihood functions, and finds a sparse weighted subset that approximates the total log-likelihood for all the data.
-```
-M = 100 # use 100 datapoints
-giga = bc.GIGA(vecs) #do coreset construction using the discretized log-likelihood functions
-giga.run(M) #build the coreset
-wts = giga.weights() #get the output weights
-idcs = wts > 0 #pull out the indices of datapoints that were included in the coreset
-```
-
-### Examples - Sparse Variational Inference
-
-Can also build coresets via sparse VI
-
-#### Example 1: Bayesian Gaussian Model, Sparse Variational Inference
-
-This is one of the examples from [Sparse Variational Inference: Bayesian Coresets from Scratch](https://arxiv.org/abs/1906.03329). The code to follow along with this example may be found in `examples/riemann_gaussian/`. Calling `python main.py` runs the example code and outputs a coreset size and posterior mean.
-
-
-
-
-#### Example 4: Bayesian Logistic Regression, Sparse Variational Inference
-
-[Sparse Variational Inference: Bayesian Coresets from Scratch](https://arxiv.org/abs/1906.03329)
+The easiest / most automated way of building a coreset is to solve a sparse variational inference problem. While this doesn't require any user input beyond a generative model and dataset, it is typically more computationally costly than the sparse regression-based methods above. The folders named `examples/riemann_[name]` contain examples using this technique.
 
 ### Citations
 
