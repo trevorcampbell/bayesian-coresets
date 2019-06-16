@@ -1,9 +1,7 @@
-from .frankwolfe import FrankWolfe
-from .subsampling import ImportanceSampling, RandomSubsampling
-from .fulldataset import FullDataset
-from .projection import ProjectionF, Projection2
-from .giga import GIGA
-from .forwardstagewise import ForwardStagewise
-from .pursuit import MatchingPursuit
-from .orthopursuit import OrthoPursuit
-from .lar import LAR
+from .tangent import FixedFiniteTangentSpace, MonteCarloFiniteTangentSpace
+from .base import FullDataCoreset
+from .hilbert import FrankWolfeCoreset, GIGACoreset, MatchingPursuitCoreset, ForwardStagewiseCoreset, OrthoPursuitCoreset, ImportanceSamplingHilbertCoreset, UniformSamplingHilbertCoreset, LassoCoreset
+from .riemann import SparseVICoreset, QuadraticSparseVICoreset, ImportanceSamplingKLCoreset, UniformSamplingKLCoreset
+
+
+
