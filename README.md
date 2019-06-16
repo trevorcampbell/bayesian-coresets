@@ -16,7 +16,9 @@ The examples also depend on [Bokeh](https://bokeh.pydata.org/en/latest) for plot
 
 ### Examples - Sparse Regression
 
-The simplest way of doing coresets is via sparse regression. Come up with some vec rep of your likelihood then SR.
+The simplest way of building a coreset is to discretize your data log-likelihoods and solve a sparse linear regression problem with the discretized log-likelihood vectors. 
+The folders named `examples/hilbert_[name]` contain examples using this technique. The primary drawback of this sort of technique is that the user must select/design
+discretization points for the log-likelihoods, e.g., using samples from some weighting distribution.
 
 #### Example 0: Synthetic Vectors, Sparse Regression
 
