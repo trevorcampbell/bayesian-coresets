@@ -8,7 +8,7 @@
 
 for ID in {1..100}
 do
-    for alg in "GIGA" "FW" "RND"
+    for alg in "RND" "FW" "GIGA" 
     do
         for dnm in "synth_lr" "phishing" "ds1" "synth_poiss" "biketrips" "airportdelays"
 	do

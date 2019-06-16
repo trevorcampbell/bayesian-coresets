@@ -72,7 +72,7 @@ if not os.path.exists('results/'+dnm+'_posterior_samples.npz'):
   t0 = time.process_time()
   full_samples = mcmc_alg(logp = logpZ, gradlogp = glogpZ, 
                    x0 = mcmc_param_init, sample_steps=mcmc_steps, burn_steps=mcmc_burn, adapt_steps=mcmc_burn, 
-                   n_leapfrogs = n_leap, scale=var_scales, progress_bar=pbar, step_size=step_size_init, target_accept=target_a) 
+                   n_leapfrogs = n_leap, scale=np.ones(mu.shape[0]), progress_bar=pbar, step_size=step_size_init, target_accept=target_a) 
   t_full = time.process_time()-t0
   np.savez('results/'+dnm+'_posterior_samples.npz', full_samples=full_samples, t_full=t_full)
 else:
@@ -86,13 +86,13 @@ cputs = np.zeros(Ms.shape[0])
 csizes = np.zeros(Ms.shape[0])
 Fs = np.zeros(Ms.shape[0])
 
-print('Running coreset construction / MCMC for ' + dnm + ' ' + anm)
+print('Running coreset construction / MCMC for ' + dnm + ' ' + anm + ' ' + ID)
 t0 = time.process_time()
 alg = algdict[anm](mct)
-t_setup = time.proess_time() - t0
+t_setup = time.process_time() - t0
 t_alg = 0.
 for m in range(Ms.shape[0]):
-  print('M = ' + str(Ms[m]) + ': coreset construction, '+ anm + ' ' + dnm)
+  print('M = ' + str(Ms[m]) + ': coreset construction, '+ anm + ' ' + dnm + ' ' + ID)
   #this runs alg up to a level of M; on the next iteration, it will continue from where it left off
   t0 = time.process_time()
   alg.build(Ms[m])
@@ -106,7 +106,7 @@ for m in range(Ms.shape[0]):
   t0 = time.process_time()
   th_samples = mcmc_alg(logp=logpZ, gradlogp=glogpZ, 
                x0 = mcmc_param_init, sample_steps=mcmc_steps, burn_steps=mcmc_burn, adapt_steps=mcmc_burn, 
-               n_leapfrogs= n_leap, scale=var_scales, progress_bar=pbar, step_size=step_size_init, target_accept=target_a)
+               n_leapfrogs= n_leap, scale=np.ones(mu.shape[0]), progress_bar=pbar, step_size=step_size_init, target_accept=target_a)
   t_alg_mcmc = time.process_time()-t0    
 
   print('M = ' + str(Ms[m]) + ': CPU times')
