@@ -4,11 +4,11 @@ import bokeh.layouts as bkl
 import time
 import os, sys
 #make it so we can import models/etc from parent folder
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
 
 
-dnames = ['lr_synth', 'lr_ds1', 'lr_phishing', 'poiss_synth', 'poiss_biketrips', 'poiss_airportdelays']
+dnames = ['synth_lr', 'ds1', 'phishing', 'synth_poiss', 'biketrips', 'airportdelays']
 
 #algs = [('uniform', 'Uniform', pal[7]), ('hilbert','GIGA (noisy)', pal[5]), ('hilbert_corr', 'Fully Corrective GIGA (noisy)', pal[1]), ('riemann', 'Greedy', pal[3]), ('riemann_corr', 'Fully Corrective Greedy', pal[4]),('hilbert_good','GIGA (truth)', pal[2]), ('hilbert_corr_good', 'Fully Corrective GIGA (truth)', pal[0])]
 algs = [('uniform', 'Uniform', pal[7]),  ('riemann_corr', 'Fully Corrective Greedy', pal[2]),('hilbert','GIGA (Noisy)', pal[1]),('hilbert_good','GIGA (Truth)', pal[0]), ('prior','Prior', 'black')]

@@ -5,7 +5,6 @@ import os
 import pickle as pk
 import time
 
-
 def load_data(dnm):
   data = np.load(dnm)
   X = data['X']
@@ -16,24 +15,15 @@ def load_data(dnm):
   V = np.cov(X[:, :-1], rowvar=False)+1e-12*np.eye(X.shape[1]-1)
   X[:, :-1] = np.linalg.solve(np.linalg.cholesky(V), (X[:, :-1] - m).T).T
   Xt[:, :-1] = np.linalg.solve(np.linalg.cholesky(V), (Xt[:, :-1] - m).T).T
-  Z = data['y'][:, np.newaxis]*X
-  Zt = data['yt'][:, np.newaxis]*Xt
   data.close()
-  return Z, X[:, :-1], Y
-
-#N_samples = 10000
-#N_per = 2000
-#
-#
-#dnms = [(logistic_data_synth, 'lr', 'synth', X_synth.shape[1]+1, sml), (logistic_data_ds1, 'lr', 'ds1', X_ds1.shape[1]+1, sml), (logistic_data_phish, 'lr', 'phishing', X_phish.shape[1]+1, sml), (poisson_data_synth, 'poiss', 'synth', X_synthp.shape[1]+1, smp), (poisson_data_bike, 'poiss', 'biketrips', X_bike.shape[1]+1, smp), (poisson_data_air, 'poiss', 'airportdelays', X_air.shape[1]+1, smp)]
-
+  return X[:, :-1], Y
 
 def sampler(dnm, datafldr, resfldr, N_samples, N_per):
   print('STAN: loading data')
-  Z, X, Y = load_data(os.path.join(datafldr,dnm+'.npz'))
+  X, Y = load_data(os.path.join(datafldr,dnm+'.npz'))
   Y[Y == -1] = 0 #convert to Stan LR label style if necessary
 
-  sampler_data = {'x': X, 'y':Y.astype(int), 'd': X.shape[1], 'n': X.shape[0]}
+  sampler_data = {'x': X, 'y': Y.astype(int), 'd': X.shape[1], 'n': X.shape[0]}
 
   print('STAN: building/loading models')
   if not os.path.exists(os.path.join(resfldr,'pystan_model_logistic.pk')): 
@@ -61,17 +51,25 @@ def sampler(dnm, datafldr, resfldr, N_samples, N_per):
   print('STAN: sampling posterior: ' + dnm)
   t0 = time.process_time()
   thd = sampler_data['d']+1
-  samples = np.zeros((0, thd))
-  for i in range(int(N_samples/N_per)):
-    if i == 0: 
-      fit = sm.sampling(data=sampler_data, iter=N_per*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
-    else:
-      try:
-        fit = sm.sampling(data=sampler_data, init=[dict(theta=samples[-1,:-1], theta0=samples[-1,-1])], iter=N_per*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
-      except:
-        print('STAN: initialization failed, trying again')
-        fit = sm.sampling(data=sampler_data, iter=N_per*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
-    samples = np.vstack((samples, fit.extract(permuted=False)[:, 0, :thd]))
+  fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
+  samples = fit.extract(permuted=False)[:, 0, :thd]
   np.save(os.path.join(resfldr, dnm+'_samples.npy'), samples) 
   tf = time.process_time()
   np.save(os.path.join(resfldr, dnm+'_mcmc_time.npy'), tf-t0)
+
+  #t0 = time.process_time()
+  #thd = sampler_data['d']+1
+  #samples = np.zeros((0, thd))
+  #for i in range(int(N_samples/N_per)):
+  #  if i == 0: 
+  #    fit = sm.sampling(data=sampler_data, iter=N_per*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
+  #  else:
+  #    try:
+  #      fit = sm.sampling(data=sampler_data, init=[dict(theta=samples[-1,:-1], theta0=samples[-1,-1])], iter=N_per*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
+  #    except:
+  #      print('STAN: initialization failed, trying again')
+  #      fit = sm.sampling(data=sampler_data, iter=N_per*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
+  #  samples = np.vstack((samples, fit.extract(permuted=False)[:, 0, :thd]))
+  #np.save(os.path.join(resfldr, dnm+'_samples.npy'), samples) 
+  #tf = time.process_time()
+  #np.save(os.path.join(resfldr, dnm+'_mcmc_time.npy'), tf-t0)
