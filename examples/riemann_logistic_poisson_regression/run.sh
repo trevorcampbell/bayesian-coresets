@@ -10,8 +10,7 @@ for ID in {1..100}
 do
     for alg in "uniform" "hilbert" "hilbert_good" "riemann_corr" "prior"
     do
-        #for dnm in "synth_lr" "phishing" "ds1" "synth_poiss" "biketrips" "airportdelays"
-        for dnm in "synth_lr" "synth_poiss"
+        for dnm in "synth_lr" "phishing" "ds1" "synth_poiss" "biketrips" "airportdelays"
 	do
 		python3 main.py $dnm $alg $ID
 	done
