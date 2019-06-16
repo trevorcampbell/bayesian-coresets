@@ -36,19 +36,6 @@ dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips
 alg = sys.argv[2] #should be hilbert / hilbert_corr / riemann / riemann_corr / uniform 
 ID = sys.argv[3] #just a number to denote trial #, any nonnegative integer
 
-print('running ' + str(dnm)+ ' ' + str(alg)+ ' ' + str(ID))
-
-if not os.path.exists('results/'):
-  os.mkdir('results')
-
-if not os.path.exists('results/'+dnm+'_samples.npy'):
-  print('No MCMC samples found -- running STAN')
-  #run sampler
-  N_samples = 10000
-  N_per = 2000
-  sampler(dnm, '../data/', 'results/', N_samples, N_per)
-
-
 #load the logistic or poisson regression model depending on selected folder
 tuning = {'synth_lr': (50, lambda itr : 1./(1.+itr)**0.5), 
           'ds1': (50, lambda itr : 1./(1.+itr)**0.5), 
@@ -63,6 +50,20 @@ if dnm in lrdnms:
   from model_lr import *
 else:
   from model_poiss import *
+
+
+
+print('running ' + str(dnm)+ ' ' + str(alg)+ ' ' + str(ID))
+
+if not os.path.exists('results/'):
+  os.mkdir('results')
+
+if not os.path.exists('results/'+dnm+'_samples.npy'):
+  print('No MCMC samples found -- running STAN')
+  #run sampler
+  N_samples = 10000
+  sampler(dnm, dnm in lrdnms, '../data/', 'results/', N_samples)
+
 
 print('Loading dataset '+dnm)
 Z, Zt, D = load_data('../data/'+dnm+'.npz')

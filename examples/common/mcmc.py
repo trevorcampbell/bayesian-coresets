@@ -18,35 +18,36 @@ def load_data(dnm):
   data.close()
   return X[:, :-1], Y
 
-def sampler(dnm, datafldr, resfldr, N_samples, N_per):
+def sampler(dnm, lr, datafldr, resfldr, N_samples):
   print('STAN: loading data')
   X, Y = load_data(os.path.join(datafldr,dnm+'.npz'))
   Y[Y == -1] = 0 #convert to Stan LR label style if necessary
 
   sampler_data = {'x': X, 'y': Y.astype(int), 'd': X.shape[1], 'n': X.shape[0]}
 
-  print('STAN: building/loading models')
-  if not os.path.exists(os.path.join(resfldr,'pystan_model_logistic.pk')): 
-    print('STAN: building LR model')
-    sm = pystan.StanModel(model_code=logistic_code)
-    f = open(os.path.join(resfldr,'pystan_model_logistic.pk'),'wb')
-    pk.dump(sm, f)
-    f.close()
+  print('STAN: building/loading model')
+  if lr:
+    if not os.path.exists(os.path.join(resfldr,'pystan_model_logistic.pk')): 
+      print('STAN: building LR model')
+      sm = pystan.StanModel(model_code=logistic_code)
+      f = open(os.path.join(resfldr,'pystan_model_logistic.pk'),'wb')
+      pk.dump(sm, f)
+      f.close()
+    else:
+      f = open(os.path.join(resfldr,'pystan_model_logistic.pk'),'rb')
+      sm = pk.load(f)
+      f.close()
   else:
-    f = open(os.path.join(resfldr,'pystan_model_logistic.pk'),'rb')
-    sm = pk.load(f)
-    f.close()
-
-  if not os.path.exists(os.path.join(resfldr,'pystan_model_poisson.pk')): 
-    print('STAN: building PR model')
-    sm = pystan.StanModel(model_code=poisson_code)
-    f = open(os.path.join(resfldr,'pystan_model_poisson.pk'),'wb')
-    pk.dump(sm, f)
-    f.close()
-  else:
-    f = open(os.path.join(resfldr,'pystan_model_poisson.pk'),'rb')
-    sm = pk.load(f)
-    f.close()
+    if not os.path.exists(os.path.join(resfldr,'pystan_model_poisson.pk')): 
+      print('STAN: building PR model')
+      sm = pystan.StanModel(model_code=poisson_code)
+      f = open(os.path.join(resfldr,'pystan_model_poisson.pk'),'wb')
+      pk.dump(sm, f)
+      f.close()
+    else:
+      f = open(os.path.join(resfldr,'pystan_model_poisson.pk'),'rb')
+      sm = pk.load(f)
+      f.close()
 
   print('STAN: sampling posterior: ' + dnm)
   t0 = time.process_time()
