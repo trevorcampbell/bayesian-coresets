@@ -64,15 +64,4 @@ idcs = wts > 0 #pull out the indices of datapoints that were included in the cor
 ```
 
 
-#### Example 1: Bayesian Gaussian Model, Sparse Variational Inference
-
-This is one of the examples from [Sparse Variational Inference: Bayesian Coresets from Scratch](https://arxiv.org/abs/1906.03329). The code to follow along with this example may be found in `examples/riemann_gaussian/`. Calling `python main.py` runs the example code and outputs a coreset size and posterior mean.
-
-
-
-
-#### Example 4: Bayesian Logistic Regression, Sparse Variational Inference
-
-[Sparse Variational Inference: Bayesian Coresets from Scratch](https://arxiv.org/abs/1906.03329)
-
 
