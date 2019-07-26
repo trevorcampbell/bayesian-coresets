@@ -63,16 +63,20 @@ for t in trials:
   Y = x[:, 2]
 
   #get true posterior
+  print('Computing true posterior')
   mup, Sigp = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, X, Y, np.ones(X.shape[0]))
   Sigpinv = np.linalg.inv(Sigp)
 
   #create function to output log_likelihood given param samples
+  print('Creating log-likelihood function')
   log_likelihood = lambda samples : model_linreg.potentials(datastd**2, X, Y, samples)
 
   #create tangent space for well-tuned Hilbert coreset alg
+  print('Creating tuned tangent space for Hilbert coreset construction')
   T_true = bc.MonteCarloFiniteTangentSpace(log_likelihood, lambda sz : np.random.multivariate_normal(mup, 9*Sigp, sz), proj_dim)
 
   #create tangent space for poorly-tuned Hilbert coreset alg
+  print('Creating untuned tangent space for Hilbert coreset construction')
   U = np.random.rand()
   muhat = U*mup + (1.-U)*mu0
   Sighat = U*Sigp + (1.-U)*Sig0
@@ -95,6 +99,7 @@ for t in trials:
     
    
   #create coreset construction objects
+  print('Creating coreset construction objects')
   riemann_one = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=True)
   riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=False)
   giga_true = bc.GIGACoreset(T_true)
@@ -110,7 +115,7 @@ for t in trials:
     w = np.zeros((M+1, x.shape[0]))
     w_opt = np.zeros((M+1, x.shape[0]))
     for m in range(1, M+1):
-      print('trial: ' + str(t+1)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
+      print('trial: ' + str(trnum)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 
       alg.build(m)
       #store weights
@@ -131,6 +136,7 @@ for t in trials:
     rklw = np.zeros(M+1)
     fklw = np.zeros(M+1)
     for m in range(M+1):
+      print('KL divergence computation for trial: ' + str(trnum)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
       muw[m, :], Sigw[m, :, :] = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, X, Y, w[m, :])
       rklw[m] = gaussian.weighted_post_KL(th0, Sig0inv, sigsq, X, Y, w[m,:], reverse=True)
       fklw[m] = gaussian.weighted_post_KL(th0, Sig0inv, sigsq, X, Y, w[m,:], reverse=False)
@@ -139,6 +145,7 @@ for t in trials:
     rklw_opt = np.zeros(M+1)
     fklw_opt = np.zeros(M+1)
     for m in range(M+1):
+      print('Optimized KL divergence computation for trial: ' + str(trnum)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
       muw_opt[m, :], Sigw_opt[m, :, :] = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, X, Y, w_opt[m, :])
       rklw_opt[m] = gaussian.weighted_post_KL(th0, Sig0inv, sigsq, X, Y, w_opt[m,:], reverse=True)
       fklw_opt[m] = gaussian.weighted_post_KL(th0, Sig0inv, sigsq, X, Y, w_opt[m,:], reverse=False)
@@ -146,6 +153,7 @@ for t in trials:
 
     if not os.path.exists('results/'):
       os.mkdir('results')
+    print('saving result for trial: ' + str(trnum)+'/'+str(trials.shape[0])+' alg: ' + nm)
     np.savez('results/results_linreg_'+nm+'_' + str(t)+'.npz', x=x, mu0=mu0, Sig0=Sig0, Sig=Sig, mup=mup, Sigp=Sigp, w=w, w_opt=w_opt,
                                    muw=muw, Sigw=Sigw, rklw=rklw, fklw=fklw,
                                    muw_opt=muw_opt, Sigw_opt=Sigw_opt, rklw_opt=rklw_opt, fklw_opt=fklw_opt)
