@@ -20,7 +20,7 @@ def weighted_post(th0, Sig0inv, sigsq, X, Y, w):
   mup = np.dot(Sigp,  np.dot(Sig0inv,th0) + (w[:, np.newaxis]*Y[:,np.newaxis]*X).sum(axis=0)/sigsq )
   return mup, Sigp
 
-def gaussian_potentials(sigsq, X, Y, samples):
+def potentials(sigsq, X, Y, samples):
   XST = X.dot(samples.T)
   return -1./2.*np.log(2.*np.pi*sigsq) - 1./(2.*sigsq)*(Y[:,np.newaxis]**2 - 2*XST*Y[:,np.newaxis] + XST**2)
  

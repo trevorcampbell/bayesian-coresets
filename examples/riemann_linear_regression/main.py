@@ -11,21 +11,36 @@ import model_linreg
 #each row of x is [lat, lon, price]
 print('Loading data')
 x = np.load('../data/prices2018.npy')
+
+N_subsample = 1000
+
+#get a random subsample of it
+idcs = np.arange(x.shape[0])
+np.random.shuffle(idcs)
+x = x[idcs[:N_subsample], :]
+
+#log transform
 x[:, 2] = np.log10(x[:, 2])
 
+#get empirical mean/std
 datastd = x[:,2].std()
 datamn = x[:,2].mean()
+
 
 #bases of increasing size; the last one is effectively a constant
 basis_unique_scales = np.array([.2, .4, .8, 1.2, 1.6, 2., 100])
 basis_unique_counts = np.array([1000, 500, 100, 50, 10, 5, 1])
+
+basis_unique_scales = np.array([.4, 1., 2., 100])
+basis_unique_counts = np.hstack((3*np.ones(3, dtype=np.int64), 1))
+
 
 #the dimension of the scaling vector for the above bases
 d = basis_unique_counts.sum()
 
 #model params
 mu0 = datamn*np.ones(d)
-Sig0 = np.diag(datastd**2+datamn**2)
+Sig0 = (datastd**2+datamn**2)*np.eye(d)
 Sig = datastd**2*np.eye(d)
 SigL = np.linalg.cholesky(Sig)
 Sig0inv = np.linalg.inv(Sig0)
@@ -87,13 +102,18 @@ for t in trials:
 
   #create exact tangent space factory for Riemann coresets
   def tangent_space_factory(wts, idcs):
-    w = np.zeros(x.shape[0])
+    w = np.zeros(X.shape[0])
     w[idcs] = wts
     muw, Sigw = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, X, Y, w)
-    nu = (x - muw).dot(SigLInv.T)
-    Psi = np.dot(SigLInv, np.dot(Sigw, SigLInv.T))
 
-    nu = np.hstack((nu.dot(np.linalg.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
+    try:
+      nu = X.dot(np.linalg.cholesky(Sigw+1e-3*np.eye(Sigw.shape[0])))/datastd**2
+    except:
+      print(np.linalg.eigvalsh(Sigw))
+   
+    dnu = (Y - X.dot(muw))[:,np.newaxis]*nu
+
+    nu = np.hstack((dnu, 1./np.sqrt(2.)*( nu[:, :, np.newaxis]*nu[:, np.newaxis, :]).reshape( (nu.shape[0], nu.shape[1]**2))))
     
     return bc.FixedFiniteTangentSpace(nu, wts, idcs)
     
@@ -138,8 +158,8 @@ for t in trials:
     for m in range(M+1):
       print('KL divergence computation for trial: ' + str(trnum)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
       muw[m, :], Sigw[m, :, :] = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, X, Y, w[m, :])
-      rklw[m] = gaussian.weighted_post_KL(th0, Sig0inv, sigsq, X, Y, w[m,:], reverse=True)
-      fklw[m] = gaussian.weighted_post_KL(th0, Sig0inv, sigsq, X, Y, w[m,:], reverse=False)
+      rklw[m] = model_linreg.weighted_post_KL(mu0, Sig0inv, datastd**2, X, Y, w[m,:], reverse=True)
+      fklw[m] = model_linreg.weighted_post_KL(mu0, Sig0inv, datastd**2, X, Y, w[m,:], reverse=False)
     muw_opt = np.zeros((M+1, mu0.shape[0]))
     Sigw_opt = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
     rklw_opt = np.zeros(M+1)
@@ -147,8 +167,8 @@ for t in trials:
     for m in range(M+1):
       print('Optimized KL divergence computation for trial: ' + str(trnum)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
       muw_opt[m, :], Sigw_opt[m, :, :] = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, X, Y, w_opt[m, :])
-      rklw_opt[m] = gaussian.weighted_post_KL(th0, Sig0inv, sigsq, X, Y, w_opt[m,:], reverse=True)
-      fklw_opt[m] = gaussian.weighted_post_KL(th0, Sig0inv, sigsq, X, Y, w_opt[m,:], reverse=False)
+      rklw_opt[m] = model_linreg.weighted_post_KL(mu0, Sig0inv, datastd**2, X, Y, w_opt[m,:], reverse=True)
+      fklw_opt[m] = model_linreg.weighted_post_KL(mu0, Sig0inv, datastd**2, X, Y, w_opt[m,:], reverse=False)
 
 
     if not os.path.exists('results/'):
