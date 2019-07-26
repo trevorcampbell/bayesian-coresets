@@ -7,6 +7,11 @@ sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
 
 
+print('Loading data')
+x = np.load('../data/prices2018.npy')
+
+#plot posterior predictive density contours + coreset points
+
 size_x_axis = False
 trial_num = 0
 
