@@ -58,8 +58,8 @@ datastd = res['datastd']
 
 figs = []
 for m in Ms:
-  fig = bkp.figure(x_range=lon_bds, y_range=lat_bds, plot_width=750, plot_height=750)
-  fig_opt = bkp.figure(x_range=x_range, y_range=y_range, plot_width=750, plot_height=750)
+  fig = bkp.figure(x_range=lonbds, y_range=latbds, plot_width=750, plot_height=750)
+  fig_opt = bkp.figure(x_range=lonbds, y_range=latbds, plot_width=750, plot_height=750)
   #for f in [fig, fig_opt]:
   for f in [fig]:
     preprocess_plot(f, '24pt', False, False)
@@ -72,12 +72,14 @@ for m in Ms:
     #compute posterior mean regression on the grid
     reg = np.zeros(longrid.shape)
     for i in range(basis_scales.shape[0]):
-      reg += muw[i]*np.exp(-(longrid - basis_locs[i,0])**2/(2*datastd**2) - (latgrid - basis_locs[i,1])**2/(2*datastd**2) )
+      reg += muw[m, i]*np.exp(-(longrid - basis_locs[i,1])**2/(2*datastd**2) - (latgrid - basis_locs[i,0])**2/(2*datastd**2) )
     #plot contours
     for color, pctile in zip(contour_colors, contour_percentiles):
       contours = measure.find_contours(reg, np.percentile(reg, pctile))
       for contour in contours:
-        f.line(contour[:, 1], contour[:, 0], line_width=2, line_color=color)
+        #interpolate values
+        latlons = np.hstack(( np.interp(contour[:, 0], np.arange(lats.shape[0]), lats)[:, np.newaxis], np.interp(contour[:, 1], np.arange(lons.shape[0]), lons)[:, np.newaxis]))
+        f.line(latlons[:, 1], latlons[:, 0], line_width=2, line_color=color)
      
   #for f in [fig, fig_opt]:
   for f in [fig]:
