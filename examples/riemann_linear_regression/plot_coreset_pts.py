@@ -5,21 +5,40 @@ import sys,os
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
+from skimage import measure
 
 
 print('Loading data')
 x = np.load('../data/prices2018.npy')
 
-#plot posterior predictive density contours + coreset points
+latbds = (x[:, 0].min(), x[:, 0].max())
+lonbds = (x[:, 1].min(), x[:, 1].max())
 
-size_x_axis = False
-trial_num = 0
+lats = np.linspace(latbds[0], latbds[1], 20)
+lons = np.linspace(lonbds[0], lonbds[1], 20)
 
+longrid, latgrid = np.meshgrid(lons, lats)
+
+
+N_subsample = 100
+
+#get a random subsample of it
+idcs = np.arange(x.shape[0])
+np.random.shuffle(idcs)
+x = x[idcs[:N_subsample], :]
+
+#log transform
+x[:, 2] = np.log10(x[:, 2])
+
+contour_percentiles = np.array([1, 25, 50, 75, 99])
+c = contour_percentiles / contour_percentiles.max()
+contour_colors = ['#%02x%02x%02x' % (int(r), int(b), int(g)) for (r, b, g) in zip(255*c, 0*np.ones(c.shape[0]), 255*(1.-c))]
+
+#algorithm / trial + Ms to plot
 nm = ('SVI1', 'SparseVI-1')
-Ms = [0, 1, 2, 5, 8, 12]
-
-np.random.seed(5)
-#plot the KL figure
+trial_num = 0
+Ms = [0, 5, 10, 15, 20, 25, 29]
+Ms = [0, 10, 25]
 
 #plot the sequence of coreset pts and comparison of nonopt + opt
 res = np.load('results/results_'+nm[0] + '_' + str(trial_num)+'.npz')
@@ -33,70 +52,33 @@ muwt = res['muw']
 Sigwt = res['Sigw']
 muwt_opt = res['muw_opt']
 Sigwt_opt = res['Sigw_opt']
-
-#if dim x > 2, project onto two random orthogonal axes
-if x.shape[1] > 2:
-  ##centering on the true data gen dist
-  #true_th = np.ones(mup.shape[0])
-  #x-= true_th
-  #mup -= true_th
-  #muwt -= true_th
-  #muwt_opt -= true_th
-  #project onto two random axes
-  a1 = np.random.randn(x.shape[1])
-  a2 = np.random.randn(x.shape[1])
-  a1 /= np.sqrt((a1**2).sum())
-  a2 -= a2.dot(a1)*a1
-  a2 /= np.sqrt((a2**2).sum())
-  a = np.hstack((a1[:,np.newaxis], a2[:,np.newaxis]))
-  x = x.dot(a)
-  mup = mup.dot(a)
-  muwt = muwt.dot(a)
-  muwt_opt = muwt_opt.dot(a)
-  Sig = a.T.dot(Sig.dot(a))
-  Sigp = a.T.dot(Sigp.dot(a))
-  Sigwttmp = np.zeros((Sigwt.shape[0], 2, 2))
-  Sigwtopttmp = np.zeros((Sigwt.shape[0], 2, 2))
-  for i in range(Sigwt.shape[0]):
-    Sigwttmp[i,:,:] = a.T.dot(Sigwt[i,:,:].dot(a))
-    Sigwtopttmp[i,:,:] = a.T.dot(Sigwt_opt[i,:,:].dot(a))
-  Sigwt = Sigwttmp
-  Sigwt_opt = Sigwtopttmp
-  ##shift everything to be back to true th
-  #true_th = true_th[:2]
-  #x += true_th
-  #mup += true_th
-  #muwt += true_th
-  #muwt_opt += true_th
+basis_scales = res['basis_scales']
+basis_locs = res['basis_locs']
+datastd = res['datastd']
 
 figs = []
 for m in Ms:
-  x_range = (-4.2, 4.2)
-  y_range = (-3, 5.4)
-  fig = bkp.figure(x_range=x_range, y_range=y_range, plot_width=750, plot_height=750)
+  fig = bkp.figure(x_range=lon_bds, y_range=lat_bds, plot_width=750, plot_height=750)
   fig_opt = bkp.figure(x_range=x_range, y_range=y_range, plot_width=750, plot_height=750)
   #for f in [fig, fig_opt]:
   for f in [fig]:
     preprocess_plot(f, '24pt', False, False)
 
-  #for (f, w, muw, Sigw) in [(fig, wt, muwt, Sigwt), (fig_opt, wt_opt, muwt_opt, Sigwt_opt)]:
-  for (f, w, muw, Sigw) in [(fig, wt, muwt, Sigwt)]:
-    msz = np.where((w > 0).sum(axis=1) <= m)[0][-1]
-    f.scatter(x[:, 0], x[:, 1], fill_color='black', size=10, alpha=0.09)
-
-    if size_x_axis:
-      f.scatter(x[:, 0], x[:, 1], fill_color='black', size=10*(w[msz, :]>0)+40*w[msz,:]/w[msz,:].max())
-    else:
-      f.scatter(x[:, 0], x[:, 1], fill_color='black', size=10*(w[msz, :]>0)+40*w[m,:]/w[m,:].max())
-
-    plot_gaussian(f, mup, (4./9.)*Sigp, (4./9.)*Sig, pal[0], 17, 9, 1, 1, 'solid', 'Exact')
-
-    if size_x_axis:
-      plot_gaussian(f, muw[msz,:], (4./9.)*Sigw[msz,:], (4./9.)*Sig, pal[2], 17, 9, 1, 1, 'solid', nm[1]+', size ' + str( (w[msz, :]>0).sum() ))
-    else:
-      plot_gaussian(f, muw[m,:], (4./9.)*Sigw[m,:], (4./9.)*Sig, pal[2], 17, 9, 1, 1, 'solid', nm[1]+', ' + str(m) +' pts') 
-
-
+  for (f, w, muw, Sigw) in [(fig, wt, muwt, Sigwt), (fig_opt, wt_opt, muwt_opt, Sigwt_opt)]:
+  #for (f, w, muw, Sigw) in [(fig, wt, muwt, Sigwt)]:
+    #plot data and coreset pts
+    f.scatter(x[:, 1], x[:, 0], fill_color='black', size=10, alpha=0.09)
+    f.scatter(x[:, 1], x[:, 0], fill_color='black', size=10*(w[m, :]>0)+40*w[m,:]/w[m,:].max())
+    #compute posterior mean regression on the grid
+    reg = np.zeros(longrid.shape)
+    for i in range(basis_scales.shape[0]):
+      reg += muw[i]*np.exp(-(longrid - basis_locs[i,0])**2/(2*datastd**2) - (latgrid - basis_locs[i,1])**2/(2*datastd**2) )
+    #plot contours
+    for color, pctile in zip(contour_colors, contour_percentiles):
+      contours = measure.find_contours(reg, np.percentile(reg, pctile))
+      for contour in contours:
+        f.line(contour[:, 1], contour[:, 0], line_width=2, line_color=color)
+     
   #for f in [fig, fig_opt]:
   for f in [fig]:
     postprocess_plot(f, '24pt', orientation='horizontal', glyph_width=80)

@@ -176,5 +176,6 @@ for t in trials:
     print('saving result for trial: ' + str(trnum)+'/'+str(trials.shape[0])+' alg: ' + nm)
     np.savez('results/results_'+nm+'_' + str(t)+'.npz', x=x, mu0=mu0, Sig0=Sig0, Sig=Sig, mup=mup, Sigp=Sigp, w=w, w_opt=w_opt,
                                    muw=muw, Sigw=Sigw, rklw=rklw, fklw=fklw,
-                                   muw_opt=muw_opt, Sigw_opt=Sigw_opt, rklw_opt=rklw_opt, fklw_opt=fklw_opt)
+                                   muw_opt=muw_opt, Sigw_opt=Sigw_opt, rklw_opt=rklw_opt, fklw_opt=fklw_opt,
+                                   basis_scales=basis_scales, basis_locs=basis_locs, datastd=datastd)
   
