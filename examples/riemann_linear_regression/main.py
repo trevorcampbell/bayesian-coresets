@@ -7,13 +7,16 @@ sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import model_linreg
 
 
+np.random.seed(1)
+
 #load data and compute true posterior
 #each row of x is [lat, lon, price]
 print('Loading data')
 x = np.load('../data/prices2018.npy')
 
-N_subsample = 1000
+N_subsample = 10000
 
+print('taking a random subsample')
 #get a random subsample of it
 idcs = np.arange(x.shape[0])
 np.random.shuffle(idcs)
@@ -29,31 +32,26 @@ datamn = x[:,2].mean()
 
 #bases of increasing size; the last one is effectively a constant
 basis_unique_scales = np.array([.2, .4, .8, 1.2, 1.6, 2., 100])
-basis_unique_counts = np.array([1000, 500, 100, 50, 10, 5, 1])
-
-basis_unique_scales = np.array([.4, 1., 2., 100])
-basis_unique_counts = np.hstack((3*np.ones(3, dtype=np.int64), 1))
-
+basis_unique_counts = np.hstack((50*np.ones(6, dtype=np.int64), 1))
 
 #the dimension of the scaling vector for the above bases
 d = basis_unique_counts.sum()
+print('Basis dimension: ' + str(d))
 
 #model params
 mu0 = datamn*np.ones(d)
 Sig0 = (datastd**2+datamn**2)*np.eye(d)
-Sig = datastd**2*np.eye(d)
-SigL = np.linalg.cholesky(Sig)
+#Sig = datastd**2*np.eye(d)
+#SigL = np.linalg.cholesky(Sig)
 Sig0inv = np.linalg.inv(Sig0)
-Siginv = np.linalg.inv(Sig)
-SigLInv = np.linalg.inv(SigL)
+#Siginv = np.linalg.inv(Sig)
+#SigLInv = np.linalg.inv(SigL)
 
 #experiment params
-np.random.seed(1)
-M = 30
-n_samples = 10
+M = 500
 trials = np.arange(1)
-opt_itrs = 30
-proj_dim = 10
+opt_itrs = 20
+proj_dim = 200
 pihat_noise =0.75
 
 
@@ -106,16 +104,25 @@ for t in trials:
     w[idcs] = wts
     muw, Sigw = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, X, Y, w)
 
-    try:
-      nu = X.dot(np.linalg.cholesky(Sigw+1e-3*np.eye(Sigw.shape[0])))/datastd**2
-    except:
-      print(np.linalg.eigvalsh(Sigw))
+    evs = np.linalg.eigvalsh(Sigw)
+    if np.any(evs < 0):
+      Sigw -= 2*evs.min()*np.eye(Sigw.shape[0])
+
+    nu = X.dot(np.linalg.cholesky(Sigw))/datastd**2
    
     dnu = (Y - X.dot(muw))[:,np.newaxis]*nu
 
-    nu = np.hstack((dnu, 1./np.sqrt(2.)*( nu[:, :, np.newaxis]*nu[:, np.newaxis, :]).reshape( (nu.shape[0], nu.shape[1]**2))))
+    #correct but quadratic cost...
+    #nu = np.hstack((dnu, 1./np.sqrt(2.)*( nu[:, :, np.newaxis]*nu[:, np.newaxis, :]).reshape( (nu.shape[0], nu.shape[1]**2))))
+    #only diagonal terms
+    nu = np.hstack((dnu, 1./np.sqrt(2.)*nu**2))
+    #none of the quartic terms
+    #nu = dnu
     
     return bc.FixedFiniteTangentSpace(nu, wts, idcs)
+
+  def nulltsf(wts, idcs):
+    return bc.FixedFiniteTangentSpace(np.zeros((X.shape[0], 2)), wts, idcs)
     
    
   #create coreset construction objects
@@ -124,11 +131,15 @@ for t in trials:
   riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=False)
   giga_true = bc.GIGACoreset(T_true)
   giga_noisy = bc.GIGACoreset(T_noisy)
-  unif = bc.UniformSamplingKLCoreset(x.shape[0], tangent_space_factory)
+  unif = bc.UniformSamplingKLCoreset(x.shape[0], nulltsf)
  
-  algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif]
-  nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND']
+  #algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif]
+  algs = [riemann_full]
+  #nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND']
+  nms = ['SVIF']
 
+
+  print('Building coresets')
   #build coresets
   for nm, alg in zip(nms, algs):
     #create coreset construction objects
@@ -174,7 +185,7 @@ for t in trials:
     if not os.path.exists('results/'):
       os.mkdir('results')
     print('saving result for trial: ' + str(trnum)+'/'+str(trials.shape[0])+' alg: ' + nm)
-    np.savez('results/results_'+nm+'_' + str(t)+'.npz', x=x, mu0=mu0, Sig0=Sig0, Sig=Sig, mup=mup, Sigp=Sigp, w=w, w_opt=w_opt,
+    np.savez('results/results_'+nm+'_' + str(t)+'.npz', x=x, mu0=mu0, Sig0=Sig0, mup=mup, Sigp=Sigp, w=w, w_opt=w_opt,
                                    muw=muw, Sigw=Sigw, rklw=rklw, fklw=fklw,
                                    muw_opt=muw_opt, Sigw_opt=Sigw_opt, rklw_opt=rklw_opt, fklw_opt=fklw_opt,
                                    basis_scales=basis_scales, basis_locs=basis_locs, datastd=datastd)
