@@ -50,8 +50,8 @@ Sig0inv = np.linalg.inv(Sig0)
 #experiment params
 M = 500
 trials = np.arange(1)
-opt_itrs = 20
-proj_dim = 200
+opt_itrs = 50
+proj_dim = 20
 pihat_noise =0.75
 
 
@@ -128,15 +128,15 @@ for t in trials:
   #create coreset construction objects
   print('Creating coreset construction objects')
   riemann_one = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=True)
-  riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=False)
+  riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=False, step_sched=lambda i : 20*np.sqrt(1/(1.+i)))
   giga_true = bc.GIGACoreset(T_true)
   giga_noisy = bc.GIGACoreset(T_noisy)
   unif = bc.UniformSamplingKLCoreset(x.shape[0], nulltsf)
  
   #algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif]
-  algs = [riemann_full]
+  algs = [riemann_full, giga_true, giga_noisy]
   #nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND']
-  nms = ['SVIF']
+  nms = ['SVIF', 'GIGAT', 'GIGAN']
 
 
   print('Building coresets')

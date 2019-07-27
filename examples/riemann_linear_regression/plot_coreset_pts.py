@@ -24,10 +24,10 @@ c = contour_percentiles / contour_percentiles.max()
 contour_colors = ['#%02x%02x%02x' % (int(r), int(b), int(g)) for (r, b, g) in zip(255*c, 0*np.ones(c.shape[0]), 255*(1.-c))]
 
 #algorithm / trial + Ms to plot
-#nm = ('SVIF', 'SparseVI-F')
-nm = ('GIGAT', 'GIGA-T')
+nm = ('SVIF', 'SparseVI-F')
+#nm = ('GIGAT', 'GIGA-T')
 trial_num = 0
-Ms = np.linspace(0, 200, 10, dtype=np.int64)
+Ms = np.linspace(0, 500, 50, dtype=np.int64)
 
 #plot the sequence of coreset pts and comparison of nonopt + opt
 res = np.load('results/results_'+nm[0] + '_' + str(trial_num)+'.npz')
