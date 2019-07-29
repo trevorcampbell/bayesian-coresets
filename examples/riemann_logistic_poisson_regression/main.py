@@ -138,6 +138,8 @@ elif alg == 'riemann':
   coreset = bc.QuadraticSparseVICoreset(Z.shape[0], tangent_space_factory, step_sched=learning_rate, update_single=True)
 elif alg == 'riemann_corr':
   coreset = bc.QuadraticSparseVICoreset(Z.shape[0], tangent_space_factory, step_sched=learning_rate, update_single=False)
+elif alg == 'iterative_hilbert':
+  coreset = bc.IterativeHilbertCoreset(Z.shape[0], tangent_space_factory, bc.GIGACoreset) 
 elif alg == 'prior':
   coreset = None
 else:
