@@ -4,7 +4,7 @@ from ..riemann.kl import KLCoreset
 from .. tangent import FixedFiniteTangentSpace
 
 class IterativeHilbertCoreset(KLCoreset,IterativeCoreset):
-    def __init__(self, N, tangent_space_factory, hilbert_coreset_class, step_sched = lambda i : np.sqrt(1./(1.+i)),optimize_iterations = True, num_its = 20):
+    def __init__(self, N, tangent_space_factory, hilbert_coreset_class, step_sched = lambda i : np.sqrt(1./(1.+i)), optimize_iterations = True, num_its = 20):
         super().__init__(N=N) 
         self.tsf = tangent_space_factory
         self.step_sched = step_sched
