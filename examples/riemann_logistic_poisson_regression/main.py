@@ -100,6 +100,8 @@ projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = .75 #noise level (relative) for corrupting pihat
 ###############################
 
+num_ih_itrs = 50
+
 #initialize memory for coreset weights, laplace approx, kls
 wts = np.zeros((len(Ms), Z.shape[0]))
 cputs = np.zeros(len(Ms))
@@ -139,7 +141,7 @@ elif alg == 'riemann':
 elif alg == 'riemann_corr':
   coreset = bc.QuadraticSparseVICoreset(Z.shape[0], tangent_space_factory, step_sched=learning_rate, update_single=False)
 elif alg == 'iterative_hilbert':
-  coreset = bc.IterativeHilbertCoreset(Z.shape[0], tangent_space_factory, bc.GIGACoreset) 
+  coreset = bc.IterativeHilbertCoreset(Z.shape[0], tangent_space_factory, num_its=num_ih_itrs) 
 elif alg == 'prior':
   coreset = None
 else:
