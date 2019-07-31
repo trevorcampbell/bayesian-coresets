@@ -122,7 +122,7 @@ for m in Ms:
 
 
 
-bkp.show(bkl.gridplot(figs))
+bkp.save(bkl.gridplot(figs))
 
 
 

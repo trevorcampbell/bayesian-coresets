@@ -8,6 +8,7 @@ from plotting import *
 
 plot_reverse_kl = True
 size_x_axis = False
+plot_suboptimal = False
 trials = np.arange(1)
 Ms = np.arange(30)
 #nms = [('SVI1', 'SparseVI-1'), ('SVIF', 'SparseVI-Full'), ('GIGAT', 'GIGA (Truth)'), ('GIGAN', 'GIGA (Noisy)'), ('RAND', 'Uniform')]
@@ -40,7 +41,8 @@ for i, nm in enumerate(nms):
     #fig.scatter(sz[-1], kl[-1], color=pal[i], legend=nm) 
     #fig.scatter(szopt[-1], klopt[-1], color=pal[i], legend=nm) 
   if size_x_axis:
-    fig.line(Ms, np.maximum(np.percentile(kl, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='dashed', legend=nm[1]) 
+    if plot_suboptimal:
+      fig.line(Ms, np.maximum(np.percentile(kl, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='dashed', legend=nm[1]) 
     fig.line(Ms, np.maximum(np.percentile(klopt, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='solid', legend=nm[1]) 
   else:
     kl = np.array(kl)
@@ -48,14 +50,15 @@ for i, nm in enumerate(nms):
     #for j in range(kl.shape[0]):
     #  fig.line(np.arange(kl.shape[1]), kl[j, :], color=pal[i], line_width=5, line_dash='dashed', legend=nm[1])
     #  fig.line(np.arange(kl.shape[1]), klopt[j, :], color=pal[i], line_width=5, line_dash='solid', legend=nm[1])
-    fig.line(np.arange(kl.shape[1]), np.maximum(np.percentile(kl, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='dashed', legend=nm[1])
+    if plot_suboptimal:
+      fig.line(np.arange(kl.shape[1]), np.maximum(np.percentile(kl, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='dashed', legend=nm[1])
     fig.line(np.arange(kl.shape[1]), np.maximum(np.percentile(klopt, 50, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='solid', legend=nm[1])
 
 postprocess_plot(fig, '22pt', location='bottom_left', glyph_width=40)
 fig.legend.background_fill_alpha=0.
 fig.legend.border_line_alpha=0.
 
-bkp.show(fig)
+bkp.save(fig)
 
 
 
