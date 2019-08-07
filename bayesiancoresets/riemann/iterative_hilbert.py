@@ -5,13 +5,13 @@ from ..tangent import FixedFiniteTangentSpace
 from ..hilbert import GIGACoreset
 
 class IterativeHilbertCoreset(KLCoreset,IterativeCoreset):
-    def __init__(self, N, tangent_space_factory, hilbert_coreset_class = GIGACoreset, step_sched = lambda i : np.sqrt(1./(1.+i)), optimized_iterations = True, num_its = 20):
+    def __init__(self, N, tangent_space_factory, hilbert_coreset_class = GIGACoreset, step_sched = lambda i : np.sqrt(1./(1.+i)), optimizing = True, num_its = 20):
         super().__init__(N=N) 
         self.tsf = tangent_space_factory
         self.step_sched = step_sched
         self.num_its = num_its
         self.hilbert_coreset_class = hilbert_coreset_class
-        self.optimize_iterations = optimize_iterations
+        self.optimizing = optimizing
 
     def _stop(self):
         return self.itrs >= self.num_its 
@@ -42,7 +42,7 @@ class IterativeHilbertCoreset(KLCoreset,IterativeCoreset):
         hilbert_coreset.build(self.M)
 
         #optimize if requested
-        if self.optimized_iterations:
+        if self.optimizing:
             try:
                 hilbert_coreset.optimize() 
             except RuntimeError:
