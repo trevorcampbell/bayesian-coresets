@@ -3,7 +3,7 @@ from .coreset import Coreset
 
 class FullDataCoreset(Coreset):
 
-  def _initialize(self):
+  def _initialize(self, M):
     self._overwrite(np.arange(self.N), np.ones(self.N))
 
   def error(self):

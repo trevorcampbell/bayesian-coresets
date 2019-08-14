@@ -19,9 +19,9 @@ class IterativeHilbertCoreset(KLCoreset,IterativeCoreset):
     def _set_desired_coreset_size(self, M):
         self.M = M
 
-    def _initialize(self):
+    def _initialize(self, M):
         #on init, seed with a uniform subsample
-        seeding_wts = (self.N/self.M) * np.random.multinomial(self.M, [1/self.N]*self.N)
+        seeding_wts = (self.N/M) * np.random.multinomial(M, [1/self.N]*self.N)
         seeding_idcs = np.arange(self.N)[seeding_wts > 0]
         seeding_wts = seeding_wts[seeding_wts > 0]
         self._overwrite(seeding_idcs, seeding_wts)

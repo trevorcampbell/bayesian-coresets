@@ -13,7 +13,7 @@ class OptimizationCoreset(Coreset):
     self.adam_a1 = adam_a1
     self.adam_a2 = adam_a2
 
-  def _initialize(self):
+  def _initialize(self, M):
     self.M_cache = [0, self.N]
 
     self.lmb_cache = {}

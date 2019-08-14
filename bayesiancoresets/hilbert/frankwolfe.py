@@ -11,7 +11,7 @@ class FrankWolfeCoreset(HilbertCoreset,GreedySingleUpdateCoreset):
     if np.any(self.T.norms() == 0):
       raise ValueError(self.alg_name+'.__init__(): tangent space must not have any 0 vectors')
 
-  def _initialize(self):
+  def _initialize(self, M):
     f = self._search()
     self._overwrite(f, self.T.norms_sum()/self.T.norms()[f])
 

@@ -123,12 +123,7 @@ class Coreset(object):
 
     #initialize optimization
     if self.size() == 0:
-      self._initialize()
-      if M <= self.size():
-        if M < self.size():
-          self.log.warning('initialization created more than M = ' + str(M) + ' points: size = ' + str(self.size()))
-        return #jump out early if initialization created at least M points 
-      
+      self._initialize(M)
 
     #build the coreset with size at most M
     self._build(M)
@@ -158,8 +153,8 @@ class Coreset(object):
   def _optimize(self):
     raise NotImplementedError
 
-  #runs once on first call to .build() but after init (since it may add pt(s) to the coreset)
-  def _initialize(self):
+  #runs once on first call to .build() but after __init__ (since it may add pt(s) to the coreset)
+  def _initialize(self, M):
     pass #optional
 
   def _build(self, M):
