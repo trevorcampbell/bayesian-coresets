@@ -12,6 +12,7 @@ class Coreset(object):
     self.auto_above_N = auto_above_N
     self.N = N
     self.reached_numeric_limit = False
+    self._has_initialized = False
     self.nwts = 0
     #internal reps of wts and idcs
     self._wts = np.zeros(initial_wts_sz)
@@ -31,6 +32,7 @@ class Coreset(object):
     self.wts = self._wts[:self.nwts]
     self.idcs = self._idcs[:self.nwts]
     self.reached_numeric_limit = False
+    self._has_initialized = False
 
   def size(self):
     return (self.wts > 0).sum()
@@ -74,7 +76,6 @@ class Coreset(object):
     #create views
     self._refresh_views()
 
-
   #completely overwrite; forget any previous weight settings
   def _overwrite(self, __idcs, __wts):
     __idcs = np.atleast_1d(__idcs)
@@ -91,16 +92,12 @@ class Coreset(object):
     self.nwts = __wts.shape[0]
     self._refresh_views()
     
-
   def error(self):
     raise NotImplementedError()
 
-  #attempt to build a coreset of size M
-  def build(self, M):
-    #if M is not greater than self.size, just return 
-    if M <= self.size():
-      self.log.warning('coreset size must be increasing; returning. size = '+str(self.size()) + ' M = '+str(M))
-      return
+  #attempt to build a coreset of size `size' using at most `itrs' iterations
+  #always returns a coreset of size <= size
+  def build(self, sz, itrs):
 
     if self.reached_numeric_limit:
       self.log.warning('the numeric limit was already reached; returning. size = ' + str(self.size()) + ', error = ' +str(self.error()))
@@ -111,8 +108,8 @@ class Coreset(object):
       return
 
     #if we requested M >= N, just give all ones and return
-    if M >= self.N and self.auto_above_N:
-      self.log.warning('reached a number of points >= the dataset size. Returning full weights. M = ' + str(M) + ' N = ' + str(self.N))
+    if sz >= self.N and self.auto_above_N:
+      self.log.warning('reached a number of points >= the dataset size. Returning full weights. sz = ' + str(sz) + ' N = ' + str(self.N))
       self._wts = np.ones(self.N)
       self._idcs = np.arange(self.N)
       self.nwts = self.N
@@ -122,13 +119,13 @@ class Coreset(object):
       return
 
     #initialize optimization
-    if self.size() == 0:
-      self._initialize(M)
+    if not self._has_initialized:
+      self._initialize(sz)
+      self._has_initialized = True
 
-    #build the coreset with size at most M
-    self._build(M)
+    self._build(sz, itrs)
 
-    #if we reached numeric limit during the current build, warn immediately
+    #if we reached numeric limit during the current build, warn
     if self.reached_numeric_limit:
       self.log.warning('the numeric limit has been reached. No more points will be added. size = ' + str(self.size()) + ', error = ' +str(self.error()))
     #done
@@ -154,10 +151,10 @@ class Coreset(object):
     raise NotImplementedError
 
   #runs once on first call to .build() but after __init__ (since it may add pt(s) to the coreset)
-  def _initialize(self, M):
+  def _initialize(self, sz):
     pass #optional
 
-  def _build(self, M):
+  def _build(self, sz, itrs):
     raise NotImplementedError
 
   

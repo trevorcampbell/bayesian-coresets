@@ -3,7 +3,7 @@ from .coreset import Coreset
 
 class FullDataCoreset(Coreset):
 
-  def _initialize(self, M):
+  def _initialize(self, sz):
     self._overwrite(np.arange(self.N), np.ones(self.N))
 
   def error(self):
@@ -11,7 +11,7 @@ class FullDataCoreset(Coreset):
       raise NotImplementedError(self.alg_name+'.error(): Error on full data coreset = 0 after build, but undefined beforehand.')
     return 0.
 
-  def _build(self, M):
+  def _build(self, sz, itrs):
     pass
 
   def optimize(self):
