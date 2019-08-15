@@ -5,16 +5,17 @@ from scipy.optimize import nnls
 from sklearn.linear_model import Lasso
 import warnings
 
+#TODO fix for new riemann repo structure
 #run lasso on normalized vectors
 class LassoCoreset(OptimizationCoreset):
   def __init__(self, tangent_space):
+    raise NotImplementedError('LASSO has not been updated to the new API yet.')
     super().__init__(N=tangent_space.num_vectors()) 
     self.log.warning('LASSO + bisection regularization search implementation is not yet stable. Be wary of results!')
     self.T = tangent_space
     if np.any(self.T.norms() == 0):
       raise ValueError(self.alg_name+'.__init__(): tangent space must not have any 0 vectors')
  
-  #TODO debug why this isn't correct
   #for now just 1000* as a bandaid
   def _max_reg_coeff(self):
     return 1000*((self.T[:]/self.T.norms()[:,np.newaxis]).dot(self.T.sum())).max()/self.N

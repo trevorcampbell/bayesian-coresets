@@ -1,18 +1,18 @@
 import numpy as np
-from ..base.iterative import GreedySingleUpdateCoreset
+from ..base.incremental import ConvexUpdateIncrementalCoreset
 from ..util.errors import NumericalPrecisionError
 from .hilbert import HilbertCoreset
 
 
 
-class MatchingPursuitCoreset(HilbertCoreset,GreedySingleUpdateCoreset):
+class MatchingPursuitCoreset(HilbertCoreset,ConvexUpdateIncrementalCoreset):
   def __init__(self, tangent_space):
     super().__init__(N=tangent_space.num_vectors()) 
     self.T = tangent_space
     if np.any(self.T.norms() == 0):
       raise ValueError(self.alg_name+'.__init__(): tangent space must not have any 0 vectors')
 
-  def _search(self):
+  def _select(self):
     dots = (self.T[:]/self.T.norms()[:,np.newaxis]).dot(self.T.residual(self.wts, self.idcs))
 
     #if no active indices, just output argmax

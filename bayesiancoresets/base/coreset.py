@@ -12,7 +12,7 @@ class Coreset(object):
     self.auto_above_N = auto_above_N
     self.N = N
     self.reached_numeric_limit = False
-    self._has_initialized = False
+    #self._has_initialized_build = False
     self.nwts = 0
     #internal reps of wts and idcs
     self._wts = np.zeros(initial_wts_sz)
@@ -20,6 +20,7 @@ class Coreset(object):
     #outward facing views
     self.wts = self._wts[:self.nwts]
     self.idcs = self._idcs[:self.nwts]
+    #self.nitrs = 0
 
   #def __del__(self):
   #  n_removed = logging.getLogger().handlers[0].remove_all(self.alg_name)
@@ -29,10 +30,11 @@ class Coreset(object):
   def reset(self):
     #don't bother resetting wts, just set the nwts to 0
     self.nwts = 0
+    #self.nitrs = 0
     self.wts = self._wts[:self.nwts]
     self.idcs = self._idcs[:self.nwts]
     self.reached_numeric_limit = False
-    self._has_initialized = False
+    #self._has_initialized_build = False
 
   def size(self):
     return (self.wts > 0).sum()
@@ -95,8 +97,8 @@ class Coreset(object):
   def error(self):
     raise NotImplementedError()
 
-  #attempt to build a coreset of size `size' using at most `itrs' iterations
-  #always returns a coreset of size <= size
+  #build of desired size sz using at most n_itrs iterations
+  #always returns a coreset of size <= sz
   def build(self, sz, itrs):
 
     if self.reached_numeric_limit:
@@ -107,9 +109,12 @@ class Coreset(object):
       self.log.warning('there are no data, returning.')
       return
 
+    if sz < self.size():
+      raise ValueError(self.alg_name+'.build(): requested coreset of size < the current size, but cannot shrink coresets; returning. Requested size = ' + str(sz) + ' current size = ' + str(self.size()))
+
     #if we requested M >= N, just give all ones and return
     if sz >= self.N and self.auto_above_N:
-      self.log.warning('reached a number of points >= the dataset size. Returning full weights. sz = ' + str(sz) + ' N = ' + str(self.N))
+      self.log.warning('reached a number of points >= the dataset size. Returning full weights. Requested size = ' + str(sz) + ' N = ' + str(self.N))
       self._wts = np.ones(self.N)
       self._idcs = np.arange(self.N)
       self.nwts = self.N
@@ -118,10 +123,11 @@ class Coreset(object):
       self.reached_numeric_limit = True
       return
 
-    #initialize optimization
-    if not self._has_initialized:
-      self._initialize(sz)
-      self._has_initialized = True
+    ##initialize optimization
+    #init_itrs = 0
+    #if not self._has_initialized_build:
+    #  self._initialize_build(sz)
+    #  self._has_initialized_build = True
 
     self._build(sz, itrs)
 
@@ -150,11 +156,10 @@ class Coreset(object):
   def _optimize(self):
     raise NotImplementedError
 
-  #runs once on first call to .build() but after __init__ (since it may add pt(s) to the coreset)
-  def _initialize(self, sz):
-    pass #optional
+  ##runs once on first call to .build() but after __init__ (since it may add pt(s) to the coreset)
+  ##default do nothing + return no iterations done
+  #def _initialize_build(self, sz):
+  #  return 0
 
   def _build(self, sz, itrs):
     raise NotImplementedError
-
-  

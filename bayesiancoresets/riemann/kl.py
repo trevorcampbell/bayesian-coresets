@@ -13,4 +13,4 @@ class KLCoreset(object):
     self._update(self.idcs, x)
 
   def error(self):
-    return 0.
+    return 0. #TODO return KL estimate

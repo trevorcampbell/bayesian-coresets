@@ -5,7 +5,13 @@ from .. import util
 import bisect
 import sys
 
-class OptimizationCoreset(Coreset):
+
+#for when the coreset is specified using a parametrized optimization and the size is not known a priori (need to search)
+#TODO allow the user to prefer lower or higher values of the parameter if they yield equal sizes 
+#e.g. for regularization should prefer lower values (since closer to the original unregularized opt)
+#TODO derive from iterative
+#TODO allow decreasing size?
+class ParametrizedCoreset(Coreset):
 
   def __init__(self, adam_a1 = 1., adam_a2 = 1., **kw):
     super().__init__(**kw)

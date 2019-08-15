@@ -1,10 +1,10 @@
 import numpy as np
-from ..base.iterative import GreedySingleUpdateCoreset
+from ..base.incremental import ConvexUpdateIncrementalCoreset
 from ..util.errors import NumericalPrecisionError
 from .. import util
 from .hilbert import HilbertCoreset
 
-class GIGACoreset(HilbertCoreset,GreedySingleUpdateCoreset):
+class GIGACoreset(HilbertCoreset,ConvexUpdateIncrementalCoreset):
 
   def __init__(self, tangent_space):
     super().__init__(N=tangent_space.num_vectors()) 
@@ -12,7 +12,7 @@ class GIGACoreset(HilbertCoreset,GreedySingleUpdateCoreset):
     if np.any(self.T.norms() == 0):
       raise ValueError(self.alg_name+'.__init__(): tangent space must not have any 0 vectors')
 
-  def _search(self):
+  def _select(self):
     xw = self.T.sum_w(self.wts, self.idcs)
     nw = self.T.sum_w_norm(self.wts, self.idcs)
     xs = self.T.sum()

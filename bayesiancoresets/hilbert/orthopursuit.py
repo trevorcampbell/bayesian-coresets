@@ -1,18 +1,18 @@
 from scipy.optimize import nnls
 import numpy as np
-from ..base.iterative import GreedyCoreset
+from ..base.incremental import IncrementalCoreset
 from ..util.errors import NumericalPrecisionError
 from .hilbert import HilbertCoreset
 
 
-class OrthoPursuitCoreset(HilbertCoreset,GreedyCoreset):
+class OrthoPursuitCoreset(HilbertCoreset,IncrementalCoreset):
   def __init__(self, tangent_space):
     super().__init__(N=tangent_space.num_vectors()) 
     self.T = tangent_space
     if np.any(self.T.norms() == 0):
       raise ValueError(self.alg_name+'.__init__(): tangent space must not have any 0 vectors')
 
-  def _search(self):
+  def _select(self):
     dots = (self.T[:]/self.T.norms()[:,np.newaxis]).dot(self.T.residual(self.wts, self.idcs))
 
     #if no active indices, just output argmax
@@ -30,7 +30,7 @@ class OrthoPursuitCoreset(HilbertCoreset,GreedyCoreset):
     else:
       return self.idcs[fneg]
 
-  def _update_weights(self, f):
+  def _reweight(self, f):
 
     #store prev weights/idcs before adding f
     old_wts = self.wts.copy()
@@ -52,3 +52,7 @@ class OrthoPursuitCoreset(HilbertCoreset,GreedyCoreset):
       raise
 
     return
+
+
+
+

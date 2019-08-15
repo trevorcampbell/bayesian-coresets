@@ -1,91 +1,58 @@
 import numpy as np
-from .coreset import Coreset
+from .iterative import IterativeCoreset
 from ..util.errors import NumericalPrecisionError 
 
-class IncrementalCoreset(Coreset):
-
-  def _build(self, sz, itrs):
-    
-    retried_already = False
-    while not self._stop():
-      try:
-        self._step()
-        retried_already = False #refresh retried flag after a successful step
-        self.itrs += 1
-      except NumericalPrecisionError as e: #a special error type for this library denoting possibly reaching numeric precision limit
-        self.log.warning('numerical precision error: ' + str(e))
-        if retried_already:
-          self.log.warning('iterative step failed a second time. Assuming numeric limit reached.')
-          self.reached_numeric_limit = True
-          break
-        else:
-          self.log.warning('iterative step failed. Stabilizing and retrying...')
-          retried_already = True
-          self._stabilize()
-      if self.reached_numeric_limit:
-        break
-    #done
-
-  def _stop(self):
-    raise NotImplementedError()
- 
-  def _set_desired_coreset_size(self, M):
-    raise NotImplementedError()
-
-  def _step(self):
-    raise NotImplementedError()
-
-  def _stabilize(self):
-    pass #implementation optional; try to refresh cache/etc to make _step pass
-
-class GreedyCoreset(IterativeCoreset):
-
-  #for greedy constructions, run itrs up to M
-  def _set_desired_coreset_size(self, M):
-    self.itr_end = M
-
-  def _stop(self):
-    return self.itrs >= self.itr_end
+#for when the coreset is built one point at a time
+class IncrementalCoreset(IterativeCoreset):
 
   #step = search for next best, add it, update weights in some way
-  def _step(self):
+  def _step(self, sz, itr):
     #search for the next best point
-    f = self._search()
+    f = self._select()
     if not isinstance(f, np.integer) or f < 0:
-      raise ValueError(self.alg_name+'._step(): _search() must return a nonnegative integer. type = ' + str(type(f)) + ' val = ' + str(f))
-    #update weights, adding the new point
-    self._update_weights(f)
-    
+      raise ValueError(self.alg_name+'._step(): _select() must return a nonnegative integer. type = ' + str(type(f)) + ' val = ' + str(f))
 
-  def _search(self):
+    #compute new weights with the new point
+    self._reweight(f) 
+
+  def _select(self):
     raise NotImplementedError
 
-  def _update_weights(self, f):
+  def _reweight(self, f):
     raise NotImplementedError
 
+#for when the weight update is just (1-g)*old weight + g*new weight
+class ConvexUpdateIncrementalCoreset(IncrementalCoreset):
 
-class GreedySingleUpdateCoreset(GreedyCoreset):
-
-  def _update_weights(self, f):
+  def _reweight(self, f):
     alpha, beta = self._step_coeffs(f)
+
+    #compute new weights/indices from alpha,beta
+    new_wts = self.wts*alpha
+    new_idcs = self.idcs.copy()
+    if f in self.idcs:
+      idx = np.where(self.idcs == f)[0][0]
+      new_wts[idx] = max(0., new_wts[idx]+beta)
+    else:
+      new_wts = np.append(new_wts, max(0., beta))
+      new_idcs = np.append(new_idcs, f)
+
     #keep a record of previous setting in case the below update fails
-    preverror = self.error()
-    prevwts = self.wts.copy()
-    previdcs = self.idcs.copy()
-    prevnwts = self.nwts
+    prev_error = self.error()
+    prev_wts = self.wts.copy()
+    prev_idcs = self.idcs.copy()
+
     #update the weights
-    self.wts *= alpha
-    #it's possible wts[f] becomes negative if beta approx -wts[f], so threshold
-    idx = np.where(self.idcs == f)[0]
-    self._update(f, max((self.wts[idx] if idx.shape[0] > 0 else 0.)+beta, 0))
+    self._overwrite(new_idcs, new_wts)
+    
+    #check to make sure our error didn't increase
     error = self.error()
-    if error > preverror:
+    if error > prev_error:
       #revert
-      self._overwrite(previdcs, prevwts)
-      #self.wts = prevwts
-      #self.idcs = previdcs
-      #self.nwts = prevnwts
+      self._overwrite(prev_idcs, prev_wts)
       raise NumericalPrecisionError('Error not monotone: curr error = ' + str(error) + ' prev error = ' + str(preverror))
+    
+    return new_wts, new_idcs
 
   def _step_coeffs(self, f):
     raise NotImplementedError

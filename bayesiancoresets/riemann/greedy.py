@@ -5,14 +5,14 @@ from .kl import KLCoreset
 
 class SparseVICoreset(KLCoreset,GreedyCoreset):
 
-  def __init__(self, N, tangent_space_factory, step_sched = lambda i : np.sqrt(1./(1.+i)), opt_itrs=1000, update_single = True):
+  def __init__(self, N, tangent_space_factory, step_sched = lambda i : 1./(1.+i), opt_itrs=1000, update_single = True):
     super().__init__(N=N) 
     self.tsf = tangent_space_factory
     self.update_single = update_single
     self.step_sched = step_sched
     self.opt_itrs = opt_itrs
 
-  def _search(self):
+  def _select(self):
     #construct a new tangent space for this search iteration
     T = self.tsf(self.wts, self.idcs)
     #compute the correlations
@@ -21,7 +21,7 @@ class SparseVICoreset(KLCoreset,GreedyCoreset):
     corrs[self.idcs] = np.fabs(corrs[self.idcs]) 
     return np.argmax(corrs)
 
-  def _update_weights(self, f):
+  def _reweight(self, f):
     if f not in self.idcs:
       self._update(f, 0.)
     fidx = np.where(self.idcs == f)[0][0]

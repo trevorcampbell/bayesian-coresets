@@ -1,9 +1,9 @@
 import numpy as np
-from ..base.iterative import GreedySingleUpdateCoreset
+from ..base.incremental import ConvexUpdateIncrementalCoreset
 from ..util.errors import NumericalPrecisionError
 from .hilbert import HilbertCoreset
 
-class FrankWolfeCoreset(HilbertCoreset,GreedySingleUpdateCoreset):
+class FrankWolfeCoreset(HilbertCoreset,ConvexUpdateIncrementalCoreset):
 
   def __init__(self, tangent_space):
     super().__init__(N=tangent_space.num_vectors()) 
@@ -11,14 +11,15 @@ class FrankWolfeCoreset(HilbertCoreset,GreedySingleUpdateCoreset):
     if np.any(self.T.norms() == 0):
       raise ValueError(self.alg_name+'.__init__(): tangent space must not have any 0 vectors')
 
-  def _initialize(self, M):
-    f = self._search()
-    self._overwrite(f, self.T.norms_sum()/self.T.norms()[f])
-
-  def _search(self):
+  def _select(self):
     return (self.T[:].dot(self.T.residual(self.wts, self.idcs)) / self.T.norms()).argmax()
 
   def _step_coeffs(self, f):
+
+    #special case if this is the first point to add (places iterate on constraint polytope)
+    if self.size() == 0:
+      return 0., self.T.norms_sum()/self.T.norms()[f]
+
     nsum = self.T.norms_sum()
     nf = self.T.norms()[f]
     xw = self.T.sum_w(self.wts, self.idcs)
