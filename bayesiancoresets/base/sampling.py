@@ -2,9 +2,7 @@ import numpy as np
 from .coreset import Coreset
 
 
-#TODO make this work for sparse cts
-#TODO handle decreasing sz in build?
-#TODO derive from iterative
+#TODO somehow allow sparsity here so we don't have to store N cts/ps/etc
 class SamplingCoreset(Coreset):
 
   def __init__(self, sampling_probabilities=None, **kw):
@@ -23,7 +21,7 @@ class SamplingCoreset(Coreset):
     self.cts = np.zeros(self.N)
     
   def _build(self, sz, itrs):
-    self.cts += np.random.multinomial(sz - self.cts.sum(), self.ps)
+    self.cts += np.random.multinomial(min(itrs, sz - self.cts.sum()), self.ps)
     active = np.where(self.cts > 0)[0]
     self._overwrite(active, self.cts[active]/self.ps[active]/sz)
 
