@@ -152,7 +152,7 @@ class Coreset(object):
       self._overwrite(old_idcs, old_wts)
       self.reached_numeric_limit = True
       return
-  
+   
   def _optimize(self):
     raise NotImplementedError
 
