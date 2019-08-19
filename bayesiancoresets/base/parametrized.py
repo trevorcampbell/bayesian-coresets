@@ -1,5 +1,5 @@
 import numpy as np
-from .coreset import Coreset
+from .coreset import IterativeCoreset
 from ..util.errors import NumericalPrecisionError 
 from .. import util
 import bisect
@@ -9,15 +9,15 @@ import sys
 #for when the coreset is specified using a parametrized optimization and the size is not known a priori (need to search)
 #TODO allow the user to prefer lower or higher values of the parameter if they yield equal sizes 
 #e.g. for regularization should prefer lower values (since closer to the original unregularized opt)
-#TODO derive from iterative
-#TODO allow decreasing size?
-class ParametrizedCoreset(Coreset):
+class ParametrizedCoreset(IterativeCoreset):
 
-  def __init__(self, adam_a1 = 1., adam_a2 = 1., **kw):
+  def __init__(self, adam_a1 = 1., adam_a2 = 1., prefer_lower=True, **kw):
     super().__init__(**kw)
-    self.log.warning('OptimizationCoreset implementation is not yet stable. Be wary of results!')
+    raise NotImplementedError('ParametrizedCoreset implementation is not yet updated to the new API')
+    self.log.warning('ParametrizedCoreset implementation is not yet stable. Be wary of results!')
     self.adam_a1 = adam_a1
     self.adam_a2 = adam_a2
+    self.prefer_lower = prefer_lower
 
   def _initialize(self, M):
     self.M_cache = [0, self.N]

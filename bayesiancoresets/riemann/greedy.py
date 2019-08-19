@@ -1,9 +1,9 @@
 import numpy as np
-from ..base.iterative import GreedyCoreset
+from ..base.incremental import IncrementalCoreset
 from ..util.opt import nn_opt
 from .kl import KLCoreset
 
-class SparseVICoreset(KLCoreset,GreedyCoreset):
+class SparseVICoreset(KLCoreset,IncrementalCoreset):
 
   def __init__(self, N, tangent_space_factory, step_sched = lambda i : 1./(1.+i), opt_itrs=1000, update_single = True):
     super().__init__(N=N) 

@@ -1,5 +1,6 @@
 from .coreset import Coreset
-from .iterative import IterativeCoreset, GreedySingleUpdateCoreset
+from .iterative import IterativeCoreset
+from .incremental import IncrementalCoreset, ConvexUpdateIncrementalCoreset
 from .fulldataset import FullDataCoreset
 from .sampling import SamplingCoreset
-from .optimization import OptimizationCoreset
+from .parametrized import ParametrizedCoreset

@@ -1,5 +1,5 @@
 import numpy as np
-from ..base.incremental import ConvexUpdateIncrementalCoreset
+from ..base import ConvexUpdateIncrementalCoreset
 from ..util.errors import NumericalPrecisionError
 from .hilbert import HilbertCoreset
 
