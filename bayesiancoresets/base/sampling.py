@@ -2,7 +2,6 @@ import numpy as np
 from .coreset import Coreset
 
 
-#TODO somehow allow sparsity here so we don't have to store N cts/ps/etc
 class SamplingCoreset(Coreset):
 
   def __init__(self, sampling_probabilities=None, **kw):

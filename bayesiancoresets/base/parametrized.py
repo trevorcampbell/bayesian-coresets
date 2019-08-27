@@ -1,5 +1,5 @@
 import numpy as np
-from .coreset import IterativeCoreset
+from .iterative import IterativeCoreset
 from ..util.errors import NumericalPrecisionError 
 from .. import util
 import bisect
