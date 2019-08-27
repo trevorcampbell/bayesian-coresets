@@ -5,6 +5,10 @@ from ..util.errors import NumericalPrecisionError
 #for when the coreset is built one point at a time
 class IncrementalCoreset(IterativeCoreset):
 
+  def __init__(self, **kw):
+    super().__init__(**kw)
+    self._check_first_itr_monotone = True
+
   #step = search for next best, add it, update weights in some way
   def _step(self, sz, itr):
     #search for the next best point
@@ -12,8 +16,22 @@ class IncrementalCoreset(IterativeCoreset):
     if not isinstance(f, np.integer) or f < 0:
       raise ValueError(self.alg_name+'._step(): _select() must return a nonnegative integer. type = ' + str(type(f)) + ' val = ' + str(f))
 
-    #compute new weights with the new point
+    #keep a record of previous setting in case the below update fails
+    prev_error = self.error()
+    prev_wts = self.wts.copy()
+    prev_idcs = self.idcs.copy()
+
+    #compute and update new weights
     self._reweight(f) 
+
+    #check to make sure our error didn't increase
+    error = self.error()
+    if self._check_first_itr_monotone and error > prev_error:
+      #revert
+      self._overwrite(prev_idcs, prev_wts)
+      raise NumericalPrecisionError('Error not monotone: curr error = ' + str(error) + ' prev error = ' + str(prev_error))
+
+    #done
 
   def _select(self):
     raise NotImplementedError
@@ -37,22 +55,10 @@ class ConvexUpdateIncrementalCoreset(IncrementalCoreset):
       new_wts = np.append(new_wts, max(0., beta))
       new_idcs = np.append(new_idcs, f)
 
-    #keep a record of previous setting in case the below update fails
-    prev_error = self.error()
-    prev_wts = self.wts.copy()
-    prev_idcs = self.idcs.copy()
-
     #update the weights
     self._overwrite(new_idcs, new_wts)
-    
-    #check to make sure our error didn't increase
-    error = self.error()
-    if error > prev_error:
-      #revert
-      self._overwrite(prev_idcs, prev_wts)
-      raise NumericalPrecisionError('Error not monotone: curr error = ' + str(error) + ' prev error = ' + str(preverror))
-    
-    return new_wts, new_idcs
+
+    #done
 
   def _step_coeffs(self, f):
     raise NotImplementedError

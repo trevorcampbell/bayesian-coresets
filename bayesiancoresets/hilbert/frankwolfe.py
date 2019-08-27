@@ -10,6 +10,7 @@ class FrankWolfeCoreset(HilbertCoreset,ConvexUpdateIncrementalCoreset):
     self.T = tangent_space
     if np.any(self.T.norms() == 0):
       raise ValueError(self.alg_name+'.__init__(): tangent space must not have any 0 vectors')
+    self._check_first_itr_monotone = False
 
   def _select(self):
     return (self.T[:].dot(self.T.residual(self.wts, self.idcs)) / self.T.norms()).argmax()

@@ -5,13 +5,15 @@ import time
 
 np.random.seed(3)
 
-bc.util.set_verbosity('error')
+bc.util.set_verbosity('warning')
 
 n_trials = 5
 Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 
-anms = ['FW', 'GIGA', 'MP', 'FSW', 'OMP', 'IS', 'US']
-algs = [bc.FrankWolfeCoreset, bc.GIGACoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.ImportanceSamplingHilbertCoreset, bc.UniformSamplingHilbertCoreset]
+#anms = ['FW', 'GIGA', 'MP', 'FSW', 'OMP', 'IS', 'US']
+anms = ['FW', 'GIGA']
+#algs = [bc.FrankWolfeCoreset, bc.GIGACoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.ImportanceSamplingHilbertCoreset, bc.UniformSamplingHilbertCoreset]
+algs = [bc.FrankWolfeCoreset, bc.GIGACoreset]
 
 ##########################################
 ## Test 1: gaussian data
@@ -34,7 +36,7 @@ for tr in range(n_trials):
 
     for m, M in enumerate(Ms):
       t0 = time.time()
-      alg.build(M)
+      alg.build(M, Ms[m] if m == 0 else Ms[m] - Ms[m-1]) #build to size M 
       tf = time.time()
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts, idcs = alg.weights()
@@ -67,7 +69,7 @@ for tr in range(n_trials):
 
     for m, M in enumerate(Ms):
       t0 = time.time()
-      alg.build(M)
+      alg.build(M, Ms[m] if m == 0 else Ms[m] - Ms[m-1]) #build to size M 
       tf = time.time()
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts, idcs = alg.weights()

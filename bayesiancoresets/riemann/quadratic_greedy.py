@@ -1,10 +1,10 @@
 import numpy as np
-from ..base.iterative import GreedyCoreset
+from ..base.incremental import IncrementalCoreset
 from scipy.optimize import nnls
 from .kl import KLCoreset
 from ..util.errors import NumericalPrecisionError 
 
-class QuadraticSparseVICoreset(KLCoreset,GreedyCoreset):
+class QuadraticSparseVICoreset(KLCoreset,IncrementalCoreset):
 
   def __init__(self, N, tangent_space_factory, step_sched = lambda i : 1./(1.+i), update_single = True):
     super().__init__(N=N) 
