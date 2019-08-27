@@ -75,8 +75,12 @@ for t in trials:
   giga_noisy = bc.GIGACoreset(T_noisy)
   unif = bc.UniformSamplingKLCoreset(x.shape[0], tangent_space_factory)
  
-  algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif, ih]
-  nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND', 'IH']
+  #algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif, ih]
+  algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif]
+  #nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND', 'IH']
+  nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND']
+  
+
 
   #build coresets
   for nm, alg in zip(nms, algs):
@@ -86,7 +90,7 @@ for t in trials:
     for m in range(1, M+1):
       print('trial: ' + str(t+1)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 
-      alg.build(m, 1)
+      alg.build(m, num_ih_itrs)
       #store weights
       wts, idcs = alg.weights()
       w[m, idcs] = wts
