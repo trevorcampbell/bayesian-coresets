@@ -9,7 +9,7 @@ class KLCoreset(object):
       T = self.tsf(w, self.idcs)
       g = T.kl_grad(grad_idcs=self.idcs)
       return g
-    x = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched)
+    x = nn_opt(x0, grd, step_sched = self.step_sched)
     self._update(self.idcs, x)
 
   def error(self):

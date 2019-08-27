@@ -6,12 +6,12 @@ from ..hilbert import GIGACoreset
 
 class IterativeHilbertCoreset(KLCoreset,IterativeCoreset):
 
-    def __init__(self, N, tangent_space_factory, hilbert_coreset_class = GIGACoreset, step_sched = lambda i : 1./(1.+i), optimizing = True):
+    def __init__(self, N, tangent_space_factory, hilbert_coreset_class = GIGACoreset, step_sched = lambda i : 1./(1.+i)): #, optimizing = True):
       super().__init__(N=N) 
       self.tsf = tangent_space_factory
       self.step_sched = step_sched
       self.hilbert_coreset_class = hilbert_coreset_class
-      self.optimizing = optimizing
+      #self.optimizing = optimizing
 
     def _terminate_on_size(self):
       return False
@@ -20,7 +20,7 @@ class IterativeHilbertCoreset(KLCoreset,IterativeCoreset):
       if self.size() == 0:
         #on init, seed with a uniform subsample
         #TODO make this more memory efficient with sparse weights/idcs
-        seeding_wts = (self.N/M) * np.random.multinomial(M, [1/self.N]*self.N)
+        seeding_wts = (self.N/sz) * np.random.multinomial(sz, [1/self.N]*self.N)
         seeding_idcs = np.arange(self.N)[seeding_wts > 0]
         seeding_wts = seeding_wts[seeding_wts > 0]
         self._overwrite(seeding_idcs, seeding_wts)
@@ -39,17 +39,17 @@ class IterativeHilbertCoreset(KLCoreset,IterativeCoreset):
       hilbert_coreset = self.hilbert_coreset_class(scaled_tangent_space)
       hilbert_coreset.build(sz, sz) #build a coreset of size sz
 
-      #optimize if requested
-      if self.optimizing:
-          try:
-              hilbert_coreset.optimize() 
-          except RuntimeError:
-              print("error optimizing!")#, ", matrix was ", hilbert_coreset.T[hilbert_coreset.idcs])
-              #gained a small bit of accuracy just by terminating the algorithm here... since the case where nnls was terminating on iteration count was when our tangent space was basically zeroes. 
-              #self.itrs = self.num_its
-              #return
-              #need to test eigenvalues here
-              pass #need this line if I remove the print statement
+      ##optimize if requested
+      #if self.optimizing:
+      #    try:
+      #        hilbert_coreset.optimize() 
+      #    except RuntimeError:
+      #        print("error optimizing!")#, ", matrix was ", hilbert_coreset.T[hilbert_coreset.idcs])
+      #        #gained a small bit of accuracy just by terminating the algorithm here... since the case where nnls was terminating on iteration count was when our tangent space was basically zeroes. 
+      #        #self.itrs = self.num_its
+      #        #return
+      #        #need to test eigenvalues here
+      #        pass #need this line if I remove the print statement
 
       #update the weights 
       candidate_wts, candidate_idcs = hilbert_coreset.weights() 

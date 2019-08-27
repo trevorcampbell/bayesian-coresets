@@ -14,7 +14,7 @@ M = 30
 N = 1000
 d = 30
 n_samples = 1000
-trials = np.arange(100)
+trials = np.arange(10)
 
 mu0 = np.zeros(d)
 Sig0 = np.eye(d)
@@ -70,7 +70,7 @@ for t in trials:
   #create coreset construction objects
   riemann_one = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=True)
   riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=False)
-  ih = bc.IterativeHilbertCoreset(x.shape[0], tangent_space_factory, step_sched = lambda i : 1./(1.+i), optimizing = True)
+  ih = bc.IterativeHilbertCoreset(x.shape[0], tangent_space_factory, step_sched = lambda i : 1./(1.+i)) #, optimizing = True)
   giga_true = bc.GIGACoreset(T_true)
   giga_noisy = bc.GIGACoreset(T_noisy)
   unif = bc.UniformSamplingKLCoreset(x.shape[0], tangent_space_factory)

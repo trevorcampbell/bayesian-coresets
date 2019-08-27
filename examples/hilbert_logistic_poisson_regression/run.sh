@@ -6,7 +6,7 @@
 #ID = sys.argv[4] #just a number to denote trial #, any nonnegative integer
 
 
-for ID in {1..100}
+for ID in {1..10}
 do
     for alg in "RND" "FW" "GIGA" 
     do

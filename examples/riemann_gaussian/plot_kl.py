@@ -8,9 +8,9 @@ from plotting import *
 
 plot_reverse_kl = True
 size_x_axis = False
-trials = np.arange(100)
+trials = np.arange(10)
 Ms = np.arange(30)
-nms = [('SVI1', 'SparseVI-1'), ('SVIF', 'SparseVI-Full'), ('GIGAT', 'GIGA (Truth)'), ('GIGAN', 'GIGA (Noisy)'), ('RAND', 'Uniform')]
+nms = [('SVI1', 'SparseVI-1'), ('SVIF', 'SparseVI-Full'), ('GIGAT', 'GIGA (Truth)'), ('GIGAN', 'GIGA (Noisy)'), ('IH', 'HOPS'), ('RAND', 'Uniform')]
 
 
 #plot the KL figure
