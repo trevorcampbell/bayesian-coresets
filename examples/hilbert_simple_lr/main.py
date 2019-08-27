@@ -82,7 +82,7 @@ mct = bc.MonteCarloFiniteTangentSpace(loglik, sampler, projection_dim)
 #build the coreset
 M = 500 # use up to 500 datapoints (run 500 itrs)
 giga = bc.GIGACoreset(mct) #do coreset construction using the discretized log-likelihood functions
-giga.build(M) #build the coreset
+giga.build(M, M) #build the coreset to size M with at most M iterations
 wts, idcs = giga.weights() #get the output weights
 print('weights:')
 print(wts)
