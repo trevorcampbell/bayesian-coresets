@@ -26,7 +26,7 @@ class IncrementalCoreset(IterativeCoreset):
 
     #check to make sure our error didn't increase
     error = self.error()
-    if self._check_first_itr_monotone and error > prev_error:
+    if error > prev_error and (itr > 0 or self._check_first_itr_monotone):
       #revert
       self._overwrite(prev_idcs, prev_wts)
       raise NumericalPrecisionError('Error not monotone: curr error = ' + str(error) + ' prev error = ' + str(prev_error))
