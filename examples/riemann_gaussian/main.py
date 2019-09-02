@@ -25,7 +25,7 @@ Sig0inv = np.linalg.inv(Sig0)
 Siginv = np.linalg.inv(Sig)
 SigLInv = np.linalg.inv(SigL)
 opt_itrs = 3000
-num_ih_itrs = 50
+num_ih_itrs = 2000
 proj_dim = 100
 pihat_noise =0.75
 
@@ -70,15 +70,15 @@ for t in trials:
   #create coreset construction objects
   riemann_one = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=True)
   riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=False)
-  ih = bc.IterativeHilbertCoreset(x.shape[0], tangent_space_factory, step_sched = lambda i : 1./(1.+i)) #, optimizing = True)
+  ih = bc.IterativeHilbertCoreset(x.shape[0], tangent_space_factory, step_sched = lambda i : 1./np.sqrt(1.+i), optimizing = True)
   giga_true = bc.GIGACoreset(T_true)
   giga_noisy = bc.GIGACoreset(T_noisy)
   unif = bc.UniformSamplingKLCoreset(x.shape[0], tangent_space_factory)
  
   #algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif, ih]
-  algs = [riemann_one, riemann_full, giga_true, giga_noisy, unif]
+  algs = [ih]
   #nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND', 'IH']
-  nms = ['SVI1', 'SVIF', 'GIGAT', 'GIGAN', 'RAND']
+  nms = ['IH']
   
 
 
@@ -89,6 +89,9 @@ for t in trials:
     w_opt = np.zeros((M+1, x.shape[0]))
     for m in range(1, M+1):
       print('trial: ' + str(t+1)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
+
+      #start from scratch each time
+      alg.reset()
 
       alg.build(m, num_ih_itrs)
       #store weights
