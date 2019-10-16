@@ -26,7 +26,7 @@ class Coreset(object):
   #  n_removed = logging.getLogger().handlers[0].remove_all(self.alg_name)
   #  if n_removed > 0:
   #    self.log.warning('suppressed ' + str(n_removed) + ' warnings')
-    
+
   def reset(self):
     #don't bother resetting wts, just set the nwts to 0
     self.nwts = 0
@@ -40,7 +40,7 @@ class Coreset(object):
     return (self.wts > 0).sum()
 
   def weights(self):
-    return self.wts[self.wts > 0], self.idcs[self.wts > 0] 
+    return self.wts[self.wts > 0], self.idcs[self.wts > 0]
 
   def _refresh_views(self):
     self.wts = self._wts[:self.nwts]
@@ -93,7 +93,7 @@ class Coreset(object):
     self._idcs[:__idcs.shape[0]] = __idcs
     self.nwts = __wts.shape[0]
     self._refresh_views()
-    
+
   def error(self):
     raise NotImplementedError()
 
@@ -148,11 +148,11 @@ class Coreset(object):
         raise NumericalPrecisionError('self.optimize() returned a solution with increasing error. Numeric limit possibly reached: preverr = ' + str(prev_cost) + ' err = ' + str(new_cost) + '.\n \
                                         If the two errors are very close, try running bc.util.tolerance(tol) with tol > current tol = ' + str(util.TOL) + ' before running')
     except NumericalPrecisionError as e:
-      print(e)
+      self.log.warning(e)
       self._overwrite(old_idcs, old_wts)
       self.reached_numeric_limit = True
       return
-   
+
   def _optimize(self):
     raise NotImplementedError
 
