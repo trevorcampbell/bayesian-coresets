@@ -9,8 +9,8 @@ from plotting import *
 plot_reverse_kl = True
 size_x_axis = False
 plot_suboptimal = False
-trials = np.arange(1)
-Ms = np.arange(30)
+trials = np.arange(1, 11)
+Ms = np.arange(300)
 #nms = [('SVI1', 'SparseVI-1'), ('SVIF', 'SparseVI-Full'), ('GIGAT', 'GIGA (Truth)'), ('GIGAN', 'GIGA (Noisy)'), ('RAND', 'Uniform')]
 nms = [('SVIF', 'SparseVI-Full'), ('GIGAT', 'GIGA (Truth)'), ('GIGAN', 'GIGA (Noisy)')]
 

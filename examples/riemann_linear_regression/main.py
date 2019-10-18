@@ -10,21 +10,13 @@ import model_linreg
 nm = sys.argv[1]
 tr = sys.argv[2]
 
-#model params
-mu0 = datamn*np.ones(d)
-Sig0 = (datastd**2+datamn**2)*np.eye(d)
-#Sig = datastd**2*np.eye(d)
-#SigL = np.linalg.cholesky(Sig)
-Sig0inv = np.linalg.inv(Sig0)
-#Siginv = np.linalg.inv(Sig)
-#SigLInv = np.linalg.inv(SigL)
-
 #experiment params
 M = 300
 opt_itrs = 100
 proj_dim = 100
 pihat_noise =0.75
 ih_itrs = 2000
+n_bases_per_scale = 50
 
 #load data and compute true posterior
 #each row of x is [lat, lon, price]
@@ -51,14 +43,23 @@ datamn = x[:,2].mean()
 
 #bases of increasing size; the last one is effectively a constant
 basis_unique_scales = np.array([.2, .4, .8, 1.2, 1.6, 2., 100])
-basis_unique_counts = np.hstack((50*np.ones(6, dtype=np.int64), 1))
+basis_unique_counts = np.hstack((n_bases_per_scale*np.ones(6, dtype=np.int64), 1))
 
 #the dimension of the scaling vector for the above bases
 d = basis_unique_counts.sum()
 print('Basis dimension: ' + str(d))
 
+#model params
+mu0 = datamn*np.ones(d)
+Sig0 = (datastd**2+datamn**2)*np.eye(d)
+#Sig = datastd**2*np.eye(d)
+#SigL = np.linalg.cholesky(Sig)
+Sig0inv = np.linalg.inv(Sig0)
+#Siginv = np.linalg.inv(Sig)
+#SigLInv = np.linalg.inv(SigL)
+
 #for the actual coreset construction, use the trial # and name as seed
-np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+tr])))
+np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+tr])) % 2**32)
 
 #generate basis functions by uniformly randomly picking locations in the dataset
 print('Trial ' + tr) 
@@ -136,7 +137,7 @@ algs = {'SVI1': riemann_one,
         'GIGAT': giga_true, 
         'GIGAN': giga_noisy, 
         'IH': ih,
-        'RAND': unif]
+        'RAND': unif}
 alg = algs[nm]
 
 print('Building coreset')
