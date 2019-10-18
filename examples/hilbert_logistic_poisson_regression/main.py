@@ -7,6 +7,7 @@ import time
 import sys, os
 
 #TODO use PyStan for inference
+#TODO copy riemann_logistic_poisson_regression example
 
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
