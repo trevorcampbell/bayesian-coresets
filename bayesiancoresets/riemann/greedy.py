@@ -42,17 +42,6 @@ class SparseVICoreset(KLCoreset,IncrementalCoreset):
         return np.array([ga, gb])
       x = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched)
       self._update(self.idcs, x[0]*wtmp + x[1]*onef)
-
-      #closer to notation from paper (but since nn_opt, wrong constraints)
-      #x0 = np.array([1., 0.]) #scale, amt of new wt
-      #def grd(ab):
-      #  T = self.tsf(ab[0]*self.wts + ab[1]*onef, self.idcs)
-      #  g = T.kl_grad(grad_idcs=self.idcs)
-      #  ga = self.wts.dot(g)
-      #  gb = g[fidx]
-      #  return np.array([ga, gb])
-      #x = nn_opt(x0, grd, opt_itrs=1000, step_sched = self.step_sched)
-      #self._update(self.idcs, x[0]*self.wts + x[1]*onef)
     else:
       x0 = self.wts
       def grd(w):
