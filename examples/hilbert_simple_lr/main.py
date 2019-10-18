@@ -16,6 +16,7 @@ np.random.seed(1)
 #######################################
 #######################################
 
+print('Generating data...')
 
 #10,000 datapoints, 10-dimensional
 N = 10000
@@ -39,6 +40,8 @@ Z = y[:, np.newaxis]*X
 ###########################
 ###########################
 
+print('Importing model functions...')
+
 from model_lr import *
 
 ###############################################################
@@ -46,6 +49,8 @@ from model_lr import *
 ## Step 2: Pick a location for the coreset tangent space
 ###############################################################
 ###############################################################
+
+print('Finding MAP for tangent space approximation...')
 
 #Here we use the laplace approximation of the posterior
 #first, optimize the log joint to find the mode:
@@ -67,6 +72,9 @@ sampler = lambda sz : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 ##########################################################################
 ##########################################################################
 
+
+print('Projecting the tangent space...')
+
 projection_dim = 500 #random projection dimension
 #the below calculates a matrix N x S of log likelihoods for N datapoints and S samples from sampler
 loglik = lambda th : np.hstack( [log_likelihood(Z, th[i,:])[:,np.newaxis] for i in range(th.shape[0])])
@@ -78,6 +86,9 @@ mct = bc.MonteCarloFiniteTangentSpace(loglik, sampler, projection_dim)
 ## Step 4: Build the Coreset
 ############################
 ############################
+
+
+print('Building the coreset...')
 
 #build the coreset
 M = 500 # use up to 500 datapoints (run 500 itrs)
@@ -100,6 +111,8 @@ print(idcs)
 
 #But for this (illustrative) example we will evaluate quality via Laplace posterior approx
 
+print('Evaluating coreset quality...')
+
 w = np.zeros(N)
 w[idcs] = wts
 
@@ -109,6 +122,7 @@ muw = res.x
 #then find a quadratic expansion around the mode, and assume the distribution is Gaussian
 covw = -np.linalg.inv(hess_log_joint_w(Z, muw, w))
 
+print('Done!') 
 
 #compare posterior and coreset
 np.set_printoptions(linewidth=10000)
