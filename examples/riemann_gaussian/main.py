@@ -10,6 +10,10 @@ import gaussian
 M = 200
 N = 1000
 d = 200
+opt_itrs = 500
+ih_itrs = 2000
+proj_dim = 100
+pihat_noise =0.75
 
 mu0 = np.zeros(d)
 Sig0 = np.eye(d)
@@ -19,10 +23,6 @@ th = np.ones(d)
 Sig0inv = np.linalg.inv(Sig0)
 Siginv = np.linalg.inv(Sig)
 SigLInv = np.linalg.inv(SigL)
-opt_itrs = 500
-ih_itrs = 2000
-proj_dim = 100
-pihat_noise =0.75
 
 nm = sys.argv[1]
 tr = sys.argv[2]
@@ -36,7 +36,7 @@ mup, Sigp = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
 Sigpinv = np.linalg.inv(Sigp)
 
 #for the algorithm, use the trial # and name as seed
-np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+tr])))
+np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+tr])) % 2**32)
 
 #compute constants for log likelihood function
 xSiginv = x.dot(Siginv)
@@ -83,13 +83,13 @@ algs = {'SVI1': riemann_one,
         'GIGAT': giga_true, 
         'GIGAN': giga_noisy, 
         'IH': ih,
-        'RAND': unif]
+        'RAND': unif}
 alg = algs[nm]
 
 w = np.zeros((M+1, x.shape[0]))
 w_opt = np.zeros((M+1, x.shape[0]))
 for m in range(1, M+1):
-  print('trial: ' + str(t+1)+'/'+str(trials.shape[0])+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
+  print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 
   #start from scratch each time
   alg.reset()
