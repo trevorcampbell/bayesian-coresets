@@ -17,6 +17,7 @@ proj_dim = 100
 pihat_noise =0.75
 ih_itrs = 2000
 n_bases_per_scale = 50
+N_subsample = 10000
 
 #load data and compute true posterior
 #each row of x is [lat, lon, price]
@@ -26,7 +27,6 @@ print('Loading data')
 np.random.seed(int(tr))
 
 x = np.load('../data/prices2018.npy')
-N_subsample = 10000
 
 print('Taking a random subsample')
 #get a random subsample of it
@@ -146,6 +146,10 @@ w = np.zeros((M+1, x.shape[0]))
 w_opt = np.zeros((M+1, x.shape[0]))
 for m in range(1, M+1):
   print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
+
+
+  if nm == 'IH':
+    alg.restart() #start from scratch each time for IH
 
   alg.build(m, 1 if nm != 'IH' else ih_itrs)
   #store weights

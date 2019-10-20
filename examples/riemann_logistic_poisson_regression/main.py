@@ -100,7 +100,7 @@ projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = .75 #noise level (relative) for corrupting pihat
 ###############################
 
-num_ih_itrs = 50
+ih_itrs = 50
 
 #initialize memory for coreset weights, laplace approx, kls
 wts = np.zeros((len(Ms), Z.shape[0]))
@@ -119,7 +119,8 @@ muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
 Sighat *= np.exp(-2.*pihat_noise*np.fabs(np.random.randn()))
 
 T_noisy = bc.MonteCarloFiniteTangentSpace(lambda th : log_likelihood_2d2d(Z, th), lambda sz : np.random.multivariate_normal(muhat, Sighat, sz), projection_dim)
-T_true = bc.MonteCarloFiniteTangentSpace(lambda th : log_likelihood_2d2d(Z, th), lambda sz : np.random.multivariate_normal(mup, 9*Sigp, sz), projection_dim)
+T_true = bc.MonteCarloFiniteTangentSpace(lambda th : log_likelihood_2d2d(Z, th), lambda sz : np.random.multivariate_normal(mup, Sigp, sz), projection_dim)
+
 def tangent_space_factory(wts, idcs):
   if idcs.shape[0] > 0:
     w = np.zeros(Z.shape[0])
@@ -141,7 +142,7 @@ elif alg == 'riemann':
 elif alg == 'riemann_corr':
   coreset = bc.QuadraticSparseVICoreset(Z.shape[0], tangent_space_factory, step_sched=learning_rate, update_single=False)
 elif alg == 'iterative_hilbert':
-  coreset = bc.IterativeHilbertCoreset(Z.shape[0], tangent_space_factory, num_its=num_ih_itrs) 
+  coreset = bc.IterativeHilbertCoreset(Z.shape[0], tangent_space_factory, num_its=ih_itrs) 
 elif alg == 'prior':
   coreset = None
 else:
@@ -151,7 +152,7 @@ else:
 for m in range(len(Ms)):
   print(str(m+1)+'/'+str(len(Ms)))
   if alg != 'prior':
-    coreset.build(Ms[m])
+    coreset.build(Ms[m], Ms[0] if m == 0 else Ms[m]-Ms[m-1])
     #if we want to fully reoptimize in each step, call giga.optimize()
     if alg == 'hilbert_corr' or alg == 'hilbert_corr_good':
       coreset.optimize() 
@@ -160,31 +161,6 @@ for m in range(len(Ms)):
     w, idcs = coreset.weights()
     wts[m, idcs] = w
     
-##old build code for debugging
-#w = np.zeros(Z.shape[0])
-#for m in range(len(Ms)):
-#  if alg != 'prior':
-#    for j in range(Ms[m-1] if m > 0 else 0, Ms[m]):
-#      if j%10 == 0:
-#        print(str(j)+ '/' + str(Ms[-1]))
-#        muw, Sigw = get_laplace(w, Z, mu0)
-#        print('muw: ' + str(muw) + ' mup: ' + str(mup))
-#        mn_err = np.sqrt(((muw-mup)**2).sum())/np.sqrt(((mup**2).sum()))
-#        cv_err = np.sqrt(((Sigw-Sigp)**2).sum())/np.sqrt(((Sigp)**2).sum())
-#        print('mean error : ' + str(mn_err)+ '\n covar error: ' + str(cv_err))
-#      coreset.build(j)
-#      #if we want to fully reoptimize in each step, call giga.optimize()
-#      if alg == 'hilbert_corr' or alg == 'hilbert_corr_good':
-#        coreset.optimize() 
-#      #record time and weights
-#      wtmp, idcs = coreset.weights()
-#      #fill in 
-#      w = np.zeros(Z.shape[0])
-#      w[idcs] = wtmp
-#      wts[m,idcs] = wtmp
-#      cputs[m] = time.process_time()-t0
-      
-
 #get laplace approximations for each weight setting, and KL divergence to full posterior laplace approx mup Sigp
 #used for a quick/dirty performance comparison without expensive posterior sample comparisons (e.g. energy distance)
 mus_laplace = np.zeros((len(Ms), D))
