@@ -90,7 +90,6 @@ algs = {'SVI1': riemann_one,
 alg = algs[nm]
 
 w = np.zeros((M+1, x.shape[0]))
-w_opt = np.zeros((M+1, x.shape[0]))
 for m in range(1, M+1):
   print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 

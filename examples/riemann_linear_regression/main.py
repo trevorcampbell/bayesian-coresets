@@ -143,7 +143,6 @@ alg = algs[nm]
 print('Building coreset')
 #build coresets
 w = np.zeros((M+1, x.shape[0]))
-w_opt = np.zeros((M+1, x.shape[0]))
 for m in range(1, M+1):
   print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 
@@ -155,12 +154,7 @@ for m in range(1, M+1):
   #store weights
   wts, idcs = alg.weights()
   w[m, idcs] = wts
-  #store optimized weights
-  alg.optimize()
-  wts_opt, idcs_opt = alg.weights()
-  w_opt[m, idcs_opt] = wts_opt
-  #restore pre-opt weights
-  alg._overwrite(idcs, wts)
+  
   #printouts for debugging purposes
   #print('reverse KL: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
   #print('reverse KL opt: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
@@ -174,22 +168,11 @@ for m in range(M+1):
   muw[m, :], Sigw[m, :, :] = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, X, Y, w[m, :])
   rklw[m] = model_linreg.weighted_post_KL(mu0, Sig0inv, datastd**2, X, Y, w[m,:], reverse=True)
   fklw[m] = model_linreg.weighted_post_KL(mu0, Sig0inv, datastd**2, X, Y, w[m,:], reverse=False)
-muw_opt = np.zeros((M+1, mu0.shape[0]))
-Sigw_opt = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
-rklw_opt = np.zeros(M+1)
-fklw_opt = np.zeros(M+1)
-for m in range(M+1):
-  print('Optimized KL divergence computation for trial: ' + tr+' alg: ' + nm + ' ' + str(m) +'/'+str(M))
-  muw_opt[m, :], Sigw_opt[m, :, :] = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, X, Y, w_opt[m, :])
-  rklw_opt[m] = model_linreg.weighted_post_KL(mu0, Sig0inv, datastd**2, X, Y, w_opt[m,:], reverse=True)
-  fklw_opt[m] = model_linreg.weighted_post_KL(mu0, Sig0inv, datastd**2, X, Y, w_opt[m,:], reverse=False)
-
 
 if not os.path.exists('results/'):
   os.mkdir('results')
 print('Saving result for trial: ' + tr +' alg: ' + nm)
-np.savez('results/results_'+nm+'_' + tr+'.npz', x=x, mu0=mu0, Sig0=Sig0, mup=mup, Sigp=Sigp, w=w, w_opt=w_opt,
+np.savez('results/results_'+nm+'_' + tr+'.npz', x=x, mu0=mu0, Sig0=Sig0, mup=mup, Sigp=Sigp, w=w, 
                                muw=muw, Sigw=Sigw, rklw=rklw, fklw=fklw,
-                               muw_opt=muw_opt, Sigw_opt=Sigw_opt, rklw_opt=rklw_opt, fklw_opt=fklw_opt,
                                basis_scales=basis_scales, basis_locs=basis_locs, datastd=datastd)
 
