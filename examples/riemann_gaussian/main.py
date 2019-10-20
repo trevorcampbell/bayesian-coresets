@@ -15,7 +15,6 @@ ih_itrs = 2000
 proj_dim = 100
 pihat_noise =0.75
 
-
 mu0 = np.zeros(d)
 Sig0 = np.eye(d)
 Sig = np.eye(d)
@@ -102,12 +101,7 @@ for m in range(1, M+1):
   #store weights
   wts, idcs = alg.weights()
   w[m, idcs] = wts
-  #store optimized weights
-  alg.optimize()
-  wts_opt, idcs_opt = alg.weights()
-  w_opt[m, idcs_opt] = wts_opt
-  #restore pre-opt weights
-  alg._overwrite(idcs, wts)
+
   #printouts for debugging purposes
   #print('reverse KL: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
   #print('reverse KL opt: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
@@ -120,18 +114,9 @@ for m in range(M+1):
   muw[m, :], Sigw[m, :, :] = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w[m, :])
   rklw[m] = gaussian.weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=True)
   fklw[m] = gaussian.weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=False)
-muw_opt = np.zeros((M+1, mu0.shape[0]))
-Sigw_opt = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
-rklw_opt = np.zeros(M+1)
-fklw_opt = np.zeros(M+1)
-for m in range(M+1):
-  muw_opt[m, :], Sigw_opt[m, :, :] = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w_opt[m, :])
-  rklw_opt[m] = gaussian.weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)
-  fklw_opt[m] = gaussian.weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=False)
 
 if not os.path.exists('results/'):
   os.mkdir('results')
-np.savez('results/results_'+nm+'_' + tr+'.npz', x=x, mu0=mu0, Sig0=Sig0, Sig=Sig, mup=mup, Sigp=Sigp, w=w, w_opt=w_opt,
-                               muw=muw, Sigw=Sigw, rklw=rklw, fklw=fklw,
-                               muw_opt=muw_opt, Sigw_opt=Sigw_opt, rklw_opt=rklw_opt, fklw_opt=fklw_opt)
+np.savez('results/results_'+nm+'_' + tr+'.npz', x=x, mu0=mu0, Sig0=Sig0, Sig=Sig, mup=mup, Sigp=Sigp, w=w,
+                               muw=muw, Sigw=Sigw, rklw=rklw, fklw=fklw)
 
