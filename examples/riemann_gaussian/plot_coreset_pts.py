@@ -8,10 +8,10 @@ from plotting import *
 
 
 size_x_axis = False
-trial_num = 0
+trial_num = 1
 
-nm = ('SVI1', 'SparseVI-1')
-Ms = [0, 1, 2, 5, 8, 12]
+nm = ('SVIF', 'SparseVI')
+Ms = [0, 1, 2, 5, 8, 12, 20, 50, 100, 150, 200]
 
 np.random.seed(5)
 #plot the KL figure
@@ -20,14 +20,11 @@ np.random.seed(5)
 res = np.load('results/results_'+nm[0] + '_' + str(trial_num)+'.npz')
 x = res['x']
 wt = res['w']
-wt_opt = res['w_opt']
 Sig = res['Sig']
 mup = res['mup']
 Sigp = res['Sigp']
 muwt = res['muw']
 Sigwt = res['Sigw']
-muwt_opt = res['muw_opt']
-Sigwt_opt = res['Sigw_opt']
 
 #if dim x > 2, project onto two random orthogonal axes
 if x.shape[1] > 2:
@@ -36,7 +33,6 @@ if x.shape[1] > 2:
   #x-= true_th
   #mup -= true_th
   #muwt -= true_th
-  #muwt_opt -= true_th
   #project onto two random axes
   a1 = np.random.randn(x.shape[1])
   a2 = np.random.randn(x.shape[1])
@@ -47,65 +43,50 @@ if x.shape[1] > 2:
   x = x.dot(a)
   mup = mup.dot(a)
   muwt = muwt.dot(a)
-  muwt_opt = muwt_opt.dot(a)
   Sig = a.T.dot(Sig.dot(a))
   Sigp = a.T.dot(Sigp.dot(a))
   Sigwttmp = np.zeros((Sigwt.shape[0], 2, 2))
-  Sigwtopttmp = np.zeros((Sigwt.shape[0], 2, 2))
   for i in range(Sigwt.shape[0]):
     Sigwttmp[i,:,:] = a.T.dot(Sigwt[i,:,:].dot(a))
-    Sigwtopttmp[i,:,:] = a.T.dot(Sigwt_opt[i,:,:].dot(a))
   Sigwt = Sigwttmp
-  Sigwt_opt = Sigwtopttmp
   ##shift everything to be back to true th
   #true_th = true_th[:2]
   #x += true_th
   #mup += true_th
   #muwt += true_th
-  #muwt_opt += true_th
 
 figs = []
 for m in Ms:
   x_range = (-4.2, 4.2)
   y_range = (-3, 5.4)
   fig = bkp.figure(x_range=x_range, y_range=y_range, plot_width=750, plot_height=750)
-  fig_opt = bkp.figure(x_range=x_range, y_range=y_range, plot_width=750, plot_height=750)
-  #for f in [fig, fig_opt]:
-  for f in [fig]:
-    preprocess_plot(f, '24pt', False, False)
+  preprocess_plot(fig, '24pt', False, False)
 
-  #for (f, w, muw, Sigw) in [(fig, wt, muwt, Sigwt), (fig_opt, wt_opt, muwt_opt, Sigwt_opt)]:
-  for (f, w, muw, Sigw) in [(fig, wt, muwt, Sigwt)]:
-    msz = np.where((w > 0).sum(axis=1) <= m)[0][-1]
-    f.scatter(x[:, 0], x[:, 1], fill_color='black', size=10, alpha=0.09)
+  msz = np.where((wt > 0).sum(axis=1) <= m)[0][-1]
+  fig.scatter(x[:, 0], x[:, 1], fill_color='black', size=10, alpha=0.09)
 
-    if size_x_axis:
-      f.scatter(x[:, 0], x[:, 1], fill_color='black', size=10*(w[msz, :]>0)+40*w[msz,:]/w[msz,:].max())
-    else:
-      f.scatter(x[:, 0], x[:, 1], fill_color='black', size=10*(w[msz, :]>0)+40*w[m,:]/w[m,:].max())
+  if size_x_axis:
+    fig.scatter(x[:, 0], x[:, 1], fill_color='black', size=10*(wt[msz, :]>0)+40*wt[msz,:]/wt[msz,:].max())
+  else:
+    fig.scatter(x[:, 0], x[:, 1], fill_color='black', size=10*(wt[msz, :]>0)+40*wt[m,:]/wt[m,:].max())
 
-    plot_gaussian(f, mup, (4./9.)*Sigp, (4./9.)*Sig, pal[0], 17, 9, 1, 1, 'solid', 'Exact')
+  plot_gaussian(fig, mup, (4./9.)*Sigp, (4./9.)*Sig, pal[0], 17, 9, 1, 1, 'solid', 'Exact')
 
-    if size_x_axis:
-      plot_gaussian(f, muw[msz,:], (4./9.)*Sigw[msz,:], (4./9.)*Sig, pal[2], 17, 9, 1, 1, 'solid', nm[1]+', size ' + str( (w[msz, :]>0).sum() ))
-    else:
-      plot_gaussian(f, muw[m,:], (4./9.)*Sigw[m,:], (4./9.)*Sig, pal[2], 17, 9, 1, 1, 'solid', nm[1]+', ' + str(m) +' pts') 
+  if size_x_axis:
+    plot_gaussian(fig, muwt[msz,:], (4./9.)*Sigwt[msz,:], (4./9.)*Sig, pal[2], 17, 9, 1, 1, 'solid', nm[1]+', size ' + str( (wt[msz, :]>0).sum() ))
+  else:
+    plot_gaussian(fig, muwt[m,:], (4./9.)*Sigwt[m,:], (4./9.)*Sig, pal[2], 17, 9, 1, 1, 'solid', nm[1]+', ' + str(m) +' pts') 
 
+  postprocess_plot(fig, '24pt', orientation='horizontal', glyph_width=80)
+  fig.legend.background_fill_alpha=0.
+  fig.legend.border_line_alpha=0.
+  #f.legend.visible=False
+  fig.xaxis.visible = False
+  fig.yaxis.visible = False
 
-  #for f in [fig, fig_opt]:
-  for f in [fig]:
-    postprocess_plot(f, '24pt', orientation='horizontal', glyph_width=80)
-    f.legend.background_fill_alpha=0.
-    f.legend.border_line_alpha=0.
-    #f.legend.visible=False
-    f.xaxis.visible = False
-    f.yaxis.visible = False
+  figs.append(fig)
 
-
-  #figs.append([fig, fig_opt])
-  figs.append([fig])
-
-bkp.show(bkl.gridplot(figs))
+bkp.show(bkl.gridplot([figs]))
 
 
 

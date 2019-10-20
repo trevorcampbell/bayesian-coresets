@@ -35,12 +35,16 @@ for i, nm in enumerate(nms):
     #fig.scatter(szopt[-1], klopt[-1], color=pal[i], legend=nm) 
   if size_x_axis:
     fig.line(Ms, np.maximum(np.percentile(kl, 50, axis=0), 1e-16), color=pal[i], line_width=5, legend=nm[1]) 
+    fig.line(Ms, np.maximum(np.percentile(kl, 25, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='dashed', legend=nm[1]) 
+    fig.line(Ms, np.maximum(np.percentile(kl, 75, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='dashed', legend=nm[1]) 
   else:
     kl = np.array(kl)
     #for j in range(kl.shape[0]):
     #  fig.line(np.arange(kl.shape[1]), kl[j, :], color=pal[i], line_width=5, line_dash='dashed', legend=nm[1])
     #  fig.line(np.arange(kl.shape[1]), klopt[j, :], color=pal[i], line_width=5, line_dash='solid', legend=nm[1])
     fig.line(np.arange(kl.shape[1]), np.maximum(np.percentile(kl, 50, axis=0), 1e-16), color=pal[i], line_width=5, legend=nm[1])
+    fig.line(np.arange(kl.shape[1]), np.maximum(np.percentile(kl, 25, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='dashed', legend=nm[1])
+    fig.line(np.arange(kl.shape[1]), np.maximum(np.percentile(kl, 75, axis=0), 1e-16), color=pal[i], line_width=5, line_dash='dashed', legend=nm[1])
 
 postprocess_plot(fig, '22pt', location='bottom_left', glyph_width=40)
 fig.legend.background_fill_alpha=0.
