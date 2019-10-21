@@ -6,7 +6,7 @@ class HilbertCoreset(object):
 
   def _optimize(self):
     X = self.T[self.idcs]
-    res = nnls(X.T, self.T.sum())
+    res = nnls(X.T, self.T.sum(), maxiter=100*X.shape[0])
     self._overwrite(self.idcs.copy(), res[0])
     return
 

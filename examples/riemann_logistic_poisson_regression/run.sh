@@ -6,9 +6,10 @@
 #ID = sys.argv[4] #just a number to denote trial #, any nonnegative integer
 
 
-for ID in {1..100}
+for ID in {1..10}
 do
-    for alg in "uniform" "hilbert" "hilbert_good" "riemann_corr" "prior"
+    #for alg in "PRIOR" "RAND" "GIGAN" "GIGAT" "SVIF" "QSVIF"
+    for alg in "SVIF" 
     do
         for dnm in "synth_lr" "phishing" "ds1" "synth_poiss" "biketrips" "airportdelays"
 	do

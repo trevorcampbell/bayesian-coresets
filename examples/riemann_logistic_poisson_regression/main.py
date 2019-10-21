@@ -59,8 +59,6 @@ if dnm in lrdnms:
 else:
   from model_poiss import *
 
-
-
 print('running ' + str(dnm)+ ' ' + str(alg)+ ' ' + str(ID))
 
 if not os.path.exists('results/'):
@@ -89,25 +87,20 @@ Sigp = np.cov(samples, rowvar=False)
 mu0 = np.zeros(mup.shape[0])
 Sig0 = np.eye(mup.shape[0])
 
-#extract tuning parameters
-n_samples = tuning[dnm][0]
-learning_rate = tuning[dnm][1]
-
 ###############################
 ## TUNING PARAMETERS ##
-Ms = [1, 2, 5, 10, 20, 50, 100, 200, 499] #coreset sizes at which we record output
+#Ms = [1, 2, 5, 10, 20, 50, 100, 200, 499] #coreset sizes at which we record output
+learning_rate = lambda itr : 0.5/(1.+itr)
+n_samples = 100
+M = 100
 projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = .75 #noise level (relative) for corrupting pihat
+ih_itrs = 50 #number of iterations for IH
+opt_itrs = 500
 ###############################
 
-ih_itrs = 50
-
-#initialize memory for coreset weights, laplace approx, kls
-wts = np.zeros((len(Ms), Z.shape[0]))
-cputs = np.zeros(len(Ms))
 
 print('Building coresets via ' + alg)
-t0 = time.process_time()
 
 #get pihat via interpolation between prior/posterior + noise
 #uniformly smooth between prior and posterior
@@ -130,50 +123,62 @@ def tangent_space_factory(wts, idcs):
     muw, Sigw = mu0, Sig0
   return bc.MonteCarloFiniteTangentSpace(lambda th : log_likelihood_2d2d(Z, th), lambda sz : np.random.multivariate_normal(muw, Sigw, sz), n_samples, wref=wts, idcsref=idcs)
  
-#coreset objects
-if alg == 'hilbert' or alg=='hilbert_corr':
-  coreset = bc.GIGACoreset(T_noisy)
-elif alg == 'hilbert_good' or alg=='hilbert_corr_good':
-  coreset = bc.GIGACoreset(T_true)
-elif alg == 'uniform':
-  coreset = bc.UniformSamplingHilbertCoreset(T_true)
-elif alg == 'riemann':
-  coreset = bc.QuadraticSparseVICoreset(Z.shape[0], tangent_space_factory, step_sched=learning_rate, update_single=True)
-elif alg == 'riemann_corr':
-  coreset = bc.QuadraticSparseVICoreset(Z.shape[0], tangent_space_factory, step_sched=learning_rate, update_single=False)
-elif alg == 'iterative_hilbert':
-  coreset = bc.IterativeHilbertCoreset(Z.shape[0], tangent_space_factory, num_its=ih_itrs) 
-elif alg == 'prior':
-  coreset = None
-else:
-  raise Exception
+def nulltsf(wts, idcs):
+  return bc.FixedFiniteTangentSpace(np.zeros((Z.shape[0], 2)), wts, idcs)
+ 
+#create coreset construction objects
+giga_true = bc.GIGACoreset(T_true)
+giga_noisy = bc.GIGACoreset(T_noisy)
+unif = bc.UniformSamplingKLCoreset(Z.shape[0], nulltsf)
+ih = bc.IterativeHilbertCoreset(Z.shape[0], tangent_space_factory, step_sched = learning_rate, optimizing = True)
+riemann_one = bc.SparseVICoreset(Z.shape[0], tangent_space_factory, opt_itrs=opt_itrs, step_sched = learning_rate, update_single=True)
+riemann_full = bc.SparseVICoreset(Z.shape[0], tangent_space_factory, opt_itrs=opt_itrs, step_sched = learning_rate, update_single=False)
+quadratic_riemann_one = bc.QuadraticSparseVICoreset(Z.shape[0], tangent_space_factory, step_sched=learning_rate, update_single=True)
+quadratic_riemann_full = bc.QuadraticSparseVICoreset(Z.shape[0], tangent_space_factory, step_sched=learning_rate, update_single=False)
+
+algs = {'SVI1': riemann_one, 
+        'SVIF': riemann_full, 
+        'QSVI1': quadratic_riemann_one, 
+        'QSVIF': quadratic_riemann_full, 
+        'GIGAT': giga_true, 
+        'GIGAN': giga_noisy, 
+        'IH': ih,
+        'RAND': unif,
+        'PRIOR': None}
+coreset = algs[alg]
 
 #build
-for m in range(len(Ms)):
-  print(str(m+1)+'/'+str(len(Ms)))
-  if alg != 'prior':
-    coreset.build(Ms[m], Ms[0] if m == 0 else Ms[m]-Ms[m-1])
-    #if we want to fully reoptimize in each step, call giga.optimize()
-    if alg == 'hilbert_corr' or alg == 'hilbert_corr_good':
-      coreset.optimize() 
+wts = np.zeros((M+1, Z.shape[0]))
+cputs = np.zeros(M+1)
+t0 = time.perf_counter()
+for m in range(1, M+1):
+  print(str(m)+'/'+str(M))
+  if alg != 'PRIOR':
+    #coreset.build(Ms[m], (Ms[0] if m == 0 else Ms[m]-Ms[m-1]) if alg != 'IH' else ih_itrs)
+
+    if alg == 'IH':
+      coreset.restart() #start from scratch each time for IH
+
+    coreset.build(m, 1 if alg != 'IH' else ih_itrs)
+
     #record time and weights
-    cputs[m] = time.process_time()-t0
+    cputs[m] = time.perf_counter()-t0
     w, idcs = coreset.weights()
     wts[m, idcs] = w
     
 #get laplace approximations for each weight setting, and KL divergence to full posterior laplace approx mup Sigp
 #used for a quick/dirty performance comparison without expensive posterior sample comparisons (e.g. energy distance)
-mus_laplace = np.zeros((len(Ms), D))
-Sigs_laplace = np.zeros((len(Ms), D, D))
-kls_laplace = np.zeros(len(Ms))
+mus_laplace = np.zeros((M+1, D))
+Sigs_laplace = np.zeros((M+1, D, D))
+kls_laplace = np.zeros(M+1)
 print('Computing coreset Laplace approximation + approximate KL(posterior || coreset laplace)')
-for m in range(len(Ms)):
+for m in range(M+1):
   mul, Sigl = get_laplace(wts[m,:], Z, Z.mean(axis=0)[:D])
   mus_laplace[m,:] = mul
   Sigs_laplace[m,:,:] = Sigl
   kls_laplace[m] = gaussian.gaussian_KL(mup, Sigp, mul, np.linalg.inv(Sigl))
 
 #save results
-np.savez('results/'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=Ms, mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
+np.savez('results/'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=np.arange(M+1), mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
 
 

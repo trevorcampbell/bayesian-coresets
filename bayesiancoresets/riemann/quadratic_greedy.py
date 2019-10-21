@@ -43,11 +43,11 @@ class QuadraticSparseVICoreset(KLCoreset,IncrementalCoreset):
       wtmp = self.wts.copy()
       wtmp[fidx] = 0.
       A = np.atleast_2d(np.hstack((C.dot(onef[:,np.newaxis]), C.dot(wtmp[:,np.newaxis]))))
-      ab, resid = nnls(A,B) 
+      ab, resid = nnls(A,B, maxiter=100*A.shape[1]) 
       w = ab[0]*onef+ab[1]*wtmp
     else:
       A = C
-      w, resid = nnls(A,B) 
-    gamma = self.step_sched(self.itrs)
+      w, resid = nnls(A,B, maxiter=100*A.shape[1]) 
+    gamma = self.step_sched(self._itr)
     self._update(self.idcs, (1.-gamma)*self.wts + gamma*w)
    
