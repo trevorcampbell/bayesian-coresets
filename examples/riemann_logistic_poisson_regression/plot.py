@@ -8,19 +8,20 @@ sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
 
 
-#algs = [('uniform', 'Uniform', pal[7]), ('hilbert','GIGA (noisy)', pal[5]), ('hilbert_corr', 'Fully Corrective GIGA (noisy)', pal[1]), ('riemann', 'Greedy', pal[3]), ('riemann_corr', 'Fully Corrective Greedy', pal[4]),('hilbert_good','GIGA (truth)', pal[2]), ('hilbert_corr_good', 'Fully Corrective GIGA (truth)', pal[0])]
-dnames = ['synth_lr', 'ds1', 'phishing', 'synth_poiss', 'biketrips', 'airportdelays']
-algs = [('RAND', 'Uniform', pal[7]),  ('SVIF', 'SparseVI', pal[2]), ('QSVIF', 'Quadratic SparseVI', pal[4]), ('GIGAN','GIGA (Noisy)', pal[1]),('GIGAT','GIGA (Truth)', pal[0]), ('PRIOR','Prior', 'black')]
+#algs = [('RAND', 'Uniform', pal[7]),  ('SVIF', 'SparseVI', pal[2]), ('QSVIF', 'Quadratic SparseVI', pal[4]), ('GIGAN','GIGA (Noisy)', pal[1]),('GIGAT','GIGA (Truth)', pal[0]), ('PRIOR','Prior', 'black')]
+#dnames = ['synth_lr', 'ds1', 'phishing', 'synth_poiss', 'biketrips', 'airportdelays']
+dnames = ['synth_poiss', 'biketrips', 'airportdelays']
+algs = [('RAND', 'Uniform', pal[7]),  ('SVIF', 'SparseVI', pal[2]), ('GIGAN','GIGA (Noisy)', pal[1]),('GIGAT','GIGA (Truth)', pal[0]), ('PRIOR','Prior', 'black')]
 
 figs = []
 for dnm in dnames:
   print('Plotting ' + dnm)
-  fig = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL',  x_axis_label='# Iterations', width=2000, height=2000)
+  fig = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL',  x_axis_label='# Iterations', width=2000, height=666)
   preprocess_plot(fig, '48pt', False, True)
-  fig2 = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='CPU Time (s)', width=2000, height=2000)
+  fig2 = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='CPU Time (s)', width=2000, height=666)
   preprocess_plot(fig2, '48pt', True, True)
-  fig3 = bkp.figure(y_axis_type='log', x_axis_type='log', y_axis_label='Reverse KL',  x_axis_label='Coreset Size', width=2000, height=2000)
-  preprocess_plot(fig3, '48pt', True, True)
+  fig3 = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL',  x_axis_label='Coreset Size', width=2000, height=666)
+  preprocess_plot(fig3, '48pt', False, True)
 
   figs.append([fig, fig2, fig3])
   
@@ -89,7 +90,7 @@ for dnm in dnames:
     f.legend.glyph_width=80
     f.legend.glyph_height=80
     f.legend.spacing=20
-  #  f.legend.visible = False
+    f.legend.visible = False
   
 bkp.show(bkl.gridplot(figs))
 
