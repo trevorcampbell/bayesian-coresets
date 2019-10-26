@@ -66,16 +66,16 @@ for m in Ms:
   fig.scatter(x[:, 0], x[:, 1], fill_color='black', size=10, alpha=0.09)
 
   if size_x_axis:
-    fig.scatter(x[:, 0], x[:, 1], fill_color='black', size=10*(wt[msz, :]>0)+40*wt[msz,:]/wt[msz,:].max())
+    fig.scatter(x[:, 0], x[:, 1], fill_color='black', size=10*(wt[msz, :]>0)+40*wt[msz,:]/wt[msz,:].max(), line_color=None)
   else:
-    fig.scatter(x[:, 0], x[:, 1], fill_color='black', size=10*(wt[msz, :]>0)+40*wt[m,:]/wt[m,:].max())
+    fig.scatter(x[:, 0], x[:, 1], fill_color='black', size=10*(wt[msz, :]>0)+40*wt[m,:]/wt[m,:].max(), line_color=None)
 
-  plot_gaussian(fig, mup, (4./9.)*Sigp, (4./9.)*Sig, pal[0], 17, 9, 1, 1, 'solid', 'Exact')
+  plot_gaussian(fig, mup, (4./9.)*Sigp, (4./9.)*Sig, 'black', 17, 9, 1, 1, 'solid', 'Exact')
 
   if size_x_axis:
-    plot_gaussian(fig, muwt[msz,:], (4./9.)*Sigwt[msz,:], (4./9.)*Sig, pal[2], 17, 9, 1, 1, 'solid', nm[1]+', size ' + str( (wt[msz, :]>0).sum() ))
+    plot_gaussian(fig, muwt[msz,:], (4./9.)*Sigwt[msz,:], (4./9.)*Sig, pal[0], 17, 9, 1, 1, 'solid', nm[1]+', size ' + str( (wt[msz, :]>0).sum() ))
   else:
-    plot_gaussian(fig, muwt[m,:], (4./9.)*Sigwt[m,:], (4./9.)*Sig, pal[2], 17, 9, 1, 1, 'solid', nm[1]+', ' + str(m) +' pts') 
+    plot_gaussian(fig, muwt[m,:], (4./9.)*Sigwt[m,:], (4./9.)*Sig, pal[0], 17, 9, 1, 1, 'solid', nm[1]+', ' + str(m) +' pts') 
 
   postprocess_plot(fig, '24pt', orientation='horizontal', glyph_width=80)
   fig.legend.background_fill_alpha=0.
