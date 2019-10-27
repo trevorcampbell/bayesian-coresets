@@ -15,7 +15,6 @@ M = 300
 opt_itrs = 100
 proj_dim = 100
 pihat_noise =0.75
-ih_itrs = 2000
 n_bases_per_scale = 50
 N_subsample = 10000
 
@@ -130,13 +129,11 @@ riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=op
 giga_true = bc.GIGACoreset(T_true)
 giga_noisy = bc.GIGACoreset(T_noisy)
 unif = bc.UniformSamplingKLCoreset(x.shape[0], nulltsf)
-ih = bc.IterativeHilbertCoreset(x.shape[0], tangent_space_factory, step_sched = lambda i : 1./np.sqrt(1.+i), optimizing = True)
 
 algs = {'SVI1': riemann_one, 
         'SVIF': riemann_full, 
         'GIGAT': giga_true, 
         'GIGAN': giga_noisy, 
-        'IH': ih,
         'RAND': unif}
 alg = algs[nm]
 
@@ -147,10 +144,7 @@ for m in range(1, M+1):
   print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 
 
-  if nm == 'IH':
-    alg.restart() #start from scratch each time for IH
-
-  alg.build(m, 1 if nm != 'IH' else ih_itrs)
+  alg.build(m, 1)
   #store weights
   wts, idcs = alg.weights()
   w[m, idcs] = wts

@@ -8,7 +8,6 @@ from plotting import *
 
 plot_reverse_kl = True
 trials = np.arange(1, 11)
-#nms = [('SVI1', 'SparseVI-1'), ('SVIF', 'SparseVI-Full'), ('GIGAT', 'GIGA (Truth)'), ('GIGAN', 'GIGA (Noisy)'), ('IH', 'HOPS'), ('RAND', 'Uniform')]
 nms = [('SVIF', 'SparseVI'), ('GIGAT', 'GIGA (Optimal)'), ('GIGAN', 'GIGA (Realistic)'), ('RAND', 'Uniform')]
 
 

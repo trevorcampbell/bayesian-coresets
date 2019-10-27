@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#Algs: "SVI1" "SVIF" "GIGAT" "GIGAN" "RAND" "IH"
+#Algs: "SVI1" "SVIF" "GIGAT" "GIGAN" "RAND" 
 
 for ID in {1..10}
 do

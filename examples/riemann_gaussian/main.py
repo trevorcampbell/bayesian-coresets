@@ -11,7 +11,6 @@ M = 200
 N = 1000
 d = 200
 opt_itrs = 500
-ih_itrs = 2000
 proj_dim = 100
 pihat_noise =0.75
 
@@ -76,7 +75,6 @@ def nulltsf(wts, idcs):
 #create coreset construction objects
 riemann_one = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=True)
 riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=False)
-ih = bc.IterativeHilbertCoreset(x.shape[0], tangent_space_factory, step_sched = lambda i : 1./np.sqrt(1.+i), optimizing = True)
 giga_true = bc.GIGACoreset(T_true)
 giga_noisy = bc.GIGACoreset(T_noisy)
 unif = bc.UniformSamplingKLCoreset(x.shape[0], nulltsf)
@@ -85,7 +83,6 @@ algs = {'SVI1': riemann_one,
         'SVIF': riemann_full, 
         'GIGAT': giga_true, 
         'GIGAN': giga_noisy, 
-        'IH': ih,
         'RAND': unif}
 alg = algs[nm]
 
@@ -93,10 +90,7 @@ w = np.zeros((M+1, x.shape[0]))
 for m in range(1, M+1):
   print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 
-  if nm == 'IH':
-    alg.restart() #start from scratch each time for IH
-
-  alg.build(m, 1 if nm != 'IH' else ih_itrs)
+  alg.build(m, 1)
   #store weights
   wts, idcs = alg.weights()
   w[m, idcs] = wts

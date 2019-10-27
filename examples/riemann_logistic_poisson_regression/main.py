@@ -95,7 +95,6 @@ n_samples = 100
 M = 100
 projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = .75 #noise level (relative) for corrupting pihat
-ih_itrs = 50 #number of iterations for IH
 opt_itrs = 500
 ###############################
 
@@ -130,7 +129,6 @@ def nulltsf(wts, idcs):
 giga_true = bc.GIGACoreset(T_true)
 giga_noisy = bc.GIGACoreset(T_noisy)
 unif = bc.UniformSamplingKLCoreset(Z.shape[0], nulltsf)
-ih = bc.IterativeHilbertCoreset(Z.shape[0], tangent_space_factory, step_sched = learning_rate, optimizing = True)
 riemann_one = bc.SparseVICoreset(Z.shape[0], tangent_space_factory, opt_itrs=opt_itrs, step_sched = learning_rate, update_single=True)
 riemann_full = bc.SparseVICoreset(Z.shape[0], tangent_space_factory, opt_itrs=opt_itrs, step_sched = learning_rate, update_single=False)
 quadratic_riemann_one = bc.QuadraticSparseVICoreset(Z.shape[0], tangent_space_factory, step_sched=learning_rate, update_single=True)
@@ -142,7 +140,6 @@ algs = {'SVI1': riemann_one,
         'QSVIF': quadratic_riemann_full, 
         'GIGAT': giga_true, 
         'GIGAN': giga_noisy, 
-        'IH': ih,
         'RAND': unif,
         'PRIOR': None}
 coreset = algs[alg]
@@ -154,12 +151,7 @@ t0 = time.perf_counter()
 for m in range(1, M+1):
   print(str(m)+'/'+str(M))
   if alg != 'PRIOR':
-    #coreset.build(Ms[m], (Ms[0] if m == 0 else Ms[m]-Ms[m-1]) if alg != 'IH' else ih_itrs)
-
-    if alg == 'IH':
-      coreset.restart() #start from scratch each time for IH
-
-    coreset.build(m, 1 if alg != 'IH' else ih_itrs)
+    coreset.build(m, 1)
 
     #record time and weights
     cputs[m] = time.perf_counter()-t0
