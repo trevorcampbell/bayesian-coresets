@@ -126,7 +126,7 @@ def nulltsf(wts, idcs):
 #create coreset construction objects
 print('Creating coreset construction objects')
 riemann_one = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=True)
-riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=False, step_sched=lambda i : 30*np.sqrt(1/(1.+i)))
+riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=False)
 giga_true = bc.GIGACoreset(T_true)
 giga_noisy = bc.GIGACoreset(T_noisy)
 unif = bc.UniformSamplingKLCoreset(x.shape[0], nulltsf)

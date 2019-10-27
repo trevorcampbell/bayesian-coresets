@@ -2,3 +2,5 @@
 *.pyc
 *.npz
 *.html
+results/
+__pycache__/
