@@ -26,8 +26,8 @@ contour_colors = ['#%02x%02x%02x' % (int(r), int(b), int(g)) for (r, b, g) in zi
 #algorithm / trial + Ms to plot
 nm = ('SVIF', 'SparseVI')
 #nm = ('GIGAT', 'GIGA-T')
-trial_num = 2
-Ms = np.linspace(0, 300, 50, dtype=np.int64)
+trial_num = 5
+Ms = np.linspace(1, 300, 7, dtype=np.int64)
 
 #plot the sequence of coreset pts and comparison of nonopt + opt
 res = np.load('results/results_'+nm[0] + '_' + str(trial_num)+'.npz')
@@ -40,7 +40,6 @@ Sigwt = res['Sigw']
 basis_scales = res['basis_scales']
 basis_locs = res['basis_locs']
 datastd = res['datastd']
-
 
 figs = []
 
@@ -55,7 +54,7 @@ f.scatter(x[:, 1], x[:, 0], fill_color='black', size=10, alpha=0.01, line_color=
 #compute posterior mean regression on the grid
 reg = np.zeros(longrid.shape)
 for i in range(basis_scales.shape[0]):
-  reg += mup[i]*np.exp(-(longrid - basis_locs[i,1])**2/(2*datastd**2) - (latgrid - basis_locs[i,0])**2/(2*datastd**2) )
+  reg += mup[i]*np.exp(-(longrid - basis_locs[i,1])**2/(2*basis_scales[i]**2) - (latgrid - basis_locs[i,0])**2/(2*basis_scales[i]**2) )
 #contour_levels
 contour_levels = [np.percentile(reg, p) for p in contour_percentiles]
 #plot contours
@@ -85,11 +84,12 @@ for m in Ms:
 
   #plot data and coreset pts
   fig.scatter(x[:, 1], x[:, 0], fill_color='black', size=10, alpha=0.01, line_color=None)
-  fig.scatter(x[:, 1], x[:, 0], fill_color='black', size=10*(wt[m, :]>0)+10*wt[m,:]/wt[m,:].max(), line_color=None)
+  #fig.scatter(x[:, 1], x[:, 0], fill_color='black', size=10*(wt[m, :]>0)+10*wt[m,:]/wt[m,:].max(), line_color=None)
+  fig.scatter(x[:, 1], x[:, 0], fill_color='black', size=30*np.power(wt[m,:]/wt[m,:].max(), 0.4), line_color=None)
   #compute posterior mean regression on the grid
   reg = np.zeros(longrid.shape)
   for i in range(basis_scales.shape[0]):
-    reg += muwt[m, i]*np.exp(-(longrid - basis_locs[i,1])**2/(2*datastd**2) - (latgrid - basis_locs[i,0])**2/(2*datastd**2) )
+    reg += muwt[m, i]*np.exp(-(longrid - basis_locs[i,1])**2/(2*basis_scales[i]**2) - (latgrid - basis_locs[i,0])**2/(2*basis_scales[i]**2) )
   #plot contours
   for color, level in zip(contour_colors, contour_levels):
     contours = measure.find_contours(reg, level)

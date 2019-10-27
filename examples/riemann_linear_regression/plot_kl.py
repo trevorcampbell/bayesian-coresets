@@ -9,7 +9,7 @@ from plotting import *
 plot_reverse_kl = True
 trials = np.arange(1, 11)
 #nms = [('SVI1', 'SparseVI-1'), ('SVIF', 'SparseVI-Full'), ('GIGAT', 'GIGA (Truth)'), ('GIGAN', 'GIGA (Noisy)'), ('IH', 'HOPS'), ('RAND', 'Uniform')]
-nms = [('SVIF', 'SparseVI'), ('GIGAT', 'GIGA (Truth)'), ('GIGAN', 'GIGA (Noisy)'), ('RAND', 'Uniform')]
+nms = [('SVIF', 'SparseVI'), ('GIGAT', 'GIGA (Optimal)'), ('GIGAN', 'GIGA (Realistic)'), ('RAND', 'Uniform')]
 
 
 #plot the KL figure
@@ -28,9 +28,9 @@ for i, nm in enumerate(nms):
     else:
       kl.append(res['fklw'][::plot_every])
     sz.append((res['w'] > 0).sum(axis=1)[::plot_every])
-  fig.circle(np.percentile(sz, 50, axis=0), np.percentile(kl, 50, axis=0), color=pal[i], line_width=5, legend=nm[1]) 
-  fig.segment(x0 = np.percentile(sz, 50, axis=0), x1 = np.percentile(sz, 50, axis=0), y0 = np.percentile(kl, 25, axis=0), y1 = np.percentile(kl, 75, axis=0), color=pal[i], line_width=5, legend=nm[1]) 
-  fig.segment(x0 = np.percentile(sz, 25, axis=0), x1 = np.percentile(sz, 75, axis=0), y0 = np.percentile(kl, 50, axis=0), y1 = np.percentile(kl, 50, axis=0), color=pal[i], line_width=5, legend=nm[1]) 
+  x = np.percentile(sz, 50, axis=0)
+  fig.line(x, np.percentile(kl, 50, axis=0), color=pal[i], line_width=5, legend=nm[1]) 
+  fig.patch(x = np.hstack((x, x[::-1])), y = np.hstack((np.percentile(kl, 75, axis=0), np.percentile(kl, 25, axis=0)[::-1])), color=pal[i], fill_alpha=0.4, legend=nm[1]) 
 
 postprocess_plot(fig, '22pt', location='bottom_left', glyph_width=40)
 fig.legend.background_fill_alpha=0.
