@@ -30,7 +30,7 @@ The easiest / most automated way of building a coreset is to solve a sparse vari
 Below are some papers to cite if you find the algorithms in this repository useful in your own research:
 
 
-* T. Campbell and B. Beronov, "[Sparse variational inference: Bayesian coresets from scratch](https://arxiv.org/abs/1906.03329)," arXiv:1906.03329.
+* T. Campbell and B. Beronov, "[Sparse variational inference: Bayesian coresets from scratch](https://arxiv.org/abs/1906.03329)," Advances in Neural Information Processing Systems, 2019.
 * T. Campbell and T. Broderick, "[Automated scalable Bayesian inference via Hilbert coresets](https://arxiv.org/abs/1710.05053)," Journal of Machine Learning Research 20(15):1-38, 2019.
 * T. Campbell and T. Broderick, "[Bayesian coreset construction via Greedy Iterative Geodesic Ascent](https://arxiv.org/abs/1802.01737)," International Conference on Machine Learning (ICML), 2018.
 * J. Huggins, T. Campbell and T. Broderick, "[Coresets for scalable Bayesian logistic regression](https://arxiv.org/abs/1605.06423)," Advances in Neural Information Processing Systems, 2016.
