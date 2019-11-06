@@ -20,7 +20,8 @@ def gen_synthetic(n):
   th = np.array([3, 3])
   X = np.random.multivariate_normal(mu, cov, n)
   ps = 1.0/(1.0+np.exp(-(X*th).sum(axis=1)))
-  y =(np.random.rand(n) <= ps).astype(int)
+  y = (np.random.rand(n) <= ps).astype(int)
+  y[y==0] = -1
   return y[:, np.newaxis]*X, (y[:, np.newaxis]*X).mean(axis=0)
 
 def log_joint(Z, th, wts):
