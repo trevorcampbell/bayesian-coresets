@@ -61,9 +61,8 @@ else:
 #generate a sampler based on the laplace approx 
 sampler = lambda sz : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 #create the log-likelihood eval function
-def loglike(idcs, J):
-  th = sampler(J)
-  return np.hstack([log_likelihood(Z[idcs, :], th[i,:])[:,np.newaxis] for i in range(J)])
+def loglike(prms):
+  return np.hstack([log_likelihood(Z, prms[i,:])[:,np.newaxis] for i in range(prms.shape[0])])
 
 if not os.path.exists('results/'+dnm+'_posterior_samples.npz'):
   print('Running MCMC on the full dataset '+ dnm)
@@ -89,7 +88,7 @@ Fs = np.zeros(Ms.shape[0])
 
 print('Running coreset construction / MCMC for ' + dnm + ' ' + anm + ' ' + ID)
 t0 = time.process_time()
-alg = bc.HilbertCoreset(loglike, Z.shape[0], projection_dim, snnls = algdict[anm])
+alg = bc.HilbertCoreset(loglike, sampler, projection_dim, snnls = algdict[anm])
 t_setup = time.process_time() - t0
 t_alg = 0.
 for m in range(Ms.shape[0]):

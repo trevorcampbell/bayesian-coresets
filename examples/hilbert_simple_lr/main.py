@@ -72,9 +72,8 @@ sampler = lambda sz : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 ##########################################################################
 ##########################################################################
 
-def loglike(idcs, J):
-  th = sampler(J)
-  return np.hstack([log_likelihood(Z[idcs, :], th[i,:])[:,np.newaxis] for i in range(J)])
+def loglike(prms):
+  return np.hstack([log_likelihood(Z, prms[i,:])[:,np.newaxis] for i in range(prms.shape[0])])
 
 ############################
 ############################
@@ -88,7 +87,7 @@ print('Building the coreset...')
 #build the coreset
 projection_dim = 500 #random projection dimension
 M = 500 # use up to 500 datapoints (run 500 itrs)
-coreset = bc.HilbertCoreset(loglike, Z.shape[0], projection_dim) #do coreset construction using the discretized log-likelihood functions
+coreset = bc.HilbertCoreset(loglike, sampler, projection_dim) #do coreset construction using the discretized log-likelihood functions
 coreset.build(M, M) #build the coreset to size M with at most M iterations
 wts, idcs = coreset.weights() #get the output weights
 print('weights:')

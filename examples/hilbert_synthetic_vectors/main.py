@@ -25,13 +25,18 @@ csize = np.zeros((len(anms), n_trials, Ms.shape[0]))
 cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   X = np.random.randn(N, D)
+
+  #create "sampler" (just returns idcs for X)
+  def sampler(n):
+    return np.arange(n)
   
-  def loglike(idcs, samps):
-    return X[idcs, :samps]
+  #create "log likelihood" (given indices for X, returns that column)
+  def loglike(prms):
+    return X[:, prms]
 
   for aidx, anm in enumerate(anms):
     print('data: gauss, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm)
-    alg = bc.HilbertCoreset(loglike, X.shape[0], X.shape[1], snnls = algs[aidx])
+    alg = bc.HilbertCoreset(loglike, sampler, D, snnls = algs[aidx])
 
     for m, M in enumerate(Ms):
       t0 = time.time()
@@ -52,8 +57,14 @@ N = 5000
 N = 100
 
 X = np.eye(N)
-def loglike(idcs, samps):
-    return X[idcs, :samps]
+
+#create "sampler" (just returns idcs for X)
+def sampler(n):
+  return np.arange(n)
+
+#create "log likelihood" (given indices for X, returns that column)
+def loglike(prms):
+  return X[:, prms]
 
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 opt_err = np.zeros((len(anms), n_trials, Ms.shape[0]))
@@ -62,7 +73,7 @@ cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   for aidx, anm in enumerate(anms):
     print('data: axis, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm)
-    alg = bc.HilbertCoreset(loglike, X.shape[0], X.shape[1], snnls = algs[aidx])
+    alg = bc.HilbertCoreset(loglike, sampler, N, snnls = algs[aidx])
 
     for m, M in enumerate(Ms):
       t0 = time.time()
