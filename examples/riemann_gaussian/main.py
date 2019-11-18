@@ -59,7 +59,7 @@ Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
 sampler_realistic = lambda n : np.random.multivariate_normal(muhat, Sighat, n)
 
 #create the sampler for the weighted posterior
-def sampler_w(n, w, idcs):
+def sampler_w(n, wts, idcs):
   w = np.zeros(x.shape[0])
   w[idcs] = wts
   muw, Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w)
