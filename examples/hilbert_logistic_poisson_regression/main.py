@@ -16,7 +16,7 @@ dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips
 anm = sys.argv[2] #should be hilbert / hilbert_corr / riemann / riemann_corr / uniform 
 ID = sys.argv[3] #just a number to denote trial #, any nonnegative integer
 
-algdict = {'GIGA':bc.GIGACoreset, 'FW':bc.FrankWolfeCoreset, 'RND':bc.UniformSamplingHilbertCoreset}
+algdict = {'GIGA':bc.snnls.GIGA, 'FW':bc.snnls.FrankWolfe, 'RND':bc.snnls.UniformSampling}
 lrdnms = ['synth_lr', 'phishing', 'ds1', 'synth_lr_large', 'phishing_large', 'ds1_large']
 prdnms = ['synth_poiss', 'biketrips', 'airportdelays', 'synth_poiss_large', 'biketrips_large', 'airportdelays_large']
 if dnm in lrdnms:
@@ -60,12 +60,10 @@ else:
 
 #generate a sampler based on the laplace approx 
 sampler = lambda sz : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
-
-print('Building tangent space projection')
-t0 = time.process_time()
-loglik = lambda th : np.hstack( [log_likelihood(Z, th[i,:])[:,np.newaxis] for i in range(th.shape[0])])
-mct = bc.MonteCarloFiniteTangentSpace(loglik, sampler, projection_dim)
-t_projection = time.process_time()-t0
+#create the log-likelihood eval function
+def loglike(idcs, J):
+  th = sampler(J)
+  return np.hstack([log_likelihood(Z[idcs, :], th[i,:])[:,np.newaxis] for i in range(J)])
 
 if not os.path.exists('results/'+dnm+'_posterior_samples.npz'):
   print('Running MCMC on the full dataset '+ dnm)
@@ -91,14 +89,14 @@ Fs = np.zeros(Ms.shape[0])
 
 print('Running coreset construction / MCMC for ' + dnm + ' ' + anm + ' ' + ID)
 t0 = time.process_time()
-alg = algdict[anm](mct)
+alg = bc.HilbertCoreset(loglike, Z.shape[0], projection_dim, snnls = algdict[anm])
 t_setup = time.process_time() - t0
 t_alg = 0.
 for m in range(Ms.shape[0]):
   print('M = ' + str(Ms[m]) + ': coreset construction, '+ anm + ' ' + dnm + ' ' + ID)
   #this runs alg up to a level of M; on the next iteration, it will continue from where it left off
   t0 = time.process_time()
-  alg.build(Ms[m], Ms[m] if m == 0 else Ms[m] - Ms[m-1])
+  alg.build(Ms[m] if m == 0 else Ms[m] - Ms[m-1], Ms[m])
   t_alg += time.process_time()-t0
   wts, idcs = alg.weights()
 
@@ -113,7 +111,7 @@ for m in range(Ms.shape[0]):
   t_alg_mcmc = time.process_time()-t0    
 
   print('M = ' + str(Ms[m]) + ': CPU times')
-  cputs[m] = t_laplace + t_projection + t_setup + t_alg + t_alg_mcmc
+  cputs[m] = t_laplace + t_setup + t_alg + t_alg_mcmc
   print('M = ' + str(Ms[m]) + ': coreset sizes')
   csizes[m] = wts.shape[0]
   print('M = ' + str(Ms[m]) + ': F norms')
