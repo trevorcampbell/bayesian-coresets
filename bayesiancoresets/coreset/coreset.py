@@ -5,14 +5,10 @@ from .. import util
 from ..util.errors import NumericalPrecisionError
 
 class Coreset(object):
-  def __init__(self, N, auto_above_N = True, initial_wts_sz=1000, **kw):
-    #self.alg_name = '.'.join([b.__name__ for b in self.__class__.__bases__]) + '.' + self.__class__.__name__ + '-'+secrets.token_hex(3)
+  def __init__(self, initial_wts_sz=1000, **kw):
     self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.log = logging.LoggerAdapter(logging.getLogger(), {"id" : self.alg_name})
-    self.auto_above_N = auto_above_N
-    self.N = N
     self.reached_numeric_limit = False
-    #self._has_initialized_build = False
     self.nwts = 0
     #internal reps of wts and idcs
     self._wts = np.zeros(initial_wts_sz)
@@ -20,21 +16,13 @@ class Coreset(object):
     #outward facing views
     self.wts = self._wts[:self.nwts]
     self.idcs = self._idcs[:self.nwts]
-    #self.nitrs = 0
-
-  #def __del__(self):
-  #  n_removed = logging.getLogger().handlers[0].remove_all(self.alg_name)
-  #  if n_removed > 0:
-  #    self.log.warning('suppressed ' + str(n_removed) + ' warnings')
 
   def reset(self):
     #don't bother resetting wts, just set the nwts to 0
     self.nwts = 0
-    #self.nitrs = 0
     self.wts = self._wts[:self.nwts]
     self.idcs = self._idcs[:self.nwts]
     self.reached_numeric_limit = False
-    #self._has_initialized_build = False
 
   def size(self):
     return (self.wts > 0).sum()
@@ -69,7 +57,6 @@ class Coreset(object):
     #get difference, append, resizing if necessary
     idiff = np.setdiff1d(np.arange(__idcs.shape[0]), i2)
     while self.nwts + idiff.shape[0] > self._wts.shape[0]:
-      ##print('doubling')
       self._double_internal()
     self._idcs[self.nwts:self.nwts+idiff.shape[0]] = __idcs[idiff]
     self._wts[self.nwts:self.nwts+idiff.shape[0]] = __wts[idiff]
@@ -97,44 +84,21 @@ class Coreset(object):
   def error(self):
     raise NotImplementedError()
 
-  #build of desired size sz using at most n_itrs iterations
+  #build of desired size sz using at most itrs iterations
   #always returns a coreset of size <= sz
   def build(self, sz, itrs):
 
     if self.reached_numeric_limit:
-      self.log.warning('the numeric limit was already reached; returning. size = ' + str(self.size()) + ', error = ' +str(self.error()))
-      return
-
-    if self.N == 0:
-      self.log.warning('there are no data, returning.')
       return
 
     if sz < self.size():
       raise ValueError(self.alg_name+'.build(): requested coreset of size < the current size, but cannot shrink coresets; returning. Requested size = ' + str(sz) + ' current size = ' + str(self.size()))
 
-    #if we requested M >= N, just give all ones and return
-    if sz >= self.N and self.auto_above_N:
-      self.log.warning('reached a number of points >= the dataset size. Returning full weights. Requested size = ' + str(sz) + ' N = ' + str(self.N))
-      self._wts = np.ones(self.N)
-      self._idcs = np.arange(self.N)
-      self.nwts = self.N
-      #create views
-      self._refresh_views()
-      self.reached_numeric_limit = True
-      return
-
-    ##initialize optimization
-    #init_itrs = 0
-    #if not self._has_initialized_build:
-    #  self._initialize_build(sz)
-    #  self._has_initialized_build = True
-
-    self._build(sz, itrs)
+    self._build(itrs, sz)
 
     #if we reached numeric limit during the current build, warn
     if self.reached_numeric_limit:
       self.log.warning('the numeric limit has been reached. No more points will be added. size = ' + str(self.size()) + ', error = ' +str(self.error()))
-    #done
 
   #can run after building coreset to re-solve only the weight opt, not the combinatorial selection problem
   def optimize(self):
@@ -156,10 +120,47 @@ class Coreset(object):
   def _optimize(self):
     raise NotImplementedError
 
-  ##runs once on first call to .build() but after __init__ (since it may add pt(s) to the coreset)
-  ##default do nothing + return no iterations done
-  #def _initialize_build(self, sz):
-  #  return 0
-
-  def _build(self, sz, itrs):
+  def _build(self, itrs, sz):
     raise NotImplementedError
+
+
+# from old tangent.py
+#  def optimal_scaling(self, w, idcs):
+#    xw = self.sum_w(w, idcs)
+#    xwn = np.sqrt((xw**2).sum())
+#    xs = self.sum()
+#    xsn = np.sqrt((xs**2).sum())
+#    if xwn == 0. or xsn == 0.:
+#      return 0.
+#    if xwn < util.TOL or xsn < util.TOL:
+#        self.log.warning('the norm of xs or xw is small; optimal scaling might be unstable. ||xs|| = ' + str(xsn) + ' ||xw|| = ' + str(xwn))
+#    return xsn/xwn*max(0., (xw/xwn).dot(xs/xsn))
+#
+#  def kl_grad(self, grad_idcs = None):
+#    r = self.residual(self.wref, self.idcsref)
+#    if grad_idcs is None:
+#      return -self[:].dot(r)/self.d
+#    else:
+#      return -self[grad_idcs].dot(r)/self.d
+#
+#  #(not actually correlations, proportional to them; good enough)
+#  def kl_residual_correlations(self):
+#    return -self.kl_grad()/self.norms()
+#
+#  def kl_quadratic_expansion(self, exp_idcs=None):
+#    r = self.residual(self.wref, self.idcsref)
+#    if exp_idcs is None:
+#      D = -self[:].dot(r)/self.d
+#      H = (self[:]).dot(self[:].T) / self.d
+#      Hn = (self[:]*r).dot(self[:].T) / self.d
+#    else:
+#      D = -self[exp_idcs].dot(r)/self.d
+#      H = (self[exp_idcs]).dot(self[exp_idcs].T) / self.d
+#      Hn = (self[exp_idcs]*r).dot(self[exp_idcs].T) / self.d
+#    eta = 1.
+#    c = util.TOL*np.eye(H.shape[0])
+#    while( np.any(np.linalg.eigvalsh(H-eta*Hn+c) < 0)):
+#      eta /= 2.
+#    return D, H-eta*Hn+c
+
+
