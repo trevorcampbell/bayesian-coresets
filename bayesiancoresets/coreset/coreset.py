@@ -42,7 +42,7 @@ class Coreset(object):
     self._refresh_views()
 
   #overwrite any wts at __idcs (keeping old values if unmodified), append any new ones
-  def _update(self, __idcs, __wts):
+  def _update(self, __wts, __idcs):
     __idcs = np.atleast_1d(__idcs)
     __wts = np.atleast_1d(__wts)
     if __idcs.shape[0] != __wts.shape[0]:
@@ -66,7 +66,7 @@ class Coreset(object):
     self._refresh_views()
 
   #completely overwrite; forget any previous weight settings
-  def _overwrite(self, __idcs, __wts):
+  def _overwrite(self, __wts, __idcs):
     __idcs = np.atleast_1d(__idcs)
     __wts = np.atleast_1d(__wts)
     if __idcs.shape[0] != __wts.shape[0]:
@@ -113,7 +113,7 @@ class Coreset(object):
                                         If the two errors are very close, try running bc.util.tolerance(tol) with tol > current tol = ' + str(util.TOL) + ' before running')
     except NumericalPrecisionError as e:
       self.log.warning(e)
-      self._overwrite(old_idcs, old_wts)
+      self._overwrite(old_wts, old_idcs)
       self.reached_numeric_limit = True
       return
 
