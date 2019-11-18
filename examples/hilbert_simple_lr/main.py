@@ -72,14 +72,9 @@ sampler = lambda sz : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 ##########################################################################
 ##########################################################################
 
-
-print('Projecting the tangent space...')
-
-projection_dim = 500 #random projection dimension
-#the below calculates a matrix N x S of log likelihoods for N datapoints and S samples from sampler
-loglik = lambda th : np.hstack( [log_likelihood(Z, th[i,:])[:,np.newaxis] for i in range(th.shape[0])])
-mct = bc.MonteCarloFiniteTangentSpace(loglik, sampler, projection_dim)
-
+def loglike(idcs, J):
+  th = sampler(J)
+  return np.hstack([log_likelihood(Z[idcs, :], th[i,:])[:,np.newaxis] for i in range(J)])
 
 ############################
 ############################
@@ -91,10 +86,11 @@ mct = bc.MonteCarloFiniteTangentSpace(loglik, sampler, projection_dim)
 print('Building the coreset...')
 
 #build the coreset
+projection_dim = 500 #random projection dimension
 M = 500 # use up to 500 datapoints (run 500 itrs)
-giga = bc.GIGACoreset(mct) #do coreset construction using the discretized log-likelihood functions
-giga.build(M, M) #build the coreset to size M with at most M iterations
-wts, idcs = giga.weights() #get the output weights
+coreset = bc.HilbertCoreset(loglike, Z.shape[0], projection_dim) #do coreset construction using the discretized log-likelihood functions
+coreset.build(M, M) #build the coreset to size M with at most M iterations
+wts, idcs = coreset.weights() #get the output weights
 print('weights:')
 print(wts)
 print('idcs:')
@@ -108,7 +104,6 @@ print(idcs)
 ##############################
 
 #Normally at this point we'd run posterior inference on the coreset
-
 #But for this (illustrative) example we will evaluate quality via Laplace posterior approx
 
 print('Evaluating coreset quality...')

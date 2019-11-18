@@ -10,12 +10,21 @@ class HilbertCoreset(Coreset):
     self.snnls = snnls(vecs.T, vecs.sum(axis=0))
     super().__init__()
 
+  def reset(self):
+    self.snnls.reset()
+    super().reset()
+
   def _build(self, itrs, sz):
+    if self.snnls.size()+itrs > sz:
+      raise ValueError(self.alg_name + '._build(): # itrs + current size cannot exceed total desired size sz. # itr = ' + str(itrs) + ' cur sz: ' + str(self.snnls.size()) + ' desired sz: ' + str(sz))
     self.snnls.build(itrs)
-    self._overwrite(*self.snnls.weights())
+    w = self.snnls.weights()
+    self._overwrite(w[w>0], np.where(w>0)[0])
 
   def _optimize(self):
     self.snnls.optimize()
+    w = self.snnls.weights()
+    self._overwrite(w[w>0], np.where(w>0)[0])
 
   def error(self):
     return self.snnls.error()

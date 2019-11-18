@@ -24,7 +24,7 @@ class FrankWolfe(SparseNNLS):
     else:
       nsum = self.Anorms.sum()
       nf = self.Anorms[f]
-      xw = self.A.dot(w)
+      xw = self.A.dot(self.w)
       xf = self.A[:, f]
 
       gammanum = (nsum/nf*xf - xw).dot(self.b-xw)

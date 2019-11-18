@@ -41,20 +41,19 @@ class SparseNNLS(object):
     for i in range(itrs):
       try:
         #keep a record of previous setting in case the below update fails
-        if self.check_error_monotone and self.size() > 0:
+        size_nonzero = self.size() > 0 #create a flag here, since ._reweight(f) will change this
+        if self.check_error_monotone and size_nonzero:
           prev_error = self.error()
           prev_w = self.w.copy()
     
         #search for the next best point
         f = self._select()
-        if not isinstance(f, np.integer) or f < 0:
-          raise ValueError(self.alg_name+'._step(): _select() must return a nonnegative integer. type = ' + str(type(f)) + ' val = ' + str(f))
 
         #compute and update new weights
         self._reweight(f) 
 
         #check to make sure our error didn't increase (only if we have run at least 1 itr, since most algs have a setup step on the 1st itr)
-        if self.check_error_monotone and self.size() > 0:
+        if self.check_error_monotone and size_nonzero:
           error = self.error()
           if error > prev_error: 
             #revert

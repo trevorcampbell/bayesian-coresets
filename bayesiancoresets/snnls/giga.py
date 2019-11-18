@@ -56,7 +56,7 @@ class GIGA(SparseNNLS):
     
     x = a*xw + b*xf
     nx = np.sqrt((x**2).sum())
-    scale = ns/nx*(x/nx).dot(self.bn)
+    scale = self.bnorm/nx*(x/nx).dot(self.bn)
     
     alpha = a*scale
     beta = b*scale
