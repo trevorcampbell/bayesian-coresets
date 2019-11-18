@@ -42,47 +42,51 @@ xSiginv = x.dot(Siginv)
 xSiginvx = (xSiginv*x).sum(axis=1)
 logdetSig = np.linalg.slogdet(Sig)[1]
 
+#create the log_likelihood function
 log_likelihood = lambda samples : gaussian.gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples)
 
-#create tangent space for well-tuned Hilbert coreset alg
-T_true = bc.MonteCarloFiniteTangentSpace(log_likelihood, lambda sz : np.random.multivariate_normal(mup, Sigp, sz), proj_dim)
+#create the sampler for the "optimally-tuned" Hilbert coreset
+sampler_optimal = lambda n : np.random.multivariate_normal(mup, Sigp, n)
 
-#create tangent space for poorly-tuned Hilbert coreset alg
+#create the sampler for the "realistically-tuned" Hilbert coreset
 U = np.random.rand()
 muhat = U*mup + (1.-U)*mu0
 Sighat = U*Sigp + (1.-U)*Sig0
 #now corrupt the smoothed pihat
 muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
 Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
-T_noisy = bc.MonteCarloFiniteTangentSpace(log_likelihood, lambda sz : np.random.multivariate_normal(muhat, Sighat, sz), proj_dim)
 
-#create exact tangent space factory for Riemann coresets
-def tangent_space_factory(wts, idcs):
+sampler_realistic = lambda n : np.random.multivariate_normal(muhat, Sighat, n)
+
+#create the sampler for the weighted posterior
+def sampler_w(n, w, idcs):
   w = np.zeros(x.shape[0])
   w[idcs] = wts
   muw, Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w)
-  nu = (x - muw).dot(SigLInv.T)
-  Psi = np.dot(SigLInv, np.dot(Sigw, SigLInv.T))
+  return np.random.multivariate_normal(muw, Sigw, n)
 
-  nu = np.hstack((nu.dot(np.linalg.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
+##create exact tangent space factory for Riemann coresets
+#def tangent_space_factory(wts, idcs):
+#  w = np.zeros(x.shape[0])
+#  w[idcs] = wts
+#  muw, Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w)
+#  nu = (x - muw).dot(SigLInv.T)
+#  Psi = np.dot(SigLInv, np.dot(Sigw, SigLInv.T))
+#
+#  nu = np.hstack((nu.dot(np.linalg.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
+#  
+#  return bc.FixedFiniteTangentSpace(nu, wts, idcs)
   
-  return bc.FixedFiniteTangentSpace(nu, wts, idcs)
-  
-def nulltsf(wts, idcs):
-  return bc.FixedFiniteTangentSpace(np.zeros((x.shape[0], 2)), wts, idcs)
- 
- 
+
 #create coreset construction objects
-riemann_one = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=True)
-riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=False)
-giga_true = bc.GIGACoreset(T_true)
-giga_noisy = bc.GIGACoreset(T_noisy)
-unif = bc.UniformSamplingKLCoreset(x.shape[0], nulltsf)
+sparsevi = bc.SparseVICoreset(log_likelihood, sampler_w, proj_dim, opt_itrs)
+giga_optimal = bc.HilbertCoreset(log_likelihood, sampler_optimal, proj_dim)
+giga_realistic = bc.HilbertCoreset(log_likelihood, sampler_realistic, proj_dim)
+unif = bc.UniformSamplingCoreset(x.shape[0])
 
-algs = {'SVI1': riemann_one, 
-        'SVIF': riemann_full, 
-        'GIGAT': giga_true, 
-        'GIGAN': giga_noisy, 
+algs = {'SVI': sparsevi, 
+        'GIGAO': giga_optimal, 
+        'GIGAR': giga_realistic, 
         'RAND': unif}
 alg = algs[nm]
 
@@ -90,7 +94,7 @@ w = np.zeros((M+1, x.shape[0]))
 for m in range(1, M+1):
   print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 
-  alg.build(m, 1)
+  alg.build(1, m)
   #store weights
   wts, idcs = alg.weights()
   w[m, idcs] = wts
