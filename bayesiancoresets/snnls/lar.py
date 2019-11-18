@@ -1,11 +1,9 @@
-
-
 import numpy as np
 from ..base.iterative import IterativeCoreset
 from scipy.optimize import lsq_linear
 
-#TODO: fix for new riemann repo structure
-class LARCoreset(IterativeCoreset):
+#TODO: fix for new repo structure
+class LAR(IterativeCoreset):
 
   def __init__(self, x, use_cached_xw=False):
     raise NotImplementedError('LAR has not been updated to the new API yet.')
