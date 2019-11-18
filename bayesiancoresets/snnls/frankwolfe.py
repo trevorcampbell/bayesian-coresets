@@ -16,6 +16,9 @@ class FrankWolfe(SparseNNLS):
     residual = self.b - self.A.dot(self.w)
     return (self.An.T.dot(residual)).argmax()
 
+  def _reweight(self, f):
+    a, b = self._step_coeffs(f)
+
   def _step_coeffs(self, f):
     #special case if this is the first point to add (places iterate on constraint polytope)
     if self.size() == 0:

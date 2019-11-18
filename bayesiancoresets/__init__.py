@@ -1,3 +1,3 @@
-from .coreset import FrankWolfeCoreset, GIGACoreset, MatchingPursuitCoreset, ForwardStagewiseCoreset, OrthoPursuitCoreset, ImportanceSamplingHilbertCoreset, UniformSamplingHilbertCoreset
+from .coreset import HilbertCoreset
 
 

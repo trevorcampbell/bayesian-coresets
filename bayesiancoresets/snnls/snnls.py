@@ -9,7 +9,6 @@ class SparseNNLS(object):
   def __init__(self, A, b, check_error_monotone = True):
     self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.log = logging.LoggerAdapter(logging.getLogger(), {"id" : self.alg_name})
-    self.auto_above_N = auto_above_N
     self.A = A
     self.b = b
     self.reached_numeric_limit = False
@@ -104,5 +103,5 @@ class SparseNNLS(object):
   def _select(self):
     raise NotImplementedError
 
-  def _reweight(self):
+  def _reweight(self, f):
     raise NotImplementedError

@@ -86,7 +86,7 @@ class Coreset(object):
 
   #build of desired size sz using at most itrs iterations
   #always returns a coreset of size <= sz
-  def build(self, sz, itrs):
+  def build(self, itrs, sz):
 
     if self.reached_numeric_limit:
       return

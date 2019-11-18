@@ -1,14 +1,16 @@
 import numpy as np
 from ..util.errors import NumericalPrecisionError
 from ..snnls.giga import GIGA
+from .coreset import Coreset
 
 class HilbertCoreset(Coreset):
   def __init__(self, loglike, N, J, snnls = GIGA):
     vecs = loglike(np.arange(N), J)
     vecs -= vecs.mean(axis=1)[:, np.newaxis]
     self.snnls = snnls(vecs.T, vecs.sum(axis=0))
+    super().__init__()
 
-  def _build(self, itrs, sz = None):
+  def _build(self, itrs, sz):
     self.snnls.build(itrs)
     self._overwrite(*self.snnls.weights())
 
