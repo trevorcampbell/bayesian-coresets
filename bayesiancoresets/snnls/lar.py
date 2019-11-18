@@ -1,21 +1,33 @@
 import numpy as np
-from ..base.iterative import IterativeCoreset
-from scipy.optimize import lsq_linear
+from scipy.optimize import nnls
+from ..util.errors import NumericalPrecisionError
+from .snnls import SparseNNLS
 
-#TODO: fix for new repo structure
-class LAR(IterativeCoreset):
+class LAR(SparseNNLS):
 
-  def __init__(self, x, use_cached_xw=False):
-    raise NotImplementedError('LAR has not been updated to the new API yet.')
-    super().__init__(x=x, use_cached_xw=use_cached_xw, N=x.shape[0])
+  def __init__(self, A, b):
+    super().__init__(A, b)
+    self.active_idcs = np.zeros(self.w.shape[0], dtype=np.bool)
+    self.active_idcs[self._select()] = True
 
-  def _xw_unscaled(self):
-    return False
+    Anorms = np.sqrt((self.A**2).sum(axis=0))
+    if np.any( Anorms == 0):
+      raise ValueError(self.alg_name+'.__init__(): A must not have any 0 columns')
+    self.An = self.A / Anorms
 
-  def _prebuild(self):
-    self.active_idcs = np.zeros(self.wts.shape[0], dtype=np.bool)
-    self.active_idcs[self._search()] = True
-  
+    self.bnorm = np.sqrt(((self.b)**2).sum())
+    if self.bnorm == 0.:
+      raise NumericalPrecisionError('norm of b must be > 0')
+    self.bn = self.b / self.bnorm
+
+  def reset(self):
+    super().reset()
+    self.active_idcs = np.zeros(self.w.shape[0], dtype=np.bool)
+    self.active_idcs[self._select()] = True
+
+  def _search(self):
+    return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()
+
   def _step(self):
     #do least squares on active set
     X = self.x[self.active_idcs, :]
@@ -78,8 +90,5 @@ class LAR(IterativeCoreset):
         self.xw = self.wts.dot(self.x)
 
     return True
-
-  def _search(self):
-    return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()
 
 

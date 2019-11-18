@@ -40,43 +40,14 @@ class GIGA(SparseNNLS):
  
   def _step_coeffs(self, f):
 
-    #TODO fix this
-
     xw = self.A.dot(self.w)
-    nw = np.sqrt(((xw)**2).sum())
+    nw = np.sqrt((xw**2).sum())
     nw = 1. if nw == 0. else nw
-    xw /= nw
-
     xf = self.A[:, f]
     nf = np.sqrt((xf**2).sum())
-    xf /= nf
 
-    gA = self.bn.dot(xf) - self.bn.dot(xw) * xw.dot(xf)
-    gB = self.bn.dot(xw) - self.bn.dot(xf) * xw.dot(xf)
-    if gA <= 0. or gB < 0:
-      raise NumericalPrecisionError
-
-    a = gB/(gA+gB)
-    b = gA/(gA+gB)
-    
-    x = a*xw + b*xf
-    nx = np.sqrt((x**2).sum())
-    scale = self.bnorm/nx*(x/nx).dot(xs/ns)
-    
-    return a*scale, b*scale
-
-
-    xw = self.T.sum_w(self.wts, self.idcs)
-    nw = self.T.sum_w_norm(self.wts, self.idcs)
-    xs = self.T.sum()
-    ns = self.T.sum_norm()
-    xf = self.T[f]
-    nf = self.T.norms()[f]
-
-    nw = 1. if nw == 0. else nw
-
-    gA = (xs/ns).dot((xf/nf)) - (xs/ns).dot((xw/nw)) * (xw/nw).dot((xf/nf))
-    gB = (xs/ns).dot((xw/nw)) - (xs/ns).dot((xf/nf)) * (xw/nw).dot((xf/nf))
+    gA = self.bn.dot((xf/nf)) - self.bn.dot((xw/nw)) * (xw/nw).dot((xf/nf))
+    gB = self.bn.dot((xw/nw)) - self.bn.dot((xf/nf)) * (xw/nw).dot((xf/nf))
     if gA <= 0. or gB < 0:
       raise NumericalPrecisionError
 
@@ -85,7 +56,7 @@ class GIGA(SparseNNLS):
     
     x = a*xw + b*xf
     nx = np.sqrt((x**2).sum())
-    scale = ns/nx*(x/nx).dot(xs/ns)
+    scale = ns/nx*(x/nx).dot(self.bn)
     
     return a*scale, b*scale
 
