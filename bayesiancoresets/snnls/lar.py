@@ -6,9 +6,11 @@ from .snnls import SparseNNLS
 class LAR(SparseNNLS):
 
   def __init__(self, A, b):
+    raise NotImplementedError
     super().__init__(A, b)
     self.active_idcs = np.zeros(self.w.shape[0], dtype=np.bool)
-    self.active_idcs[self._select()] = True
+    residual = self.b - self.A.dot(self.w)
+    self.active_idcs[(self.An.T.dot(residual)).argmax()] = True
 
     Anorms = np.sqrt((self.A**2).sum(axis=0))
     if np.any( Anorms == 0):
@@ -23,34 +25,26 @@ class LAR(SparseNNLS):
   def reset(self):
     super().reset()
     self.active_idcs = np.zeros(self.w.shape[0], dtype=np.bool)
-    self.active_idcs[self._select()] = True
+    residual = self.b - self.A.dot(self.w)
+    self.active_idcs[(self.An.T.dot(residual)).argmax()] = True
 
-  def _search(self):
-    return (((self.snorm*self.xs - self.xw)*self.x).sum(axis=1)).argmax()
-
-  def _step(self):
+  def select(self):
     #do least squares on active set
-    X = self.x[self.active_idcs, :]
-    res = lsq_linear(X.T, self.snorm*self.xs, max_iter=max(1000, 10*self.xs.shape[0]))
+    res = nnls(self.A[:, self.active_idcs].T, self.b, maxiter=100*self.A.shape[1])
 
-    #if the optimizer failed or our cost increased, stop
-    prev_cost = self.error()
-    if not res.success or np.sqrt(2.*res.cost) >= prev_cost:
-      self.reached_numeric_limit = True
-      return False
-  
-    x_opt = res.x.dot(X)
-    w_opt = np.zeros(self.wts.shape[0])
-    w_opt[self.active_idcs] = res.x
-    sdir = x_opt - self.xw
+    x_opt = self.A.dot(res[0])
+    w_opt = np.zeros(self.w.shape[0])
+    w_opt[self.active_idcs] = res[0]
+    xw = self.A.dot(self.w)
+    sdir = x_opt - xw
     sdir /= np.sqrt((sdir**2).sum())
 
     #do line search towards x_opt
 
     #find earliest gamma for which a variable joins the active set
     #anywhere gamma_denom = 0 or gamma < 0, the variable never enters the active set 
-    gamma_nums = (sdir - self.x).dot(self.snorm*self.xs - self.xw)
-    gamma_denoms = (sdir - self.x).dot(x_opt - self.xw)
+    gamma_nums = (sdir - self.x).dot(self.b - xw)
+    gamma_denoms = (sdir - self.x).dot(x_opt - xw)
     good_idcs = np.logical_not(np.logical_or(gamma_denoms == 0, gamma_nums*gamma_denoms < 0))
     gammas = np.inf*np.ones(gamma_nums.shape[0])
     gammas[good_idcs] = gamma_nums[good_idcs]/gamma_denoms[good_idcs]
@@ -66,6 +60,8 @@ class LAR(SparseNNLS):
     f_leave_active = gammas.argmin()
     gamma_leave_active = gammas[f_leave_active]
 
+
+  def _reweight(self):
     if gamma_leave_active >= 1. and gamma_least_angle >= 1.:
       #no variable leaves active set, and no variable becomes more aligned; we are done
       self.xw = x_opt
