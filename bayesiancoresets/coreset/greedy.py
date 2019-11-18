@@ -1,24 +1,37 @@
 import numpy as np
-from ..base.incremental import IncrementalCoreset
+from ..util.errors import NumericalPrecisionError
 from ..util.opt import nn_opt
-from .kl import KLCoreset
+from .coreset import Coreset
 
-class SparseVICoreset(KLCoreset,IncrementalCoreset):
-
-  def __init__(self, N, tangent_space_factory, step_sched = lambda i : 1./(1.+i), opt_itrs=1000, update_single = True):
-    super().__init__(N=N) 
-    self.tsf = tangent_space_factory
-    self.update_single = update_single
+class SparseVICoreset(Coreset):
+  def __init__(self, loglike, sampler, proj_dim, opt_itrs, step_sched = lambda i : 1./(1.+i), update_single = False, **kw):
+    self.loglike = loglike
+    self.sampler = sampler
+    self.proj_dim = proj_dim
     self.step_sched = step_sched
     self.opt_itrs = opt_itrs
+    self.update_single = update_single
+    super().__init__(**kw)
+
+  def _build(self, itrs, sz):
+    if self.size()+itrs > sz:
+      raise ValueError(self.alg_name + '._build(): # itrs + current size cannot exceed total desired size sz. # itr = ' + str(itrs) + ' cur sz: ' + str(self.size()) + ' desired sz: ' + str(sz))
+    for i in range(itrs):
+      #search for the next best point
+      f = self._select()
+      #compute and update new weights
+      self._reweight(f) 
 
   def _select(self):
     #construct a new tangent space for this search iteration
-    T = self.tsf(self.wts, self.idcs)
+    prms = sampler(self.proj_dim, self.wts, self.idcs)
+    vecs = loglike(prms)
+    vecs -= vecs.mean(axis=1)[:, np.newaxis]
     #compute the correlations
-    corrs = T.kl_residual_correlations()
-    #for any in the active set, just look at corr mag
-    corrs[self.idcs] = np.fabs(corrs[self.idcs]) 
+    resid = vecs.sum(axis=0) - self.wts.dot(vecs[self.idcs, :])
+    corrs = (vecs*resid).sum(axis=1) / np.sqrt((vecs**2).sum(axis=1)) #up to a constant; good enough for argmax
+    #for any in the active set, just look at magnitude
+    corrs[self.idcs] = np.fabs(corrs[self.idcs])
     return np.argmax(corrs)
 
   def _reweight(self, f):
@@ -35,8 +48,14 @@ class SparseVICoreset(KLCoreset,IncrementalCoreset):
       #since below uses nn_opt, will parametrize beta w + alpha 1_n with w[fidx] = 0
       x0 = np.array([1., self.wts[fidx]]) #scale, amt of new wt
       def grd(ab):
-        T = self.tsf(ab[0]*wtmp + ab[1]*onef, self.idcs)
-        g = T.kl_grad(grad_idcs=self.idcs)
+        #construct the tangent space
+        prms = sampler(self.proj_dim, ab[0]*wtmp + ab[1]*onef, self.idcs)
+        vecs = loglike(prms)
+        vecs -= vecs.mean(axis=1)[:, np.newaxis]
+        #compute residual
+        resid = vecs.sum(axis=0) - self.wts.dot(vecs[self.idcs, :])
+        #output gradient of weights at idcs
+        g = -(resid*vecs[self.idcs, :]).sum(axis=1) / vecs.shape[1]
         ga = wtmp.dot(g)
         gb = g[fidx]
         return np.array([ga, gb])
@@ -45,10 +64,32 @@ class SparseVICoreset(KLCoreset,IncrementalCoreset):
     else:
       x0 = self.wts
       def grd(w):
-        T = self.tsf(w, self.idcs)
-        g = T.kl_grad(grad_idcs=self.idcs)
-        return g
+        #construct the tangent space
+        prms = sampler(self.proj_dim, w, self.idcs)
+        vecs = loglike(prms)
+        vecs -= vecs.mean(axis=1)[:, np.newaxis]
+        #compute residual
+        resid = vecs.sum(axis=0) - self.wts.dot(vecs[self.idcs, :])
+        #output gradient of weights at idcs
+        return -(resid*vecs[self.idcs, :]).sum(axis=1) / vecs.shape[1]
       x = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched)
       self._update(self.idcs, x)
     return
+
+  def _optimize(self):
+    x0 = self.wts
+    def grd(w):
+      #construct the tangent space
+      prms = sampler(self.proj_dim, w, self.idcs)
+      vecs = loglike(prms)
+      vecs -= vecs.mean(axis=1)[:, np.newaxis]
+      #compute residual
+      resid = vecs.sum(axis=0) - self.wts.dot(vecs[self.idcs, :])
+      #output gradient of weights at idcs
+      return -(resid*vecs[self.idcs, :]).sum(axis=1) / vecs.shape[1]
+    x = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched)
+    self._update(self.idcs, x)
+
+  def error(self):
+    return 0. #TODO: implement KL estimate
 

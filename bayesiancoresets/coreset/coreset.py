@@ -5,7 +5,7 @@ from .. import util
 from ..util.errors import NumericalPrecisionError
 
 class Coreset(object):
-  def __init__(self, initial_wts_sz=1000, **kw):
+  def __init__(self, initial_wts_sz=1000):
     self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.log = logging.LoggerAdapter(logging.getLogger(), {"id" : self.alg_name})
     self.reached_numeric_limit = False
@@ -122,45 +122,3 @@ class Coreset(object):
 
   def _build(self, itrs, sz):
     raise NotImplementedError
-
-
-# from old tangent.py
-#  def optimal_scaling(self, w, idcs):
-#    xw = self.sum_w(w, idcs)
-#    xwn = np.sqrt((xw**2).sum())
-#    xs = self.sum()
-#    xsn = np.sqrt((xs**2).sum())
-#    if xwn == 0. or xsn == 0.:
-#      return 0.
-#    if xwn < util.TOL or xsn < util.TOL:
-#        self.log.warning('the norm of xs or xw is small; optimal scaling might be unstable. ||xs|| = ' + str(xsn) + ' ||xw|| = ' + str(xwn))
-#    return xsn/xwn*max(0., (xw/xwn).dot(xs/xsn))
-#
-#  def kl_grad(self, grad_idcs = None):
-#    r = self.residual(self.wref, self.idcsref)
-#    if grad_idcs is None:
-#      return -self[:].dot(r)/self.d
-#    else:
-#      return -self[grad_idcs].dot(r)/self.d
-#
-#  #(not actually correlations, proportional to them; good enough)
-#  def kl_residual_correlations(self):
-#    return -self.kl_grad()/self.norms()
-#
-#  def kl_quadratic_expansion(self, exp_idcs=None):
-#    r = self.residual(self.wref, self.idcsref)
-#    if exp_idcs is None:
-#      D = -self[:].dot(r)/self.d
-#      H = (self[:]).dot(self[:].T) / self.d
-#      Hn = (self[:]*r).dot(self[:].T) / self.d
-#    else:
-#      D = -self[exp_idcs].dot(r)/self.d
-#      H = (self[exp_idcs]).dot(self[exp_idcs].T) / self.d
-#      Hn = (self[exp_idcs]*r).dot(self[exp_idcs].T) / self.d
-#    eta = 1.
-#    c = util.TOL*np.eye(H.shape[0])
-#    while( np.any(np.linalg.eigvalsh(H-eta*Hn+c) < 0)):
-#      eta /= 2.
-#    return D, H-eta*Hn+c
-
-

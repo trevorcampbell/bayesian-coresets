@@ -4,11 +4,12 @@ from ..snnls.giga import GIGA
 from .coreset import Coreset
 
 class HilbertCoreset(Coreset):
-  def __init__(self, loglike, N, J, snnls = GIGA):
-    vecs = loglike(np.arange(N), J)
+  def __init__(self, loglike, sampler, proj_dim, snnls = GIGA, **kw):
+    prms = sampler(proj_dim)
+    vecs = loglike(prms)
     vecs -= vecs.mean(axis=1)[:, np.newaxis]
     self.snnls = snnls(vecs.T, vecs.sum(axis=0))
-    super().__init__()
+    super().__init__(**kw)
 
   def reset(self):
     self.snnls.reset()
