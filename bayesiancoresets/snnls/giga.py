@@ -38,7 +38,7 @@ class GIGA(SparseNNLS):
     #compute the scores and argmax
     return (scorends[:,0]/scorends[:,1]).argmax()
  
-  def _step_coeffs(self, f):
+  def _reweight(self, f):
 
     xw = self.A.dot(self.w)
     nw = np.sqrt((xw**2).sum())
@@ -58,7 +58,8 @@ class GIGA(SparseNNLS):
     nx = np.sqrt((x**2).sum())
     scale = ns/nx*(x/nx).dot(self.bn)
     
-    return a*scale, b*scale
-
-
-
+    alpha = a*scale
+    beta = b*scale
+     
+    self.w = alpha*self.w
+    self.w[f] = max(0., self.w[f]+beta)

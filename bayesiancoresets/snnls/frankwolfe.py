@@ -17,23 +17,27 @@ class FrankWolfe(SparseNNLS):
     return (self.An.T.dot(residual)).argmax()
 
   def _reweight(self, f):
-    a, b = self._step_coeffs(f)
-
-  def _step_coeffs(self, f):
-    #special case if this is the first point to add (places iterate on constraint polytope)
     if self.size() == 0:
-      return 0., self.Anorms.sum() / self.Anorms[f]
+      #special case if this is the first point to add (places iterate on constraint polytope)
+      alpha = 0.
+      beta = self.Anorms.sum() / self.Anorms[f]
+    else:
+      nsum = self.Anorms.sum()
+      nf = self.Anorms[f]
+      xw = self.A.dot(w)
+      xf = self.A[:, f]
 
-    nsum = self.Anorms.sum()
-    nf = self.Anorms[f]
-    xw = self.A.dot(w)
-    xf = self.A[:, f]
+      gammanum = (nsum/nf*xf - xw).dot(self.b-xw)
+      gammadenom = ((nsum/nf*xf-xw)**2).sum()
 
-    gammanum = (nsum/nf*xf - xw).dot(self.b-xw)
-    gammadenom = ((nsum/nf*xf-xw)**2).sum()
+      if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
+        raise NumericalPrecisionError('precision loss in gammanum/gammadenom: num = ' + str(gammanum) + ' denom = ' + str(gammadenom))
 
-    if gammanum < 0. or gammadenom == 0. or gammanum > gammadenom:
-      raise NumericalPrecisionError('precision loss in gammanum/gammadenom: num = ' + str(gammanum) + ' denom = ' + str(gammadenom))
-    return 1. - gammanum/gammadenom, nsum/nf*gammanum/gammadenom
+      alpha = 1. - gammanum/gammadenom
+      beta = nsum/nf*gammanum/gammadenom
+
+    self.w = alpha*self.w
+    self.w[f] = max(0., self.w[f]+beta)
+
   
 
