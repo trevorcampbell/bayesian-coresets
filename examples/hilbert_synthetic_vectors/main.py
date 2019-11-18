@@ -10,8 +10,8 @@ bc.util.set_verbosity('error')
 n_trials = 5
 Ms = np.unique(np.logspace(0., 4., 100, dtype=np.int32))
 
-anms = ['FW', 'GIGA', 'MP', 'FSW', 'OMP', 'IS', 'US']
-algs = [bc.FrankWolfeCoreset, bc.GIGACoreset, bc.MatchingPursuitCoreset, bc.ForwardStagewiseCoreset, bc.OrthoPursuitCoreset, bc.ImportanceSamplingHilbertCoreset, bc.UniformSamplingHilbertCoreset]
+anms = ['FW', 'GIGA', 'OMP', 'IS', 'US']
+algs = [bc.snnls.FrankWolfe, bc.snnls.GIGA, bc.snnls.OrthoPursuit, bc.snnls.ImportanceSampling, bc.snnls.UniformSampling]
 
 ##########################################
 ## Test 1: gaussian data
@@ -19,31 +19,35 @@ algs = [bc.FrankWolfeCoreset, bc.GIGACoreset, bc.MatchingPursuitCoreset, bc.Forw
 N = 10000
 D = 100
 
-
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 scaled_err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 csize = np.zeros((len(anms), n_trials, Ms.shape[0]))
 cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   X = np.random.randn(N, D)
-  T = bc.FixedFiniteTangentSpace(X)
-  XS = X.sum(axis=0)
+  
+  def loglike(idcs, samps):
+    return X[idcs, :samps]
+
   for aidx, anm in enumerate(anms):
     print('data: gauss, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm)
-    alg = algs[aidx](T)
+    alg = bc.HilbertCoreset(loglike, X.shape[0], X.shape[1], snnls = algs[aidx])
 
     for m, M in enumerate(Ms):
       t0 = time.time()
-      alg.build(M, Ms[m] if m == 0 else Ms[m] - Ms[m-1]) #build to size M 
+      alg.build(Ms[m] if m == 0 else Ms[m] - Ms[m-1]) #build to size M 
       tf = time.time()
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts, idcs = alg.weights()
-      err[aidx, tr, m] = np.sqrt((((wts[:, np.newaxis]*X[idcs,:]).sum(axis=0) - XS)**2).sum())
-      alpha = T.optimal_scaling(wts, idcs)
-      scaled_err[aidx, tr, m] = np.sqrt((((alpha*wts[:, np.newaxis]*X[idcs,:]).sum(axis=0) - XS)**2).sum())
       csize[aidx, tr, m] = (wts > 0).sum()
+      err[aidx, tr, m] = alg.error()
+      wts = wts.copy() 
+      idcs = idcs.copy()
+      alg.optimize()
+      opt_err[aidx, tr, m] = alg.error()
+      alg._overwrite(wts, idcs)
 
-np.savez_compressed('gauss_results.npz', err=err, csize=csize, cput=cput, scaled_err=scaled_err, Ms = Ms, anms=anms)
+np.savez_compressed('gauss_results.npz', err=err, csize=csize, cput=cput, opt_err=opt_err, Ms = Ms, anms=anms)
 
 ##########################################
 ## Test 2: axis-aligned data
@@ -53,8 +57,8 @@ N = 5000
 N = 100
 
 X = np.eye(N)
-XS = np.ones(N)
-T = bc.FixedFiniteTangentSpace(X)
+def loglike(idcs, samps):
+    return X[idcs, :samps]
 
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 scaled_err = np.zeros((len(anms), n_trials, Ms.shape[0]))
@@ -63,18 +67,21 @@ cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   for aidx, anm in enumerate(anms):
     print('data: axis, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm)
-    alg = algs[aidx](T)
+    alg = bc.HilbertCoreset(loglike, X.shape[0], X.shape[1], snnls = algs[aidx])
 
     for m, M in enumerate(Ms):
       t0 = time.time()
-      alg.build(M, Ms[m] if m == 0 else Ms[m] - Ms[m-1]) #build to size M 
+      alg.build(Ms[m] if m == 0 else Ms[m] - Ms[m-1]) #build to size M 
       tf = time.time()
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts, idcs = alg.weights()
-      err[aidx, tr, m] = np.sqrt((((wts[:, np.newaxis]*X[idcs, :]).sum(axis=0) - XS)**2).sum())
-      alpha = T.optimal_scaling(wts, idcs)
-      scaled_err[aidx, tr, m] = np.sqrt((((alpha*wts[:, np.newaxis]*X[idcs, :]).sum(axis=0) - XS)**2).sum())
-      csize[aidx, tr, m] = (wts>0).sum()
+      csize[aidx, tr, m] = (wts > 0).sum()
+      err[aidx, tr, m] = alg.error()
+      wts = wts.copy() 
+      idcs = idcs.copy()
+      alg.optimize()
+      opt_err[aidx, tr, m] = alg.error()
+      alg._overwrite(wts, idcs)
 
-np.savez_compressed('axis_results.npz', err=err, csize=csize, cput=cput, scaled_err=scaled_err, Ms = Ms, anms=anms)
+np.savez_compressed('axis_results.npz', err=err, csize=csize, cput=cput, opt_err=opt_err, Ms = Ms, anms=anms)
 

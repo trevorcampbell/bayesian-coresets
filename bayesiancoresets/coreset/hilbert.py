@@ -8,7 +8,7 @@ class HilbertCoreset(Coreset):
     vecs -= vecs.mean(axis=1)[:, np.newaxis]
     self.snnls = snnls(vecs.T, vecs.sum(axis=0))
 
-  def _build(self, itrs, sz):
+  def _build(self, itrs, sz = None):
     self.snnls.build(itrs)
     self._overwrite(*self.snnls.weights())
 
