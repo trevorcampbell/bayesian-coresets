@@ -72,7 +72,7 @@ cov = -np.linalg.inv(hess_log_joint(Z, mu))
 projection_dim = 500 #random projection dimension
 
 #we can call sampler(n) to take n  samples from the approximate posterior
-sampler = lambda sz : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
+sampler = lambda sz, w, ids : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 
 def loglike(prms):
   return np.hstack([log_likelihood(Z, prms[i,:])[:,np.newaxis] for i in range(prms.shape[0])])
