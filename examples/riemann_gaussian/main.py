@@ -58,28 +58,40 @@ Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
 
 sampler_realistic = lambda n : np.random.multivariate_normal(muhat, Sighat, n)
 
-#create the sampler for the weighted posterior
+############################
+###Random projections in SparseVI for gradient computation
+###the below is what you would do normally for a model where exact log-likelihood projection is unavailable
+##create the sampler for the weighted posterior
+#def sampler_w(n, wts, idcs):
+#  w = np.zeros(x.shape[0])
+#  w[idcs] = wts
+#  muw, Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w)
+#  return np.random.multivariate_normal(muw, Sigw, n)
+#log_likelihood_w = log_likelihood
+############################
+
+##############################
+###Exact projection in SparseVI for gradient computation
+#since for this model we can do the tangent space projection exactly,
+#the "sampler" in this case just outputs the exact weighted posterior parameters muw, Sigw
+#i.e. normally the sampler would output samples of pi_w; here it just outputs the exact representation of pi_w
 def sampler_w(n, wts, idcs):
   w = np.zeros(x.shape[0])
   w[idcs] = wts
   muw, Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w)
-  return np.random.multivariate_normal(muw, Sigw, n)
+  return muw, Sigw
 
-##create exact tangent space factory for Riemann coresets
-#def tangent_space_factory(wts, idcs):
-#  w = np.zeros(x.shape[0])
-#  w[idcs] = wts
-#  muw, Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w)
-#  nu = (x - muw).dot(SigLInv.T)
-#  Psi = np.dot(SigLInv, np.dot(Sigw, SigLInv.T))
-#
-#  nu = np.hstack((nu.dot(np.linalg.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
-#  
-#  return bc.FixedFiniteTangentSpace(nu, wts, idcs)
-  
+#the "log_likelihood_w" function outputs the exact finite-dimensional tangent space vectors using muw, Sigw
+def log_likelihood_w(prms):
+  muw, Sigw = prms
+  nu = (x - muw).dot(SigLInv.T)
+  Psi = np.dot(SigLInv, np.dot(Sigw, SigLInv.T))
+  nu = np.hstack((nu.dot(np.linalg.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
+  return nu
+##############################
 
 #create coreset construction objects
-sparsevi = bc.SparseVICoreset(log_likelihood, sampler_w, proj_dim, opt_itrs)
+sparsevi = bc.SparseVICoreset(log_likelihood_w, sampler_w, proj_dim, opt_itrs)
 giga_optimal = bc.HilbertCoreset(log_likelihood, sampler_optimal, proj_dim)
 giga_realistic = bc.HilbertCoreset(log_likelihood, sampler_realistic, proj_dim)
 unif = bc.UniformSamplingCoreset(x.shape[0])
