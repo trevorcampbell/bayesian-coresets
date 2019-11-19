@@ -64,6 +64,8 @@ sampler = lambda sz : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 def loglike(prms):
   return np.hstack([log_likelihood(Z, prms[i,:])[:,np.newaxis] for i in range(prms.shape[0])])
 
+tsf = bc.BayesianTangentSpaceFactory(loglike, sampler, projection_dim)
+
 if not os.path.exists('results/'+dnm+'_posterior_samples.npz'):
   print('Running MCMC on the full dataset '+ dnm)
   logpZ = lambda th : log_joint(Z, th, np.ones(Z.shape[0]))
@@ -88,7 +90,7 @@ Fs = np.zeros(Ms.shape[0])
 
 print('Running coreset construction / MCMC for ' + dnm + ' ' + anm + ' ' + ID)
 t0 = time.process_time()
-alg = bc.HilbertCoreset(loglike, sampler, projection_dim, snnls = algdict[anm])
+alg = bc.HilbertCoreset(tsf, snnls = algdict[anm])
 t_setup = time.process_time() - t0
 t_alg = 0.
 for m in range(Ms.shape[0]):

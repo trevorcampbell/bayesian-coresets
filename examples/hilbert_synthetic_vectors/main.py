@@ -26,17 +26,13 @@ cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   X = np.random.randn(N, D)
 
-  #create "sampler" (just returns idcs for X)
-  def sampler(n):
-    return np.arange(n)
-  
-  #create "log likelihood" (given indices for X, returns that column)
-  def loglike(prms):
-    return X[:, prms]
+  #create the tangent space factory (in this synthetic vectors example, it's just X)
+  def tsf_X():
+    return X
 
   for aidx, anm in enumerate(anms):
     print('data: gauss, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm)
-    alg = bc.HilbertCoreset(loglike, sampler, D, snnls = algs[aidx])
+    alg = bc.HilbertCoreset(tsf_X, snnls = algs[aidx])
 
     for m, M in enumerate(Ms):
       t0 = time.time()
@@ -58,13 +54,9 @@ N = 100
 
 X = np.eye(N)
 
-#create "sampler" (just returns idcs for X)
-def sampler(n):
-  return np.arange(n)
-
-#create "log likelihood" (given indices for X, returns that column)
-def loglike(prms):
-  return X[:, prms]
+#create the tangent space factory (in this synthetic vectors example, it's just X)
+def tsf_X():
+    return X
 
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 opt_err = np.zeros((len(anms), n_trials, Ms.shape[0]))
@@ -73,7 +65,7 @@ cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   for aidx, anm in enumerate(anms):
     print('data: axis, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm)
-    alg = bc.HilbertCoreset(loglike, sampler, N, snnls = algs[aidx])
+    alg = bc.HilbertCoreset(tsf_X, snnls = algs[aidx])
 
     for m, M in enumerate(Ms):
       t0 = time.time()

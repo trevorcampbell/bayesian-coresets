@@ -59,9 +59,6 @@ res = minimize(lambda mu : -log_joint(Z, mu, np.ones(Z.shape[0])), Z.mean(axis=0
 mu = res.x
 cov = -np.linalg.inv(hess_log_joint(Z, mu))
 
-#we can call sampler(n) to take n  samples from the approximate posterior
-sampler = lambda sz : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
-
 #you can replace this step with a lot of different things: e.g.
 # - choose a subset of data uniformly and weight uniformly, run MCMC
 # - same thing with var inf, INLA, SGLD, etc 
@@ -72,8 +69,15 @@ sampler = lambda sz : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 ##########################################################################
 ##########################################################################
 
+projection_dim = 500 #random projection dimension
+
+#we can call sampler(n) to take n  samples from the approximate posterior
+sampler = lambda sz : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
+
 def loglike(prms):
   return np.hstack([log_likelihood(Z, prms[i,:])[:,np.newaxis] for i in range(prms.shape[0])])
+
+tsf = bc.BayesianTangentSpaceFactory(loglike, sampler, projection_dim)
 
 ############################
 ############################
@@ -85,9 +89,8 @@ def loglike(prms):
 print('Building the coreset...')
 
 #build the coreset
-projection_dim = 500 #random projection dimension
 M = 500 # use up to 500 datapoints (run 500 itrs)
-coreset = bc.HilbertCoreset(loglike, sampler, projection_dim) #do coreset construction using the discretized log-likelihood functions
+coreset = bc.HilbertCoreset(tsf) #do coreset construction using the discretized log-likelihood functions
 coreset.build(M, M) #build the coreset to size M with at most M iterations
 wts, idcs = coreset.weights() #get the output weights
 print('weights:')

@@ -46,7 +46,8 @@ logdetSig = np.linalg.slogdet(Sig)[1]
 log_likelihood = lambda samples : gaussian.gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples)
 
 #create the sampler for the "optimally-tuned" Hilbert coreset
-sampler_optimal = lambda n : np.random.multivariate_normal(mup, Sigp, n)
+sampler_optimal = lambda n, w, ids : np.random.multivariate_normal(mup, Sigp, n)
+tsf_optimal = bc.BayesianTangentSpaceFactory(log_likelihood, sampler_optimal, proj_dim)
 
 #create the sampler for the "realistically-tuned" Hilbert coreset
 U = np.random.rand()
@@ -56,7 +57,8 @@ Sighat = U*Sigp + (1.-U)*Sig0
 muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
 Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
 
-sampler_realistic = lambda n : np.random.multivariate_normal(muhat, Sighat, n)
+sampler_realistic = lambda n, w, ids : np.random.multivariate_normal(muhat, Sighat, n)
+tsf_realistic = bc.BayesianTangentSpaceFactory(log_likelihood, sampler_realistic, proj_dim)
 
 ############################
 ###Random projections in SparseVI for gradient computation
@@ -68,36 +70,34 @@ sampler_realistic = lambda n : np.random.multivariate_normal(muhat, Sighat, n)
 #  muw, Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w)
 #  return np.random.multivariate_normal(muw, Sigw, n)
 #log_likelihood_w = log_likelihood
+#tsf_w = bc.BayesianTangentSpaceFactory(log_likelihood, sampler_w, proj_dim)
 ############################
 
 ##############################
 ###Exact projection in SparseVI for gradient computation
-#since for this model we can do the tangent space projection exactly,
-#the "sampler" in this case just outputs the exact weighted posterior parameters muw, Sigw
-#i.e. normally the sampler would output samples of pi_w; here it just outputs the exact representation of pi_w
-def sampler_w(n, wts, idcs):
+#for this model we can do the tangent space projection exactly
+def tsf_exact_w(w, ids):
   w = np.zeros(x.shape[0])
   w[idcs] = wts
   muw, Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w)
-  return muw, Sigw
-
-#the "log_likelihood_w" function outputs the exact finite-dimensional tangent space vectors using muw, Sigw
-def log_likelihood_w(prms):
-  muw, Sigw = prms
   nu = (x - muw).dot(SigLInv.T)
   Psi = np.dot(SigLInv, np.dot(Sigw, SigLInv.T))
   nu = np.hstack((nu.dot(np.linalg.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
   return nu
+
+tsf_exact_1 = lambda : tsf_exact_w(np.ones(x.shape[0]), np.arange(x.shape[0]))
 ##############################
 
 #create coreset construction objects
-sparsevi = bc.SparseVICoreset(log_likelihood_w, sampler_w, proj_dim, opt_itrs)
-giga_optimal = bc.HilbertCoreset(log_likelihood, sampler_optimal, proj_dim)
-giga_realistic = bc.HilbertCoreset(log_likelihood, sampler_realistic, proj_dim)
+sparsevi = bc.SparseVICoreset(tsf_w, opt_itrs)
+giga_optimal_exact = bc.HilbertCoreset(tsf_exact_1)
+giga_optimal_projected = bc.HilbertCoreset(tsf_optimal)
+giga_realistic = bc.HilbertCoreset(tsf_realistic)
 unif = bc.UniformSamplingCoreset(x.shape[0])
 
 algs = {'SVI': sparsevi, 
-        'GIGAO': giga_optimal, 
+        'GIGAOP': giga_optimal_projected, 
+        'GIGAOE': giga_optimal_exact, 
         'GIGAR': giga_realistic, 
         'RAND': unif}
 alg = algs[nm]

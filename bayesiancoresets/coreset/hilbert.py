@@ -4,10 +4,8 @@ from ..snnls.giga import GIGA
 from .coreset import Coreset
 
 class HilbertCoreset(Coreset):
-  def __init__(self, loglike, sampler, proj_dim, snnls = GIGA, **kw):
-    prms = sampler(proj_dim)
-    vecs = loglike(prms)
-    vecs -= vecs.mean(axis=1)[:, np.newaxis]
+  def __init__(self, tangent_space_factory, snnls = GIGA, **kw):
+    vecs = tangent_space_factory()
     self.snnls = snnls(vecs.T, vecs.sum(axis=0))
     super().__init__(**kw)
 
