@@ -29,7 +29,7 @@ class SparseVICoreset(Coreset):
     #TODO vecs -= vecs.mean(axis=1)[:, np.newaxis]
     #compute the correlations
     resid = vecs.sum(axis=0) - self.wts.dot(vecs[self.idcs, :])
-    corrs = (vecs*resid).sum(axis=1) / np.sqrt((vecs**2).sum(axis=1)) #up to a constant; good enough for argmax
+    corrs = (vecs*resid).sum(axis=1) / np.sqrt((vecs**2).sum(axis=1)) / vecs.shape[1] #up to a constant; good enough for argmax
     #for any in the active set, just look at magnitude
     corrs[self.idcs] = np.fabs(corrs[self.idcs])
     return np.argmax(corrs)
