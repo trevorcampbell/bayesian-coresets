@@ -59,7 +59,7 @@ else:
   t_laplace = lplc['t_laplace']
 
 #generate a sampler based on the laplace approx 
-sampler = lambda sz : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
+sampler = lambda sz, w, ids : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 #create the log-likelihood eval function
 def loglike(prms):
   return np.hstack([log_likelihood(Z, prms[i,:])[:,np.newaxis] for i in range(prms.shape[0])])
