@@ -76,7 +76,7 @@ tsf_realistic = bc.BayesianTangentSpaceFactory(log_likelihood, sampler_realistic
 ##############################
 ###Exact projection in SparseVI for gradient computation
 #for this model we can do the tangent space projection exactly
-def tsf_exact_w(w, ids):
+def tsf_exact_w(wts, idcs):
   w = np.zeros(x.shape[0])
   w[idcs] = wts
   muw, Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w)
@@ -89,7 +89,7 @@ tsf_exact_1 = lambda : tsf_exact_w(np.ones(x.shape[0]), np.arange(x.shape[0]))
 ##############################
 
 #create coreset construction objects
-sparsevi = bc.SparseVICoreset(tsf_w, opt_itrs)
+sparsevi = bc.SparseVICoreset(tsf_exact_w, opt_itrs)
 giga_optimal_exact = bc.HilbertCoreset(tsf_exact_1)
 giga_optimal_projected = bc.HilbertCoreset(tsf_optimal)
 giga_realistic = bc.HilbertCoreset(tsf_realistic)
