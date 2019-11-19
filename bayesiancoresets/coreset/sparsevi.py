@@ -53,7 +53,7 @@ class SparseVICoreset(Coreset):
         vecs = self.loglike(prms)
         #TODO vecs -= vecs.mean(axis=1)[:, np.newaxis]
         #compute residual
-        resid = vecs.sum(axis=0) - self.wts.dot(vecs[self.idcs, :])
+        resid = vecs.sum(axis=0) - w.dot(vecs[self.idcs, :])
         #output gradient of weights at idcs
         g = -(resid*vecs[self.idcs, :]).sum(axis=1) / vecs.shape[1]
         ga = wtmp.dot(g)
@@ -69,7 +69,7 @@ class SparseVICoreset(Coreset):
         vecs = self.loglike(prms)
         #TODO vecs -= vecs.mean(axis=1)[:, np.newaxis]
         #compute residual
-        resid = vecs.sum(axis=0) - self.wts.dot(vecs[self.idcs, :])
+        resid = vecs.sum(axis=0) - w.dot(vecs[self.idcs, :])
         #output gradient of weights at idcs
         return -(resid*vecs[self.idcs, :]).sum(axis=1) / vecs.shape[1]
       x = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched)
