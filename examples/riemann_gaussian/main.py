@@ -85,19 +85,16 @@ def tsf_exact_w(wts, idcs):
   nu = np.hstack((nu.dot(np.linalg.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
   return nu
 
-tsf_exact_1 = lambda : tsf_exact_w(np.ones(x.shape[0]), np.arange(x.shape[0]))
 ##############################
 
 #create coreset construction objects
 sparsevi = bc.SparseVICoreset(tsf_exact_w, opt_itrs)
-giga_optimal_exact = bc.HilbertCoreset(tsf_exact_1)
-giga_optimal_projected = bc.HilbertCoreset(tsf_optimal)
+giga_optimal = bc.HilbertCoreset(tsf_optimal)
 giga_realistic = bc.HilbertCoreset(tsf_realistic)
 unif = bc.UniformSamplingCoreset(x.shape[0])
 
 algs = {'SVI': sparsevi, 
-        'GIGAOP': giga_optimal_projected, 
-        'GIGAOE': giga_optimal_exact, 
+        'GIGAO': giga_optimal, 
         'GIGAR': giga_realistic, 
         'RAND': unif}
 alg = algs[nm]
