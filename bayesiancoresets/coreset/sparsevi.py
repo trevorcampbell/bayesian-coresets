@@ -26,7 +26,7 @@ class SparseVICoreset(Coreset):
     #construct a new tangent space for this search iteration
     prms = self.sampler(self.proj_dim, self.wts, self.idcs)
     vecs = self.loglike(prms)
-    vecs -= vecs.mean(axis=1)[:, np.newaxis]
+    #TODO vecs -= vecs.mean(axis=1)[:, np.newaxis]
     #compute the correlations
     resid = vecs.sum(axis=0) - self.wts.dot(vecs[self.idcs, :])
     corrs = (vecs*resid).sum(axis=1) / np.sqrt((vecs**2).sum(axis=1)) #up to a constant; good enough for argmax
@@ -51,7 +51,7 @@ class SparseVICoreset(Coreset):
         #construct the tangent space
         prms = self.sampler(self.proj_dim, ab[0]*wtmp + ab[1]*onef, self.idcs)
         vecs = self.loglike(prms)
-        vecs -= vecs.mean(axis=1)[:, np.newaxis]
+        #TODO vecs -= vecs.mean(axis=1)[:, np.newaxis]
         #compute residual
         resid = vecs.sum(axis=0) - self.wts.dot(vecs[self.idcs, :])
         #output gradient of weights at idcs
@@ -67,7 +67,7 @@ class SparseVICoreset(Coreset):
         #construct the tangent space
         prms = self.sampler(self.proj_dim, w, self.idcs)
         vecs = self.loglike(prms)
-        vecs -= vecs.mean(axis=1)[:, np.newaxis]
+        #TODO vecs -= vecs.mean(axis=1)[:, np.newaxis]
         #compute residual
         resid = vecs.sum(axis=0) - self.wts.dot(vecs[self.idcs, :])
         #output gradient of weights at idcs
@@ -82,7 +82,7 @@ class SparseVICoreset(Coreset):
       #construct the tangent space
       prms = self.sampler(self.proj_dim, w, self.idcs)
       vecs = self.loglike(prms)
-      vecs -= vecs.mean(axis=1)[:, np.newaxis]
+      #TODO vecs -= vecs.mean(axis=1)[:, np.newaxis]
       #compute residual
       resid = vecs.sum(axis=0) - self.wts.dot(vecs[self.idcs, :])
       #output gradient of weights at idcs
