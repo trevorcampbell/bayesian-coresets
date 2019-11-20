@@ -33,7 +33,7 @@ def get_laplace(wts, Z, mu0):
   return mu, Sig
 
 dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips / airportdelays
-alg = sys.argv[2] #should be hilbert / hilbert_corr / riemann / riemann_corr / uniform 
+alg = sys.argv[2] #should be GIGAO / GIGAR / RAND / PRIOR / SVI
 ID = sys.argv[3] #just a number to denote trial #, any nonnegative integer
 
 np.random.seed(int(ID))
@@ -129,9 +129,9 @@ giga_realistic = bc.HilbertCoreset(tsf_realistic)
 unif = bc.UniformSamplingCoreset(Z.shape[0])
 sparsevi = bc.SparseVICoreset(tsf_w, opt_itrs=opt_itrs, step_sched = learning_rate)
 
-algs = {'SVI': riemann_one, 
-        'GIGAO': giga_true, 
-        'GIGAR': giga_noisy, 
+algs = {'SVI': sparsevi, 
+        'GIGAO': giga_optimal, 
+        'GIGAR': giga_realistic, 
         'RAND': unif,
         'PRIOR': None}
 coreset = algs[alg]
