@@ -8,7 +8,7 @@ from plotting import *
 
 plot_reverse_kl = True
 trials = np.arange(1, 11)
-nms = [('SVIF', 'SparseVI'), ('GIGAT', 'GIGA (Optimal)'), ('GIGAN', 'GIGA (Realistic)'), ('RAND', 'Uniform')]
+nms = [('SVIF', 'SparseVI'), ('GIGAO', 'GIGA (Optimal)'), ('GIGAR', 'GIGA (Realistic)'), ('RAND', 'Uniform')]
 
 
 #plot the KL figure

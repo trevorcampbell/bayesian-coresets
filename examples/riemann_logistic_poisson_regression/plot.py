@@ -8,9 +8,8 @@ sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
 
 
-#algs = [('RAND', 'Uniform', pal[7]),  ('SVIF', 'SparseVI', pal[2]), ('QSVIF', 'Quadratic SparseVI', pal[4]), ('GIGAN','GIGA (Noisy)', pal[1]),('GIGAT','GIGA (Truth)', pal[0]), ('PRIOR','Prior', 'black')]
 dnames = ['synth_lr', 'ds1', 'phishing', 'synth_poiss', 'biketrips', 'airportdelays']
-algs = [('RAND', 'Uniform', pal[3]),  ('SVIF', 'SparseVI', pal[0]), ('GIGAN','GIGA (Noisy)', pal[2]),('GIGAT','GIGA (Truth)', pal[1]), ('PRIOR','Prior', 'black')]
+algs = [('RAND', 'Uniform', pal[3]),  ('SVI', 'SparseVI', pal[0]), ('GIGAR','GIGA (Realistic)', pal[2]),('GIGAO','GIGA (Optimal)', pal[1]), ('PRIOR','Prior', 'black')]
 
 figs = []
 for dnm in dnames:

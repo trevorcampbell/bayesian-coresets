@@ -98,9 +98,6 @@ pihat_noise = .75 #noise level (relative) for corrupting pihat
 opt_itrs = 500
 ###############################
 
-
-print('Building coresets via ' + alg)
-
 #get pihat via interpolation between prior/posterior + noise
 #uniformly smooth between prior and posterior
 U = np.random.rand()
@@ -110,40 +107,36 @@ Sighat = U*Sigp + (1.-U)*Sig0
 muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
 Sighat *= np.exp(-2.*pihat_noise*np.fabs(np.random.randn()))
 
-T_noisy = bc.MonteCarloFiniteTangentSpace(lambda th : log_likelihood_2d2d(Z, th), lambda sz : np.random.multivariate_normal(muhat, Sighat, sz), projection_dim)
-T_true = bc.MonteCarloFiniteTangentSpace(lambda th : log_likelihood_2d2d(Z, th), lambda sz : np.random.multivariate_normal(mup, Sigp, sz), projection_dim)
+print('Building tangent space factories')
+#build tangent spaces
+tsf_optimal = bc.BayesianTangentSpaceFactory(lambda th : log_likelihood_2d2d(Z, th), lambda sz, wts, idcs : np.random.multivariate_normal(mup, Sigp, sz), projection_dim)
+tsf_realistic = bc.BayesianTangentSpaceFactory(lambda th : log_likelihood_2d2d(Z, th), lambda sz, wts, idcs : np.random.multivariate_normal(muhat, Sighat, sz), projection_dim)
 
-def tangent_space_factory(wts, idcs):
+def sampler_w(sz, wts, idcs):
   if idcs.shape[0] > 0:
     w = np.zeros(Z.shape[0])
     w[idcs] = wts
     muw, Sigw = get_laplace(w, Z, mu0)
   else:
     muw, Sigw = mu0, Sig0
-  return bc.MonteCarloFiniteTangentSpace(lambda th : log_likelihood_2d2d(Z, th), lambda sz : np.random.multivariate_normal(muw, Sigw, sz), n_samples, wref=wts, idcsref=idcs)
+  return np.random.multivariate_normal(muw, Sigw, sz)
+tsf_w = bc.BayesianTangentSpaceFactory(lambda th : log_likelihood_2d2d(Z, th), sampler_w, projection_dim)
  
-def nulltsf(wts, idcs):
-  return bc.FixedFiniteTangentSpace(np.zeros((Z.shape[0], 2)), wts, idcs)
- 
+print('Creating coresets object')
 #create coreset construction objects
-giga_true = bc.GIGACoreset(T_true)
-giga_noisy = bc.GIGACoreset(T_noisy)
-unif = bc.UniformSamplingKLCoreset(Z.shape[0], nulltsf)
-riemann_one = bc.SparseVICoreset(Z.shape[0], tangent_space_factory, opt_itrs=opt_itrs, step_sched = learning_rate, update_single=True)
-riemann_full = bc.SparseVICoreset(Z.shape[0], tangent_space_factory, opt_itrs=opt_itrs, step_sched = learning_rate, update_single=False)
-quadratic_riemann_one = bc.QuadraticSparseVICoreset(Z.shape[0], tangent_space_factory, step_sched=learning_rate, update_single=True)
-quadratic_riemann_full = bc.QuadraticSparseVICoreset(Z.shape[0], tangent_space_factory, step_sched=learning_rate, update_single=False)
+giga_optimal = bc.HilbertCoreset(tsf_optimal)
+giga_realistic = bc.HilbertCoreset(tsf_realistic)
+unif = bc.UniformSamplingCoreset(Z.shape[0])
+sparsevi = bc.SparseVICoreset(tsf_w, opt_itrs=opt_itrs, step_sched = learning_rate)
 
-algs = {'SVI1': riemann_one, 
-        'SVIF': riemann_full, 
-        'QSVI1': quadratic_riemann_one, 
-        'QSVIF': quadratic_riemann_full, 
-        'GIGAT': giga_true, 
-        'GIGAN': giga_noisy, 
+algs = {'SVI': riemann_one, 
+        'GIGAO': giga_true, 
+        'GIGAR': giga_noisy, 
         'RAND': unif,
         'PRIOR': None}
 coreset = algs[alg]
 
+print('Building coresets via ' + alg)
 #build
 wts = np.zeros((M+1, Z.shape[0]))
 cputs = np.zeros(M+1)
@@ -151,7 +144,7 @@ t0 = time.perf_counter()
 for m in range(1, M+1):
   print(str(m)+'/'+str(M))
   if alg != 'PRIOR':
-    coreset.build(m, 1)
+    coreset.build(1, m)
 
     #record time and weights
     cputs[m] = time.perf_counter()-t0

@@ -88,7 +88,8 @@ log_likelihood = lambda samples : model_linreg.potentials(datastd**2, X, Y, samp
 
 #create tangent space for well-tuned Hilbert coreset alg
 print('Creating tuned tangent space for Hilbert coreset construction')
-T_true = bc.MonteCarloFiniteTangentSpace(log_likelihood, lambda sz : np.random.multivariate_normal(mup, Sigp, sz), proj_dim)
+sampler_optimal = lambda n, w, ids : np.random.multivariate_normal(mup, Sigp, n)
+tsf_optimal = bc.BayesianTangentSpaceFactory(log_likelihood, sampler_optimal, proj_dim)
 
 #create tangent space for poorly-tuned Hilbert coreset alg
 print('Creating untuned tangent space for Hilbert coreset construction')
@@ -98,10 +99,12 @@ Sighat = U*Sigp + (1.-U)*Sig0
 #now corrupt the smoothed pihat
 muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
 Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
-T_noisy = bc.MonteCarloFiniteTangentSpace(log_likelihood, lambda sz : np.random.multivariate_normal(muhat, Sighat, sz), proj_dim)
+
+sampler_realistic = lambda n, w, ids : np.random.multivariate_normal(muhat, Sighat, n)
+tsf_realistic = bc.BayesianTangentSpaceFactory(log_likelihood, sampler_realistic, proj_dim)
 
 #create exact tangent space factory for Riemann coresets
-def tangent_space_factory(wts, idcs):
+def tsf_exact_w(wts, idcs):
   w = np.zeros(X.shape[0])
   w[idcs] = wts
   muw, Sigw = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, X, Y, w)
@@ -116,24 +119,18 @@ def tangent_space_factory(wts, idcs):
   nu = np.hstack((dnu, 1./np.sqrt(2.)*nu**2))
   #none of the quartic terms
   #nu = dnu
-  return bc.FixedFiniteTangentSpace(nu, wts, idcs)
+  return nu
 
-def nulltsf(wts, idcs):
-  return bc.FixedFiniteTangentSpace(np.zeros((X.shape[0], 2)), wts, idcs)
-  
- 
 #create coreset construction objects
 print('Creating coreset construction objects')
-riemann_one = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=True)
-riemann_full = bc.SparseVICoreset(x.shape[0], tangent_space_factory, opt_itrs=opt_itrs, update_single=False)
-giga_true = bc.GIGACoreset(T_true)
-giga_noisy = bc.GIGACoreset(T_noisy)
-unif = bc.UniformSamplingKLCoreset(x.shape[0], nulltsf)
+sparsevi = bc.SparseVICoreset(tsf_exact_w, opt_itrs=opt_itrs)
+giga_optimal = bc.HilbertCoreset(tsf_optimal)
+giga_realistic = bc.HilbertCoreset(tsf_realistic)
+unif = bc.UniformSamplingCoreset(x.shape[0])
 
-algs = {'SVI1': riemann_one, 
-        'SVIF': riemann_full, 
-        'GIGAT': giga_true, 
-        'GIGAN': giga_noisy, 
+algs = {'SVI': sparsevi, 
+        'GIGAO': giga_optimal, 
+        'GIGAR': giga_realistic, 
         'RAND': unif}
 alg = algs[nm]
 
@@ -144,7 +141,7 @@ for m in range(1, M+1):
   print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 
 
-  alg.build(m, 1)
+  alg.build(1, m)
   #store weights
   wts, idcs = alg.weights()
   w[m, idcs] = wts

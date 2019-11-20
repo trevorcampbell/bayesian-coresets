@@ -10,7 +10,7 @@ from plotting import *
 size_x_axis = False
 trial_num = 1
 
-nm = ('SVIF', 'SparseVI')
+nm = ('SVI', 'SparseVI')
 Ms = [0, 1, 2, 5, 8, 12, 20, 50, 100, 150, 200]
 
 np.random.seed(5)
