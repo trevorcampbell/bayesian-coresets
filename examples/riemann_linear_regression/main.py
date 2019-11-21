@@ -128,9 +128,9 @@ giga_optimal = bc.HilbertCoreset(tsf_optimal)
 giga_realistic = bc.HilbertCoreset(tsf_realistic)
 unif = bc.UniformSamplingCoreset(x.shape[0])
 
-algs = {'SVI': sparsevi, 
-        'GIGAO': giga_optimal, 
-        'GIGAR': giga_realistic, 
+algs = {'SVIF': sparsevi, 
+        'GIGAT': giga_optimal, 
+        'GIGAN': giga_realistic, 
         'RAND': unif}
 alg = algs[nm]
 

@@ -24,7 +24,7 @@ c = contour_percentiles / contour_percentiles.max()
 contour_colors = ['#%02x%02x%02x' % (int(r), int(b), int(g)) for (r, b, g) in zip(255*c, 0*np.ones(c.shape[0]), 255*(1.-c))]
 
 #algorithm / trial + Ms to plot
-nm = ('SVI', 'SparseVI')
+nm = ('SVIF', 'SparseVI')
 #nm = ('GIGAT', 'GIGA-T')
 trial_num = 5
 Ms = np.linspace(1, 300, 7, dtype=np.int64)
