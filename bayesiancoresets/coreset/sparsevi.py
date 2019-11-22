@@ -45,7 +45,8 @@ class SparseVICoreset(Coreset):
       x0 = np.array([1., self.wts[fidx]]) #scale, amt of new wt
       def grd(ab):
         #construct the tangent space
-        vecs = self.tsf(ab[0]*wtmp + ab[1]*onef, self.idcs)
+        w = ab[0]*wtmp + ab[1]*onef
+        vecs = self.tsf(w, self.idcs)
         #compute residual
         resid = vecs.sum(axis=0) - w.dot(vecs[self.idcs, :])
         #output gradient of weights at idcs
@@ -74,7 +75,7 @@ class SparseVICoreset(Coreset):
       #construct the tangent space
       vecs = self.tsf(w, self.idcs)
       #compute residual
-      resid = vecs.sum(axis=0) - self.wts.dot(vecs[self.idcs, :])
+      resid = vecs.sum(axis=0) - w.dot(vecs[self.idcs, :])
       #output gradient of weights at idcs
       return -(resid*vecs[self.idcs, :]).sum(axis=1) / vecs.shape[1]
     x = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched)
