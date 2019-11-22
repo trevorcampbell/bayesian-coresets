@@ -25,7 +25,8 @@ class SparseVICoreset(Coreset):
     vecs = self.tsf(self.wts, self.idcs)
     #compute the correlations
     resid = vecs.sum(axis=0) - self.wts.dot(vecs[self.idcs, :])
-    corrs = (vecs*resid).sum(axis=1) / np.sqrt((vecs**2).sum(axis=1)) / vecs.shape[1] #up to a constant; good enough for argmax
+    #corrs = (vecs*resid).sum(axis=1) / np.sqrt((vecs**2).sum(axis=1)) / vecs.shape[1] #up to a constant; good enough for argmax
+    corrs = vecs.dot(resid) / np.sqrt((vecs**2).sum(axis=1)) / vecs.shape[1] #up to a constant; good enough for argmax
     #for any in the active set, just look at magnitude
     corrs[self.idcs] = np.fabs(corrs[self.idcs])
     return np.argmax(corrs)
@@ -50,7 +51,8 @@ class SparseVICoreset(Coreset):
         #compute residual
         resid = vecs.sum(axis=0) - w.dot(vecs[self.idcs, :])
         #output gradient of weights at idcs
-        g = -(resid*vecs[self.idcs, :]).sum(axis=1) / vecs.shape[1]
+        #g = -(resid*vecs[self.idcs, :]).sum(axis=1) / vecs.shape[1]
+        g = -vecs[self.idcs, :].dot(resid) / vecs.shape[1]
         ga = wtmp.dot(g)
         gb = g[fidx]
         return np.array([ga, gb])
@@ -64,7 +66,8 @@ class SparseVICoreset(Coreset):
         #compute residual
         resid = vecs.sum(axis=0) - w.dot(vecs[self.idcs, :])
         #output gradient of weights at idcs
-        return -(resid*vecs[self.idcs, :]).sum(axis=1) / vecs.shape[1]
+        #return -(resid*vecs[self.idcs, :]).sum(axis=1) / vecs.shape[1]
+        return -vecs[self.idcs, :].dot(resid) / vecs.shape[1]
       x = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched)
       self._update(x, self.idcs)
     return
@@ -77,7 +80,8 @@ class SparseVICoreset(Coreset):
       #compute residual
       resid = vecs.sum(axis=0) - w.dot(vecs[self.idcs, :])
       #output gradient of weights at idcs
-      return -(resid*vecs[self.idcs, :]).sum(axis=1) / vecs.shape[1]
+      #return -(resid*vecs[self.idcs, :]).sum(axis=1) / vecs.shape[1]
+      return -vecs[self.idcs, :].dot(resid) / vecs.shape[1]
     x = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched)
     self._update(x, self.idcs)
 
