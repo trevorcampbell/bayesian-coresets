@@ -108,18 +108,16 @@ def tsf_exact_w(wts, idcs):
   w = np.zeros(X.shape[0])
   w[idcs] = wts
   muw, Sigw = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, X, Y, w)
-  evs = np.linalg.eigvalsh(Sigw)
-  if np.any(evs < 0):
-    Sigw -= 2*evs.min()*np.eye(Sigw.shape[0])
-  nu = X.dot(np.linalg.cholesky(Sigw))/datastd**2
-  dnu = (Y - X.dot(muw))[:,np.newaxis]*nu
-  #correct but quadratic cost...
-  #nu = np.hstack((dnu, 1./np.sqrt(2.)*( nu[:, :, np.newaxis]*nu[:, np.newaxis, :]).reshape( (nu.shape[0], nu.shape[1]**2))))
-  #only diagonal terms
-  nu = np.hstack((dnu, 1./np.sqrt(2.)*nu**2))
-  #none of the quartic terms
-  #nu = dnu
-  return nu
+  lmb, V = np.linalg.eigh(Sigw)
+  beta = X.dot(V*np.sqrt(np.maximum(lmb, 0.)))
+  nu = Y - X.dot(muw)
+
+  #project the matrix term down to 20*20 = 400 dimensions
+  lmb, V = np.linalg.eigh(beta.T.dot(beta))
+  n_dim = 20
+  beta_proj = beta.dot(V[:, -n_dim:])
+  
+  return np.hstack((nu[:, np.newaxis]*beta, 1./np.sqrt(2.)*(beta_proj[:, :, np.newaxis]*beta_proj[:, np.newaxis, :]).reshape(beta.shape[0], n_dim**2))) / datastd**2
 
 #create coreset construction objects
 print('Creating coreset construction objects')
