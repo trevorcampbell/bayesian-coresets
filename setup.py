@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'bayesiancoresets',
-    version='0.9',
+    version='0.9.1',
     description="Coresets for approximate Bayesian inference",
     author='Trevor Campbell',
     author_email='trevor@stat.ubc.ca',
