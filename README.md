@@ -1,7 +1,5 @@
 # Bayesian Coresets: Automated, Scalable Inference
 
-TODO: update readme with reqmts (loglike(prms, idcs = all), sampler(num, wts / idcs)
-
 This repository provides a python package that can be used to construct [Bayesian coresets](http://arxiv.org/abs/1710.05053). It also contains all the code used to run the experiments in [Bayesian Coreset Construction via Greedy Iterative Geodesic Ascent](https://arxiv.org/abs/1802.01737) and [Sparse Variational Inference: Bayesian Coresets from Scratch](https://arxiv.org/abs/1906.03329) in the `bayesian-coresets/examples/` folder.
 
 A **coreset** (i.e. the "core of a dataset") is a small, weighted subset of a dataset that can be used in place of the original dataset when learning a statistical model. If the coreset is much smaller than the original dataset, generally this makes learning faster; but if the coreset is too small, it doesn't represent the original dataset well. Building a coreset that is both small and a good approximation for the purposes of Bayesian inference is what the code in this repository does.
