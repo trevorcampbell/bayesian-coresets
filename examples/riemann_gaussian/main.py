@@ -85,17 +85,29 @@ def tsf_exact_w(wts, idcs):
   nu = np.hstack((nu.dot(np.linalg.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
   return nu
 
+tsf_exact_optimal = lambda : tsf_exact_w(np.ones(x.shape[0]), np.arange(x.shape[0]))
+rlst_idcs = np.arange(x.shape[0])
+np.random.shuffle(rlst_idcs)
+rlst_idcs = rlst_idcs[:int(0.1*rlst_idcs.shape[0])]
+rlst_w = np.zeros(x.shape[0])
+rlst_w[rlst_idcs] = 2.*x.shape[0]/rlst_idcs.shape[0]*np.random.rand(rlst_idcs.shape[0])
+tsf_exact_realistic = lambda : tsf_exact_w(2.*np.random.rand(x.shape[0]), np.arange(x.shape[0]))
+
 ##############################
 
 #create coreset construction objects
 sparsevi = bc.SparseVICoreset(tsf_exact_w, opt_itrs)
 giga_optimal = bc.HilbertCoreset(tsf_optimal)
+giga_optimal_exact = bc.HilbertCoreset(tsf_exact_optimal)
 giga_realistic = bc.HilbertCoreset(tsf_realistic)
+giga_realistic_exact = bc.HilbertCoreset(tsf_exact_realistic)
 unif = bc.UniformSamplingCoreset(x.shape[0])
 
 algs = {'SVI': sparsevi, 
         'GIGAO': giga_optimal, 
+        'GIGAOE': giga_optimal_exact, 
         'GIGAR': giga_realistic, 
+        'GIGARE': giga_realistic_exact, 
         'RAND': unif}
 alg = algs[nm]
 

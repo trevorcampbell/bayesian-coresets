@@ -103,7 +103,9 @@ Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
 sampler_realistic = lambda n, w, ids : np.random.multivariate_normal(muhat, Sighat, n)
 tsf_realistic = bc.BayesianTangentSpaceFactory(log_likelihood, sampler_realistic, proj_dim)
 
-#create exact tangent space factory for Riemann coresets
+##############################
+###Exact projection in SparseVI for gradient computation
+#for this model we can do the tangent space projection exactly
 def tsf_exact_w(wts, idcs):
   w = np.zeros(X.shape[0])
   w[idcs] = wts
@@ -119,16 +121,31 @@ def tsf_exact_w(wts, idcs):
   
   return np.hstack((nu[:, np.newaxis]*beta, 1./np.sqrt(2.)*(beta_proj[:, :, np.newaxis]*beta_proj[:, np.newaxis, :]).reshape(beta.shape[0], n_dim**2))) / datastd**2
 
+tsf_exact_optimal = lambda : tsf_exact_w(np.ones(x.shape[0]), np.arange(x.shape[0]))
+rlst_idcs = np.arange(x.shape[0])
+np.random.shuffle(rlst_idcs)
+rlst_idcs = rlst_idcs[:int(0.1*rlst_idcs.shape[0])]
+rlst_w = np.zeros(x.shape[0])
+rlst_w[rlst_idcs] = 2.*x.shape[0]/rlst_idcs.shape[0]*np.random.rand(rlst_idcs.shape[0])
+tsf_exact_realistic = lambda : tsf_exact_w(2.*np.random.rand(x.shape[0]), np.arange(x.shape[0]))
+
+##############################
+
+
 #create coreset construction objects
 print('Creating coreset construction objects')
 sparsevi = bc.SparseVICoreset(tsf_exact_w, opt_itrs=opt_itrs)
 giga_optimal = bc.HilbertCoreset(tsf_optimal)
+giga_optimal_exact = bc.HilbertCoreset(tsf_exact_optimal)
 giga_realistic = bc.HilbertCoreset(tsf_realistic)
+giga_realistic_exact = bc.HilbertCoreset(tsf_exact_realistic)
 unif = bc.UniformSamplingCoreset(x.shape[0])
 
 algs = {'SVI': sparsevi, 
         'GIGAO': giga_optimal, 
+        'GIGAOE': giga_optimal_exact, 
         'GIGAR': giga_realistic, 
+        'GIGARE': giga_realistic_exact, 
         'RAND': unif}
 alg = algs[nm]
 
