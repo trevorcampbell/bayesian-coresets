@@ -1,1 +1,1 @@
-from .coreset import HilbertCoreset, SparseVICoreset, UniformSamplingCoreset, BayesianTangentSpaceFactory
+from .coreset import HilbertCoreset, SparseVICoreset, UniformSamplingCoreset, BlackBoxProjector

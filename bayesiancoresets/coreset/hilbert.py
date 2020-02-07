@@ -4,9 +4,19 @@ from ..snnls.giga import GIGA
 from .coreset import Coreset
 
 class HilbertCoreset(Coreset):
-  def __init__(self, tangent_space_factory, snnls = GIGA, **kw):
-    vecs = tangent_space_factory()
+  def __init__(self, data, ll_projector, n_subsample = None, snnls = GIGA, **kw):
+
+    if n_subsample is None:
+      sub_idcs = None
+      vecs = ll_projector.project(data)
+    else:
+      n_subsample = min(data.shape[0], n_subsample)
+      sub_idcs = np.random.choice(data.shape[0], size=n_subsample, replace=False)
+      vecs = ll_projector.project(data[sub_idcs])
+
     self.snnls = snnls(vecs.T, vecs.sum(axis=0))
+    self.sub_idcs = sub_idcs
+    self.data = data
     super().__init__(**kw)
 
   def reset(self):
@@ -18,12 +28,16 @@ class HilbertCoreset(Coreset):
       raise ValueError(self.alg_name + '._build(): # itrs + current size cannot exceed total desired size sz. # itr = ' + str(itrs) + ' cur sz: ' + str(self.snnls.size()) + ' desired sz: ' + str(sz))
     self.snnls.build(itrs)
     w = self.snnls.weights()
-    self._overwrite(w[w>0], np.where(w>0)[0])
+    self.wts = w[w>0]
+    self.idcs = self.sub_idcs[w>0] if self.sub_idcs is not None else np.where(w>0)[0]
+    self.pts = self.data[self.idcs]
 
   def _optimize(self):
     self.snnls.optimize()
     w = self.snnls.weights()
-    self._overwrite(w[w>0], np.where(w>0)[0])
+    self.wts = w[w>0]
+    self.idcs = self.sub_idcs[w>0] if self.sub_idcs is not None else np.where(w>0)[0]
+    self.pts = self.data[self.idcs]
 
   def error(self):
     return self.snnls.error()
