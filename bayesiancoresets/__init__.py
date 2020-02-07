@@ -1,1 +1,1 @@
-from .coreset import HilbertCoreset, SparseVICoreset, UniformSamplingCoreset, BlackBoxProjector
+from .coreset import HilbertCoreset, SparseVICoreset, UniformSamplingCoreset, BlackBoxProjector, Projector

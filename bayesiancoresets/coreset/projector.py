@@ -10,13 +10,22 @@ class Projector(object):
 
 
 class BlackBoxProjector(Projector):
-    def __init__(self, sampler, loglikelihood, grad_loglikelihood):
+    def __init__(self, sampler, projection_dimension, loglikelihood, grad_loglikelihood = None):
         self.sampler = sampler
         self.loglikelihood = loglikelihood
         self.grad_loglikelihood = grad_loglikelihood
 
     def project(self, pts, grad=False):
-        pass
+        lls = self.loglikelihood(pts, self.samples)
+        lls -= lls.mean(axis=1)
+        if grad:
+            if self.grad_loglikelihood is None:
+                raise ValueError('grad_loglikelihood was requested but not initialized in BlackBoxProjector.project')
+            glls = self.gradloglikelihood(pts, self.samples)
+            glls -= glls.mean(axis=2)[:, :, np.newaxis]
+            return lls, glls
+        else:
+            return lls
 
     def update(self, wts, pts):
-        pass
+        self.samples = self.sampler(projection_dimension, wts, pts)
