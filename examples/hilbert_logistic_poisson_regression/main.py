@@ -59,7 +59,7 @@ else:
   t_laplace = lplc['t_laplace']
 
 #generate a sampler based on the laplace approx 
-sampler = lambda sz, w, ids : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
+sampler = lambda sz, w, pts : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 projector = bc.BlackBoxProjector(sampler, projection_dim, log_likelihood)
 
 if not os.path.exists('results/'+dnm+'_posterior_samples.npz'):

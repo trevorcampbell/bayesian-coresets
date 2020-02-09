@@ -38,16 +38,16 @@ Sigpinv = np.linalg.inv(Sigp)
 np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+tr])) % 2**32)
 
 #compute constants for log likelihood function
-xSiginv = x.dot(Siginv)
-xSiginvx = (xSiginv*x).sum(axis=1)
+#xSiginv = x.dot(Siginv)
+#xSiginvx = (xSiginv*x).sum(axis=1)
 logdetSig = np.linalg.slogdet(Sig)[1]
 
 #create the log_likelihood function
-log_likelihood = lambda samples : gaussian.gaussian_potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples)
+log_likelihood = lambda x, th : gaussian.gaussian_loglikelihood(x, th, Siginv, logdetSig)
 
 #create the sampler for the "optimally-tuned" Hilbert coreset
-sampler_optimal = lambda n, w, ids : np.random.multivariate_normal(mup, Sigp, n)
-tsf_optimal = bc.BayesianTangentSpaceFactory(log_likelihood, sampler_optimal, proj_dim)
+sampler_optimal = lambda n, w, pts : np.random.multivariate_normal(mup, Sigp, n)
+prj_optimal = bc.BlackBoxProjector(sampler_optimal, proj_dim, log_likelihood)
 
 #create the sampler for the "realistically-tuned" Hilbert coreset
 U = np.random.rand()
@@ -57,8 +57,8 @@ Sighat = U*Sigp + (1.-U)*Sig0
 muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
 Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
 
-sampler_realistic = lambda n, w, ids : np.random.multivariate_normal(muhat, Sighat, n)
-tsf_realistic = bc.BayesianTangentSpaceFactory(log_likelihood, sampler_realistic, proj_dim)
+sampler_realistic = lambda n, w, pts : np.random.multivariate_normal(muhat, Sighat, n)
+prj_realistic = bc.BlackBoxProjector(sampler_realistic, proj_dim, log_likelihood)
 
 ############################
 ###Random projections in SparseVI for gradient computation
@@ -74,33 +74,39 @@ tsf_realistic = bc.BayesianTangentSpaceFactory(log_likelihood, sampler_realistic
 ############################
 
 ##############################
-###Exact projection in SparseVI for gradient computation
-#for this model we can do the tangent space projection exactly
-def tsf_exact_w(wts, idcs):
-  w = np.zeros(x.shape[0])
-  w[idcs] = wts
-  muw, Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w)
-  nu = (x - muw).dot(SigLInv.T)
-  Psi = np.dot(SigLInv, np.dot(Sigw, SigLInv.T))
-  nu = np.hstack((nu.dot(np.linalg.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
-  return nu
+#for this model we can do the log likelihood projection exactly
+class GaussianProjector(bc.Projector):
+    def project(self, pts, grad=False):
+        nu = (pts - self.muw).dot(SigLInv.T)
+        Psi = np.dot(SigLInv, np.dot(self.Sigw, SigLInv.T))
+        nu = np.hstack((nu.dot(np.linalg.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
+        return nu
 
-tsf_exact_optimal = lambda : tsf_exact_w(np.ones(x.shape[0]), np.arange(x.shape[0]))
+    def update(self, wts = None, pts = None):
+        if wts is None or pts is None or pts.shape[0] == 0:
+            self.muw = mu0
+            self.Sigw = Sig0
+        else:
+            self.muw, self.Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
+
+prj_exact_optimal = GaussianProjector()
+prj_exact_optimal.update(np.ones(x.shape[0]), x)
 rlst_idcs = np.arange(x.shape[0])
 np.random.shuffle(rlst_idcs)
 rlst_idcs = rlst_idcs[:int(0.1*rlst_idcs.shape[0])]
 rlst_w = np.zeros(x.shape[0])
 rlst_w[rlst_idcs] = 2.*x.shape[0]/rlst_idcs.shape[0]*np.random.rand(rlst_idcs.shape[0])
-tsf_exact_realistic = lambda : tsf_exact_w(2.*np.random.rand(x.shape[0]), np.arange(x.shape[0]))
+prj_exact_realistic = GaussianProjector()
+prj_exact_realistic.update(2.*np.random.rand(x.shape[0]), x)
 
 ##############################
 
 #create coreset construction objects
-sparsevi = bc.SparseVICoreset(tsf_exact_w, opt_itrs)
-giga_optimal = bc.HilbertCoreset(tsf_optimal)
-giga_optimal_exact = bc.HilbertCoreset(tsf_exact_optimal)
-giga_realistic = bc.HilbertCoreset(tsf_realistic)
-giga_realistic_exact = bc.HilbertCoreset(tsf_exact_realistic)
+sparsevi = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = opt_itrs)
+giga_optimal = bc.HilbertCoreset(x, prj_optimal)
+giga_optimal_exact = bc.HilbertCoreset(x,prj_exact_optimal)
+giga_realistic = bc.HilbertCoreset(x,prj_realistic)
+giga_realistic_exact = bc.HilbertCoreset(x,prj_exact_realistic)
 unif = bc.UniformSamplingCoreset(x.shape[0])
 
 algs = {'SVI': sparsevi, 
@@ -117,7 +123,7 @@ for m in range(1, M+1):
 
   alg.build(1, m)
   #store weights
-  wts, idcs = alg.weights()
+  wts, pts, idcs = alg.get()
   w[m, idcs] = wts
 
   #printouts for debugging purposes

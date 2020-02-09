@@ -4,14 +4,13 @@ from ..util.opt import nn_opt
 from .coreset import Coreset
 
 class SparseVICoreset(Coreset):
-  def __init__(self, data, ll_projector, n_subsample_select = None, n_subsample_opt = None, opt_itrs = 100, step_sched = lambda i : 1./(1.+i), **kw): #update_single = False, **kw):
+  def __init__(self, data, ll_projector, n_subsample_select = None, n_subsample_opt = None, opt_itrs = 100, step_sched = lambda i : 1./(1.+i), **kw): 
     self.data = data
     self.ll_projector = ll_projector
-    self.n_subsample_select = min(data.shape[0], n_subsample_select)
-    self.n_subsample_opt = min(data.shape[0], n_subsample_opt)
+    self.n_subsample_select = None if n_subsample_select is None else min(data.shape[0], n_subsample_select)
+    self.n_subsample_opt = None if n_subsample_opt is None else min(data.shape[0], n_subsample_opt)
     self.step_sched = step_sched
     self.opt_itrs = opt_itrs
-    self.update_single = update_single
     super().__init__(**kw)
 
   def _build(self, itrs, sz):
@@ -30,13 +29,17 @@ class SparseVICoreset(Coreset):
     #construct a tangent space
     if n_subsample is None:
       sub_idcs = None
-      vecs = ll_projector.project(self.data)
+      vecs = self.ll_projector.project(self.data)
       sum_scaling = 1.
     else:
       sub_idcs = np.random.choice(self.data.shape[0], size=n_subsample, replace=False)
-      vecs = ll_projector.project(self.data[sub_idcs])
+      vecs = self.ll_projector.project(self.data[sub_idcs])
       sum_scaling = self.data.shape[0]/n_subsample
-    corevecs = ll_projector.project(self.pts)
+
+    if self.pts.size > 0:
+      corevecs = self.ll_projector.project(self.pts)
+    else:
+      corevecs = np.zeros((0, vecs.shape[1]))
 
     return vecs, sum_scaling, sub_idcs, corevecs
 
@@ -52,7 +55,7 @@ class SparseVICoreset(Coreset):
     corecorrs = np.fabs(corevecs.dot(resid) / np.sqrt((corevecs**2).sum(axis=1))) #up to a constant; good enough for argmax
 
     #get the best selection; if it's an old coreset pt do nothing, if it's a new point expand and initialize storage for the new pt
-    if corrs.max() > corecorrs.max():
+    if corecorrs.size == 0 or corrs.max() > corecorrs.max():
       f = sub_idcs[np.argmax(corrs)] if sub_idcs is not None else np.argmax(corrs)
       #expand and initialize storage for new coreset pt
       #need to double-check that f isn't in self.idcs, since the subsample may contain some of the coreset pts
@@ -106,7 +109,7 @@ class SparseVICoreset(Coreset):
       vecs, sum_scaling, sub_idcs, corevecs = self._get_tangent_space(self.n_subsample_opt, w, self.pts)
       resid = sum_scaling*vecs.sum(axis=0) - w.dot(corevecs)
       #output gradient of weights at idcs
-      return -vecs.dot(resid) / vecs.shape[1]
+      return -corevecs.dot(resid) / self.pts.shape[1]
     x0 = self.wts
     self.wts = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched)
 

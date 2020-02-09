@@ -11,12 +11,12 @@ class Coreset(object):
     self.reached_numeric_limit = False
     self.wts = np.array([])
     self.idcs = np.array([], dtype=np.int64)
-    self.pts = np.array([[]])
+    self.pts = np.array([])
 
   def reset(self):
     self.wts = np.array([])
     self.idcs = np.array([], dtype=np.int64)
-    self.pts = np.array([[]])
+    self.pts = np.array([])
     self.reached_numeric_limit = False
 
   def size(self):
