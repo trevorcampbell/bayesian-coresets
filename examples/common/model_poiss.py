@@ -23,7 +23,7 @@ def gen_synthetic(n):
 
 def compute_s(th, x):
   s = x.dot(th.T)
-  idcs = dots > -100
+  idcs = s > -100
   s[idcs] =  np.log(np.maximum(s[idcs], 0) + np.log1p(np.exp(-np.fabs(s[idcs]))))
   #for any indices s < -100, then log( log(1+e^s) ) approximately s
   return s

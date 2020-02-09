@@ -46,9 +46,9 @@ if not os.path.exists('results/'):
 if not os.path.exists('results/'+dnm+'_laplace.npz'):
   print('Computing Laplace approximation for '+dnm)
   t0 = time.process_time()
-  res = minimize(lambda mu : -log_joint(Z, mu, np.ones(Z.shape[0])), Z.mean(axis=0)[:D], jac=lambda mu : -grad_log_joint(Z, mu, np.ones(Z.shape[0])))
+  res = minimize(lambda mu : -log_joint(Z, mu, np.ones(Z.shape[0]))[0], Z.mean(axis=0)[:D], jac=lambda mu : -grad_th_log_joint(Z, mu, np.ones(Z.shape[0]))[0,:])
   mu = res.x
-  cov = -np.linalg.inv(hess_log_joint(Z, mu))
+  cov = -np.linalg.inv(hess_th_log_joint(Z, mu, np.ones(Z.shape[0]))[0,:,:])
   t_laplace = time.process_time() - t0
   np.savez('results/'+dnm+'_laplace.npz', mu=mu, cov=cov, t_laplace=t_laplace)
 else:
@@ -60,16 +60,12 @@ else:
 
 #generate a sampler based on the laplace approx 
 sampler = lambda sz, w, ids : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
-#create the log-likelihood eval function
-def loglike(prms):
-  return np.hstack([log_likelihood(Z, prms[i,:])[:,np.newaxis] for i in range(prms.shape[0])])
-
-tsf = bc.BayesianTangentSpaceFactory(loglike, sampler, projection_dim)
+projector = bc.BlackBoxProjector(sampler, projection_dim, log_likelihood)
 
 if not os.path.exists('results/'+dnm+'_posterior_samples.npz'):
   print('Running MCMC on the full dataset '+ dnm)
-  logpZ = lambda th : log_joint(Z, th, np.ones(Z.shape[0]))
-  glogpZ = lambda th : grad_log_joint(Z, th, np.ones(Z.shape[0]))
+  logpZ = lambda th : log_joint(Z, th, np.ones(Z.shape[0]))[0]
+  glogpZ = lambda th : grad_th_log_joint(Z, th, np.ones(Z.shape[0]))[0,:]
   mcmc_param_init = np.random.multivariate_normal(mu, cov)
   t0 = time.process_time()
   full_samples = mcmc_alg(logp = logpZ, gradlogp = glogpZ, 
@@ -90,7 +86,7 @@ Fs = np.zeros(Ms.shape[0])
 
 print('Running coreset construction / MCMC for ' + dnm + ' ' + anm + ' ' + ID)
 t0 = time.process_time()
-alg = bc.HilbertCoreset(tsf, snnls = algdict[anm])
+alg = bc.HilbertCoreset(Z, projector, snnls = algdict[anm])
 t_setup = time.process_time() - t0
 t_alg = 0.
 for m in range(Ms.shape[0]):
@@ -99,10 +95,10 @@ for m in range(Ms.shape[0]):
   t0 = time.process_time()
   alg.build(Ms[m] if m == 0 else Ms[m] - Ms[m-1], Ms[m])
   t_alg += time.process_time()-t0
-  wts, idcs = alg.weights()
+  wts, pts, idcs = alg.get()
 
-  logpZ = lambda th : log_joint(Z[idcs, :], th, wts)
-  glogpZ = lambda th : grad_log_joint(Z[idcs, :], th, wts)
+  logpZ = lambda th : log_joint(Z[idcs, :], th, wts)[0]
+  glogpZ = lambda th : grad_th_log_joint(Z[idcs, :], th, wts)[0,:]
   mcmc_param_init = np.random.multivariate_normal(mu, cov)
   print('M = ' + str(Ms[m]) + ': MCMC')
   t0 = time.process_time()
@@ -116,7 +112,7 @@ for m in range(Ms.shape[0]):
   print('M = ' + str(Ms[m]) + ': coreset sizes')
   csizes[m] = wts.shape[0]
   print('M = ' + str(Ms[m]) + ': F norms')
-  gcs = np.array([ grad_log_joint(Z[idcs, :], full_samples[i, :], wts) for i in range(full_samples.shape[0]) ])
-  gfs = np.array([ grad_log_joint(Z, full_samples[i, :], np.ones(Z.shape[0])) for i in range(full_samples.shape[0]) ])
+  gcs = np.array([ grad_th_log_joint(Z[idcs, :], full_samples[i, :], wts) for i in range(full_samples.shape[0]) ])
+  gfs = np.array([ grad_th_log_joint(Z, full_samples[i, :], np.ones(Z.shape[0])) for i in range(full_samples.shape[0]) ])
   Fs[m] = (((gcs - gfs)**2).sum(axis=1)).mean()
 np.savez_compressed('results/'+dnm+'_'+anm+'_results_'+ID+'.npz', Ms=Ms, Fs=Fs, cputs=cputs, csizes=csizes)
