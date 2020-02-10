@@ -107,27 +107,26 @@ Sighat = U*Sigp + (1.-U)*Sig0
 muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
 Sighat *= np.exp(-2.*pihat_noise*np.fabs(np.random.randn()))
 
-print('Building tangent space factories')
-#build tangent spaces
-tsf_optimal = bc.BayesianTangentSpaceFactory(lambda th : log_likelihood_2d2d(Z, th), lambda sz, wts, idcs : np.random.multivariate_normal(mup, Sigp, sz), projection_dim)
-tsf_realistic = bc.BayesianTangentSpaceFactory(lambda th : log_likelihood_2d2d(Z, th), lambda sz, wts, idcs : np.random.multivariate_normal(muhat, Sighat, sz), projection_dim)
-
-def sampler_w(sz, wts, idcs):
-  if idcs.shape[0] > 0:
-    w = np.zeros(Z.shape[0])
-    w[idcs] = wts
-    muw, Sigw = get_laplace(w, Z, mu0)
+print('Building projectors')
+sampler_optimal = lambda sz, w, pts : np.atleast_2d(np.random.multivariate_normal(mup, Sigp, sz))
+sampler_realistic = lambda sz, w, pts : np.atleast_2d(np.random.multivariate_normal(muhat, Sighat, sz))
+def sampler_w(sz, w, pts):
+  if pts.shape[0] > 0:
+    muw, Sigw = get_laplace(w, pts, mu0)
   else:
     muw, Sigw = mu0, Sig0
   return np.random.multivariate_normal(muw, Sigw, sz)
-tsf_w = bc.BayesianTangentSpaceFactory(lambda th : log_likelihood_2d2d(Z, th), sampler_w, projection_dim)
+
+prj_optimal = bc.BlackBoxProjector(sampler_optimal, projection_dim, log_likelihood)
+prj_realistic = bc.BlackBoxProjector(sampler_realistic, projection_dim, log_likelihood)
+prj_w = bc.BlackBoxProjector(sampler_w, projection_dim, log_likelihood)
  
 print('Creating coresets object')
 #create coreset construction objects
-giga_optimal = bc.HilbertCoreset(tsf_optimal)
-giga_realistic = bc.HilbertCoreset(tsf_realistic)
-unif = bc.UniformSamplingCoreset(Z.shape[0])
-sparsevi = bc.SparseVICoreset(tsf_w, opt_itrs=opt_itrs, step_sched = learning_rate)
+giga_optimal = bc.HilbertCoreset(Z, prj_optimal)
+giga_realistic = bc.HilbertCoreset(Z, prj_realistic)
+unif = bc.UniformSamplingCoreset(Z)
+sparsevi = bc.SparseVICoreset(Z, prj_w, opt_itrs=opt_itrs, step_sched = learning_rate)
 
 algs = {'SVI': sparsevi, 
         'GIGAO': giga_optimal, 
