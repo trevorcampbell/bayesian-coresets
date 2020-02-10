@@ -50,9 +50,9 @@ class SparseVICoreset(Coreset):
     resid = sum_scaling*vecs.sum(axis=0) - self.wts.dot(corevecs)
 
     #compute the correlations for the new subsample
-    corrs = vecs.dot(resid) / np.sqrt((vecs**2).sum(axis=1)) #up to a constant; good enough for argmax
+    corrs = vecs.dot(resid) / np.sqrt((vecs**2).sum(axis=1)) / vecs.shape[1] #up to a constant; good enough for argmax
     #compute the correlations for the coreset pts (use fabs because we can decrease the weight of these)
-    corecorrs = np.fabs(corevecs.dot(resid) / np.sqrt((corevecs**2).sum(axis=1))) #up to a constant; good enough for argmax
+    corecorrs = np.fabs(corevecs.dot(resid) / np.sqrt((corevecs**2).sum(axis=1))) / corevecs.shape[1] #up to a constant; good enough for argmax
 
     #get the best selection; if it's an old coreset pt do nothing, if it's a new point expand and initialize storage for the new pt
     if corecorrs.size == 0 or corrs.max() > corecorrs.max():
@@ -109,7 +109,7 @@ class SparseVICoreset(Coreset):
       vecs, sum_scaling, sub_idcs, corevecs = self._get_tangent_space(self.n_subsample_opt, w, self.pts)
       resid = sum_scaling*vecs.sum(axis=0) - w.dot(corevecs)
       #output gradient of weights at idcs
-      return -corevecs.dot(resid) / self.pts.shape[1]
+      return -corevecs.dot(resid) / corevecs.shape[1]
     x0 = self.wts
     self.wts = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched)
 

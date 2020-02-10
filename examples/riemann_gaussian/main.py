@@ -107,7 +107,7 @@ giga_optimal = bc.HilbertCoreset(x, prj_optimal)
 giga_optimal_exact = bc.HilbertCoreset(x,prj_exact_optimal)
 giga_realistic = bc.HilbertCoreset(x,prj_realistic)
 giga_realistic_exact = bc.HilbertCoreset(x,prj_exact_realistic)
-unif = bc.UniformSamplingCoreset(x.shape[0])
+unif = bc.UniformSamplingCoreset(x)
 
 algs = {'SVI': sparsevi, 
         'GIGAO': giga_optimal, 
