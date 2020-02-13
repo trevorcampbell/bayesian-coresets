@@ -3,14 +3,12 @@ from ..util.errors import NumericalPrecisionError
 from ..util.opt import nn_opt
 from .coreset import Coreset
 
-class SparseVICoreset(Coreset):
-  def __init__(self, data, ll_projector, n_subsample_select = None, n_subsample_opt = None, opt_itrs = 100, step_sched = lambda i : 1./(1.+i), **kw): 
+class BatchPSVI(Coreset):
+  def __init__(self, data, ll_projector, n_subsample_opt = None, step_sched = lambda i : 1./(1.+i), **kw): 
     self.data = data
     self.ll_projector = ll_projector
-    self.n_subsample_select = None if n_subsample_select is None else min(data.shape[0], n_subsample_select)
     self.n_subsample_opt = None if n_subsample_opt is None else min(data.shape[0], n_subsample_opt)
     self.step_sched = step_sched
-    self.opt_itrs = opt_itrs
     super().__init__(**kw)
 
   def _build(self, itrs, sz):
