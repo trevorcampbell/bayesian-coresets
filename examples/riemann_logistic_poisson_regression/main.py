@@ -18,7 +18,7 @@ def get_laplace(wts, Z, mu0):
   ww = wts[wts>0]
   while True:
     try:
-      res = minimize(lambda mu : -log_joint(Zw, mu, ww), mu0, jac=lambda mu : -grad_log_joint(Zw, mu, ww))
+      res = minimize(lambda mu : -log_joint(Zw, mu, ww)[0], mu0, jac=lambda mu : -grad_th_log_joint(Zw, mu, ww)[0,:])
     except:
       mu0 = mu0.copy()
       mu0 += np.sqrt((mu0**2).sum())*0.1*np.random.randn(mu0.shape[0])
@@ -29,7 +29,7 @@ def get_laplace(wts, Z, mu0):
       continue
     break
   mu = res.x
-  Sig = -np.linalg.inv(hess_log_joint_w(Zw, mu, ww))
+  Sig = -np.linalg.inv(hess_th_log_joint(Zw, mu, ww)[0,:,:])
   return mu, Sig
 
 dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips / airportdelays
@@ -115,6 +115,7 @@ def sampler_w(sz, w, pts):
     muw, Sigw = get_laplace(w, pts, mu0)
   else:
     muw, Sigw = mu0, Sig0
+  #print('min eig: ' + str(np.linalg.eigvalsh(Sigw)[0]) + ' max eig: ' + str(np.linalg.eigvalsh(Sigw)[-1]))
   return np.random.multivariate_normal(muw, Sigw, sz)
 
 prj_optimal = bc.BlackBoxProjector(sampler_optimal, projection_dim, log_likelihood)
@@ -147,7 +148,7 @@ for m in range(1, M+1):
 
     #record time and weights
     cputs[m] = time.perf_counter()-t0
-    w, idcs = coreset.weights()
+    w, pts, idcs = coreset.get()
     wts[m, idcs] = w
     
 #get laplace approximations for each weight setting, and KL divergence to full posterior laplace approx mup Sigp

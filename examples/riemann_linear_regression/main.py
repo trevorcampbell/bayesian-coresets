@@ -123,8 +123,8 @@ class LinRegProjector(bc.Projector):
         beta_proj = beta.dot(self.bV)
         return np.hstack((nu[:, np.newaxis]*beta, 1./np.sqrt(2.)*(beta_proj[:, :, np.newaxis]*beta_proj[:, np.newaxis, :]).reshape(beta.shape[0], self.bV.shape[1]**2))) / datastd**2
 
-    def update(self, wts = None, pts = None):
-        if wts is None or pts is None or pts.shape[0] == 0:
+    def update(self, wts, pts):
+        if pts.shape[0] == 0:
             self.muw = mu0
             self.Sigw = Sig0
         else:

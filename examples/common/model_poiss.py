@@ -78,9 +78,9 @@ def hess_th_log_likelihood(z, th):
   x = z[:, :-1]
   y = np.tile(z[:, -1][:, np.newaxis], (1, th.shape[0]))
   s = compute_s(th, x)
-  h = -np.exp(s)*(np.exp(s)-y-1.)
+  h = -(1.+y)*np.exp(s)
   idcs = np.exp(s) > 1e-15
-  h[idcs] = -(1.-np.exp(-np.exp(s[idcs])))*((y[idcs]*np.exp(-s[idcs])-1.)*np.exp(-np.exp(s[idcs])) - y[idcs]*np.exp(-2*s[idcs])*(1.-np.exp(-np.exp(s[idcs]))))
+  h[idcs] = (y[idcs]*np.exp(-s[idcs])*(1.-np.exp(-s[idcs]+np.exp(s[idcs]))+np.exp(-s[idcs])) - 1.)*(np.exp(-np.exp(s[idcs]))-np.exp(-2*np.exp(s[idcs])))
   return h[:, :, np.newaxis, np.newaxis]*x[:, np.newaxis, :, np.newaxis]*x[:, np.newaxis, np.newaxis, :]
 
 def hess_th_log_prior(th):

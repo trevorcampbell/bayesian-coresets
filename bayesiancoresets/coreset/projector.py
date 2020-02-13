@@ -5,17 +5,17 @@ class Projector(object):
     def project(self, pts, grad=False):
         raise NotImplementedError
 
-    def update(self, wts = None, pts = None):
+    def update(self, wts, pts):
         raise NotImplementedError
 
 
 class BlackBoxProjector(Projector):
-    def __init__(self, sampler, projection_dimension, loglikelihood, grad_loglikelihood = None, w0 = None, pts0 = None):
+    def __init__(self, sampler, projection_dimension, loglikelihood, grad_loglikelihood = None):
         self.projection_dimension = projection_dimension
         self.sampler = sampler
         self.loglikelihood = loglikelihood
         self.grad_loglikelihood = grad_loglikelihood
-        self.update(w0, pts0)
+        self.update(np.array([]), np.array([]))
 
     def project(self, pts, grad=False):
         lls = self.loglikelihood(pts, self.samples)
