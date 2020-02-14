@@ -17,8 +17,8 @@ class BatchPSVI(Coreset):
     self.pts = self.data[init_idcs]
     self.wts = self.data.shape[0]/sz*np.ones(sz)
     self.idcs = -1*np.ones(sz)
-
     # run gradient optimization for opt_itrs steps
+    self._optimize()
 
   def _get_projection(self, n_subsample, w, p):
     #update the projector
@@ -49,25 +49,19 @@ class BatchPSVI(Coreset):
       p = x[sz:].reshape((sz, d))
       vecs, sum_scaling, sub_idcs, corevecs, pgrads = self._get_projection(self.n_subsample_opt, w, p)
 
-      #compute gradient of weights
+      #compute gradient of weights and pts
       resid = sum_scaling*vecs.sum(axis=0) - w.dot(corevecs)
       wgrad = -corevecs.dot(resid) / corevecs.shape[1]
-      
-      #compute gradient of pts
+      ugrad = -(w[:, np.newaxis, np.newaxis]*pgrads*resid[np.newaxis, :, np.newaxis]).sum(axis=1)/corevecs.shape[1]
 
-      #concatenate and return
+      #return reshaped grad
+      return np.hstack((wgrad, ugrad.reshape(sz*d)))  
 
-      #output gradient of weights at idcs
-      return g
-    x0 = np.hstack((self.wts, self.pts.reshape((sz*d))))
+    x0 = np.hstack((self.wts, self.pts.reshape(sz*d)))
     xf = partial_nn_opt(x0, grd, np.arange(sz), self.opt_itrs, step_sched = lambda i : 1./(i+1), b1=0.9, b2=0.99, eps=1e-8, verbose=False):
     self.wts = xf[:sz]
     self.pts = xf[sz:].reshape((sz, d))
 
   def error(self):
     return 0. #TODO: implement KL estimate
-
-def grd(w):
-   vecs, sum_scaling, sub_idcs, corevecs = self._get_tangent_space(self.n_subsample_opt, w, self.pts)
-   
 
