@@ -10,6 +10,11 @@ def gaussian_loglikelihood(x, th, Siginv, logdetSig):
   thSiginvth = (th*(th.dot(Siginv))).sum(axis=1)
   xSiginvth = x.dot(Siginv.dot(th.T))
   return -x.shape[1]/2*np.log(2*np.pi) - 1./2.*logdetSig - 1./2.*(xSiginvx[:, np.newaxis] + thSiginvth - 2*xSiginvth)
+
+def gaussian_grad_x_loglikelihood(x, th, Siginv):
+  x = np.atleast_2d(x)
+  th = np.atleast_2d(th)
+  return th.dot(Siginv)[np.newaxis, :, :] - x.dot(Siginv)[:, np.newaxis, :]
  
 def gaussian_KL(mu0, Sig0, mu1, Sig1inv):
   t1 = np.dot(Sig1inv, Sig0).trace()

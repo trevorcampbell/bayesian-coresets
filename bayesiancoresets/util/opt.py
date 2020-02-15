@@ -48,6 +48,3 @@ def partial_nn_opt(x0, grd, nn_idcs, opt_itrs=1000, step_sched = lambda i : 1./(
     sys.stdout.flush()
 
   return x
-
-
-

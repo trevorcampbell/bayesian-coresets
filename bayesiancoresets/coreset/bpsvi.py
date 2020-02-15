@@ -3,10 +3,11 @@ from ..util.errors import NumericalPrecisionError
 from ..util.opt import partial_nn_opt
 from .coreset import Coreset
 
-class BatchPSVI(Coreset):
-  def __init__(self, data, ll_projector, n_subsample_opt = None, step_sched = lambda i : 1./(1.+i), **kw): 
+class BatchPSVICoreset(Coreset):
+  def __init__(self, data, ll_projector, opt_itrs, n_subsample_opt = None, step_sched = lambda i : 1./(1.+i), **kw): 
     self.data = data
     self.ll_projector = ll_projector
+    self.opt_itrs = opt_itrs
     self.n_subsample_opt = None if n_subsample_opt is None else min(data.shape[0], n_subsample_opt)
     self.step_sched = step_sched
     super().__init__(**kw)
@@ -58,7 +59,7 @@ class BatchPSVI(Coreset):
       return np.hstack((wgrad, ugrad.reshape(sz*d)))  
 
     x0 = np.hstack((self.wts, self.pts.reshape(sz*d)))
-    xf = partial_nn_opt(x0, grd, np.arange(sz), self.opt_itrs, step_sched = lambda i : 1./(i+1), b1=0.9, b2=0.99, eps=1e-8, verbose=False):
+    xf = partial_nn_opt(x0, grd, np.arange(sz), self.opt_itrs, step_sched = lambda i : 1./(i+1))
     self.wts = xf[:sz]
     self.pts = xf[sz:].reshape((sz, d))
 

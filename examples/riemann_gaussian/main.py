@@ -44,10 +44,11 @@ logdetSig = np.linalg.slogdet(Sig)[1]
 
 #create the log_likelihood function
 log_likelihood = lambda x, th : gaussian.gaussian_loglikelihood(x, th, Siginv, logdetSig)
+grad_log_likelihood = lambda x, th : gaussian.gaussian_gradx_loglikelihood(x, th, Siginv)
 
 #create the sampler for the "optimally-tuned" Hilbert coreset
 sampler_optimal = lambda n, w, pts : np.random.multivariate_normal(mup, Sigp, n)
-prj_optimal = bc.BlackBoxProjector(sampler_optimal, proj_dim, log_likelihood)
+prj_optimal = bc.BlackBoxProjector(sampler_optimal, proj_dim, log_likelihood, grad_log_likelihood)
 
 #create the sampler for the "realistically-tuned" Hilbert coreset
 U = np.random.rand()
@@ -58,7 +59,7 @@ muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
 Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
 
 sampler_realistic = lambda n, w, pts : np.random.multivariate_normal(muhat, Sighat, n)
-prj_realistic = bc.BlackBoxProjector(sampler_realistic, proj_dim, log_likelihood)
+prj_realistic = bc.BlackBoxProjector(sampler_realistic, proj_dim, log_likelihood, grad_log_likelihood)
 
 ############################
 ###Random projections in SparseVI for gradient computation
@@ -80,7 +81,11 @@ class GaussianProjector(bc.Projector):
         nu = (pts - self.muw).dot(SigLInv.T)
         Psi = np.dot(SigLInv, np.dot(self.Sigw, SigLInv.T))
         nu = np.hstack((nu.dot(np.linalg.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
-        return nu
+        if not grad:
+            return nu
+        else:
+            #compute
+            return nu, gnu
 
     def update(self, wts = None, pts = None):
         if wts is None or pts is None or pts.shape[0] == 0:
@@ -102,6 +107,7 @@ prj_exact_realistic.update(2.*np.random.rand(x.shape[0]), x)
 ##############################
 
 #create coreset construction objects
+bpsvi = bc.BatchPSVICoreset(x, GaussianProjector(), opt_itrs = opt_itrs, n_subsample_opt = 50)
 sparsevi = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = opt_itrs)
 giga_optimal = bc.HilbertCoreset(x, prj_optimal)
 giga_optimal_exact = bc.HilbertCoreset(x,prj_exact_optimal)
@@ -109,7 +115,8 @@ giga_realistic = bc.HilbertCoreset(x,prj_realistic)
 giga_realistic_exact = bc.HilbertCoreset(x,prj_exact_realistic)
 unif = bc.UniformSamplingCoreset(x)
 
-algs = {'SVI': sparsevi, 
+algs = {'BPSVI' : bpsvi,
+        'SVI': sparsevi, 
         'GIGAO': giga_optimal, 
         'GIGAOE': giga_optimal_exact, 
         'GIGAR': giga_realistic, 
