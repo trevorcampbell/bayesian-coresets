@@ -61,21 +61,7 @@ Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
 sampler_realistic = lambda n, w, pts : np.random.multivariate_normal(muhat, Sighat, n)
 prj_realistic = bc.BlackBoxProjector(sampler_realistic, proj_dim, log_likelihood, grad_log_likelihood)
 
-############################
-###Random projections in SparseVI for gradient computation
-###the below is what you would do normally for a model where exact log-likelihood projection is unavailable
-##create the sampler for the weighted posterior
-#def sampler_w(n, wts, idcs):
-#  w = np.zeros(x.shape[0])
-#  w[idcs] = wts
-#  muw, Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w)
-#  return np.random.multivariate_normal(muw, Sigw, n)
-#log_likelihood_w = log_likelihood
-#tsf_w = bc.BayesianTangentSpaceFactory(log_likelihood, sampler_w, proj_dim)
-############################
-
-##############################
-#for this model we can do the log likelihood projection exactly
+#exact (gradient) log likelihood projection
 class GaussianProjector(bc.Projector):
     def project(self, pts, grad=False):
         nu = (pts - self.muw).dot(SigLInv.T)
