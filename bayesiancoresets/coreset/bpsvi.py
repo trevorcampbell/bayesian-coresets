@@ -36,7 +36,7 @@ class BatchPSVICoreset(Coreset):
       sum_scaling = self.data.shape[0]/n_subsample
 
     if self.pts.size > 0:
-      corevecs, pgrads = self.ll_projector.project(self.pts, grads=True)
+      corevecs, pgrads = self.ll_projector.project(self.pts, grad=True)
     else:
       corevecs, pgrads = np.zeros((0, vecs.shape[1])), np.zeros((0, vecs.shape[1], self.pts.shape[1]))
 
