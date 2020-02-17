@@ -80,11 +80,13 @@ class GaussianProjector(bc.Projector):
     def project(self, pts, grad=False):
         nu = (pts - self.muw).dot(SigLInv.T)
         Psi = np.dot(SigLInv, np.dot(self.Sigw, SigLInv.T))
-        nu = np.hstack((nu.dot(np.linalg.cholesky(Psi)), 0.25*np.sqrt(np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
+        PsiL = np.linalg.cholesky(Psi)
+        nu = np.hstack((nu.dot(PsiL), np.sqrt(0.5*np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
         if not grad:
             return nu
         else:
-            #compute
+            gnu = np.hstack((SigLInv.T.dot(PsiL), np.zeros(pts.shape[1])[:,np.newaxis])).T
+            gnu = np.tile(gnu, (pts.shape[0], 1, 1))
             return nu, gnu
 
     def update(self, wts = None, pts = None):
