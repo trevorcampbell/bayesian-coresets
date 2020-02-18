@@ -90,10 +90,10 @@ Sig0 = np.eye(mup.shape[0])
 ###############################
 ## TUNING PARAMETERS ##
 #Ms = [1, 2, 5, 10, 20, 50, 100, 200, 499] #coreset sizes at which we record output
+M = 100
 SVI_step_sched = lambda itr : 1./(1.+itr)
 BPSVI_step_sched = lambda itr : 1./(1.+itr)
-n_samples = 100
-M = 100
+n_subsample_opt = 50
 projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = .75 #noise level (relative) for corrupting pihat
 opt_itrs = 500
