@@ -174,7 +174,7 @@ for m in range(M+1):
   fkls_laplace[m] = gaussian.gaussian_KL(mup, Sigp, mul, np.linalg.inv(Sigl))
 
 #save results
-f = open('results/results_'+alg+'_results_' +str(ID)+'.pk', 'wb')
+f = open('results/'+dnm+'_'+alg+'_results_' +str(ID)+'.pk', 'wb')
 res = (cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace, fkls_laplace)
 pk.dump(res, f)
 f.close()
