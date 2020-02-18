@@ -93,11 +93,11 @@ Sig0 = np.eye(mup.shape[0])
 M = 100
 SVI_step_sched = lambda itr : 1./(1.+itr)
 BPSVI_step_sched = lambda itr : 1./(1.+itr)
-n_subsample_opt = 100
+n_subsample_opt = 300
 projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = .75 #noise level (relative) for corrupting pihat
 SVI_opt_itrs = 500
-BPSVI_opt_itrs = 500
+BPSVI_opt_itrs = 1000
 ###############################
 
 #get pihat via interpolation between prior/posterior + noise
