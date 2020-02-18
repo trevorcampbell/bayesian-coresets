@@ -10,8 +10,8 @@ import gaussian
 M = 100
 N = 1000
 d = 200
-SVI_opt_itrs = 100
-BPSVI_opt_itrs = 100
+SVI_opt_itrs = 500
+BPSVI_opt_itrs = 500
 n_subsample_opt = None # 100
 proj_dim = 100
 pihat_noise =0.75
