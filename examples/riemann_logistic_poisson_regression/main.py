@@ -38,19 +38,19 @@ ID = sys.argv[3] #just a number to denote trial #, any nonnegative integer
 
 np.random.seed(int(ID))
 
-#load the logistic or poisson regression model depending on selected folder
-tuning = {'synth_lr': (50, lambda itr : 1./(1.+itr)**0.5), 
-          'synth_lr_large': (50, lambda itr : 1./(1.+itr)**0.5), 
-          'ds1': (50, lambda itr : 1./(1.+itr)**0.5), 
-          'ds1_large': (50, lambda itr : 1./(1.+itr)**0.5), 
-          'phishing': (50, lambda itr : 1./(1.+itr)**0.5), 
-          'phishing_large': (50, lambda itr : 1./(1.+itr)**0.5), 
-          'synth_poiss': (50, lambda itr : 1./(1.+itr)**0.5), 
-          'synth_poiss_large': (50, lambda itr : 1./(1.+itr)**0.5), 
-          'biketrips': (200, lambda itr : 1./(1.+itr)**0.5), 
-          'biketrips_large': (200, lambda itr : 1./(1.+itr)**0.5), 
-          'airportdelays': (200, lambda itr : 1./(1.+itr)**0.5),
-          'airportdelays_large': (200, lambda itr : 1./(1.+itr)**0.5)}
+##load the logistic or poisson regression model depending on selected folder
+#tuning = {'synth_lr': (50, lambda itr : 1./(1.+itr)**0.5), 
+#          'synth_lr_large': (50, lambda itr : 1./(1.+itr)**0.5), 
+#          'ds1': (50, lambda itr : 1./(1.+itr)**0.5), 
+#          'ds1_large': (50, lambda itr : 1./(1.+itr)**0.5), 
+#          'phishing': (50, lambda itr : 1./(1.+itr)**0.5), 
+#          'phishing_large': (50, lambda itr : 1./(1.+itr)**0.5), 
+#          'synth_poiss': (50, lambda itr : 1./(1.+itr)**0.5), 
+#          'synth_poiss_large': (50, lambda itr : 1./(1.+itr)**0.5), 
+#          'biketrips': (200, lambda itr : 1./(1.+itr)**0.5), 
+#          'biketrips_large': (200, lambda itr : 1./(1.+itr)**0.5), 
+#          'airportdelays': (200, lambda itr : 1./(1.+itr)**0.5),
+#          'airportdelays_large': (200, lambda itr : 1./(1.+itr)**0.5)}
 
 lrdnms = ['synth_lr', 'phishing', 'ds1', 'synth_lr_large', 'phishing_large', 'ds1_large']
 prdnms = ['synth_poiss', 'biketrips', 'airportdelays', 'synth_poiss_large', 'biketrips_large', 'airportdelays_large']
@@ -90,7 +90,8 @@ Sig0 = np.eye(mup.shape[0])
 ###############################
 ## TUNING PARAMETERS ##
 #Ms = [1, 2, 5, 10, 20, 50, 100, 200, 499] #coreset sizes at which we record output
-learning_rate = lambda itr : 0.5/(1.+itr)
+SVI_step_sched = lambda itr : 1./(1.+itr)
+BPSVI_step_sched = lambda itr : 1./(1.+itr)
 n_samples = 100
 M = 100
 projection_dim = 100 #random projection dimension for Hilbert csts
@@ -127,9 +128,11 @@ print('Creating coresets object')
 giga_optimal = bc.HilbertCoreset(Z, prj_optimal)
 giga_realistic = bc.HilbertCoreset(Z, prj_realistic)
 unif = bc.UniformSamplingCoreset(Z)
-sparsevi = bc.SparseVICoreset(Z, prj_w, opt_itrs=opt_itrs, step_sched = learning_rate)
+sparsevi = bc.SparseVICoreset(Z, prj_w, opt_itrs=SVI_opt_itrs, step_sched = SVI_step_sched)
+bpsvi = bc.BatchPSVICoreset(x, GaussianProjector(), opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
 
 algs = {'SVI': sparsevi, 
+        'BPSVI': bpsvi, 
         'GIGAO': giga_optimal, 
         'GIGAR': giga_realistic, 
         'RAND': unif,
@@ -137,19 +140,23 @@ algs = {'SVI': sparsevi,
 coreset = algs[alg]
 
 print('Building coresets via ' + alg)
-#build
-wts = np.zeros((M+1, Z.shape[0]))
+w = [np.array([0.])]
+p = [np.zeros((1, x.shape[1]))]
 cputs = np.zeros(M+1)
-t0 = time.perf_counter()
 for m in range(1, M+1):
   print(str(m)+'/'+str(M))
   if alg != 'PRIOR':
+    t0 = time.perf_counter()
     coreset.build(1, m)
 
     #record time and weights
     cputs[m] = time.perf_counter()-t0
-    w, pts, idcs = coreset.get()
-    wts[m, idcs] = w
+    wts, pts, idcs = coreset.get()
+    w.append(wts)
+    p.append(pts)
+  else:
+    w.append(np.array([0.]))
+    p.append(np.zeros((1, x.shape[1])))
     
 #get laplace approximations for each weight setting, and KL divergence to full posterior laplace approx mup Sigp
 #used for a quick/dirty performance comparison without expensive posterior sample comparisons (e.g. energy distance)
@@ -158,12 +165,15 @@ Sigs_laplace = np.zeros((M+1, D, D))
 kls_laplace = np.zeros(M+1)
 print('Computing coreset Laplace approximation + approximate KL(posterior || coreset laplace)')
 for m in range(M+1):
-  mul, Sigl = get_laplace(wts[m,:], Z, Z.mean(axis=0)[:D])
+  mul, Sigl = get_laplace(w[m], p[m], Z.mean(axis=0)[:D])
   mus_laplace[m,:] = mul
   Sigs_laplace[m,:,:] = Sigl
-  kls_laplace[m] = gaussian.gaussian_KL(mup, Sigp, mul, np.linalg.inv(Sigl))
+  rkls_laplace[m] = gaussian.gaussian_KL(mul, Sigl, mup, np.linalg.inv(Sigp))
+  fkls_laplace[m] = gaussian.gaussian_KL(mup, Sigp, mul, np.linalg.inv(Sigl))
 
 #save results
 np.savez('results/'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=np.arange(M+1), mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
-
-
+f = open('results/results_'+alg+'_results_' +str(ID)+'.pk', 'wb')
+res = (cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace, fkls_laplace)
+pk.dump(res, f)
+f.close()

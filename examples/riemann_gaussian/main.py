@@ -1,4 +1,5 @@
 import numpy as np
+import pickle as pk
 import bayesiancoresets as bc
 import os, sys
 from scipy.stats import multivariate_normal
@@ -6,13 +7,16 @@ from scipy.stats import multivariate_normal
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import gaussian
 
-
-M = 200
+M = 100
 N = 1000
 d = 200
-opt_itrs = 500
+SVI_opt_itrs = 100
+BPSVI_opt_itrs = 100
+n_subsample_opt = 100
 proj_dim = 100
 pihat_noise =0.75
+BPSVI_step_sched = lambda i : 1./(1+i)
+SVI_step_sched = lambda i : 1./(1+i)
 
 mu0 = np.zeros(d)
 Sig0 = np.eye(d)
@@ -68,11 +72,13 @@ class GaussianProjector(bc.Projector):
         Psi = np.dot(SigLInv, np.dot(self.Sigw, SigLInv.T))
         PsiL = np.linalg.cholesky(Psi)
         nu = np.hstack((nu.dot(PsiL), np.sqrt(0.5*np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
+        nu *= np.sqrt(nu.shape[1])
         if not grad:
             return nu
         else:
             gnu = np.hstack((SigLInv.T.dot(PsiL), np.zeros(pts.shape[1])[:,np.newaxis])).T
             gnu = np.tile(gnu, (pts.shape[0], 1, 1))
+            gnu *= np.sqrt(gnu.shape[1])
             return nu, gnu
 
     def update(self, wts = None, pts = None):
@@ -93,10 +99,9 @@ prj_exact_realistic = GaussianProjector()
 prj_exact_realistic.update(2.*np.random.rand(x.shape[0]), x)
 
 ##############################
-
 #create coreset construction objects
-bpsvi = bc.BatchPSVICoreset(x, GaussianProjector(), opt_itrs = opt_itrs, n_subsample_opt = 50)
-sparsevi = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = opt_itrs)
+bpsvi = bc.BatchPSVICoreset(x, GaussianProjector(), opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
+sparsevi = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = BPSVI_opt_itrs, step_sched = SVI_step_sched)
 giga_optimal = bc.HilbertCoreset(x, prj_optimal)
 giga_optimal_exact = bc.HilbertCoreset(x,prj_exact_optimal)
 giga_realistic = bc.HilbertCoreset(x,prj_realistic)
@@ -112,17 +117,19 @@ algs = {'BPSVI' : bpsvi,
         'RAND': unif}
 alg = algs[nm]
 
-w = np.zeros((M+1, x.shape[0]))
+w = [np.array([0.])]
+p = [np.zeros((1, x.shape[1]))]
 for m in range(1, M+1):
   print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 
   alg.build(1, m)
-  #store weights
+  #store weights/pts
   wts, pts, idcs = alg.get()
-  w[m, idcs] = wts
+  w.append(wts)
+  p.append(pts)
 
   #printouts for debugging purposes
-  #print('reverse KL: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
+  #print('reverse KL: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, p[m], w[m], reverse=True)))
   #print('reverse KL opt: ' + str(weighted_post_KL(mu0, Sig0inv, Siginv, x, w_opt[m, :], reverse=True)))
 
 muw = np.zeros((M+1, mu0.shape[0]))
@@ -130,12 +137,13 @@ Sigw = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
 rklw = np.zeros(M+1)
 fklw = np.zeros(M+1)
 for m in range(M+1):
-  muw[m, :], Sigw[m, :, :] = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, w[m, :])
-  rklw[m] = gaussian.weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=True)
-  fklw[m] = gaussian.weighted_post_KL(mu0, Sig0inv, Siginv, x, w[m, :], reverse=False)
+  muw[m, :], Sigw[m, :, :] = gaussian.weighted_post(mu0, Sig0inv, Siginv, p[m], w[m])
+  rklw[m] = gaussian.gaussian_KL(muw[m,:], Sigw[m,:,:], mup, Sigpinv)
+  fklw[m] = gaussian.gaussian_KL(mup, Sigp, muw[m,:], np.linalg.inv(Sigw[m,:,:]))
 
 if not os.path.exists('results/'):
   os.mkdir('results')
-np.savez('results/results_'+nm+'_' + tr+'.npz', x=x, mu0=mu0, Sig0=Sig0, Sig=Sig, mup=mup, Sigp=Sigp, w=w,
-                               muw=muw, Sigw=Sigw, rklw=rklw, fklw=fklw)
-
+f = open('results/results_'+nm+'_' + tr+'.pk', 'wb')
+res = (x, mu0, Sig0, Sig, mup, Sigp, w, p, muw, Sigw, rklw, fklw)
+pk.dump(res, f)
+f.close()

@@ -35,10 +35,10 @@ class BatchPSVICoreset(Coreset):
       vecs = self.ll_projector.project(self.data[sub_idcs])
       sum_scaling = self.data.shape[0]/n_subsample
 
-    if self.pts.size > 0:
-      corevecs, pgrads = self.ll_projector.project(self.pts, grad=True)
+    if p.size > 0:
+      corevecs, pgrads = self.ll_projector.project(p, grad=True)
     else:
-      corevecs, pgrads = np.zeros((0, vecs.shape[1])), np.zeros((0, vecs.shape[1], self.pts.shape[1]))
+      corevecs, pgrads = np.zeros((0, vecs.shape[1])), np.zeros((0, vecs.shape[1], p.shape[1]))
 
     return vecs, sum_scaling, sub_idcs, corevecs, pgrads
 
@@ -48,6 +48,7 @@ class BatchPSVICoreset(Coreset):
     def grd(x):
       w = x[:sz]
       p = x[sz:].reshape((sz, d))
+
       vecs, sum_scaling, sub_idcs, corevecs, pgrads = self._get_projection(self.n_subsample_opt, w, p)
 
       #compute gradient of weights and pts

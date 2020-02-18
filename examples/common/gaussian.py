@@ -27,12 +27,3 @@ def weighted_post(th0, Sig0inv, Siginv, x, w):
   mup = np.dot(Sigp,  np.dot(Sig0inv,th0) + np.dot(Siginv, (w[:, np.newaxis]*x).sum(axis=0)))
   return mup, Sigp
 
-def weighted_post_KL(th0, Sig0inv, Siginv, x, w, reverse=True):
-  muw, Sigw = weighted_post(th0, Sig0inv, Siginv, x, w)
-  mup, Sigp = weighted_post(th0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
-  if reverse:
-    return gaussian_KL(muw, Sigw, mup, np.linalg.inv(Sigp))
-  else:
-    return gaussian_KL(mup, Sigp, muw, np.linalg.inv(Sigw))
-
-
