@@ -1,5 +1,6 @@
 from __future__ import print_function
 import numpy as np
+import pickle as pk
 import bayesiancoresets as bc
 from scipy.optimize import minimize
 import time
@@ -93,7 +94,7 @@ Sig0 = np.eye(mup.shape[0])
 M = 100
 SVI_step_sched = lambda itr : 1./(1.+itr)
 BPSVI_step_sched = lambda itr : 1./(1.+itr)
-n_subsample_opt = 50
+n_subsample_opt = 100
 projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = .75 #noise level (relative) for corrupting pihat
 SVI_opt_itrs = 500
