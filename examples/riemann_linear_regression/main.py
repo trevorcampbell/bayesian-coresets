@@ -10,31 +10,30 @@ import model_linreg
 nm = sys.argv[1]
 tr = sys.argv[2]
 
+#np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+tr])) % 2**32) #use this if need a seed depending on alg name and trial num
+#use the trial # as seed
+np.random.seed(int(tr))
+
 #experiment params
 M = 300
-opt_itrs = 100
+SVI_opt_itrs = 100
+BPSVI_opt_itrs = 100
+n_subsample_opt = 200
+n_subsample_select = 1000
 proj_dim = 100
 pihat_noise =0.75
 n_bases_per_scale = 50
-N_subsample = 10000
 beta_dim = 20
+BPSVI_step_sched = lambda i : 1./(1+i)
+SVI_step_sched = lambda i : 1./(1+i)
 
 #load data and compute true posterior
 #each row of x is [lat, lon, price]
 print('Loading data')
 
-#trial num as seed for loading data
-np.random.seed(int(tr))
-
 x = np.load('../data/prices2018.npy')
 
-print('Taking a random subsample')
-#get a random subsample of it
-idcs = np.arange(x.shape[0])
-np.random.shuffle(idcs)
-x = x[idcs[:N_subsample], :]
-
-#log transform
+#log transform the prices
 x[:, 2] = np.log10(x[:, 2])
 
 #get empirical mean/std
@@ -57,9 +56,6 @@ Sig0 = (datastd**2+datamn**2)*np.eye(d)
 Sig0inv = np.linalg.inv(Sig0)
 #Siginv = np.linalg.inv(Sig)
 #SigLInv = np.linalg.inv(SigL)
-
-#for the actual coreset construction, use the trial # and name as seed
-np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+tr])) % 2**32)
 
 #generate basis functions by uniformly randomly picking locations in the dataset
 print('Trial ' + tr) 
