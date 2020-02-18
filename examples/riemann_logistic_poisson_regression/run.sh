@@ -8,8 +8,7 @@
 
 for ID in {1..10}
 do
-    #for alg in "PRIOR" "RAND" "GIGAO" "GIGAR" "SVI" "BPSVI"
-    for alg in "BPSVI"
+    for alg in "PRIOR" "RAND" "GIGAO" "GIGAR" "SVI" "BPSVI"
     do
         for dnm in "synth_lr" "phishing" "ds1" 
 	do

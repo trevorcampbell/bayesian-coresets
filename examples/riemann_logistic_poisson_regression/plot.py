@@ -9,7 +9,7 @@ sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
 
 
-dnames = ['synth_lr', 'ds1', 'phishing', 'synth_poiss', 'biketrips', 'airportdelays']
+dnames = ['synth_lr', 'ds1', 'phishing'] #, 'synth_poiss', 'biketrips', 'airportdelays']
 algs = [('RAND', 'Uniform', pal[3]),  ('SVI', 'SparseVI', pal[0]), ('BPSVI', 'BPSVI', pal[4]), ('GIGAR','GIGA (Realistic)', pal[2]),('GIGAO','GIGA (Optimal)', pal[1]), ('PRIOR','Prior', 'black')]
 
 figs = []
@@ -62,8 +62,13 @@ for dnm in dnames:
       if 'PRIOR' in fn:
         kls[tridx, :] = np.median(kls[tridx,:])
 
-    # since cputs record per-iteration time, need to sum up for everything except BPSVI
-    if alg[0] != 'BPSVI':
+    #cputs[0] is setup time
+    #cputs[i] is time for iteration i in 1:M
+    # for BPSVI, since each iter runs independently, need to add cputs[0] to all scputs[i]
+    # for all others, since iters build up on each other, need to cumulative sum
+    if alg[0] == 'BPSVI':
+      cputs[:, 1:] += cputs[:, 0][:,np.newaxis]
+    else:
       cputs = np.cumsum(cputs, axis=1)
   
     cput50 = np.percentile(cputs, 50, axis=0)

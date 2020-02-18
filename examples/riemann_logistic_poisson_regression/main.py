@@ -90,14 +90,15 @@ Sig0 = np.eye(mup.shape[0])
 
 ###############################
 ## TUNING PARAMETERS ##
-M = 100
+M = 20
 SVI_step_sched = lambda itr : 1./(1.+itr)
-BPSVI_step_sched = lambda itr : 1./(1.+itr)
-n_subsample_opt = 300
+BPSVI_step_sched = lambda itr : 10./(1.+itr)
+n_subsample_opt = 400
+n_subsample_select = 1000
 projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = .75 #noise level (relative) for corrupting pihat
-SVI_opt_itrs = 500
-BPSVI_opt_itrs = 1000
+SVI_opt_itrs = 1500
+BPSVI_opt_itrs = 1500
 ###############################
 
 #get pihat via interpolation between prior/posterior + noise
@@ -126,11 +127,25 @@ prj_w = bc.BlackBoxProjector(sampler_w, projection_dim, log_likelihood, grad_z_l
  
 print('Creating coresets object')
 #create coreset construction objects
+t0 = time.perf_counter()
 giga_optimal = bc.HilbertCoreset(Z, prj_optimal)
+gigao_t_setup = time.perf_counter()-t0
+
+t0 = time.perf_counter()
 giga_realistic = bc.HilbertCoreset(Z, prj_realistic)
+gigar_t_setup = time.perf_counter()-t0
+
+t0 = time.perf_counter()
 unif = bc.UniformSamplingCoreset(Z)
-sparsevi = bc.SparseVICoreset(Z, prj_w, opt_itrs=SVI_opt_itrs, step_sched = SVI_step_sched)
+unif_t_setup = time.perf_counter()-t0
+
+t0 = time.perf_counter()
+sparsevi = bc.SparseVICoreset(Z, prj_w, opt_itrs=SVI_opt_itrs, n_subsample_opt = n_subsample_opt, n_subsample_select = n_subsample_select, step_sched = SVI_step_sched)
+sparsevi_t_setup = time.perf_counter()-t0
+
+t0 = time.perf_counter()
 bpsvi = bc.BatchPSVICoreset(Z, prj_w, opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
+bpsvi_t_setup = time.perf_counter()-t0
 
 algs = {'SVI': sparsevi, 
         'BPSVI': bpsvi, 
@@ -139,19 +154,26 @@ algs = {'SVI': sparsevi,
         'RAND': unif,
         'PRIOR': None}
 coreset = algs[alg]
+t0s = {'SVI' : sparsevi_t_setup,
+       'BPSVI' : bpsvi_t_setup,
+       'GIGAO' : gigao_t_setup,
+       'GIGAR' : gigar_t_setup,
+       'RAND' : unif_t_setup,
+       'PRIOR' : 0.}
 
 print('Building coresets via ' + alg)
 w = [np.array([0.])]
 p = [np.zeros((1, Z.shape[1]))]
 cputs = np.zeros(M+1)
+cputs[0] = t0s[alg]
 for m in range(1, M+1):
   print(str(m)+'/'+str(M))
   if alg != 'PRIOR':
     t0 = time.perf_counter()
     coreset.build(1, m)
+    cputs[m] = time.perf_counter()-t0
 
     #record time and weights
-    cputs[m] = time.perf_counter()-t0
     wts, pts, idcs = coreset.get()
     w.append(wts)
     p.append(pts)
