@@ -96,7 +96,8 @@ BPSVI_step_sched = lambda itr : 1./(1.+itr)
 n_subsample_opt = 50
 projection_dim = 100 #random projection dimension for Hilbert csts
 pihat_noise = .75 #noise level (relative) for corrupting pihat
-opt_itrs = 500
+SVI_opt_itrs = 500
+BPSVI_opt_itrs = 500
 ###############################
 
 #get pihat via interpolation between prior/posterior + noise
@@ -119,9 +120,9 @@ def sampler_w(sz, w, pts):
   #print('min eig: ' + str(np.linalg.eigvalsh(Sigw)[0]) + ' max eig: ' + str(np.linalg.eigvalsh(Sigw)[-1]))
   return np.random.multivariate_normal(muw, Sigw, sz)
 
-prj_optimal = bc.BlackBoxProjector(sampler_optimal, projection_dim, log_likelihood)
-prj_realistic = bc.BlackBoxProjector(sampler_realistic, projection_dim, log_likelihood)
-prj_w = bc.BlackBoxProjector(sampler_w, projection_dim, log_likelihood)
+prj_optimal = bc.BlackBoxProjector(sampler_optimal, projection_dim, log_likelihood, grad_z_log_likelihood)
+prj_realistic = bc.BlackBoxProjector(sampler_realistic, projection_dim, log_likelihood, grad_z_log_likelihood)
+prj_w = bc.BlackBoxProjector(sampler_w, projection_dim, log_likelihood, grad_z_log_likelihood)
  
 print('Creating coresets object')
 #create coreset construction objects
@@ -129,7 +130,7 @@ giga_optimal = bc.HilbertCoreset(Z, prj_optimal)
 giga_realistic = bc.HilbertCoreset(Z, prj_realistic)
 unif = bc.UniformSamplingCoreset(Z)
 sparsevi = bc.SparseVICoreset(Z, prj_w, opt_itrs=SVI_opt_itrs, step_sched = SVI_step_sched)
-bpsvi = bc.BatchPSVICoreset(x, GaussianProjector(), opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
+bpsvi = bc.BatchPSVICoreset(Z, prj_w, opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
 
 algs = {'SVI': sparsevi, 
         'BPSVI': bpsvi, 
@@ -141,7 +142,7 @@ coreset = algs[alg]
 
 print('Building coresets via ' + alg)
 w = [np.array([0.])]
-p = [np.zeros((1, x.shape[1]))]
+p = [np.zeros((1, Z.shape[1]))]
 cputs = np.zeros(M+1)
 for m in range(1, M+1):
   print(str(m)+'/'+str(M))
@@ -156,13 +157,14 @@ for m in range(1, M+1):
     p.append(pts)
   else:
     w.append(np.array([0.]))
-    p.append(np.zeros((1, x.shape[1])))
+    p.append(np.zeros((1, Z.shape[1])))
     
 #get laplace approximations for each weight setting, and KL divergence to full posterior laplace approx mup Sigp
 #used for a quick/dirty performance comparison without expensive posterior sample comparisons (e.g. energy distance)
 mus_laplace = np.zeros((M+1, D))
 Sigs_laplace = np.zeros((M+1, D, D))
-kls_laplace = np.zeros(M+1)
+rkls_laplace = np.zeros(M+1)
+fkls_laplace = np.zeros(M+1)
 print('Computing coreset Laplace approximation + approximate KL(posterior || coreset laplace)')
 for m in range(M+1):
   mul, Sigl = get_laplace(w[m], p[m], Z.mean(axis=0)[:D])
@@ -172,7 +174,6 @@ for m in range(M+1):
   fkls_laplace[m] = gaussian.gaussian_KL(mup, Sigp, mul, np.linalg.inv(Sigl))
 
 #save results
-np.savez('results/'+dnm+'_'+alg+'_results_'+str(ID)+'.npz', cputs=cputs, wts=wts, Ms=np.arange(M+1), mus=mus_laplace, Sigs=Sigs_laplace, kls=kls_laplace)
 f = open('results/results_'+alg+'_results_' +str(ID)+'.pk', 'wb')
 res = (cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace, fkls_laplace)
 pk.dump(res, f)

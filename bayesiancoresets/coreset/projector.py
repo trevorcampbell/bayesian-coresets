@@ -23,7 +23,7 @@ class BlackBoxProjector(Projector):
         if grad:
             if self.grad_loglikelihood is None:
                 raise ValueError('grad_loglikelihood was requested but not initialized in BlackBoxProjector.project')
-            glls = self.gradloglikelihood(pts, self.samples)
+            glls = self.grad_loglikelihood(pts, self.samples)
             glls -= glls.mean(axis=2)[:, :, np.newaxis]
             return lls, glls
         else:
