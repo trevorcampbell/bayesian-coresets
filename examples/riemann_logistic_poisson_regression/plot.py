@@ -1,4 +1,5 @@
 import numpy as np
+import pickle as pk
 import bokeh.plotting as bkp
 import bokeh.layouts as bkl
 import time
@@ -9,7 +10,7 @@ from plotting import *
 
 
 dnames = ['synth_lr', 'ds1', 'phishing', 'synth_poiss', 'biketrips', 'airportdelays']
-algs = [('RAND', 'Uniform', pal[3]),  ('SVI', 'SparseVI', pal[0]), ('GIGAR','GIGA (Realistic)', pal[2]),('GIGAO','GIGA (Optimal)', pal[1]), ('PRIOR','Prior', 'black')]
+algs = [('RAND', 'Uniform', pal[3]),  ('SVI', 'SparseVI', pal[0]), ('BPSVI', 'BPSVI', pal[4]), ('GIGAR','GIGA (Realistic)', pal[2]),('GIGAO','GIGA (Optimal)', pal[1]), ('PRIOR','Prior', 'black')]
 
 figs = []
 for dnm in dnames:
@@ -30,32 +31,40 @@ for dnm in dnames:
     print('Need to run prior to establish baseline first')
     quit()
   kltot = 0.
+  M = 0
   for tridx, fn in enumerate(trials):
-    res = np.load('results/'+fn)
-    assert np.all(res['kls'] == res['kls'][0]) #make sure prior doesn't change...
-    kltot += res['kls'][0]
+    f = open('results/'+fn, 'rb')
+    res = pk.load(f) #(cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace, fkls_laplace)
+    f.close()
+    assert np.all(res[5] == res[5][0]) #make sure prior doesn't change...
+    kltot += res[5][0]
+    M = res[0].shape[0]
   std_kls[dnm] = kltot / len(trials)
   
   for alg in algs:
     trials = [fn for fn in os.listdir('results/') if dnm+'_'+alg[0]+'_results_' in fn]
     if len(trials) == 0: continue
-    Ms = np.load('results/'+trials[0])['Ms']
-    kls = np.zeros((len(trials), len(Ms)))
-    cputs = np.zeros((len(trials), len(Ms)))
-    cszs = np.zeros((len(trials), len(Ms)))
+    kls = np.zeros((len(trials), M))
+    cputs = np.zeros((len(trials), M))
+    cszs = np.zeros((len(trials), M))
     kl0 = std_kls[dnm] 
     for tridx, fn in enumerate(trials):
-      res = np.load('results/'+fn)
-      cput = res['cputs']
-      cputs[tridx, :] = cput[:len(Ms)]
-      wts = res['wts']
-      mu = res['mus']
-      Sig = res['Sigs']
-      kl = res['kls']
-      cszs[tridx, :] = (wts > 0).sum(axis=1)
-      kls[tridx, :] = kl[:len(Ms)]/kl0
+      f = open('results/'+fn, 'rb')
+      res = pk.load(f) #(cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace, fkls_laplace)
+      f.close()
+      cputs[tridx, :] = res[0]
+      wts = res[1]
+      mu = res[3]
+      Sig = res[4]
+      kl = res[5]
+      cszs[tridx, :] = np.array([w.shape[0] for w in wts])
+      kls[tridx, :] = kl/kl0
       if 'PRIOR' in fn:
         kls[tridx, :] = np.median(kls[tridx,:])
+
+    # since cputs record per-iteration time, need to sum up for everything except BPSVI
+    if alg[0] != 'BPSVI':
+      cputs = np.cumsum(cputs, axis=1)
   
     cput50 = np.percentile(cputs, 50, axis=0)
     cput25 = np.percentile(cputs, 25, axis=0)
@@ -69,9 +78,9 @@ for dnm in dnames:
     kl25 = np.percentile(kls, 25, axis=0)
     kl75 = np.percentile(kls, 75, axis=0)
   
-    fig.line(Ms, kl50, color=alg[2], legend=alg[1], line_width=10)
-    fig.line(Ms, kl25, color=alg[2], legend=alg[1], line_width=10, line_dash='dashed')
-    fig.line(Ms, kl75, color=alg[2], legend=alg[1], line_width=10, line_dash='dashed')
+    fig.line(np.arange(kl50.shape[0]), kl50, color=alg[2], legend=alg[1], line_width=10)
+    fig.line(np.arange(kl25.shape[0]), kl25, color=alg[2], legend=alg[1], line_width=10, line_dash='dashed')
+    fig.line(np.arange(kl75.shape[0]), kl75, color=alg[2], legend=alg[1], line_width=10, line_dash='dashed')
   
     fig2.line(cput50, kl50, color=alg[2], legend=alg[1], line_width=10)
     fig2.patch(np.hstack((cput50, cput50[::-1])), np.hstack((kl75, kl25[::-1])), fill_color=alg[2], legend=alg[1], alpha=0.3)
