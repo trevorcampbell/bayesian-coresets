@@ -1,5 +1,6 @@
 from __future__ import print_function
 import numpy as np
+import scipy.linalg as sl
 import pickle as pk
 import bayesiancoresets as bc
 from scipy.optimize import minimize
@@ -13,7 +14,7 @@ from mcmc import sampler
 import gaussian
 
 #computes the Laplace approximation N(mu, Sig) to the posterior with weights wts
-def get_laplace(wts, Z, mu0):
+def get_laplace(wts, Z, mu0, diag = False):
   trials = 10
   Zw = Z[wts>0, :]
   ww = wts[wts>0]
@@ -30,8 +31,13 @@ def get_laplace(wts, Z, mu0):
       continue
     break
   mu = res.x
-  Sig = -np.linalg.inv(hess_th_log_joint(Zw, mu, ww)[0,:,:])
-  return mu, Sig
+  if diag:
+    LSigInv = np.sqrt(-diag_hess_th_log_joint(Zw, mu, ww)[0,:])
+    LSig = 1./LSigInv
+  else:
+    LSigInv = np.linalg.cholesky(-hess_th_log_joint(Zw, mu, ww)[0,:,:])
+    LSig = sl.solve_triangular(LSigInv, np.eye(LSigInv.shape[0]), lower=True, overwrite_b = True, check_finite = False)
+  return mu, LSig, LSigInv
 
 dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips / airportdelays
 alg = sys.argv[2] #should be GIGAO / GIGAR / RAND / PRIOR / SVI
@@ -83,6 +89,8 @@ samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
 #used for pihat computation for Hilbert coresets with noise to simulate uncertainty in a good pihat
 mup = samples.mean(axis=0)
 Sigp = np.cov(samples, rowvar=False)
+LSigp = np.linalg.cholesky(Sigp)
+LSigpInv = sl.solve_triangular(LSigp, np.eye(LSigp.shape[0]), lower=True, overwrite_b = True, check_finite = False)
 
 #create the prior -- also used for the above purpose
 mu0 = np.zeros(mup.shape[0])
@@ -90,6 +98,7 @@ Sig0 = np.eye(mup.shape[0])
 
 ###############################
 ## TUNING PARAMETERS ##
+use_diag_laplace_w = False
 M = 20
 SVI_step_sched = lambda itr : 1./(1.+itr)
 BPSVI_step_sched = lambda itr : 10./(1.+itr)
@@ -109,17 +118,17 @@ Sighat = U*Sigp + (1.-U)*Sig0
 #now corrupt the smoothed pihat
 muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
 Sighat *= np.exp(-2.*pihat_noise*np.fabs(np.random.randn()))
+LSighat = np.linalg.cholesky(Sighat)
 
 print('Building projectors')
-sampler_optimal = lambda sz, w, pts : np.atleast_2d(np.random.multivariate_normal(mup, Sigp, sz))
-sampler_realistic = lambda sz, w, pts : np.atleast_2d(np.random.multivariate_normal(muhat, Sighat, sz))
+sampler_optimal = lambda sz, w, pts : mup + np.random.randn((sz, mup.shape[0])).dot(LSigp.T)
+sampler_realistic = lambda sz, w, pts : muhat + np.random.randn((sz, muhat.shape[0])).dot(LSighat.T)
 def sampler_w(sz, w, pts):
-  if pts.shape[0] > 0:
-    muw, Sigw = get_laplace(w, pts, mu0)
-  else:
-    muw, Sigw = mu0, Sig0
-  #print('min eig: ' + str(np.linalg.eigvalsh(Sigw)[0]) + ' max eig: ' + str(np.linalg.eigvalsh(Sigw)[-1]))
-  return np.random.multivariate_normal(muw, Sigw, sz)
+  if pts.shape[0] == 0:
+    w = np.zeros(1)
+    pts = np.zeros((1, Z.shape[1]))
+  muw, LSigw, LSigwInv = get_laplace(w, pts, mu0, use_diag_laplace_w)
+  return muw + np.random.randn((sz, muw.shape[0])).dot(LSigw.T)
 
 prj_optimal = bc.BlackBoxProjector(sampler_optimal, projection_dim, log_likelihood, grad_z_log_likelihood)
 prj_realistic = bc.BlackBoxProjector(sampler_realistic, projection_dim, log_likelihood, grad_z_log_likelihood)
@@ -189,11 +198,11 @@ rkls_laplace = np.zeros(M+1)
 fkls_laplace = np.zeros(M+1)
 print('Computing coreset Laplace approximation + approximate KL(posterior || coreset laplace)')
 for m in range(M+1):
-  mul, Sigl = get_laplace(w[m], p[m], Z.mean(axis=0)[:D])
+  mul, LSigl, LSiglInv = get_laplace(w[m], p[m], Z.mean(axis=0)[:D])
   mus_laplace[m,:] = mul
-  Sigs_laplace[m,:,:] = Sigl
-  rkls_laplace[m] = gaussian.gaussian_KL(mul, Sigl, mup, np.linalg.inv(Sigp))
-  fkls_laplace[m] = gaussian.gaussian_KL(mup, Sigp, mul, np.linalg.inv(Sigl))
+  Sigs_laplace[m,:,:] = LSigl.dot(LSigl.T)
+  rkls_laplace[m] = gaussian.gaussian_KL(mul, Sigs_laplace[m,:,:], mup, LSigpInv.dot(LSigpInv.T))
+  fkls_laplace[m] = gaussian.gaussian_KL(mup, Sigp, mul, LSiglInv.dot(LSiglInv.T))
 
 #save results
 f = open('results/'+dnm+'_'+alg+'_results_' +str(ID)+'.pk', 'wb')
