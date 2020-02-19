@@ -4,7 +4,7 @@ import scipy.linalg as sl
 import pickle as pk 
 import os, sys
 hpc = True
-if hpc:  sys.path.insert(1, os.path.join(sys.path[0], '/home/dm754/bayesian-coresets-private'))
+if hpc: sys.path.insert(1, os.path.join(sys.path[0], '/home/dm754/bayesian-coresets-private'))
 import bayesiancoresets as bc
 from scipy.optimize import minimize, nnls
 import time
@@ -37,7 +37,7 @@ def get_laplace(wts, Z, mu0, diag = False):
     LSig = 1./LSigInv
   else:
     LSigInv = np.linalg.cholesky(-hess_th_log_joint(Zw, mu, ww)[0,:,:])
-    LSig = sl.solve_triangular(LSigInv, np.eye(LSigInv.shape[0]), lower=True, overwrite_b = True, check_finite = False)
+    LSig = sl.solve_triangular(LSigInv, np.eye(LSigInv.shape[0]), lower=True, overwrite_b=True, check_finite=False)
   return mu, LSig, LSigInv
 
 dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips / airportdelays
