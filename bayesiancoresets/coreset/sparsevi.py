@@ -64,8 +64,8 @@ class SparseVICoreset(Coreset):
         self.idcs.resize(self.idcs.shape[0]+1)
         self.pts.resize((self.pts.shape[0]+1, self.data.shape[1]))
         self.wts[-1] = 0.
-        self.idcs[-1] = sub_idcs[f] if sub_idcs is not None else f
-        self.pts[-1] = self.data[sub_idcs[f]] if sub_idcs is not None else self.data[f]
+        self.idcs[-1] = f
+        self.pts[-1] = self.data[f] 
     return
 
   #def _reweight(self, f):
