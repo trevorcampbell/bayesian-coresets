@@ -196,7 +196,7 @@ for m in range(M+1):
   print('KL divergence computation for trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
   muw[m, :], LSigw, LSigwInv = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, p[m], w[m])
   Sigw[m, :, :] = LSigw.dot(LSigw.T)
-  rklw[m] = model_linreg.gaussian_KL(muw[m,:], Sigw[m,:,:], mup, Sigpinv)
+  rklw[m] = model_linreg.gaussian_KL(muw[m,:], Sigw[m,:,:], mup, SigpInv)
   fklw[m] = model_linreg.gaussian_KL(mup, Sigp, muw[m,:], LSigwInv.dot(LSigwInv.T))
 
 if not os.path.exists('results/'):

@@ -146,7 +146,7 @@ fklw = np.zeros(M+1)
 for m in range(M+1):
   muw[m, :], LSigw, LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, p[m], w[m])
   Sigw[m, :, :] = LSigw.dot(LSigw.T)
-  rklw[m] = gaussian.gaussian_KL(muw[m,:], Sigw[m,:,:], mup, Sigpinv)
+  rklw[m] = gaussian.gaussian_KL(muw[m,:], Sigw[m,:,:], mup, SigpInv)
   fklw[m] = gaussian.gaussian_KL(mup, Sigp, muw[m,:], LSigwInv.dot(LSigwInv.T))
 
 if not os.path.exists('results/'):
