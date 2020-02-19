@@ -81,7 +81,6 @@ Z = np.hstack((X, Y[:,np.newaxis]))
 #get true posterior
 print('Computing true posterior')
 mup, Sigp = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, Z, np.ones(X.shape[0]))
-Sigp = 0.5*(Sigp+Sigp.T) #enforce symmetry
 Sigpinv = np.linalg.inv(Sigp)
 
 #create function to output log_likelihood given param samples
@@ -115,7 +114,6 @@ def sampler_w(n, wts, pts):
         Sigw = Sig0
     else:
         muw, Sigw = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
-        Sigw = 0.5*(Sigw+Sigw.T) #enforce symmetry
     return np.random.multivariate_normal(muw, Sigw, n)
 prj_w = bc.BlackBoxProjector(sampler_w, proj_dim, log_likelihood, grad_log_likelihood)
 

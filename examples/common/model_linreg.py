@@ -25,7 +25,11 @@ def weighted_post(th0, Sig0inv, sigsq, z, w):
   z = np.atleast_2d(z)
   X = z[:, :-1]
   Y = z[:, -1]
-  Sigp = np.linalg.inv(Sig0inv + (w[:, np.newaxis]*X).T.dot(X)/sigsq)
+  lmb, V = np.linalg.eigh(Sig0inv + (w[:, np.newaxis]*X).T.dot(X)/sigsq)
+  lmb += -10*np.minimum(lmb, 0.) #regularize
+  Sigp = ((1./lmb)*V).dot(V.T)
+  Sigp = 0.5*(Sigp+Sigp.T)
+  #Sigp = np.linalg.inv(Sig0inv + (w[:, np.newaxis]*X).T.dot(X)/sigsq)
   mup = np.dot(Sigp,  np.dot(Sig0inv,th0) + (w[:, np.newaxis]*Y[:,np.newaxis]*X).sum(axis=0)/sigsq )
   return mup, Sigp
 
