@@ -87,8 +87,9 @@ for dnm in dnames:
     fig.line(np.arange(kl25.shape[0]), kl25, color=alg[2], legend=alg[1], line_width=10, line_dash='dashed')
     fig.line(np.arange(kl75.shape[0]), kl75, color=alg[2], legend=alg[1], line_width=10, line_dash='dashed')
   
-    fig2.line(cput50, kl50, color=alg[2], legend=alg[1], line_width=10)
-    fig2.patch(np.hstack((cput50, cput50[::-1])), np.hstack((kl75, kl25[::-1])), fill_color=alg[2], legend=alg[1], alpha=0.3)
+    # for computation time, don't show the coreset size 0 step since it's really really fast for all algs 
+    fig2.line(cput50[1:], kl50[1:], color=alg[2], legend=alg[1], line_width=10)
+    fig2.patch(np.hstack((cput50[1:], cput50[1:][::-1])), np.hstack((kl75[1:], kl25[1:][::-1])), fill_color=alg[2], legend=alg[1], alpha=0.3)
   
     #fig2.circle(cput50, kl50, color=alg[2], legend=alg[1], size=15)
     #fig2.segment(x0=cput25, x1 = cput75, y0 = kl50, y1 = kl50, color=alg[2], legend=alg[1], line_width=4)
