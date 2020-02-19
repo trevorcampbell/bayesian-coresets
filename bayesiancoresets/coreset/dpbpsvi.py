@@ -8,12 +8,11 @@ def clip(x, c, axis=None):
   return (x.T/(np.linalg.norm(x, axis=axis)+1e-9)*np.clip(np.linalg.norm(x, axis=axis), 0, c)).T
 
 class DiffPrivBatchPSVICoreset(Coreset):
-  def __init__(self, data, ll_projector, opt_itrs=1000, n_subsample_select=None, n_subsample_opt = 400, step_sched = lambda i : 1./(1.+i), 
+  def __init__(self, data, ll_projector, opt_itrs=1000, n_subsample_opt = 400, step_sched = lambda i : 1./(1.+i), 
                noise_multiplier=1.5, delta=None, init_sampler=None, gen_inits=None, l2normclip=10., **kw): 
-    self.data=data
-    self.ll_projector=ll_projector
-    self.opt_itrs = 1000
-    self.n_subsample_select = None if n_subsample_select is None else min(data.shape[0], n_subsample_select)
+    self.data = data
+    self.ll_projector = ll_projector
+    self.opt_itrs = opt_itrs
     self.n_subsample_opt = None if n_subsample_opt is None else min(data.shape[0], n_subsample_opt)
     self.step_sched = step_sched
     self.delta = 1./self.data.shape[0] if delta is None else delta
