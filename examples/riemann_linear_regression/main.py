@@ -147,7 +147,8 @@ prj_exact_realistic.update(2.*np.random.rand(x.shape[0]), Z )
 
 #create coreset construction objects
 print('Creating coreset construction objects')
-sparsevi = bc.SparseVICoreset(Z, LinRegProjector(betaV), opt_itrs=opt_itrs)
+sparsevi = bc.SparseVICoreset(Z, LinRegProjector(betaV), opt_itrs = SVI_opt_itrs, n_subsample_opt = n_subsample_opt,  n_subsample_select = n_subsample_select, step_sched = SVI_step_sched)
+bpsvi = bc.BPSVICoreset(Z, LinRegProjector(betaV), opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
 giga_optimal = bc.HilbertCoreset(Z, prj_optimal)
 giga_optimal_exact = bc.HilbertCoreset(Z, prj_exact_optimal)
 giga_realistic = bc.HilbertCoreset(Z, prj_realistic)
