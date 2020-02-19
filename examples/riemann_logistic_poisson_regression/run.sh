@@ -6,13 +6,13 @@
 #ID = sys.argv[4] #just a number to denote trial #, any nonnegative integer
 
 
-for ID in {1..10}
+for ID in {1..1}
 do
     for alg in "SVI" "BPSVI" "GIGAO" "GIGAR" "RAND" "PRIOR"
     do
         for dnm in "synth_lr" "phishing" "ds1" 
 	do
-		python3 main.py $dnm $alg $ID
+		python3 main.py $dnm $alg $ID 
 	done
     done
 done

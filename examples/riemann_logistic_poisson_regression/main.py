@@ -1,16 +1,13 @@
 from __future__ import print_function
 import numpy as np
 import scipy.linalg as sl
-import pickle as pk
-hpc=True 
-if hpc:
-  import os, sys
-  sys.path.insert(1, os.path.join(sys.path[0], '/home/dm754/bayesian-coresets-private'))
-import bayesiancoresets as bc
-from scipy.optimize import minimize
-import time
-from scipy.optimize import nnls
+import pickle as pk 
 import os, sys
+hpc = True
+if hpc:  sys.path.insert(1, os.path.join(sys.path[0], '/home/dm754/bayesian-coresets-private'))
+import bayesiancoresets as bc
+from scipy.optimize import minimize, nnls
+import time
 
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
@@ -48,20 +45,6 @@ alg = sys.argv[2] #should be GIGAO / GIGAR / RAND / PRIOR / SVI
 ID = sys.argv[3] #just a number to denote trial #, any nonnegative integer
 
 np.random.seed(int(ID))
-
-##load the logistic or poisson regression model depending on selected folder
-#tuning = {'synth_lr': (50, lambda itr : 1./(1.+itr)**0.5), 
-#          'synth_lr_large': (50, lambda itr : 1./(1.+itr)**0.5), 
-#          'ds1': (50, lambda itr : 1./(1.+itr)**0.5), 
-#          'ds1_large': (50, lambda itr : 1./(1.+itr)**0.5), 
-#          'phishing': (50, lambda itr : 1./(1.+itr)**0.5), 
-#          'phishing_large': (50, lambda itr : 1./(1.+itr)**0.5), 
-#          'synth_poiss': (50, lambda itr : 1./(1.+itr)**0.5), 
-#          'synth_poiss_large': (50, lambda itr : 1./(1.+itr)**0.5), 
-#          'biketrips': (200, lambda itr : 1./(1.+itr)**0.5), 
-#          'biketrips_large': (200, lambda itr : 1./(1.+itr)**0.5), 
-#          'airportdelays': (200, lambda itr : 1./(1.+itr)**0.5),
-#          'airportdelays_large': (200, lambda itr : 1./(1.+itr)**0.5)}
 
 lrdnms = ['synth_lr', 'phishing', 'ds1', 'synth_lr_large', 'phishing_large', 'ds1_large']
 prdnms = ['synth_poiss', 'biketrips', 'airportdelays', 'synth_poiss_large', 'biketrips_large', 'airportdelays_large']
