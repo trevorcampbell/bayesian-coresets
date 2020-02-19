@@ -8,7 +8,7 @@ def clip(x, c, axis=None):
   return (x.T/(np.linalg.norm(x, axis=axis)+1e-9)*np.clip(np.linalg.norm(x, axis=axis), 0, c)).T
 
 class DiffPrivBatchPSVICoreset(Coreset):
-  def __init__(self, data, ll_projector, opt_itrs=1000, n_subsample_opt = 400, step_sched = lambda i : 1./(1.+i), 
+  def __init__(self, data, ll_projector, opt_itrs=500, n_subsample_opt = 128, step_sched = lambda i : 1./(1.+i), 
                noise_multiplier=1.5, delta=None, init_sampler=None, gen_inits=None, l2normclip=10., **kw): 
     self.data = data
     self.ll_projector = ll_projector
@@ -33,7 +33,7 @@ class DiffPrivBatchPSVICoreset(Coreset):
   def _initialize(self, sz):
     # sample model parameters from pseudocoreset posterior (i.e. prior when pseudocoreset is empty)
     self.wts = self.data.shape[0]/sz*np.ones(sz)
-    th0 = self.init_sampler(self.wts.shape[0], None, np.random.choice(self.data.shape[0], size=0)) # dummy init to empty set 
+    th0 = self.init_sampler(self.wts.shape[0], None, np.random.randint(self.data.shape[0], size=0)) # dummy init to empty set 
     self.pts = self.gen_inits(self.wts.shape[0], th0)
     self.idcs = -1*np.ones(sz)
     return
@@ -70,7 +70,7 @@ class DiffPrivBatchPSVICoreset(Coreset):
       vecs = self.ll_projector.project(self.data)
       sum_scaling = 1.
     else:
-      sub_idcs = np.random.choice(self.data.shape[0], size=n_subsample, replace=False)
+      sub_idcs = np.random.randint(self.data.shape[0], size=n_subsample)
       vecs = self.ll_projector.project(self.data[sub_idcs])
       sum_scaling = self.data.shape[0]/n_subsample
 
@@ -78,5 +78,4 @@ class DiffPrivBatchPSVICoreset(Coreset):
       corevecs, pgrads = self.ll_projector.project(p, grad=True)
     else:
       corevecs, pgrads = np.zeros((0, vecs.shape[1])), np.zeros((0, vecs.shape[1], p.shape[1]))
-
     return vecs, sum_scaling, sub_idcs, corevecs, pgrads
