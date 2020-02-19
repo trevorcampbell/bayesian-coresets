@@ -55,12 +55,12 @@ class BatchPSVICoreset(Coreset):
       resid = sum_scaling*vecs.sum(axis=0) - w.dot(corevecs)
       wgrad = -corevecs.dot(resid) / corevecs.shape[1]
       ugrad = -(w[:, np.newaxis, np.newaxis]*pgrads*resid[np.newaxis, :, np.newaxis]).sum(axis=1)/corevecs.shape[1]
-
+ 
       #return reshaped grad
       return np.hstack((wgrad, ugrad.reshape(sz*d)))  
 
     x0 = np.hstack((self.wts, self.pts.reshape(sz*d)))
-    xf = partial_nn_opt(x0, grd, np.arange(sz), self.opt_itrs, step_sched = lambda i : 1./(i+1))
+    xf = partial_nn_opt(x0, grd, np.arange(sz), self.opt_itrs, step_sched = self.step_sched)
     self.wts = xf[:sz]
     self.pts = xf[sz:].reshape((sz, d))
 
