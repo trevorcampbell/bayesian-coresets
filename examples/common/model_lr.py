@@ -3,16 +3,16 @@ import numpy as np
 def load_data(dnm):
   data = np.load(dnm)
   X = data['X']
-  Xt = data['Xt']
+  #Xt = data['Xt']
   #standardize the covariates; last col is intercept, so no stdization there
   m = X[:, :-1].mean(axis=0)
   V = np.cov(X[:, :-1], rowvar=False)+1e-12*np.eye(X.shape[1]-1)
   X[:, :-1] = np.linalg.solve(np.linalg.cholesky(V), (X[:, :-1] - m).T).T
-  Xt[:, :-1] = np.linalg.solve(np.linalg.cholesky(V), (Xt[:, :-1] - m).T).T
+  #Xt[:, :-1] = np.linalg.solve(np.linalg.cholesky(V), (Xt[:, :-1] - m).T).T
   Z = data['y'][:, np.newaxis]*X
-  Zt = data['yt'][:, np.newaxis]*Xt
+  #Zt = data['yt'][:, np.newaxis]*Xt
   data.close()
-  return Z, Zt, Z.shape[1]
+  return Z, None, Z.shape[1]
 
 def gen_synthetic(n):
   mu = np.array([0, 0])
