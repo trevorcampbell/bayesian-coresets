@@ -75,7 +75,7 @@ DPBPSVI_opt_itrs = 500
 
 print('Loading dataset '+dnm)
 Z, Zt, D = load_data('../data/'+dnm+'.npz')
-
+print('dataset shape : ', Z.shape)
 if not os.path.exists('results/'):
   os.mkdir('results')
   
