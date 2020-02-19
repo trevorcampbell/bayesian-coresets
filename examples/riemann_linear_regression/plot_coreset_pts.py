@@ -1,4 +1,5 @@
 import bokeh.layouts as bkl
+import pickle as pk
 import bokeh.plotting as bkp
 import numpy as np
 import sys,os
@@ -24,22 +25,27 @@ c = contour_percentiles / contour_percentiles.max()
 contour_colors = ['#%02x%02x%02x' % (int(r), int(b), int(g)) for (r, b, g) in zip(255*c, 0*np.ones(c.shape[0]), 255*(1.-c))]
 
 #algorithm / trial + Ms to plot
-nm = ('SVIF', 'SparseVI')
+nm = ('SVI', 'SparseVI')
 #nm = ('GIGAT', 'GIGA-T')
 trial_num = 5
-Ms = np.linspace(1, 300, 7, dtype=np.int64)
 
 #plot the sequence of coreset pts and comparison of nonopt + opt
-res = np.load('results/results_'+nm[0] + '_' + str(trial_num)+'.npz')
-x = res['x']
-wt = res['w']
-mup = res['mup']
-Sigp = res['Sigp']
-muwt = res['muw']
-Sigwt = res['Sigw']
-basis_scales = res['basis_scales']
-basis_locs = res['basis_locs']
-datastd = res['datastd']
+f = open('results/results_'+nm[0]+'_' + str(trial_num)+'.pk', 'rb')
+res = pk.load(f) #res = (x, mu0, Sig0, mup, Sigp, w, p, muw, Sigw, rklw, fklw, basis_scales, basis_locs, datastd)
+f.close()
+x = res[0]
+wt = res[5]
+pt = res[6]
+mup = res[3]
+Sigp = res[4]
+muwt = res[7]
+Sigwt = res[8]
+basis_scales = res[11]
+basis_locs = res[12]
+datastd = res[13]
+
+#Ms = np.linspace(1, len(wt), 7, dtype=np.int64)
+Ms = [1, 2, 5, 10]
 
 figs = []
 
@@ -84,8 +90,11 @@ for m in Ms:
 
   #plot data and coreset pts
   fig.scatter(x[:, 1], x[:, 0], fill_color='black', size=10, alpha=0.01, line_color=None)
+
+  #compute rough position of pseudopoints based on feature vectors
+  ps = (np.fabs(pt[m][:,:-1])/np.fabs(pt[m][:,:-1]).sum(axis=1)[:,np.newaxis]).dot(basis_locs)
   #fig.scatter(x[:, 1], x[:, 0], fill_color='black', size=10*(wt[m, :]>0)+10*wt[m,:]/wt[m,:].max(), line_color=None)
-  fig.scatter(x[:, 1], x[:, 0], fill_color='black', size=30*np.power(wt[m,:]/wt[m,:].max(), 0.4), line_color=None)
+  fig.scatter(ps[:, 1], ps[:, 0], fill_color='black', size=30*np.power(wt[m]/wt[m].max(), 0.4), line_color=None)
   #compute posterior mean regression on the grid
   reg = np.zeros(longrid.shape)
   for i in range(basis_scales.shape[0]):

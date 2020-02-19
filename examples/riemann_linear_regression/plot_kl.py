@@ -1,4 +1,5 @@
 import bokeh.plotting as bkp
+import pickle as pk
 import numpy as np
 import sys, os
 #make it so we can import models/etc from parent folder
@@ -7,8 +8,9 @@ from plotting import *
 
 
 plot_reverse_kl = True
-trials = np.arange(1, 11)
-nms = [('SVI', 'SparseVI'), ('GIGAO', 'GIGA (Optimal, Projected)'), ('GIGAOE', 'GIGA (Optimal, Exact)'), ('GIGAR', 'GIGA (Realistic, Projected)'), ('GIGARE', 'GIGA (Realistic, Exact)'), ('RAND', 'Uniform')]
+trials = np.arange(1, 6)
+#nms = [('SVI', 'SparseVI'), ('BPSVI', 'BPSVI'), ('GIGAO', 'GIGA (Optimal, Projected)'), ('GIGAOE', 'GIGA (Optimal, Exact)'), ('GIGAR', 'GIGA (Realistic, Projected)'), ('GIGARE', 'GIGA (Realistic, Exact)'), ('RAND', 'Uniform')]
+nms = [('SVI', 'SparseVI'), ('BPSVI', 'BPSVI'), ('GIGAO', 'GIGA (Optimal, Projected)'), ('GIGAR', 'GIGA (Realistic, Projected)'), ('RAND', 'Uniform')]
 
 
 #plot the KL figure
@@ -21,12 +23,14 @@ for i, nm in enumerate(nms):
   kl = []
   sz = []
   for t in trials:
-    res = np.load('results/results_'+nm[0]+'_' + str(t)+'.npz')
+    f = open('results/results_'+nm[0]+'_' + str(t)+'.pk', 'rb')
+    res = pk.load(f) #res = (x, mu0, Sig0, mup, Sigp, w, p, muw, Sigw, rklw, fklw, basis_scales, basis_locs, datastd)
+    f.close()
     if plot_reverse_kl:
-      kl.append(res['rklw'][::plot_every])
+      kl.append(res[9][::plot_every])
     else:
-      kl.append(res['fklw'][::plot_every])
-    sz.append((res['w'] > 0).sum(axis=1)[::plot_every])
+      kl.append(res[9][::plot_every])
+    sz.append( np.array([w.shape[0] for w in res[5]])[::plot_every])
   x = np.percentile(sz, 50, axis=0)
   fig.line(x, np.percentile(kl, 50, axis=0), color=pal[i], line_width=5, legend=nm[1]) 
   fig.patch(x = np.hstack((x, x[::-1])), y = np.hstack((np.percentile(kl, 75, axis=0), np.percentile(kl, 25, axis=0)[::-1])), color=pal[i], fill_alpha=0.4, legend=nm[1]) 

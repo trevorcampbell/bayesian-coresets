@@ -1,4 +1,5 @@
 import numpy as np
+import pickle as pk
 import bayesiancoresets as bc
 import os, sys
 from scipy.stats import multivariate_normal
@@ -14,31 +15,18 @@ tr = sys.argv[2]
 #use the trial # as seed
 np.random.seed(int(tr))
 
-#M = 300
-#SVI_opt_itrs = 100
-#BPSVI_opt_itrs = 100
-#n_subsample_opt = 200
-#n_subsample_select = 1000
-#proj_dim = 100
-#pihat_noise =0.75
-#n_bases_per_scale = 50
-#beta_dim = 20
-#BPSVI_step_sched = lambda i : 1./(1+i)
-#SVI_step_sched = lambda i : 1./(1+i)
-
-
-#experiment params
-M = 20
-SVI_opt_itrs = 10
-BPSVI_opt_itrs = 10
+M = 200
+SVI_opt_itrs = 100
+BPSVI_opt_itrs = 100
 n_subsample_opt = 20
-n_subsample_select = 10
-proj_dim = 10
+n_subsample_select = 100
+proj_dim = 100
 pihat_noise =0.75
-n_bases_per_scale = 5
-#beta_dim = 20
+n_bases_per_scale = 50
+beta_dim = 20
 BPSVI_step_sched = lambda i : 1./(1+i)
 SVI_step_sched = lambda i : 1./(1+i)
+
 
 #load data and compute true posterior
 #each row of x is [lat, lon, price]
@@ -93,6 +81,7 @@ Z = np.hstack((X, Y[:,np.newaxis]))
 #get true posterior
 print('Computing true posterior')
 mup, Sigp = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, Z, np.ones(X.shape[0]))
+Sigp = 0.5*(Sigp+Sigp.T) #enforce symmetry
 Sigpinv = np.linalg.inv(Sigp)
 
 #create function to output log_likelihood given param samples
@@ -119,7 +108,6 @@ Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
 sampler_realistic = lambda n, w, pts : np.random.multivariate_normal(muhat, Sighat, n)
 prj_realistic = bc.BlackBoxProjector(sampler_realistic, proj_dim, log_likelihood, grad_log_likelihood)
 
-
 print('Creating black box projector')
 def sampler_w(n, wts, pts):
     if pts.shape[0] == 0:
@@ -127,6 +115,7 @@ def sampler_w(n, wts, pts):
         Sigw = Sig0
     else:
         muw, Sigw = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
+        Sigw = 0.5*(Sigw+Sigw.T) #enforce symmetry
     return np.random.multivariate_normal(muw, Sigw, n)
 prj_w = bc.BlackBoxProjector(sampler_w, proj_dim, log_likelihood, grad_log_likelihood)
 
@@ -190,7 +179,7 @@ alg = algs[nm]
 print('Building coreset')
 #build coresets
 w = [np.array([0.])]
-p = [np.zeros((1, x.shape[1]))]
+p = [np.zeros((1, Z.shape[1]))]
 for m in range(1, M+1):
   print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 
