@@ -15,7 +15,7 @@ tr = sys.argv[2]
 #use the trial # as seed
 np.random.seed(int(tr))
 
-M = 20
+M = 300
 SVI_opt_itrs = 2000
 BPSVI_opt_itrs = 2000
 n_subsample_opt = 500
@@ -26,6 +26,21 @@ n_bases_per_scale = 50
 beta_dim = 20
 BPSVI_step_sched = lambda i : 1./(1+i)
 SVI_step_sched = lambda i : 1./(1+i)
+
+#
+M = 300
+SVI_opt_itrs = 2000
+BPSVI_opt_itrs = 2000
+n_subsample_opt = 500
+n_subsample_select = 2000
+proj_dim = 100
+pihat_noise =0.75
+n_bases_per_scale = 5
+beta_dim = 20
+BPSVI_step_sched = lambda i : 1./(1+i)
+SVI_step_sched = lambda i : 1./(1+i)
+
+
 
 #load data and compute true posterior
 #each row of x is [lat, lon, price]
@@ -50,7 +65,7 @@ print('Basis dimension: ' + str(d))
 
 #model params
 mu0 = datamn*np.ones(d)
-Sig0 = (datastd**2+datamn**2)*np.eye(d)
+Sig0 = 1e-10*(datastd**2+datamn**2)*np.eye(d)
 #Sig = datastd**2*np.eye(d)
 #SigL = np.linalg.cholesky(Sig)
 Sig0inv = np.linalg.inv(Sig0)
