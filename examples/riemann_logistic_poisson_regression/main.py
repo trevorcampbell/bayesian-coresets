@@ -1,6 +1,10 @@
 from __future__ import print_function
 import numpy as np
 import pickle as pk
+hpc=True 
+if hpc:
+  import os, sys
+  sys.path.insert(1, os.path.join(sys.path[0], '/home/dm754/bayesian-coresets-private'))
 import bayesiancoresets as bc
 from scipy.optimize import minimize
 import time
