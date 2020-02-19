@@ -25,7 +25,7 @@ def gaussian_KL(mu0, Sig0, mu1, Sig1inv):
 
 def weighted_post(th0, Sig0inv, Siginv, x, w): 
   LSigpInv = np.linalg.cholesky(Sig0inv + w.sum()*Siginv)
-  LSigp = sl.linalg.solve_triangular(LSigpInv, np.eye(LSigpInv.shape[0]), lower=True, overwrite_b=True, check_finite=False)
+  LSigp = sl.solve_triangular(LSigpInv, np.eye(LSigpInv.shape[0]), lower=True, overwrite_b=True, check_finite=False)
   mup = np.dot(LSigp.dot(LSigp.T),  np.dot(Sig0inv,th0) + np.dot(Siginv, (w[:, np.newaxis]*x).sum(axis=0)))
   #Sigp = np.linalg.inv(Sig0inv + w.sum()*Siginv)
   #mup = np.dot(Sigp,  np.dot(Sig0inv,th0) + np.dot(Siginv, (w[:, np.newaxis]*x).sum(axis=0)))
