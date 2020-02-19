@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.linalg as sl
 import pickle as pk
 import bayesiancoresets as bc
 import os, sys
@@ -26,6 +27,7 @@ th = np.ones(d)
 Sig0inv = np.linalg.inv(Sig0)
 Siginv = np.linalg.inv(Sig)
 SigLInv = np.linalg.inv(SigL)
+logdetSig = np.linalg.slogdet(Sig)[1]
 
 nm = sys.argv[1]
 tr = sys.argv[2]
@@ -36,16 +38,12 @@ np.random.seed(int(tr))
 
 print('Computing true posterior')
 x = np.random.multivariate_normal(th, Sig, N)
-mup, Sigp = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
-Sigpinv = np.linalg.inv(Sigp)
+mup, LSigp, LSigpInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
+Sigp = LSigp.dot(LSigp.T)
+SigpInv = LSigpInv.dot(LSigpInv.T)
 
 #for the algorithm, use the trial # and name as seed
 np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+tr])) % 2**32)
-
-#compute constants for log likelihood function
-#xSiginv = x.dot(Siginv)
-#xSiginvx = (xSiginv*x).sum(axis=1)
-logdetSig = np.linalg.slogdet(Sig)[1]
 
 #create the log_likelihood function
 print('Creating log-likelihood function')
@@ -56,7 +54,7 @@ grad_log_likelihood = lambda x, th : gaussian.gaussian_gradx_loglikelihood(x, th
 
 print('Creating tuned projector for Hilbert coreset construction')
 #create the sampler for the "optimally-tuned" Hilbert coreset
-sampler_optimal = lambda n, w, pts : np.random.multivariate_normal(mup, Sigp, n)
+sampler_optimal = lambda n, w, pts : mup + np.random.randn(n, mup.shape[0]).dot(LSigp.T)
 prj_optimal = bc.BlackBoxProjector(sampler_optimal, proj_dim, log_likelihood, grad_log_likelihood)
 
 print('Creating untuned projector for Hilbert coreset construction')
@@ -67,8 +65,9 @@ Sighat = U*Sigp + (1.-U)*Sig0
 #now corrupt the smoothed pihat
 muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
 Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
+LSighat = np.linalg.cholesky(Sighat)
 
-sampler_realistic = lambda n, w, pts : np.random.multivariate_normal(muhat, Sighat, n)
+sampler_realistic = lambda n, w, pts : mup + np.random.randn(n, mup.shape[0]).dot(LSighat.T)
 prj_realistic = bc.BlackBoxProjector(sampler_realistic, proj_dim, log_likelihood, grad_log_likelihood)
 
 print('Creating exact projectors')
@@ -76,8 +75,8 @@ print('Creating exact projectors')
 class GaussianProjector(bc.Projector):
     def project(self, pts, grad=False):
         nu = (pts - self.muw).dot(SigLInv.T)
-        Psi = np.dot(SigLInv, np.dot(self.Sigw, SigLInv.T))
-        PsiL = np.linalg.cholesky(Psi)
+        PsiL = SigLInv.dot(self.LSigw)
+        Psi = PsiL.dot(PsiL.T)
         nu = np.hstack((nu.dot(PsiL), np.sqrt(0.5*np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
         nu *= np.sqrt(nu.shape[1])
         if not grad:
@@ -90,10 +89,9 @@ class GaussianProjector(bc.Projector):
 
     def update(self, wts = None, pts = None):
         if wts is None or pts is None or pts.shape[0] == 0:
-            self.muw = mu0
-            self.Sigw = Sig0
-        else:
-            self.muw, self.Sigw = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
+            wts = np.zeros(1)
+            pts = np.zeros((1, mu0.shape[0]))
+        self.muw, self.LSigw, self.LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
 
 prj_exact_optimal = GaussianProjector()
 prj_exact_optimal.update(np.ones(x.shape[0]), x)
@@ -146,9 +144,10 @@ Sigw = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
 rklw = np.zeros(M+1)
 fklw = np.zeros(M+1)
 for m in range(M+1):
-  muw[m, :], Sigw[m, :, :] = gaussian.weighted_post(mu0, Sig0inv, Siginv, p[m], w[m])
+  muw[m, :], LSigw, LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, p[m], w[m])
+  Sigw[m, :, :] = LSigw.dot(LSigw.T)
   rklw[m] = gaussian.gaussian_KL(muw[m,:], Sigw[m,:,:], mup, Sigpinv)
-  fklw[m] = gaussian.gaussian_KL(mup, Sigp, muw[m,:], np.linalg.inv(Sigw[m,:,:]))
+  fklw[m] = gaussian.gaussian_KL(mup, Sigp, muw[m,:], LSigwInv.dot(LSigwInv.T))
 
 if not os.path.exists('results/'):
   os.mkdir('results')

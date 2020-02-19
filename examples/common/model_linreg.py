@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.linalg as sl
 
 def gaussian_loglikelihood(z, th, sigsq):
   z = np.atleast_2d(z)
@@ -25,12 +26,11 @@ def weighted_post(th0, Sig0inv, sigsq, z, w):
   z = np.atleast_2d(z)
   X = z[:, :-1]
   Y = z[:, -1]
-  lmb, V = np.linalg.eigh(Sig0inv + (w[:, np.newaxis]*X).T.dot(X)/sigsq)
-  lmb += -10*np.minimum(lmb, 0.) #regularize
-  Sigp = ((1./lmb)*V).dot(V.T)
-  Sigp = 0.5*(Sigp+Sigp.T)
+  LSigpInv = np.linalg.cholesky(Sig0inv + (w[:, np.newaxis]*X).T.dot(X)/sigsq)
+  LSigp = sl.linalg.solve_triangular(LSigpInv, np.eye(LSigpInv.shape[0]), lower=True, overwrite_b = True, check_finite = False)
+  mup = np.dot(LSigp.dot(LSigp.T),  np.dot(Sig0inv,th0) + (w[:, np.newaxis]*Y[:,np.newaxis]*X).sum(axis=0)/sigsq )
   #Sigp = np.linalg.inv(Sig0inv + (w[:, np.newaxis]*X).T.dot(X)/sigsq)
-  mup = np.dot(Sigp,  np.dot(Sig0inv,th0) + (w[:, np.newaxis]*Y[:,np.newaxis]*X).sum(axis=0)/sigsq )
-  return mup, Sigp
+  #mup = np.dot(Sigp,  np.dot(Sig0inv,th0) + (w[:, np.newaxis]*Y[:,np.newaxis]*X).sum(axis=0)/sigsq )
+  return mup, LSigp, LSigpInv
 
 

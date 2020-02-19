@@ -80,8 +80,9 @@ Z = np.hstack((X, Y[:,np.newaxis]))
 
 #get true posterior
 print('Computing true posterior')
-mup, Sigp = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, Z, np.ones(X.shape[0]))
-Sigpinv = np.linalg.inv(Sigp)
+mup, LSigp, LSigpInv = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, Z, np.ones(X.shape[0]))
+Sigp = LSigp.dot(LSigp.T)
+Sigpinv = LSigpInv.dot(LSigpInv.T)
 
 #create function to output log_likelihood given param samples
 print('Creating log-likelihood function')
@@ -92,7 +93,7 @@ grad_log_likelihood = lambda z, th : model_linreg.gaussian_grad_x_loglikelihood(
 
 #create tangent space for well-tuned Hilbert coreset alg
 print('Creating tuned projector for Hilbert coreset construction')
-sampler_optimal = lambda n, w, ids : np.random.multivariate_normal(mup, Sigp, n)
+sampler_optimal = lambda n, w, pts : mup + np.random.randn(n, mup.shape[0]).dot(LSigp.T)
 prj_optimal = bc.BlackBoxProjector(sampler_optimal, proj_dim, log_likelihood, grad_log_likelihood)
 
 #create tangent space for poorly-tuned Hilbert coreset alg
@@ -103,18 +104,15 @@ Sighat = U*Sigp + (1.-U)*Sig0
 #now corrupt the smoothed pihat
 muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
 Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
+LSighat = np.linalg.cholesky(Sighat)
 
-sampler_realistic = lambda n, w, pts : np.random.multivariate_normal(muhat, Sighat, n)
+sampler_realistic = lambda n, w, pts : mup + np.random.randn(n, mup.shape[0]).dot(LSighat.T)
 prj_realistic = bc.BlackBoxProjector(sampler_realistic, proj_dim, log_likelihood, grad_log_likelihood)
 
 print('Creating black box projector')
 def sampler_w(n, wts, pts):
-    if pts.shape[0] == 0:
-        muw = mu0
-        Sigw = Sig0
-    else:
-        muw, Sigw = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
-    return np.random.multivariate_normal(muw, Sigw, n)
+    muw, LSigw, LSigwInv = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
+    return muw + np.random.randn(n, muw.shape[0]).dot(LSigw.T)
 prj_w = bc.BlackBoxProjector(sampler_w, proj_dim, log_likelihood, grad_log_likelihood)
 
 #print('Creating exact projectors')
@@ -181,7 +179,6 @@ p = [np.zeros((1, Z.shape[1]))]
 for m in range(1, M+1):
   print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 
-
   alg.build(1, m)
   #store weights
   wts, pts, idcs = alg.get()
@@ -197,9 +194,10 @@ rklw = np.zeros(M+1)
 fklw = np.zeros(M+1)
 for m in range(M+1):
   print('KL divergence computation for trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
-  muw[m, :], Sigw[m, :, :] = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, p[m], w[m])
+  muw[m, :], LSigw, LSigwInv = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, p[m], w[m])
+  Sigw[m, :, :] = LSigw.dot(LSigw.T)
   rklw[m] = model_linreg.gaussian_KL(muw[m,:], Sigw[m,:,:], mup, Sigpinv)
-  fklw[m] = model_linreg.gaussian_KL(mup, Sigp, muw[m,:], np.linalg.inv(Sigw[m,:,:]))
+  fklw[m] = model_linreg.gaussian_KL(mup, Sigp, muw[m,:], LSigwInv.dot(LSigwInv.T))
 
 if not os.path.exists('results/'):
   os.mkdir('results')
