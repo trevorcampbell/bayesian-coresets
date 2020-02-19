@@ -22,7 +22,7 @@ class SparseVICoreset(Coreset):
       #update the weights
       self._optimize() 
 
-  def _get_tangent_space(self, n_subsample, w, p):
+  def _get_projection(self, n_subsample, w, p):
     #update the projector
     self.ll_projector.update(w, p)
 
@@ -32,7 +32,7 @@ class SparseVICoreset(Coreset):
       vecs = self.ll_projector.project(self.data)
       sum_scaling = 1.
     else:
-      sub_idcs = np.random.choice(self.data.shape[0], size=n_subsample, replace=False)
+      sub_idcs = np.random.randint(self.data.shape[0], size=n_subsample)
       vecs = self.ll_projector.project(self.data[sub_idcs])
       sum_scaling = self.data.shape[0]/n_subsample
 
@@ -44,7 +44,7 @@ class SparseVICoreset(Coreset):
     return vecs, sum_scaling, sub_idcs, corevecs
 
   def _select(self):
-    vecs, sum_scaling, sub_idcs, corevecs = self._get_tangent_space(self.n_subsample_select, self.wts, self.pts)
+    vecs, sum_scaling, sub_idcs, corevecs = self._get_projection(self.n_subsample_select, self.wts, self.pts)
 
     #compute the residual error
     resid = sum_scaling*vecs.sum(axis=0) - self.wts.dot(corevecs)
@@ -106,7 +106,7 @@ class SparseVICoreset(Coreset):
 
   def _optimize(self):
     def grd(w):
-      vecs, sum_scaling, sub_idcs, corevecs = self._get_tangent_space(self.n_subsample_opt, w, self.pts)
+      vecs, sum_scaling, sub_idcs, corevecs = self._get_projection(self.n_subsample_opt, w, self.pts)
       resid = sum_scaling*vecs.sum(axis=0) - w.dot(corevecs)
       #output gradient of weights at idcs
       return -corevecs.dot(resid) / corevecs.shape[1]
