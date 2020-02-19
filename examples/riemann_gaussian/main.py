@@ -34,6 +34,7 @@ tr = sys.argv[2]
 #use the trial # as the seed
 np.random.seed(int(tr))
 
+print('Computing true posterior')
 x = np.random.multivariate_normal(th, Sig, N)
 mup, Sigp = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
 Sigpinv = np.linalg.inv(Sigp)
@@ -47,13 +48,18 @@ np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+tr])) % 2**32)
 logdetSig = np.linalg.slogdet(Sig)[1]
 
 #create the log_likelihood function
+print('Creating log-likelihood function')
 log_likelihood = lambda x, th : gaussian.gaussian_loglikelihood(x, th, Siginv, logdetSig)
+
+print('Creating gradient log-likelihood function')
 grad_log_likelihood = lambda x, th : gaussian.gaussian_gradx_loglikelihood(x, th, Siginv)
 
+print('Creating tuned projector for Hilbert coreset construction')
 #create the sampler for the "optimally-tuned" Hilbert coreset
 sampler_optimal = lambda n, w, pts : np.random.multivariate_normal(mup, Sigp, n)
 prj_optimal = bc.BlackBoxProjector(sampler_optimal, proj_dim, log_likelihood, grad_log_likelihood)
 
+print('Creating untuned projector for Hilbert coreset construction')
 #create the sampler for the "realistically-tuned" Hilbert coreset
 U = np.random.rand()
 muhat = U*mup + (1.-U)*mu0
@@ -65,6 +71,7 @@ Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
 sampler_realistic = lambda n, w, pts : np.random.multivariate_normal(muhat, Sighat, n)
 prj_realistic = bc.BlackBoxProjector(sampler_realistic, proj_dim, log_likelihood, grad_log_likelihood)
 
+print('Creating exact projectors')
 #exact (gradient) log likelihood projection
 class GaussianProjector(bc.Projector):
     def project(self, pts, grad=False):
@@ -99,6 +106,7 @@ prj_exact_realistic = GaussianProjector()
 prj_exact_realistic.update(2.*np.random.rand(x.shape[0]), x)
 
 ##############################
+print('Creating coreset construction objects')
 #create coreset construction objects
 bpsvi = bc.BatchPSVICoreset(x, GaussianProjector(), opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
 sparsevi = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = BPSVI_opt_itrs, step_sched = SVI_step_sched)
@@ -117,6 +125,7 @@ algs = {'BPSVI' : bpsvi,
         'RAND': unif}
 alg = algs[nm]
 
+print('Building coreset')
 w = [np.array([0.])]
 p = [np.zeros((1, x.shape[1]))]
 for m in range(1, M+1):

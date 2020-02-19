@@ -84,15 +84,18 @@ Sigpinv = np.linalg.inv(Sigp)
 
 #create function to output log_likelihood given param samples
 print('Creating log-likelihood function')
-log_likelihood = lambda z, th : model_linreg.potentials(z, th, datastd**2)
+log_likelihood = lambda z, th : model_linreg.gaussian_loglikelihood(z, th, datastd**2)
+
+print('Creating gradient log-likelihood function')
+grad_log_likelihood = lambda z, th : model_linreg.gaussian_grad_x_loglikelihood(z, th, datastd**2)
 
 #create tangent space for well-tuned Hilbert coreset alg
-print('Creating tuned tangent space for Hilbert coreset construction')
+print('Creating tuned projector for Hilbert coreset construction')
 sampler_optimal = lambda n, w, ids : np.random.multivariate_normal(mup, Sigp, n)
-prj_optimal = bc.BlackBoxProjector(sampler_optimal, proj_dim, log_likelihood)
+prj_optimal = bc.BlackBoxProjector(sampler_optimal, proj_dim, log_likelihood, grad_log_likelihood)
 
 #create tangent space for poorly-tuned Hilbert coreset alg
-print('Creating untuned tangent space for Hilbert coreset construction')
+print('Creating untuned projector for Hilbert coreset construction')
 U = np.random.rand()
 muhat = U*mup + (1.-U)*mu0
 Sighat = U*Sigp + (1.-U)*Sig0
@@ -101,7 +104,9 @@ muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
 Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
 
 sampler_realistic = lambda n, w, pts : np.random.multivariate_normal(muhat, Sighat, n)
-prj_realistic = bc.BlackBoxProjector(sampler_realistic, proj_dim, log_likelihood)
+prj_realistic = bc.BlackBoxProjector(sampler_realistic, proj_dim, log_likelihood, grad_log_likelihood)
+
+print('Creating exact projectors')
 
 ##############################
 ###Exact projection in SparseVI for gradient computation
