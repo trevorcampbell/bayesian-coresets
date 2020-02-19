@@ -106,66 +106,78 @@ Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
 sampler_realistic = lambda n, w, pts : np.random.multivariate_normal(muhat, Sighat, n)
 prj_realistic = bc.BlackBoxProjector(sampler_realistic, proj_dim, log_likelihood, grad_log_likelihood)
 
-print('Creating exact projectors')
 
-##############################
-###Exact projection in SparseVI for gradient computation
-#for this model we can do the tangent space projection exactly
-class LinRegProjector(bc.Projector):
-    def __init__(self, bV):
-        self.bV = bV
+print('Creating black box projector')
+def sampler_w(n, wts, pts):
+    if pts.shape[0] == 0:
+        muw = mu0
+        Sigw = Sig0
+    else:
+        muw, Sigw = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
+    return np.random.multivariate_normal(muw, Sigw, n)
+prj_w = bc.BlackBoxProjector(sampler_w, proj_dim, log_likelihood, grad_log_likelihood)
 
-    def project(self, pts, grad=False):
-        X = pts[:, :-1]
-        Y = pts[:, -1]
-        beta = X.dot(self.V*np.sqrt(np.maximum(self.lmb, 0.)))
-        nu = Y - X.dot(self.muw)
-        #approximation to avoid high memory cost: project the matrix term down to bV.shape[1]**2 dimensions
-        beta_proj = beta.dot(self.bV)
-        return np.hstack((nu[:, np.newaxis]*beta, 1./np.sqrt(2.)*(beta_proj[:, :, np.newaxis]*beta_proj[:, np.newaxis, :]).reshape(beta.shape[0], self.bV.shape[1]**2))) / datastd**2
-
-    def update(self, wts, pts):
-        if pts.shape[0] == 0:
-            self.muw = mu0
-            self.Sigw = Sig0
-        else:
-            self.muw, self.Sigw = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
-        self.lmb, self.V = np.linalg.eigh(self.Sigw)
-
-prj_exact_optimal = LinRegProjector(betaV)
-prj_exact_optimal.update(np.ones(x.shape[0]), Z)
-rlst_idcs = np.arange(x.shape[0])
-np.random.shuffle(rlst_idcs)
-rlst_idcs = rlst_idcs[:int(0.1*rlst_idcs.shape[0])]
-rlst_w = np.zeros(x.shape[0])
-rlst_w[rlst_idcs] = 2.*x.shape[0]/rlst_idcs.shape[0]*np.random.rand(rlst_idcs.shape[0])
-prj_exact_realistic = LinRegProjector(betaV)
-prj_exact_realistic.update(2.*np.random.rand(x.shape[0]), Z )
+#print('Creating exact projectors')
+###############################
+####Exact projection in SparseVI for gradient computation
+##for this model we can do the tangent space projection exactly
+#class LinRegProjector(bc.Projector):
+#    def __init__(self, bV):
+#        self.bV = bV
+#
+#    def project(self, pts, grad=False):
+#        X = pts[:, :-1]
+#        Y = pts[:, -1]
+#        beta = X.dot(self.V*np.sqrt(np.maximum(self.lmb, 0.)))
+#        nu = Y - X.dot(self.muw)
+#        #approximation to avoid high memory cost: project the matrix term down to bV.shape[1]**2 dimensions
+#        beta_proj = beta.dot(self.bV)
+#        return np.hstack((nu[:, np.newaxis]*beta, 1./np.sqrt(2.)*(beta_proj[:, :, np.newaxis]*beta_proj[:, np.newaxis, :]).reshape(beta.shape[0], self.bV.shape[1]**2))) / datastd**2
+#
+#    def update(self, wts, pts):
+#        if pts.shape[0] == 0:
+#            self.muw = mu0
+#            self.Sigw = Sig0
+#        else:
+#            self.muw, self.Sigw = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
+#        self.lmb, self.V = np.linalg.eigh(self.Sigw)
+#
+#prj_exact_optimal = LinRegProjector(betaV)
+#prj_exact_optimal.update(np.ones(x.shape[0]), Z)
+#rlst_idcs = np.arange(x.shape[0])
+#np.random.shuffle(rlst_idcs)
+#rlst_idcs = rlst_idcs[:int(0.1*rlst_idcs.shape[0])]
+#rlst_w = np.zeros(x.shape[0])
+#rlst_w[rlst_idcs] = 2.*x.shape[0]/rlst_idcs.shape[0]*np.random.rand(rlst_idcs.shape[0])
+#prj_exact_realistic = LinRegProjector(betaV)
+#prj_exact_realistic.update(2.*np.random.rand(x.shape[0]), Z )
 
 ##############################
 
 
 #create coreset construction objects
 print('Creating coreset construction objects')
-sparsevi = bc.SparseVICoreset(Z, LinRegProjector(betaV), opt_itrs = SVI_opt_itrs, n_subsample_opt = n_subsample_opt,  n_subsample_select = n_subsample_select, step_sched = SVI_step_sched)
-bpsvi = bc.BPSVICoreset(Z, LinRegProjector(betaV), opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
+sparsevi = bc.SparseVICoreset(Z, prj_w, opt_itrs = SVI_opt_itrs, n_subsample_opt = n_subsample_opt,  n_subsample_select = n_subsample_select, step_sched = SVI_step_sched)
+bpsvi = bc.BPSVICoreset(Z, prj_w, opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
 giga_optimal = bc.HilbertCoreset(Z, prj_optimal)
-giga_optimal_exact = bc.HilbertCoreset(Z, prj_exact_optimal)
+#giga_optimal_exact = bc.HilbertCoreset(Z, prj_exact_optimal)
 giga_realistic = bc.HilbertCoreset(Z, prj_realistic)
-giga_realistic_exact = bc.HilbertCoreset(Z, prj_exact_realistic)
+#giga_realistic_exact = bc.HilbertCoreset(Z, prj_exact_realistic)
 unif = bc.UniformSamplingCoreset(Z)
 
-algs = {'SVI': sparsevi, 
+algs = {'BPSVI': bpsvi, 
+        'SVI': sparsevi, 
         'GIGAO': giga_optimal, 
-        'GIGAOE': giga_optimal_exact, 
+        #'GIGAOE': giga_optimal_exact, 
         'GIGAR': giga_realistic, 
-        'GIGARE': giga_realistic_exact, 
+        #'GIGARE': giga_realistic_exact, 
         'RAND': unif}
 alg = algs[nm]
 
 print('Building coreset')
 #build coresets
-w = np.zeros((M+1, x.shape[0]))
+w = [np.array([0.])]
+p = [np.zeros((1, x.shape[1]))]
 for m in range(1, M+1):
   print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 
@@ -173,8 +185,9 @@ for m in range(1, M+1):
   alg.build(1, m)
   #store weights
   wts, pts, idcs = alg.get()
-  w[m, idcs] = wts
-  
+  w.append(wts)
+  p.append(pts)
+
   #printouts for debugging purposes
   #print('reverse KL: ' + str(model_linreg.weighted_post_KL(mu0, Sig0inv, datastd**2, Z, w[m, :], reverse=True)))
 
@@ -184,14 +197,14 @@ rklw = np.zeros(M+1)
 fklw = np.zeros(M+1)
 for m in range(M+1):
   print('KL divergence computation for trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
-  muw[m, :], Sigw[m, :, :] = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, Z, w[m, :])
-  rklw[m] = model_linreg.weighted_post_KL(mu0, Sig0inv, datastd**2, Z, w[m,:], reverse=True)
-  fklw[m] = model_linreg.weighted_post_KL(mu0, Sig0inv, datastd**2, Z, w[m,:], reverse=False)
+  muw[m, :], Sigw[m, :, :] = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, p[m], w[m])
+  rklw[m] = model_linreg.gaussian_KL(muw[m,:], Sigw[m,:,:], mup, Sigpinv)
+  fklw[m] = model_linreg.gaussian_KL(mup, Sigp, muw[m,:], np.linalg.inv(Sigw[m,:,:]))
 
 if not os.path.exists('results/'):
   os.mkdir('results')
 print('Saving result for trial: ' + tr +' alg: ' + nm)
-np.savez('results/results_'+nm+'_' + tr+'.npz', x=x, mu0=mu0, Sig0=Sig0, mup=mup, Sigp=Sigp, w=w, 
-                               muw=muw, Sigw=Sigw, rklw=rklw, fklw=fklw,
-                               basis_scales=basis_scales, basis_locs=basis_locs, datastd=datastd)
-
+f = open('results/results_'+nm+'_' + tr+'.pk', 'wb')
+res = (x, mu0, Sig0, mup, Sigp, w, p, muw, Sigw, rklw, fklw, basis_scales, basis_locs, datastd)
+pk.dump(res, f)
+f.close()
