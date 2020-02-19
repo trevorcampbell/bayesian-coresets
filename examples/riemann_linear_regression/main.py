@@ -27,7 +27,6 @@ beta_dim = 20
 BPSVI_step_sched = lambda i : 1./(1+i)
 SVI_step_sched = lambda i : 1./(1+i)
 
-
 #load data and compute true posterior
 #each row of x is [lat, lon, price]
 print('Loading data')
@@ -82,7 +81,7 @@ Z = np.hstack((X, Y[:,np.newaxis]))
 print('Computing true posterior')
 mup, LSigp, LSigpInv = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, Z, np.ones(X.shape[0]))
 Sigp = LSigp.dot(LSigp.T)
-Sigpinv = LSigpInv.dot(LSigpInv.T)
+SigpInv = LSigpInv.dot(LSigpInv.T)
 
 #create function to output log_likelihood given param samples
 print('Creating log-likelihood function')
@@ -111,6 +110,9 @@ prj_realistic = bc.BlackBoxProjector(sampler_realistic, proj_dim, log_likelihood
 
 print('Creating black box projector')
 def sampler_w(n, wts, pts):
+    if pts.shape[0] == 0:
+      wts = np.zeros(1)
+      pts = np.zeros((1, Z.shape[1]))
     muw, LSigw, LSigwInv = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
     return muw + np.random.randn(n, muw.shape[0]).dot(LSigw.T)
 prj_w = bc.BlackBoxProjector(sampler_w, proj_dim, log_likelihood, grad_log_likelihood)
