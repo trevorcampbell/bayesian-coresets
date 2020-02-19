@@ -31,7 +31,7 @@ class BatchPSVICoreset(Coreset):
       vecs = self.ll_projector.project(self.data)
       sum_scaling = 1.
     else:
-      sub_idcs = np.random.choice(self.data.shape[0], size=n_subsample, replace=False)
+      sub_idcs = np.random.randint(self.data.shape[0], size=n_subsample)
       vecs = self.ll_projector.project(self.data[sub_idcs])
       sum_scaling = self.data.shape[0]/n_subsample
 
