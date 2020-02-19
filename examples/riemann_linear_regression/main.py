@@ -14,16 +14,29 @@ tr = sys.argv[2]
 #use the trial # as seed
 np.random.seed(int(tr))
 
+#M = 300
+#SVI_opt_itrs = 100
+#BPSVI_opt_itrs = 100
+#n_subsample_opt = 200
+#n_subsample_select = 1000
+#proj_dim = 100
+#pihat_noise =0.75
+#n_bases_per_scale = 50
+#beta_dim = 20
+#BPSVI_step_sched = lambda i : 1./(1+i)
+#SVI_step_sched = lambda i : 1./(1+i)
+
+
 #experiment params
-M = 300
-SVI_opt_itrs = 100
-BPSVI_opt_itrs = 100
-n_subsample_opt = 200
-n_subsample_select = 1000
-proj_dim = 100
+M = 20
+SVI_opt_itrs = 10
+BPSVI_opt_itrs = 10
+n_subsample_opt = 20
+n_subsample_select = 10
+proj_dim = 10
 pihat_noise =0.75
-n_bases_per_scale = 50
-beta_dim = 20
+n_bases_per_scale = 5
+#beta_dim = 20
 BPSVI_step_sched = lambda i : 1./(1+i)
 SVI_step_sched = lambda i : 1./(1+i)
 
@@ -74,8 +87,8 @@ for i in range(basis_scales.shape[0]):
   X[:, i] = np.exp( -((x[:, :2] - basis_locs[i, :])**2).sum(axis=1) / (2*basis_scales[i]**2) )
 Y = x[:, 2]
 Z = np.hstack((X, Y[:,np.newaxis]))
-_, betaV = np.linalg.eigh(X.T.dot(X))
-betaV = betaV[:, -beta_dim:]
+#_, betaV = np.linalg.eigh(X.T.dot(X))
+#betaV = betaV[:, -beta_dim:]
 
 #get true posterior
 print('Computing true posterior')
@@ -158,7 +171,7 @@ prj_w = bc.BlackBoxProjector(sampler_w, proj_dim, log_likelihood, grad_log_likel
 #create coreset construction objects
 print('Creating coreset construction objects')
 sparsevi = bc.SparseVICoreset(Z, prj_w, opt_itrs = SVI_opt_itrs, n_subsample_opt = n_subsample_opt,  n_subsample_select = n_subsample_select, step_sched = SVI_step_sched)
-bpsvi = bc.BPSVICoreset(Z, prj_w, opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
+bpsvi = bc.BatchPSVICoreset(Z, prj_w, opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
 giga_optimal = bc.HilbertCoreset(Z, prj_optimal)
 #giga_optimal_exact = bc.HilbertCoreset(Z, prj_exact_optimal)
 giga_realistic = bc.HilbertCoreset(Z, prj_realistic)
