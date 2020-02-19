@@ -121,14 +121,17 @@ Sighat *= np.exp(-2.*pihat_noise*np.fabs(np.random.randn()))
 LSighat = np.linalg.cholesky(Sighat)
 
 print('Building projectors')
-sampler_optimal = lambda sz, w, pts : mup + np.random.randn((sz, mup.shape[0])).dot(LSigp.T)
-sampler_realistic = lambda sz, w, pts : muhat + np.random.randn((sz, muhat.shape[0])).dot(LSighat.T)
+sampler_optimal = lambda sz, w, pts : mup + np.random.randn(sz, mup.shape[0]).dot(LSigp.T)
+sampler_realistic = lambda sz, w, pts : muhat + np.random.randn(sz, muhat.shape[0]).dot(LSighat.T)
 def sampler_w(sz, w, pts):
   if pts.shape[0] == 0:
     w = np.zeros(1)
     pts = np.zeros((1, Z.shape[1]))
   muw, LSigw, LSigwInv = get_laplace(w, pts, mu0, use_diag_laplace_w)
-  return muw + np.random.randn((sz, muw.shape[0])).dot(LSigw.T)
+  if use_diag_laplace_w:
+    return muw + np.random.randn(sz, muw.shape[0])*LSigw
+  else:
+    return muw + np.random.randn(sz, muw.shape[0]).dot(LSigw.T)
 
 prj_optimal = bc.BlackBoxProjector(sampler_optimal, projection_dim, log_likelihood, grad_z_log_likelihood)
 prj_realistic = bc.BlackBoxProjector(sampler_realistic, projection_dim, log_likelihood, grad_z_log_likelihood)
