@@ -48,7 +48,7 @@ class DiffPrivBatchPSVICoreset(Coreset):
       #compute gradient of weights and pts
       resids = sum_scaling*self.n_subsample_opt*vecs - w.dot(corevecs) 
       wgrads = (-corevecs.dot(resids.T) / corevecs.shape[1]).transpose()
-      ugrads = np.einsum('ijk,lj->lik',  w[:,np.newaxis, np.newaxis]*pgrads, sum_scaling*self.n_subsample_opt*vecs - w.dot(corevecs))/corevecs.shape[1]
+      ugrads = np.einsum('ijk,lj->lik',  -w[:,np.newaxis, np.newaxis]*pgrads, sum_scaling*self.n_subsample_opt*vecs - w.dot(corevecs))/corevecs.shape[1]
       clipped_grads = clip(np.hstack((wgrads, ugrads.reshape(ugrads.shape[0],-1))), self.gradclip)
       gauss = self.gradclip*self.noise_mul*np.random.randn(clipped_grads.shape[0], clipped_grads.shape[1])
       return np.mean(clipped_grads + gauss, axis=0)
