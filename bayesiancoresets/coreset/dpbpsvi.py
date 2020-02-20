@@ -46,19 +46,17 @@ class DiffPrivBatchPSVICoreset(Coreset):
       p = x[sz:].reshape((sz, d))
       vecs, sum_scaling, sub_idcs, corevecs, pgrads = self._get_projection(self.n_subsample_opt, w, p)
       #compute gradient of weights and pts
-      wgrads = np.apply_along_axis(lambda v: -corevecs.dot(sum_scaling*self.n_subsample_opt*v - w.dot(corevecs)) / corevecs.shape[1], 1, vecs) # residual per private datapoint
-      ugrads =  np.apply_along_axis(lambda v: -(w[:, np.newaxis, np.newaxis]*pgrads*sum_scaling*self.n_subsample_opt*v - w.dot(corevecs)[np.newaxis, :, np.newaxis]).sum(axis=1)/corevecs.shape[1], 1, vecs)
-      #return reshaped grad
+      resids = sum_scaling*self.n_subsample_opt*vecs - w.dot(corevecs) 
+      wgrads = (-corevecs.dot(resids.T) / corevecs.shape[1]).transpose()
+      ugrads = np.einsum('ijk,lj->lik',  w[:,np.newaxis, np.newaxis]*pgrads, sum_scaling*self.n_subsample_opt*vecs - w.dot(corevecs))/corevecs.shape[1]
       clipped_grads = clip(np.hstack((wgrads, ugrads.reshape(ugrads.shape[0],-1))), self.gradclip)
-      gauss = 2*self.gradclip*self.noise_mul*np.random.randn(clipped_grads.shape[0], clipped_grads.shape[1])
+      gauss = self.gradclip*self.noise_mul*np.random.randn(clipped_grads.shape[0], clipped_grads.shape[1])
       return np.mean(clipped_grads + gauss, axis=0)
 
     x0 = np.hstack((self.wts, self.pts.reshape(sz*d)))
-    xf = partial_nn_opt(x0, grd, np.arange(sz), self.opt_itrs, step_sched = lambda i : 1./(i+1))
+    xf = partial_nn_opt(x0, grd, np.arange(sz), self.opt_itrs, step_sched = self.step_sched)
     self.wts = xf[:sz]
     self.pts = xf[sz:].reshape((sz, d))
-
-
 
   def _get_projection(self, n_subsample, w, p):
     #update the projector
