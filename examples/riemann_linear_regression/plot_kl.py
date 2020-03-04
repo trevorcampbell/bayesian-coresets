@@ -17,7 +17,7 @@ nms = [('SVI', 'SparseVI'), ('BPSVI', 'BPSVI'), ('GIGAO', 'GIGA (Optimal, Projec
 fig = bkp.figure(y_axis_type='log', plot_width=750, plot_height=750, x_axis_label='Coreset Size', y_axis_label=('Reverse KL' if plot_reverse_kl else 'Forward KL') )
 preprocess_plot(fig, '32pt', False, True)
 
-plot_every = 5
+plot_every = 1
 
 for i, nm in enumerate(nms):
   kl = []
@@ -29,7 +29,7 @@ for i, nm in enumerate(nms):
     if plot_reverse_kl:
       kl.append(res[9][::plot_every])
     else:
-      kl.append(res[9][::plot_every])
+      kl.append(res[10][::plot_every])
     sz.append( np.array([w.shape[0] for w in res[5]])[::plot_every])
   x = np.percentile(sz, 50, axis=0)
   fig.line(x, np.percentile(kl, 50, axis=0), color=pal[i], line_width=5, legend=nm[1]) 

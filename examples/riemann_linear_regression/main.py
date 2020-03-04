@@ -17,7 +17,7 @@ tr = sys.argv[2]
 #use the trial # as seed
 np.random.seed(int(tr))
 
-M = 300
+M = 20
 SVI_opt_itrs = 2000
 BPSVI_opt_itrs = 2000
 n_subsample_opt = 500
@@ -26,21 +26,8 @@ proj_dim = 100
 pihat_noise =0.75
 n_bases_per_scale = 50
 beta_dim = 20
-BPSVI_step_sched = lambda i : 1./(1+i)
-SVI_step_sched = lambda i : 1./(1+i)
-
-#
-M = 300
-SVI_opt_itrs = 2000
-BPSVI_opt_itrs = 2000
-n_subsample_opt = 500
-n_subsample_select = 2000
-proj_dim = 100
-pihat_noise =0.75
-n_bases_per_scale = 5
-beta_dim = 20
-BPSVI_step_sched = lambda i : 1./(1+i)
-SVI_step_sched = lambda i : 1./(1+i)
+BPSVI_step_sched = lambda i : 0.1/(1+i)
+SVI_step_sched = lambda i : 1.e5/(1+i)
 
 
 
