@@ -11,9 +11,9 @@ class HilbertCoreset(Coreset):
       vecs = ll_projector.project(data)
     else:
       n_subsample = min(data.shape[0], n_subsample)
-      sub_idcs = np.random.choice(data.shape[0], size=n_subsample, replace=False)
+      sub_idcs = np.random.randint(data.shape[0], size=n_subsample)
       vecs = ll_projector.project(data[sub_idcs])
-
+    vecs = vecs[np.sqrt((vecs**2).sum(axis=1))>0.,:]
     self.snnls = snnls(vecs.T, vecs.sum(axis=0))
     self.sub_idcs = sub_idcs
     self.data = data

@@ -1,7 +1,9 @@
 import numpy as np
 import pickle as pk
-import bayesiancoresets as bc
 import os, sys
+hpc = True
+if hpc:  sys.path.insert(1, os.path.join(sys.path[0], '/home/dm754/bayesian-coresets-private'))
+import bayesiancoresets as bc
 from scipy.stats import multivariate_normal
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
@@ -47,6 +49,7 @@ SVI_step_sched = lambda i : 1./(1+i)
 print('Loading data')
 
 x = np.load('../data/prices2018.npy')
+print('dataset size : ', x.shape)
 
 #log transform the prices
 x[:, 2] = np.log10(x[:, 2])

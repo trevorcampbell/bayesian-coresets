@@ -22,6 +22,8 @@ class DiffPrivBatchPSVICoreset(Coreset):
     self.init_sampler = init_sampler
     self.gen_inits = gen_inits
     self.dp = (analysis.epsilon(self.data.shape[0], self.n_subsample_opt, self.noise_mul, self.gradcalls, self.delta), self.delta)
+    print(self.data.shape[0], self.n_subsample_opt, self.noise_mul, self.gradcalls, self.delta)
+    print('achieved privacy : ', self.dp)
     super().__init__(**kw)
 
   def _build(self, itrs, sz):

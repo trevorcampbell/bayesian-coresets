@@ -8,9 +8,9 @@
 
 for ID in {1..1}
 do
-    for alg in  "BPSVI" "SVI" "GIGAO" "GIGAR" "RAND" "PRIOR"
+    for alg in "PRIOR"  #"DPBPSVI" #"PRIOR" #"BPSVI" #"SVI" "GIGAO" "GIGAR" "RAND" "PRIOR"
     do
-        for dnm in  "mnist2class_test" "fma" #"ds1.100"
+        for dnm in  "ds1.100" #"fma" #"mnist2class_test" #"ds1.100" #"mnist2class_test" "fma" "ds1.100" # "mnist2class_test"
 	do
 		python3 largemain.py $dnm $alg $ID 
 	done

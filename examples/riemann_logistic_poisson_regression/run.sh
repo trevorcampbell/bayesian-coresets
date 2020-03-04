@@ -10,7 +10,7 @@ for ID in {1..1}
 do
     for alg in "SVI" "BPSVI" "GIGAO" "GIGAR" "RAND" "PRIOR"
     do
-        for dnm in "synth_lr" "phishing" "ds1" 
+        for dnm in "synth_lr" # "phishing" "ds1" 
 	do
 		python3 main.py $dnm $alg $ID 
 	done

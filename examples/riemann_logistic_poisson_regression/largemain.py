@@ -57,21 +57,35 @@ else:
 
 print('running ' + str(dnm)+ ' ' + str(alg)+ ' ' + str(ID))
 
+
+M = 100
+projection_dim = 100 #random projection dimension for Hilbert csts
+pihat_noise = .75 #noise level (relative) for corrupting pihat
+
 ###############################
 ## TUNING PARAMETERS ##
 use_diag_laplace_w = True
-M = 20
-SVI_step_sched = lambda itr : 1./(1.+itr)
-BPSVI_step_sched = lambda itr : 5./(1.+itr)
-DPBPSVI_step_sched = lambda itr: 10./(1+itr)
-n_subsample_opt = 400
+n_subsample_opt = 200
 n_subsample_select = 1000
-projection_dim = 100 #random projection dimension for Hilbert csts
-pihat_noise = .75 #noise level (relative) for corrupting pihat
-SVI_opt_itrs = 1500
+SVI_opt_itrs = 500
 BPSVI_opt_itrs = 500
 DPBPSVI_opt_itrs = 500
+gamma_svi=1.
+gamma_bpsvi=10.
+gamma_dpbpsvi=50.
 ###############################
+
+SVI_step_sched = lambda itr : gamma_svi/(1.+itr)
+BPSVI_step_sched = lambda itr : gamma_bpsvi/(1.+itr)
+DPBPSVI_step_sched = lambda itr: gamma_dpbpsvi/(1+itr)
+
+tuneparams ={
+    'SVI' : {'opt_itrs':SVI_opt_itrs, 'gamma':gamma_svi, 'batch_opt':n_subsample_opt, 'batch_select':n_subsample_select},
+    'BPSVI' : {'opt_itrs':BPSVI_opt_itrs, 'gamma':gamma_bpsvi, 'batch_opt':n_subsample_opt},
+    'DPBPSVI': {'opt_itrs':DPBPSVI_opt_itrs, 'gamma':gamma_dpbpsvi, 'batch_opt':n_subsample_opt}
+}
+
+#print(tuneparams[alg])
 
 print('Loading dataset '+dnm)
 Z, Zt, D = load_data('../data/'+dnm+'.npz')
@@ -218,9 +232,14 @@ for m in range(M+1):
   Sigs_laplace[m,:,:] = LSigl.dot(LSigl.T)
   rkls_laplace[m] = gaussian.gaussian_KL(mul, Sigs_laplace[m,:,:], mup, LSigpInv.dot(LSigpInv.T))
   fkls_laplace[m] = gaussian.gaussian_KL(mup, Sigp, mul, LSiglInv.dot(LSiglInv.T))
-
+print('RKLD : ', rkls_laplace)
 #save results
 f = open('results/'+dnm+'_'+alg+'_results_' +str(ID)+'.pk', 'wb')
-res = (cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace, fkls_laplace)
+
+cstparams = None
+if alg in tuneparams.keys():
+  cstparams = '_'.join('{}{}'.format(key, val) for key, val in tuneparams[alg].items())
+print('cst params : ', cstparams)
+res = (cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace, fkls_laplace, cstparams)
 pk.dump(res, f)
 f.close()
