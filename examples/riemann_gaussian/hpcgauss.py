@@ -17,20 +17,22 @@ BPSVI_opt_itrs = 500
 n_subsample_opt = None # 100
 proj_dim = 100
 pihat_noise =0.75
-BPSVI_step_sched = lambda i : 1./(1+i)
+BPSVI_step_sched = lambda m: lambda i : (-0.005*m+1.005)/(1+i) # linear interpolaton giving i0=1 at m=1 and i0=0.005 at m=200 
 SVI_step_sched = lambda i : 1./(1+i)
 
 def linearize():
   args_dict = dict()
   c = -1
-  for tr in range(0,10):
-    for nm in ["BPSVI"]: # ["RAND", "BPSVI", "SVI", "GIGAO", "GIGAR"]:
-      for d in [500]: # [200, 500]:
-        c += 1
-        args_dict[c] = (tr, nm, d)
+  for tr in range(0,10): # trial number
+    for nm in ["BPSVI"]: # ["RAND", "BPSVI", "SVI", "GIGAO", "GIGAR"]: # coreset method
+      for d in [200]: # [200, 500]: # data dimension
+          #for i0 in [5., 1.5, 0.5, 0.1]: # initial learning rate
+          c += 1
+          args_dict[c] = (tr, nm, d) #(tr, nm, d, i0)
   return args_dict
 
 mapping = linearize()
+
 #print('mapping : ', len(mapping))
 #print( 'mapping at 0 : ', mapping[0] )
 #exit()
@@ -47,7 +49,6 @@ Sig0inv = np.linalg.inv(Sig0)
 Siginv = np.linalg.inv(Sig)
 SigLInv = np.linalg.inv(SigL)
 logdetSig = np.linalg.slogdet(Sig)[1]
-
 
 #generate data and compute true posterior
 #use the trial # as the seed
@@ -140,14 +141,29 @@ alg = algs[nm]
 print('Building coreset')
 w = [np.array([0.])]
 p = [np.zeros((1, x.shape[1]))]
-for m in range(1, M+1):
-  print('trial: ' + str(tr) +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
-  alg.build(1, m)
-  #store weights/pts
-  wts, pts, idcs = alg.get()
-  w.append(wts)
-  p.append(pts)
 
+def build_for_m(m): # auxiliary function for parallelizing BPSVI experiment
+  print('trial: ' + str(tr) +' alg: BPSVI ' + str(m) +'/'+str(M))
+  alg.build(1, m)
+  return alg.get()
+
+if nm=="BPSVI": #parallelize over batch pseudocoreset sizes
+  from multiprocessing import Pool
+  pool = Pool(processes=64)
+  res = pool.map(build_for_m, range(1, M+1))
+  for wts, pts, _ in res:
+    w.append(wts)
+    p.append(pts)
+else:
+  for m in range(1, M+1):
+    print('trial: ' + str(tr) +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
+    alg.build(1, m)
+    #store weights/pts
+    wts, pts, _ = alg.get()
+    w.append(wts)
+    p.append(pts)
+
+# computing kld and saving results
 muw = np.zeros((M+1, mu0.shape[0]))
 Sigw = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
 rklw = np.zeros(M+1)
@@ -160,7 +176,8 @@ for m in range(M+1):
 
 if not os.path.exists('results/'):
   os.mkdir('results')
-f = open('results/results_'+nm+'_'+str(d)+'_'+str(tr)+'.pk', 'wb')
+#f = open('results/results_'+nm+'_'+str(d)+'_'+'lr'+'_'+str(i0)+'_'+str(tr)+'.pk', 'wb')
+f = open('results/results_adaptr_'+nm+'_'+str(d)+'_'+str(tr)+'.pk', 'wb')
 res = (x, mu0, Sig0, Sig, mup, Sigp, w, p, muw, Sigw, rklw, fklw)
 pk.dump(res, f)
 f.close()

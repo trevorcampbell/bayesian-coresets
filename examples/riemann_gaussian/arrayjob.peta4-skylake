@@ -2,7 +2,7 @@
 
 #! sbatch directives begin here ###############################
 #! Name of the job:
-#SBATCH -J arr_gaussian
+#SBATCH -J adaptrgauss
 #! Which project should be charged:
 #SBATCH -A COMPUTERLAB-SL2-CPU
 #! Output filename:
@@ -19,7 +19,7 @@
 #! How many many cores will be allocated per task? (for single core jobs always leave this at 1)
 #SBATCH --cpus-per-task=32
 #! How much wallclock time will be required?
-#SBATCH --time=10:30:00
+#SBATCH --time=01:30:00
 #! What types of email messages do you wish to receive?
 #SBATCH --mail-type=FAIL
 #! Uncomment this to prevent the job from being requeued (e.g. if
@@ -27,7 +27,7 @@
 ##SBATCH --no-requeue
 #! Submit a job array with index values between 0 and 31
 #! NOTE: This must be a range, not a single number (i.e. specifying '32' here would only run one job, with index 32)
-#SBATCH --array=0-9
+#SBATCH --array=0-10
 
 #! For 6GB per CPU, set "-p skylake"; for 12GB per CPU, set "-p skylake-himem": 
 #SBATCH -p skylake-himem
