@@ -10,10 +10,10 @@ import time
 def linearize():
   args_dict = dict()
   c = -1
-  for nmult in [100.]:
+  for nmult in [1000000]:
     for i0 in [0.05]: #[500., 1000.]:
-      for ID in range(0, 1):
-        for alg in ["DPBPSVI"]: #, "BPSVI", "SVI"]: #["RAND", "PRIOR", "GIGAO", "GIGAR", "BPSVI", "SVI"]:
+      for ID in range(0, 5):
+        for alg in ["DPBPSVI"]: #, "RAND", "PRIOR", "GIGAO", "GIGAR", "BPSVI", "SVI"]:
           for dnm in ['ds1.100']: #['mnist2class_test']: #['ds1.100']: #['mnist2class_test']: #['fma', 'ds1.100', 'mnist2class_test']:
             c += 1
             args_dict[c] = (dnm, alg, ID, i0, nmult)
@@ -21,7 +21,6 @@ def linearize():
 
 mapping = linearize()
 print('mapping : ', len(mapping))
-#exit()
 #dnm, alg, ID, i0, nmult = mapping[int(sys.argv[1])]
 dnm, alg, ID, i0, nmult = mapping[0]
 hpc = True
@@ -75,7 +74,7 @@ if dnm in largescale:
   use_diag_laplace_w = True
 else:
   use_diag_laplace_w = False
-M = 15
+M = 50
 SVI_step_sched = lambda itr : i0/(1.+itr)
 BPSVI_step_sched = lambda m: lambda itr : (50. + 50*(1.-m/M))/(1.+itr) # make step schedule potentially dependent on coreset size
 DPBPSVI_step_sched = BPSVI_step_sched
@@ -118,7 +117,7 @@ samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
 mup = samples.mean(axis=0)
 Sigp = np.cov(samples, rowvar=False)
 LSigp = np.linalg.cholesky(Sigp)
-LSigpInv = sl.solve_triangular(LSigp, np.eye(LSigp.shape[0]), lower=True, overwrite_b = True, check_finite = False)
+LSigpInv = sl.solve_triangular(LSigp, np.eye(LSigp.shape[0]), lower=True, overwrite_b=True, check_finite=False)
 print('posterior fitting done')
 
 #create the prior -- also used for the above purpose
@@ -138,6 +137,7 @@ LSighat = np.linalg.cholesky(Sighat)
 print('Building projectors')
 sampler_optimal = lambda sz, w, pts : mup + np.random.randn(sz, mup.shape[0]).dot(LSigp.T)
 sampler_realistic = lambda sz, w, pts : muhat + np.random.randn(sz, muhat.shape[0]).dot(LSighat.T)
+
 def sampler_w(sz, w, pts):
   if pts.shape[0] == 0:
     w = np.zeros(1)
@@ -215,7 +215,7 @@ def build_per_m(m): # consturction in parallel for different coreset sizes used 
   print('m = ', m, ' done')
   return coreset.get(), time.perf_counter()-t0
 
-if alg in ['BPSVI', 'QDPBPSVI']:
+if alg in ['BPSVI', 'DPBPSVI']:
   from multiprocessing import Pool
   pool = Pool(processes=80)
   res = pool.map(build_per_m, range(1, M+1))
@@ -247,18 +247,14 @@ rkls_laplace = np.zeros(M+1)
 fkls_laplace = np.zeros(M+1)
 print('Computing coreset Laplace approximation + approximate KL(posterior || coreset laplace)')
 for m in range(M+1):
-  print('shapes of w and p : ', w[m].shape, p[m].shape)
-  input()
   mul, LSigl, LSiglInv = get_laplace(w[m], p[m], Z.mean(axis=0)[:D])
   mus_laplace[m,:] = mul
   Sigs_laplace[m,:,:] = LSigl.dot(LSigl.T)
-  print('rkld')
   rkls_laplace[m] = gaussian.gaussian_KL(mul, Sigs_laplace[m,:,:], mup, LSigpInv.dot(LSigpInv.T))
-  #fkls_laplace[m] = gaussian.gaussian_KL(mup, Sigp, mul, LSiglInv.dot(LSiglInv.T))
-  print('reverse kl : ', rkls_laplace[m])
+  fkls_laplace[m] = gaussian.gaussian_KL(mup, LSigpInv.dot(LSigpInv.T), mul, Sigs_laplace[m,:,:])
 #save results
 f = open('results/dp_adaptive_'+dnm+'_'+alg+'_results_'+str(i0)+'_nmult'+str(nmult)+'_'+str(ID)+'.pk', 'wb')
-res = (cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace)#, fkls_laplace)
+res = (cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace, fkls_laplace)
 pk.dump(res, f)
 f.close()
 

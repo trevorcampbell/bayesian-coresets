@@ -2,31 +2,30 @@ from __future__ import print_function
 import numpy as np
 import scipy.linalg as sl
 import pickle as pk 
+import os, sys, time
+from scipy.optimize import minimize, nnls
 
 # linearize for slurm job array submission
 def linearize():
   args_dict = dict()
   c = -1
-  for i0 in [0.5, 1., 2., 5.,  10.]:
-    for ID in range(1,10):
-      for alg in ["BPSVI"]: #, "SVI", "RAND", "PRIOR", "GIGAO", "GIGAR"]:
+  for i0 in [0.05, 0.1, 0.2, 0.5]: #, 1., 2., 5., 10.]:
+    for ID in range(0,10):
+      for alg in ["BPSVI", "SVI"]: #, "RAND", "PRIOR", "GIGAO", "GIGAR"]:
         for dnm in ['ds1', 'synth_lr', 'phishing']:
           c += 1
           args_dict[c] = (dnm, alg, ID, i0)
   return args_dict
 
 mapping = linearize()
-#print('mapping : ', len(mapping))
+print('mapping : ', len(mapping))
 #print( 'mapping at 0 : ', mapping[0] )
 #exit()
-import os, sys
 dnm, alg, ID, i0 = mapping[int(sys.argv[1])]
 #dnm, alg, ID, i0 = mapping[0]
 hpc = True
 if hpc: sys.path.insert(1, os.path.join(sys.path[0], '/home/dm754/bayesian-coresets-private'))
 import bayesiancoresets as bc
-from scipy.optimize import minimize, nnls
-import time
 
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
@@ -73,9 +72,9 @@ print('running ' + str(dnm)+ ' ' + str(alg)+ ' ' + str(ID))
 ###############################
 ## TUNING PARAMETERS ##
 use_diag_laplace_w = False
-M = 20
-SVI_step_sched = lambda itr : 1./(1.+itr)
-BPSVI_step_sched = lambda m: lambda itr : i0/(1.+itr) # make step schedule potentially dependent on coreset size
+M = 100
+SVI_step_sched = lambda itr : i0/(1.+itr)
+BPSVI_step_sched = lambda m: lambda itr : i0/(1.+itr) #(0.1+i0*(1.-m/M))/(1.+itr) # make step schedule potentially dependent on coreset size
 n_subsample_opt = 400
 n_subsample_select = 1000
 projection_dim = 100 #random projection dimension for Hilbert csts
@@ -98,7 +97,7 @@ if not os.path.exists('results/'+dnm+'_samples.npy'):
     if use_diag_laplace_w:
       samples_laplace = mup_laplace + np.random.randn(N_samples, mup_laplace.shape[0])*LSigp_laplace
     else:
-      samples_laplace =  mup_laplace + np.random.randn(N_samples, mup_laplace.shape[0]).dot(LSigp_laplace.T)
+      samples_laplace = mup_laplace + np.random.randn(N_samples, mup_laplace.shape[0]).dot(LSigp_laplace.T)
     np.save(os.path.join('results/'+dnm+'_samples.npy'), samples_laplace)
   else: # use stan sampler
     print('No MCMC samples found -- running STAN')
@@ -166,7 +165,6 @@ sparsevi = bc.SparseVICoreset(Z, prj_w, opt_itrs=SVI_opt_itrs, n_subsample_opt =
 sparsevi_t_setup = time.perf_counter()-t0
 
 t0 = time.perf_counter()
-print('i0 :', i0 )
 bpsvi = bc.BatchPSVICoreset(Z, prj_w, opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
 bpsvi_t_setup = time.perf_counter()-t0
 
@@ -197,7 +195,7 @@ def build_per_m(m): # consturction in parallel for different coreset sizes used 
 
 if alg=='BPSVI':
   from multiprocessing import Pool
-  pool = Pool(processes=64)
+  pool = Pool(processes=100)
   res = pool.map(build_per_m, range(1, M+1))
   i=1
   print('here!')
@@ -235,7 +233,7 @@ for m in range(M+1):
   fkls_laplace[m] = gaussian.gaussian_KL(mup, Sigp, mul, LSiglInv.dot(LSiglInv.T))
 
 #save results
-f = open('results/smallexp'+dnm+'_'+alg+'_results_i0_'+str(i0)+'_'+str(ID)+'.pk', 'wb')
+f = open('results/smallscale_constant_'+dnm+'_'+alg+'_results_'+str(i0)+'_'+str(ID)+'.pk', 'wb')
 res = (cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace, fkls_laplace)
 pk.dump(res, f)
 f.close()
