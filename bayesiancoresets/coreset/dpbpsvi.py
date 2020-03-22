@@ -8,7 +8,7 @@ def clip(x, c, axis=None):
   return (x.T/(np.linalg.norm(x, axis=axis)+1e-9)*np.clip(np.linalg.norm(x, axis=axis), 0, c)).T
 
 class DiffPrivBatchPSVICoreset(Coreset):
-  def __init__(self, data, ll_projector, opt_itrs=500, n_subsample_opt = 128, step_sched = lambda i : 1./(1.+i), 
+  def __init__(self, data, ll_projector, opt_itrs=500, n_subsample_opt = 128, step_sched = lambda m: lambda i : 1./(1.+i), 
                noise_multiplier=1.5, delta=None, init_sampler=None, gen_inits=None, l2normclip=10., **kw): 
     self.data = data
     self.ll_projector = ll_projector
@@ -22,8 +22,7 @@ class DiffPrivBatchPSVICoreset(Coreset):
     self.init_sampler = init_sampler
     self.gen_inits = gen_inits
     self.dp = (analysis.epsilon(self.data.shape[0], self.n_subsample_opt, self.noise_mul, self.gradcalls, self.delta), self.delta)
-    print(self.data.shape[0], self.n_subsample_opt, self.noise_mul, self.gradcalls, self.delta)
-    print('achieved privacy : ', self.dp)
+    #print('achieved privacy : ', self.dp)
     super().__init__(**kw)
 
   def _build(self, itrs, sz):
@@ -53,13 +52,14 @@ class DiffPrivBatchPSVICoreset(Coreset):
       ugrads = np.einsum('ijk,lj->lik',  -w[:,np.newaxis, np.newaxis]*pgrads, sum_scaling*self.n_subsample_opt*vecs - w.dot(corevecs))/corevecs.shape[1]
       clipped_grads = clip(np.hstack((wgrads, ugrads.reshape(ugrads.shape[0],-1))), self.gradclip)
       gauss = self.gradclip*self.noise_mul*np.random.randn(clipped_grads.shape[0], clipped_grads.shape[1])
-      return np.mean(clipped_grads + gauss, axis=0)
-
+      grad = np.mean(clipped_grads+gauss, axis=0)
+      return grad
     x0 = np.hstack((self.wts, self.pts.reshape(sz*d)))
-    xf = partial_nn_opt(x0, grd, np.arange(sz), self.opt_itrs, step_sched = self.step_sched)
+    xf = partial_nn_opt(x0, grd, np.arange(sz), self.opt_itrs, step_sched = self.step_sched(sz))
     self.wts = xf[:sz]
     self.pts = xf[sz:].reshape((sz, d))
-
+    return 
+    
   def _get_projection(self, n_subsample, w, p):
     #update the projector
     self.ll_projector.update(w, p)
