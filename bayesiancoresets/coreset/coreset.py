@@ -5,7 +5,7 @@ from .. import util
 from ..util.errors import NumericalPrecisionError
 
 class Coreset(object):
-  def __init__(self, initial_sz=10):
+  def __init__(self):
     self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.log = logging.LoggerAdapter(logging.getLogger(), {"id" : self.alg_name})
     self.reached_numeric_limit = False
