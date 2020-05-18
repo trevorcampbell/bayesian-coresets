@@ -4,7 +4,7 @@ from ..snnls.giga import GIGA
 from .coreset import Coreset
 
 class HilbertCoreset(Coreset):
-  def __init__(self, data, ll_projector, n_subsample = None, snnls = GIGA, **kw):
+  def __init__(self, data, ll_projector, n_subsample=None, snnls=GIGA, **kw):
 
     if n_subsample is None:
       sub_idcs = None
