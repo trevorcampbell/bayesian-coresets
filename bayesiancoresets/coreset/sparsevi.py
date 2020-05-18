@@ -76,7 +76,7 @@ class SparseVICoreset(Coreset):
       #output gradient of weights at idcs
       return -corevecs.dot(resid) / corevecs.shape[1]
     x0 = self.wts
-    self.wts = nn_opt(x0, grd, opt_itrs=self.opt_itrs, step_sched = self.step_sched)
+    self.wts = nn_opt(x0, grd, opt_itrs = self.opt_itrs, step_sched = self.step_sched)
 
   def error(self):
     return 0. #TODO: implement KL estimate

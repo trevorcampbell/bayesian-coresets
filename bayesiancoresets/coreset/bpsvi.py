@@ -55,7 +55,7 @@ class BatchPSVICoreset(Coreset):
       return np.hstack((wgrad, ugrad.reshape(sz*d))) 
 
     x0 = np.hstack((self.wts, self.pts.reshape(sz*d)))
-    xf = partial_nn_opt(x0, grd, np.arange(sz), self.opt_itrs, step_sched = self.step_sched(sz))
+    xf = nn_opt(x0, grd, nn_idcs = np.arange(sz), opt_itrs = self.opt_itrs, step_sched = self.step_sched)
     self.wts = xf[:sz]
     self.pts = xf[sz:].reshape((sz, d))
 
