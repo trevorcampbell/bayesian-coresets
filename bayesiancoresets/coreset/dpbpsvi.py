@@ -8,7 +8,7 @@ def clip(x, c, axis=None):
   return (x.T/(np.linalg.norm(x, axis=axis)+1e-9)*np.clip(np.linalg.norm(x, axis=axis), 0, c)).T
 
 class DiffPrivBatchPSVICoreset(Coreset):
-  def __init__(self, data, ll_projector, opt_itrs=500, n_subsample_opt = 128, step_sched = lambda m: lambda i : 1./(1.+i), 
+  def __init__(self, data, ll_projector, opt_itrs=500, n_subsample_opt=128, step_sched=lambda m: lambda i: 1./(1.+i), 
                noise_multiplier=1.5, delta=None, init_sampler=None, gen_inits=None, l2normclip=10., **kw): 
     self.data = data
     self.ll_projector = ll_projector
@@ -18,12 +18,14 @@ class DiffPrivBatchPSVICoreset(Coreset):
     self.delta = 1./self.data.shape[0] if delta is None else delta
     self.gradclip = l2normclip 
     self.noise_mul = noise_multiplier
-    self.gradcalls = self.opt_itrs
     self.init_sampler = init_sampler
     self.gen_inits = gen_inits
-    self.dp = (analysis.epsilon(self.data.shape[0], self.n_subsample_opt, self.noise_mul, self.gradcalls, self.delta), self.delta)
+    self.dp = (analysis.epsilon(self.data.shape[0], self.n_subsample_opt, self.noise_mul, self.opt_itrs, self.delta), self.delta)
     #print('achieved privacy : ', self.dp)
     super().__init__(**kw)
+
+  def get_privacy_params(self):
+    return self.dp
 
   def _build(self, itrs, sz):
     # privately initialize points
@@ -32,9 +34,10 @@ class DiffPrivBatchPSVICoreset(Coreset):
     self._optimize()
   
   def _initialize(self, sz):
+    # implemented ONLY for Bayesian logistic regression 
     # sample model parameters from pseudocoreset posterior (i.e. prior when pseudocoreset is empty)
     self.wts = self.data.shape[0]/sz*np.ones(sz)
-    th0 = self.init_sampler(self.wts.shape[0], None, np.random.randint(self.data.shape[0], size=0)) # dummy init to empty set 
+    th0 = self.init_sampler(self.wts.shape[0], None, np.random.randint(self.data.shape[0], size=0)) # dummy init to empty set, which samples from the prior 
     self.pts = self.gen_inits(self.wts.shape[0], th0)
     self.idcs = -1*np.ones(sz)
     return
