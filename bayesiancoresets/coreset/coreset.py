@@ -1,17 +1,23 @@
 import numpy as np
 import logging
-import time
+import secrets
 from .. import util
 from ..util.errors import NumericalPrecisionError
 
 class Coreset(object):
   def __init__(self):
-    self.alg_name = self.__class__.__name__ 
+    self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.log = logging.LoggerAdapter(logging.getLogger(), {"id" : self.alg_name})
+    self.reached_numeric_limit = False
     self.wts = np.array([])
     self.idcs = np.array([], dtype=np.int64)
     self.pts = np.array([])
-    self._t = 0
+
+  def reset(self):
+    self.wts = np.array([])
+    self.idcs = np.array([], dtype=np.int64)
+    self.pts = np.array([])
+    self.reached_numeric_limit = False
 
   def size(self):
     return (self.wts > 0).sum()
@@ -22,19 +28,30 @@ class Coreset(object):
   def error(self):
     raise NotImplementedError()
 
-  def build(self, sz, tracing=False):
-    #for now, nothing special to do at the parent level
-    #but keep an extra layer of abstraction here in case future versions need it
-    return self._build(sz, tracing)
+  #build of desired size sz using at most itrs iterations
+  #always returns a coreset of size <= sz
+  def build(self, itrs, sz):
+
+    if self.reached_numeric_limit:
+      return
+
+    if sz < self.size():
+      raise ValueError(self.alg_name+'.build(): requested coreset of size < the current size, but cannot shrink coresets; returning. Requested size = ' + str(sz) + ' current size = ' + str(self.size()))
+
+    self._build(itrs, sz)
+
+    #if we reached numeric limit during the current build, warn
+    if self.reached_numeric_limit:
+      self.log.warning('the numeric limit has been reached. No more points will be added. size = ' + str(self.size()) + ', error = ' +str(self.error()))
 
   #can run after building coreset to re-solve only the weight opt, not the combinatorial selection problem
-  def optimize(self, tracing=False):
+  def optimize(self):
     try:
       prev_cost = self.error()
       old_wts = self.wts.copy()
       old_idcs = self.idcs.copy()
       old_pts = self.pts.copy()
-      trace = self._optimize(tracing)
+      self._optimize()
       new_cost = self.error()
       if new_cost > prev_cost*(1.+util.TOL):
         raise NumericalPrecisionError('self.optimize() returned a solution with increasing error. Numeric limit possibly reached: preverr = ' + str(prev_cost) + ' err = ' + str(new_cost) + '.\n \
@@ -44,27 +61,11 @@ class Coreset(object):
       self.wts = old_wts
       self.idcs = old_idcs
       self.pts = old_pts
+      self.reached_numeric_limit = True
       return
-    return trace
 
-  def _optimize(self, tracing):
+  def _optimize(self):
     raise NotImplementedError
 
-  def _build(self, sz, tracing):
+  def _build(self, itrs, sz):
     raise NotImplementedError
-
-  def _tic(self, tracing):
-    if tracing:
-      self._t = time.perf_counter()
-  
-  def _toc(self, trace = None, tracing, **kwargs):
-    if tracing:
-      if trace is None:
-        trace = []
-      kwargs['t'] = time.perf_counter() - self._t
-      trace.append(kwargs)
-      return trace
-    return None
-
-
-
