@@ -26,10 +26,9 @@ class UniformSamplingCoreset(Coreset):
         self.cts.append(1)
 
       iter_t = _toc() 
-      if trace is not None:
+      if trace:
         self._convert_cts()
         trace.append({'t': iter_t + (trace[-1]['t'] if len(trace) > 0 else 0),
-		      'err': self.error(),
 		      'wts': self.wts.copy(),
                       'idcs': self.idcs.copy(),
                       'pts': self.pts.copy()

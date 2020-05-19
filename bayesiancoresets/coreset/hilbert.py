@@ -37,16 +37,15 @@ class HilbertCoreset(Coreset):
      
       #if trace is not None, the user wants detailed internal run info. append the initialization result/timing
       init_t = _toc()
-      if trace is not None:
+      if trace:
         trace.append({'t': init_t,
-                      'err': self.error(),
 		      'wts': self.wts.copy(),
                       'idcs': self.idcs.copy(),
                       'pts': self.pts.copy()
                      }) 
 
     #run the number of iterations needed to build up to size sz
-    if trace is not None:
+    if trace:
       snnls_trace = []
       self.snnls.build(sz - self.snnls.size(), trace = snnls_trace)
       self._append_snnls_trace(trace, snnls_trace)
@@ -60,7 +59,7 @@ class HilbertCoreset(Coreset):
     self.pts = self.data[self.idcs]
     
   def _optimize(self, trace):
-    if trace is not None:
+    if trace:
       snnls_trace = []
       self.snnls.optimize(snnls_trace)
       self._append_snnls_trace(trace, snnls_trace)
@@ -81,5 +80,4 @@ class HilbertCoreset(Coreset):
       tr['t'] += trace[-1]['t']
       tr['idcs'] = self.sub_idcs[nnz]
       tr['pts'] = self.data[tr['idcs']]
-      #error tr['err'] needs no processing
     trace.extend(snnls_trace)

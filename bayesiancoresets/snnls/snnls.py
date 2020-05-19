@@ -75,9 +75,8 @@ class SparseNNLS(object):
 
       #if trace is not None, the user wants detailed internal run info. append the iteration result/timing
       iter_t = _toc()
-      if trace is not None:
+      if trace:
         trace.append({'t': iter_t + (trace[-1]['t'] if len(trace) > 0 else 0),
-		      'err': self.error(),
 		      'wts': self.w.copy()
                      })
 
@@ -109,10 +108,8 @@ class SparseNNLS(object):
       return
 
     opt_t = _toc()
-    if trace is not None:
-      trace.append({'t': opt_t, 
-                    'err': self.error(),
-                    'wts': self.w.copy()})
+    if trace:
+      trace.append({'t': opt_t, 'wts': self.w.copy()})
 
   def _stabilize(self):
     pass #implementation optional; try to refresh cache/etc to make _step pass

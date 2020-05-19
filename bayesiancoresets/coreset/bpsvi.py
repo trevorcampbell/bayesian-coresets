@@ -23,7 +23,6 @@ class BatchPSVICoreset(Coreset):
     init_t = _toc()
     if trace:
       trace.append({'t': init_t,
-                    'err': self.error(),
 		    'wts': self.wts.copy(),
                     'idcs': self.idcs.copy(),
                     'pts': self.pts.copy()
