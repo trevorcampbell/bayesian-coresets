@@ -1,8 +1,8 @@
 import numpy as np
 from ..util.errors import NumericalPrecisionError
-from ..util.opt import nn_opt
+from ..util.opt import partial_nn_opt
 from .coreset import Coreset
-from ..util.timing import _tic, _toc
+from ..util import _tic, _toc
 
 class BatchPSVICoreset(Coreset):
   def __init__(self, data, ll_projector, opt_itrs, n_subsample_opt=None, step_sched=lambda i : 1./(1.+i), **kw): 

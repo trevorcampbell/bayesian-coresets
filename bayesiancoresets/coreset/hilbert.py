@@ -2,7 +2,7 @@ import numpy as np
 from ..util.errors import NumericalPrecisionError
 from ..snnls.giga import GIGA
 from .coreset import Coreset
-from ..util.timing import _tic, _toc
+from ..util import _tic, _toc
 
 class HilbertCoreset(Coreset):
   def __init__(self, data, ll_projector, n_subsample=None, snnls_alg=GIGA, **kw):
@@ -17,10 +17,10 @@ class HilbertCoreset(Coreset):
   def _build(self, sz, trace):
     if self.snnls is None:
       _tic()
-      if self.n_subsample is None:
+      if n_subsample is None:
         #user requested to work with the whole dataset
         self.sub_idcs = np.arange(self.data.shape[0])
-        vecs = self.ll_projector.project(self.data)
+        vecs = ll_projector.project(self.data)
       else:
         #user requested to work with a subsample of the large dataset
         #randint is efficient (doesn't enumerate all possible indices) but we need to call unique after to avoid duplicates

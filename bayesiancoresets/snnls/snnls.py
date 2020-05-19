@@ -4,7 +4,7 @@ import secrets
 from .. import util
 from ..util.errors import NumericalPrecisionError
 from scipy.optimize import nnls
-from ..util.timing import _tic, _toc
+from ..util import _tic, _toc
 
 class SparseNNLS(object):
   def __init__(self, A, b, check_error_monotone = True):
@@ -29,7 +29,7 @@ class SparseNNLS(object):
   def error(self):
     return np.sqrt(((self.A.dot(self.w) - self.b)**2).sum())
 
-  def build(self, itrs, trace = None):
+  def build(self, itrs, trace):
     if self.reached_numeric_limit:
       self.log.warning('the numeric limit was already reached; returning. size = ' + str(self.size()) + ', error = ' +str(self.error()))
       return
