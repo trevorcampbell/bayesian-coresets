@@ -1,5 +1,5 @@
 import numpy as np
-from ..util.errors import NumericalPrecisionError
+from .util.errors import NumericalPrecisionError
 
 class Projector(object):
     def project(self, pts, grad=False):
