@@ -2,6 +2,7 @@ import numpy as np
 from ..util.errors import NumericalPrecisionError
 from ..util.opt import partial_nn_opt
 from .coreset import Coreset
+from ..util import _tic, _toc
 
 class BatchPSVICoreset(Coreset):
   def __init__(self, data, ll_projector, opt_itrs, n_subsample_opt=None, step_sched=lambda i : 1./(1.+i), **kw): 
@@ -12,14 +13,23 @@ class BatchPSVICoreset(Coreset):
     self.step_sched = step_sched
     super().__init__(**kw)
 
-  def _build(self, itrs, sz):
+  def _build(self, sz, trace):
     # initialize the points via full dataset subsampling
+    _tic()
     init_idcs = np.random.choice(self.data.shape[0], size=sz, replace=False)
     self.pts = self.data[init_idcs]
     self.wts = self.data.shape[0]/sz*np.ones(sz)
     self.idcs = -1*np.ones(sz)
+    init_t = _toc()
+    if trace:
+      trace.append({'t': init_t,
+		    'wts': self.wts.copy(),
+                    'idcs': self.idcs.copy(),
+                    'pts': self.pts.copy()
+                     })
+
     # run gradient optimization for opt_itrs steps
-    self._optimize()
+    self._optimize(trace)
 
   def _get_projection(self, n_subsample, w, p):
     #update the projector
@@ -39,7 +49,7 @@ class BatchPSVICoreset(Coreset):
       corevecs, pgrads = np.zeros((0, vecs.shape[1])), np.zeros((0, vecs.shape[1], p.shape[1]))
     return vecs, sum_scaling, sub_idcs, corevecs, pgrads
 
-  def _optimize(self):
+  def _optimize(self, trace):
     sz = self.wts.shape[0]
     d = self.pts.shape[1]
 
@@ -55,7 +65,7 @@ class BatchPSVICoreset(Coreset):
       return np.hstack((wgrad, ugrad.reshape(sz*d))) 
 
     x0 = np.hstack((self.wts, self.pts.reshape(sz*d)))
-    xf = nn_opt(x0, grd, nn_idcs = np.arange(sz), opt_itrs = self.opt_itrs, step_sched = self.step_sched)
+    xf = nn_opt(x0, grd, nn_idcs = np.arange(sz), opt_itrs = self.opt_itrs, step_sched = self.step_sched, trace = trace)
     self.wts = xf[:sz]
     self.pts = xf[sz:].reshape((sz, d))
 

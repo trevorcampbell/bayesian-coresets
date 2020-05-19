@@ -4,6 +4,7 @@ import secrets
 from .. import util
 from ..util.errors import NumericalPrecisionError
 from scipy.optimize import nnls
+from ..util import _tic, _toc
 
 class SparseNNLS(object):
   def __init__(self, A, b, check_error_monotone = True):
@@ -28,7 +29,7 @@ class SparseNNLS(object):
   def error(self):
     return np.sqrt(((self.A.dot(self.w) - self.b)**2).sum())
 
-  def build(self, itrs):
+  def build(self, itrs, trace):
     if self.reached_numeric_limit:
       self.log.warning('the numeric limit was already reached; returning. size = ' + str(self.size()) + ', error = ' +str(self.error()))
       return
@@ -39,6 +40,7 @@ class SparseNNLS(object):
 
     retried_already = False
     for i in range(itrs):
+      _tic()
       try:
         #keep a record of previous setting in case the below update fails
         size_nonzero = self.size() > 0 #create a flag here, since ._reweight(f) will change this
@@ -70,6 +72,14 @@ class SparseNNLS(object):
           self.log.warning('iterative step failed. Stabilizing and retrying...')
           retried_already = True
           self._stabilize()
+
+      #if trace is not None, the user wants detailed internal run info. append the iteration result/timing
+      iter_t = _toc()
+      if trace:
+        trace.append({'t': iter_t + (trace[-1]['t'] if len(trace) > 0 else 0),
+		      'wts': self.w.copy()
+                     })
+
       if self.reached_numeric_limit:
         break
 
@@ -79,7 +89,8 @@ class SparseNNLS(object):
     #done
 
   #can run after building coreset to re-solve only the weight opt, not the combinatorial selection problem
-  def optimize(self):
+  def optimize(self, trace):
+    _tic()
     try:
       prev_cost = self.error()
       prev_w = self.w.copy()
@@ -95,6 +106,10 @@ class SparseNNLS(object):
       self.w = prev_w
       self.reached_numeric_limit = True
       return
+
+    opt_t = _toc()
+    if trace:
+      trace.append({'t': opt_t, 'wts': self.w.copy()})
 
   def _stabilize(self):
     pass #implementation optional; try to refresh cache/etc to make _step pass

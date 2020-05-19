@@ -1,10 +1,12 @@
 import numpy as np
 import sys
+from . import _tic, _toc
 
-def nn_opt(x0, grd, nn_idcs=None, opt_itrs=1000, step_sched=lambda i : 1./(i+1), b1=0.9, b2=0.999, eps=1e-8, verbose=False):
+def nn_opt(x0, grd, nn_idcs=None, opt_itrs=1000, step_sched=lambda i : 1./(i+1), b1=0.9, b2=0.999, eps=1e-8, trace = None, verbose = False):
   x = x0.copy()
   m1 = np.zeros(x.shape[0])
   m2 = np.zeros(x.shape[0])
+  _tic()
   for i in range(opt_itrs):
     g = grd(x)
     if verbose:
@@ -21,6 +23,12 @@ def nn_opt(x0, grd, nn_idcs=None, opt_itrs=1000, step_sched=lambda i : 1./(i+1),
         x = np.maximum(x, 0.)
     else:
         x[nn_idcs] = np.maximum(x[nn_idcs], 0.)
+  
+    if trace:
+      d = {}
+      d['t'] = _toc()
+      d['x'] = x
+      trace.append(d)
 
   if verbose:
     sys.stdout.write('\n')

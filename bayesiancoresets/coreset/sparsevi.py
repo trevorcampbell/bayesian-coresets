@@ -2,6 +2,7 @@ import numpy as np
 from ..util.errors import NumericalPrecisionError
 from ..util.opt import nn_opt
 from .coreset import Coreset
+from ..util import _tic, _toc
 
 class SparseVICoreset(Coreset):
   def __init__(self, data, ll_projector, n_subsample_select=None, n_subsample_opt=None, opt_itrs=100, step_sched=lambda i : 1./(1.+i), **kw): 
@@ -13,15 +14,21 @@ class SparseVICoreset(Coreset):
     self.step_sched = step_sched
     self.opt_itrs = opt_itrs
 
-  def _build(self, sz, tracing):
-    if self.size()+itrs > sz:
-      raise ValueError(self.alg_name + '._build(): # itrs + current size cannot exceed total desired size sz. # itr = ' + str(itrs) + ' cur sz: ' + str(self.size()) + ' desired sz: ' + str(sz))
-
-    for i in range(itrs):
+  def _build(self, sz, trace):
+    for i in range(sz-self.size()):
+      _tic()
       #search for the next best point
       self._select()
       #update the weights
       self._optimize() 
+      #if trace is not None, the user wants detailed internal run info. append the iteration result/timing
+      iter_t = _toc()
+      if trace:
+        trace.append({'t': iter_t + (trace[-1]['t'] if len(trace) > 0 else 0),
+		      'wts': self.wts.copy(),
+                      'idcs': self.idcs.copy(),
+                      'pts': self.pts.copy()
+                     })
 
   def _get_projection(self, n_subsample, w, p):
     #update the projector
@@ -69,14 +76,14 @@ class SparseVICoreset(Coreset):
         self.pts[-1] = self.data[f] 
     return
 
-  def _optimize(self):
+  def _optimize(self, trace):
     def grd(w):
       vecs, sum_scaling, sub_idcs, corevecs = self._get_projection(self.n_subsample_opt, w, self.pts)
       resid = sum_scaling*vecs.sum(axis=0) - w.dot(corevecs)
       #output gradient of weights at idcs
       return -corevecs.dot(resid) / corevecs.shape[1]
     x0 = self.wts
-    self.wts = nn_opt(x0, grd, opt_itrs = self.opt_itrs, step_sched = self.step_sched)
+    self.wts = nn_opt(x0, grd, opt_itrs = self.opt_itrs, step_sched = self.step_sched, trace = trace)
 
   def error(self):
     return 0. #TODO: implement KL estimate

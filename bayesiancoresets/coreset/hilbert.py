@@ -2,6 +2,7 @@ import numpy as np
 from ..util.errors import NumericalPrecisionError
 from ..snnls.giga import GIGA
 from .coreset import Coreset
+from ..util import _tic, _toc
 
 class HilbertCoreset(Coreset):
   def __init__(self, data, ll_projector, n_subsample=None, snnls_alg=GIGA, **kw):
@@ -13,9 +14,9 @@ class HilbertCoreset(Coreset):
     self.sub_idcs = None 
     self.snnls = None
 
-  def _build(self, sz, tracing):
+  def _build(self, sz, trace):
     if self.snnls is None:
-      self._tic(tracing)
+      _tic()
       if n_subsample is None:
         #user requested to work with the whole dataset
         self.sub_idcs = np.arange(self.data.shape[0])
@@ -33,45 +34,50 @@ class HilbertCoreset(Coreset):
 
       #create the snnls object
       self.snnls = self.snnls_alg(vecs.T, vecs.sum(axis=0))
-
-      #create the trace
-      trace = self._toc(trace, tracing)
-
-    #snnls algs are only expected to grow coresets; if requested sz is smaller, just log a warning and return
-    if self.snnls.size() >= sz:
-      self.log.warning('requested coreset of size ' + str(sz) + '; coreset is already size ' + str(self.snnls.size()) + '. Returning...')
-      return
+     
+      #if trace is not None, the user wants detailed internal run info. append the initialization result/timing
+      init_t = _toc()
+      if trace:
+        trace.append({'t': init_t,
+		      'wts': self.wts.copy(),
+                      'idcs': self.idcs.copy(),
+                      'pts': self.pts.copy()
+                     }) 
 
     #run the number of iterations needed to build up to size sz
-    snnls_trace = self.snnls.build(sz - self.snnls.size(), tracing = tracing)
+    if trace:
+      snnls_trace = []
+      self.snnls.build(sz - self.snnls.size(), trace = snnls_trace)
+      self._append_snnls_trace(trace, snnls_trace)
+    else:
+      self.snnls.build(sz - self.snnls.size())
 
-    #store the trace, converting indices where necessary
-    if tracing:
-      trace.extend(self._convert_trace(snnls_trace))
-    
     #get current state
     w = self.snnls.weights()
     self.wts = w[w>0]
     self.idcs = self.sub_idcs[w>0]
     self.pts = self.data[self.idcs]
-
-    if tracing:
-      return trace
     
-  def _optimize(self, tracing):
-    snnls_trace = self.snnls.optimize(tracing)
+  def _optimize(self, trace):
+    if trace:
+      snnls_trace = []
+      self.snnls.optimize(snnls_trace)
+      self._append_snnls_trace(trace, snnls_trace)
+    else:
+      self.snnls.optimize()
     w = self.snnls.weights()
     self.wts = w[w>0]
     self.idcs = self.sub_idcs[w>0]
     self.pts = self.data[self.idcs]
-    return snnls_trace
 
   def error(self):
     return self.snnls.error()
 
-  def _convert_trace(self, trace):
-    for snap in trace:
-      nnz = snap.wts > 0
-      snap.wts = snap.wts[nnz]
-      snap.idcs = self.sub_idcs[nnz]
-      snap.pts = self.data[snap.idcs]
+  def _append_snnls_trace(self, trace, snnls_trace):
+    for tr in snnls_trace:
+      nnz = tr['wts'] > 0
+      tr['wts'] = tr['wts'][nnz]
+      tr['t'] += trace[-1]['t']
+      tr['idcs'] = self.sub_idcs[nnz]
+      tr['pts'] = self.data[tr['idcs']]
+    trace.extend(snnls_trace)
