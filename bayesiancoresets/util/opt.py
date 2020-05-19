@@ -1,6 +1,6 @@
 import numpy as np
 import sys
-from . import _tic, _toc
+from .timing import _tic, _toc
 
 def nn_opt(x0, grd, nn_idcs=None, opt_itrs=1000, step_sched=lambda i : 1./(i+1), b1=0.9, b2=0.999, eps=1e-8, trace = None, verbose = False):
   x = x0.copy()

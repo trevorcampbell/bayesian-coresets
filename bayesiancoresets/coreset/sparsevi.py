@@ -2,7 +2,7 @@ import numpy as np
 from ..util.errors import NumericalPrecisionError
 from ..util.opt import nn_opt
 from .coreset import Coreset
-from ..util import _tic, _toc
+from ..util.timing import _tic, _toc
 
 class SparseVICoreset(Coreset):
   def __init__(self, data, ll_projector, n_subsample_select=None, n_subsample_opt=None, opt_itrs=100, step_sched=lambda i : 1./(1.+i), **kw): 

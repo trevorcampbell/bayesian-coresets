@@ -1,7 +1,7 @@
 import numpy as np
 from ..util.errors import NumericalPrecisionError
 from .coreset import Coreset
-from ..util import _tic, _toc
+from ..util.timing import _tic, _toc
 
 class UniformSamplingCoreset(Coreset):
   def __init__(self, data, **kw):

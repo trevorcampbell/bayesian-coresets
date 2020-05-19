@@ -85,7 +85,7 @@ print('Building the coreset...')
 #build the coreset
 M = 500 # use up to 500 datapoints (run 500 itrs)
 coreset = bc.HilbertCoreset(Z, projector) #do coreset construction using the discretized log-likelihood functions
-coreset.build(M, M) #build the coreset to size M with at most M iterations
+coreset.build(M) #build the coreset to size at most M
 wts, pts, idcs = coreset.get() #get the output weights
 print('coreset weights:')
 print(wts)
