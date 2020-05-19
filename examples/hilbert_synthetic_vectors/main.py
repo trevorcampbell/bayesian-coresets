@@ -28,19 +28,20 @@ N = 10000
 D = 100
 
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
-opt_err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 csize = np.zeros((len(anms), n_trials, Ms.shape[0]))
 cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
+
+
 for tr in range(n_trials):
   X = np.random.randn(N, D)
 
   for aidx, anm in enumerate(anms):
     print('data: gauss, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm)
-    alg = bc.HilbertCoreset(X, IDProjector(), snnls = algs[aidx])
+    alg = bc.HilbertCoreset(X, IDProjector(), snnls_alg = algs[aidx])
 
     for m, M in enumerate(Ms):
       t0 = time.time()
-      alg.build(Ms[m] if m == 0 else Ms[m] - Ms[m-1], np.inf) #no explicit bound on size, just run correct # iterations (size will be upper bounded by # itrs)
+      alg.build(Ms[m] if m == 0 else Ms[m] - Ms[m-1]) #no explicit bound on size, just run correct # iterations (size will be upper bounded by # itrs)
       tf = time.time()
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts, pts, idcs = alg.get()
@@ -63,13 +64,12 @@ def tsf_X():
     return X
 
 err = np.zeros((len(anms), n_trials, Ms.shape[0]))
-opt_err = np.zeros((len(anms), n_trials, Ms.shape[0]))
 csize = np.zeros((len(anms), n_trials, Ms.shape[0]))
 cput = np.zeros((len(anms), n_trials, Ms.shape[0]))
 for tr in range(n_trials):
   for aidx, anm in enumerate(anms):
     print('data: axis, trial ' + str(tr+1) + '/' + str(n_trials) + ', alg: ' + anm)
-    alg = bc.HilbertCoreset(X, IDProjector(), snnls = algs[aidx])
+    alg = bc.HilbertCoreset(X, IDProjector(), snnls_alg = algs[aidx])
 
     for m, M in enumerate(Ms):
       t0 = time.time()
