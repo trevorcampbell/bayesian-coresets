@@ -1,6 +1,6 @@
 import numpy as np
 from ..util.errors import NumericalPrecisionError
-from ..util.opt import partial_nn_opt
+from ..util.opt import nn_opt
 from .coreset import Coreset
 
 class BatchPSVICoreset(Coreset):
