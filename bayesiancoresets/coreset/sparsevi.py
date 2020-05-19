@@ -23,8 +23,9 @@ class SparseVICoreset(Coreset):
       self._optimize() 
       #if trace is not None, the user wants detailed internal run info. append the iteration result/timing
       iter_t = _toc()
-      if trace:
+      if trace is not None:
         trace.append({'t': iter_t + (trace[-1]['t'] if len(trace) > 0 else 0),
+		      'err': self.error(),
 		      'wts': self.wts.copy(),
                       'idcs': self.idcs.copy(),
                       'pts': self.pts.copy()
