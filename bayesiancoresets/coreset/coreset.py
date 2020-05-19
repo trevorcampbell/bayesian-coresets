@@ -1,5 +1,6 @@
 import numpy as np
 import logging
+import time
 from .. import util
 from ..util.errors import NumericalPrecisionError
 
@@ -19,23 +20,21 @@ class Coreset(object):
     return self.wts[self.wts > 0], self.pts[self.wts > 0, :], self.idcs[self.wts > 0]
 
   def error(self):
-    raise NotImplementedError
+    raise NotImplementedError()
 
-  def build(self, sz, trace = None):
-    #algs are only expected to grow coresets; if requested sz is smaller, just log a warning and return
-    if self.size() >= sz:
-      self.log.warning('requested coreset of size ' + str(sz) + '; coreset is already size ' + str(self.snnls.size()) + '. Returning...')
-      return
-    return self._build(sz, trace)
+  def build(self, sz, tracing=False):
+    #for now, nothing special to do at the parent level
+    #but keep an extra layer of abstraction here in case future versions need it
+    return self._build(sz, tracing)
 
   #can run after building coreset to re-solve only the weight opt, not the combinatorial selection problem
-  def optimize(self, trace = None):
+  def optimize(self, tracing=False):
     try:
       prev_cost = self.error()
       old_wts = self.wts.copy()
       old_idcs = self.idcs.copy()
       old_pts = self.pts.copy()
-      self._optimize(trace)
+      trace = self._optimize(tracing)
       new_cost = self.error()
       if new_cost > prev_cost*(1.+util.TOL):
         raise NumericalPrecisionError('self.optimize() returned a solution with increasing error. Numeric limit possibly reached: preverr = ' + str(prev_cost) + ' err = ' + str(new_cost) + '.\n \
@@ -46,9 +45,26 @@ class Coreset(object):
       self.idcs = old_idcs
       self.pts = old_pts
       return
+    return trace
 
-  def _optimize(self, trace):
+  def _optimize(self, tracing):
     raise NotImplementedError
 
-  def _build(self, sz, trace):
+  def _build(self, sz, tracing):
     raise NotImplementedError
+
+  def _tic(self, tracing):
+    if tracing:
+      self._t = time.perf_counter()
+  
+  def _toc(self, trace = None, tracing, **kwargs):
+    if tracing:
+      if trace is None:
+        trace = []
+      kwargs['t'] = time.perf_counter() - self._t
+      trace.append(kwargs)
+      return trace
+    return None
+
+
+
