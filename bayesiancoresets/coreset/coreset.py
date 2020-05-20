@@ -32,9 +32,6 @@ class Coreset(object):
     if self.reached_numeric_limit:
       return
 
-    if sz < self.size():
-      raise ValueError(self.alg_name+'.build(): requested coreset of size < the current size, but cannot shrink coresets; returning. Requested size = ' + str(sz) + ' current size = ' + str(self.size()))
-
     self._build(itrs)
 
     #if we reached numeric limit during the current build, warn
