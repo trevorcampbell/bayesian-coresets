@@ -14,9 +14,7 @@ class UniformSamplingCoreset(Coreset):
     self.ct_idcs = []
     super().reset()
 
-  def _build(self, itrs, sz):
-    if self.size()+itrs > sz:
-      raise ValueError(self.alg_name + '._build(): # itrs + current size cannot exceed total desired size sz. # itr = ' + str(itrs) + ' cur sz: ' + str(self.size()) + ' desired sz: ' + str(sz))
+  def _build(self, itrs):
     for i in range(itrs):
       f = np.random.randint(self.data.shape[0])
       if f in self.ct_idcs:

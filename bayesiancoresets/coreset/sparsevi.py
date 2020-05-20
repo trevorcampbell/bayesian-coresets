@@ -13,10 +13,7 @@ class SparseVICoreset(Coreset):
     self.opt_itrs = opt_itrs
     super().__init__(**kw)
 
-  def _build(self, itrs, sz):
-    if self.size()+itrs > sz:
-      raise ValueError(self.alg_name + '._build(): # itrs + current size cannot exceed total desired size sz. # itr = ' + str(itrs) + ' cur sz: ' + str(self.size()) + ' desired sz: ' + str(sz))
-
+  def _build(self, itrs):
     for i in range(itrs):
       #search for the next best point
       self._select()

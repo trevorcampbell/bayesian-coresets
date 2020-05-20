@@ -30,9 +30,7 @@ class HilbertCoreset(Coreset):
     self.snnls.reset()
     super().reset()
 
-  def _build(self, itrs, sz):
-    if self.snnls.size()+itrs > sz:
-      raise ValueError(self.alg_name + '._build(): # itrs + current size cannot exceed total desired size sz. # itr = ' + str(itrs) + ' cur sz: ' + str(self.snnls.size()) + ' desired sz: ' + str(sz))
+  def _build(self, itrs):
     self.snnls.build(itrs)
     w = self.snnls.weights()
     self.wts = w[w>0]

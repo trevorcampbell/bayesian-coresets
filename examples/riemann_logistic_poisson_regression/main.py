@@ -169,7 +169,7 @@ for m in range(1, M+1):
   print(str(m)+'/'+str(M))
   if alg != 'PRIOR':
     t0 = time.perf_counter()
-    coreset.build(1, m)
+    coreset.build(1)
     cputs[m] = time.perf_counter()-t0
 
     #record time and weights

@@ -40,7 +40,8 @@ for tr in range(n_trials):
 
     for m, M in enumerate(Ms):
       t0 = time.time()
-      alg.build(Ms[m] if m == 0 else Ms[m] - Ms[m-1], np.inf) #no explicit bound on size, just run correct # iterations (size will be upper bounded by # itrs)
+      itrs = (Ms[m] if m == 0 else Ms[m] - Ms[m-1])
+      alg.build(itrs) #no explicit bound on size, just run correct # iterations (size will be upper bounded by # itrs)
       tf = time.time()
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0
       wts, pts, idcs = alg.get()
@@ -73,7 +74,8 @@ for tr in range(n_trials):
 
     for m, M in enumerate(Ms):
       t0 = time.time()
-      alg.build(Ms[m] if m == 0 else Ms[m] - Ms[m-1], np.inf) #no explicit bound on size, just run correct # iterations (size will be upper bounded by # itrs)
+      itrs = (Ms[m] if m == 0 else Ms[m] - Ms[m-1])
+      alg.build(itrs) #no explicit bound on size, just run correct # iterations (size will be upper bounded by # itrs)
 
       tf = time.time()
       cput[aidx, tr, m] = tf-t0 + cput[aidx, tr, m-1] if m > 0 else tf-t0

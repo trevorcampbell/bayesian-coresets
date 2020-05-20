@@ -186,7 +186,7 @@ p = [np.zeros((1, Z.shape[1]))]
 for m in range(1, M+1):
   print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
 
-  alg.build(1, m)
+  alg.build(1)
   #store weights
   wts, pts, idcs = alg.get()
   w.append(wts)

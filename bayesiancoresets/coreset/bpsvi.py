@@ -5,6 +5,7 @@ from .coreset import Coreset
 
 class BatchPSVICoreset(Coreset):
   def __init__(self, data, ll_projector, opt_itrs, n_subsample_opt=None, step_sched=lambda i : 1./(1.+i), **kw): 
+    raise NotImplementedError #need to make this work w/ new build(itrs)
     self.data = data
     self.ll_projector = ll_projector
     self.opt_itrs = opt_itrs
@@ -12,7 +13,7 @@ class BatchPSVICoreset(Coreset):
     self.step_sched = step_sched
     super().__init__(**kw)
 
-  def _build(self, itrs, sz):
+  def _build(self, itrs):
     # initialize the points via full dataset subsampling
     init_idcs = np.random.choice(self.data.shape[0], size=sz, replace=False)
     self.pts = self.data[init_idcs]

@@ -93,7 +93,8 @@ for m in range(Ms.shape[0]):
   print('M = ' + str(Ms[m]) + ': coreset construction, '+ anm + ' ' + dnm + ' ' + ID)
   #this runs alg up to a level of M; on the next iteration, it will continue from where it left off
   t0 = time.process_time()
-  alg.build(Ms[m] if m == 0 else Ms[m] - Ms[m-1], Ms[m])
+  itrs = (Ms[m] if m == 0 else Ms[m] - Ms[m-1])
+  alg.build(itrs)
   t_alg += time.process_time()-t0
   wts, pts, idcs = alg.get()
 

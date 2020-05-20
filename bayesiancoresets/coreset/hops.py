@@ -4,7 +4,7 @@ from ..util.opt import nn_opt
 from .coreset import Coreset
 from scipy.optimize import nnls
 
-class nnlsHOPSCoreset(Coreset):
+class HOPSCoreset(Coreset):
   def __init__(self, tangent_space_factory, opt_itrs, step_sched = lambda i : 1./(1.+i), update_single = False, **kw):
     self.tsf = tangent_space_factory
     self.step_sched = step_sched
