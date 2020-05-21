@@ -1,2 +1,2 @@
-from .coreset import HilbertCoreset, SparseVICoreset, UniformSamplingCoreset#BatchPSVICoreset, UniformSamplingCoreset
+from .coreset import HilbertCoreset, SparseVICoreset, BatchPSVICoreset, UniformSamplingCoreset
 from .projector import BlackBoxProjector, Projector
