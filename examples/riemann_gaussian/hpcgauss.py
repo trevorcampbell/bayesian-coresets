@@ -8,7 +8,7 @@ hpc=True
 if hpc: sys.path.insert(1, os.path.join(sys.path[0], '/home/dm754/bayesian-coresets-private'))
 import bayesiancoresets as bc
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
-import gaussian
+import model_gaussian as gaussian
 
 M = 200
 N = 1000
