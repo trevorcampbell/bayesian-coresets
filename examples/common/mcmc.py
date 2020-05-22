@@ -58,20 +58,3 @@ def sampler(dnm, lr, datafldr, resfldr, N_samples):
   np.save(os.path.join(resfldr, dnm+'_samples.npy'), samples) 
   tf = time.process_time()
   np.save(os.path.join(resfldr, dnm+'_mcmc_time.npy'), tf-t0)
-
-  #t0 = time.process_time()
-  #thd = sampler_data['d']+1
-  #samples = np.zeros((0, thd))
-  #for i in range(int(N_samples/N_per)):
-  #  if i == 0: 
-  #    fit = sm.sampling(data=sampler_data, iter=N_per*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
-  #  else:
-  #    try:
-  #      fit = sm.sampling(data=sampler_data, init=[dict(theta=samples[-1,:-1], theta0=samples[-1,-1])], iter=N_per*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
-  #    except:
-  #      print('STAN: initialization failed, trying again')
-  #      fit = sm.sampling(data=sampler_data, iter=N_per*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
-  #  samples = np.vstack((samples, fit.extract(permuted=False)[:, 0, :thd]))
-  #np.save(os.path.join(resfldr, dnm+'_samples.npy'), samples) 
-  #tf = time.process_time()
-  #np.save(os.path.join(resfldr, dnm+'_mcmc_time.npy'), tf-t0)
