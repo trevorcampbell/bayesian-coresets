@@ -1,6 +1,7 @@
 import numpy as np
 import pystan
-from stan_code import logistic_code, poisson_code
+from model_lr import logistic_code
+from model_poiss import poisson_code
 import os
 import pickle as pk
 import time

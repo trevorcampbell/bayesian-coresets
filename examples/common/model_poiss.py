@@ -89,4 +89,26 @@ def hess_th_log_prior(th):
 
 def hess_th_log_joint(z, th, wts):
   return hess_th_log_prior(th) + (wts[:, np.newaxis, np.newaxis, np.newaxis]*hess_th_log_likelihood(z, th)).sum(axis=0)
+  
+poisson_code = """
+data {
+  int<lower=0> n; // number of observations
+  int<lower=0> d; // number of predictors
+  int<lower=0> y[n]; // outputs
+  matrix[n,d] x; // inputs
+}
+parameters {
+  real theta0; // intercept
+  vector[d] theta; // auxiliary parameter
+}
+transformed parameters {
+  vector[n] f;
+  f = -log_inv_logit(-(theta0 + x*theta));
+}
+model {
+  theta0 ~ normal(0, 1);
+  theta ~ normal(0, 1);
+  y ~ poisson(f);
+}
+"""
 
