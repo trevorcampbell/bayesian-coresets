@@ -19,6 +19,19 @@ def load_data(dnm):
   data.close()
   return X[:, :-1], Y
 
+def build_model(resfldr, modelName, modelCode):
+  if not os.path.exists(os.path.join(resfldr, modelName)): 
+      print('STAN: building model')
+      sm = pystan.StanModel(model_code=modelCode)
+      f = open(os.path.join(resfldr, modelName),'wb')
+      pk.dump(sm, f)
+      f.close()
+  else:
+      f = open(os.path.join(resfldr, modelName),'rb')
+      sm = pk.load(f)
+      f.close()
+  return sm
+
 def sampler(dnm, lr, datafldr, resfldr, N_samples):
   print('STAN: loading data')
   X, Y = load_data(os.path.join(datafldr,dnm+'.npz'))
@@ -28,27 +41,9 @@ def sampler(dnm, lr, datafldr, resfldr, N_samples):
 
   print('STAN: building/loading model')
   if lr:
-    if not os.path.exists(os.path.join(resfldr,'pystan_model_logistic.pk')): 
-      print('STAN: building LR model')
-      sm = pystan.StanModel(model_code=logistic_code)
-      f = open(os.path.join(resfldr,'pystan_model_logistic.pk'),'wb')
-      pk.dump(sm, f)
-      f.close()
-    else:
-      f = open(os.path.join(resfldr,'pystan_model_logistic.pk'),'rb')
-      sm = pk.load(f)
-      f.close()
+    sm = build_model(resfldr, 'pystan_model_logistic.pk', logistic_code)
   else:
-    if not os.path.exists(os.path.join(resfldr,'pystan_model_poisson.pk')): 
-      print('STAN: building PR model')
-      sm = pystan.StanModel(model_code=poisson_code)
-      f = open(os.path.join(resfldr,'pystan_model_poisson.pk'),'wb')
-      pk.dump(sm, f)
-      f.close()
-    else:
-      f = open(os.path.join(resfldr,'pystan_model_poisson.pk'),'rb')
-      sm = pk.load(f)
-      f.close()
+    sm = build_model(resfldr, 'pystan_model_poisson.pk', poisson_code)
 
   print('STAN: sampling posterior: ' + dnm)
   t0 = time.process_time()
