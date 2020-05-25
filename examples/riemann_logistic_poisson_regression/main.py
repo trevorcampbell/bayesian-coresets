@@ -55,22 +55,16 @@ else:
 
 print('running ' + str(dnm)+ ' ' + str(alg)+ ' ' + str(ID))
 
-if not os.path.exists('caching/'):
-  os.mkdir('caching')
-
-if not os.path.exists('caching/'+dnm+'_samples.npy'):
-  print('No MCMC samples found -- running STAN')
-  #run sampler
-  N_samples = 10000
-  sampler(dnm, '../data/', 'caching/', N_samples, stan_representation)
+#run sampler
+N_samples = 10000
+samples = sampler(dnm, '../data/', 'caching/', N_samples, stan_representation) #adjusting so I don't have to first call sampler and then call samples = np.load('caching/'+dnm+'_samples.npy')
 
 
 print('Loading dataset '+dnm)
 Z, Zt, D = load_data('../data/'+dnm+'.npz')
 print('Loading posterior samples for '+dnm)
-samples = np.load('caching/'+dnm+'_samples.npy')
 #TODO FIX SAMPLER TO NOT HAVE TO DO THIS
-samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
+samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis])) #TODO: verify that this is as simple as moving this code into the sampler function
 
 #fit a gaussian to the posterior samples 
 #used for pihat computation for Hilbert coresets with noise to simulate uncertainty in a good pihat
