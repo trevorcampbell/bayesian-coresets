@@ -90,6 +90,7 @@ def hess_th_log_prior(th):
 def hess_th_log_joint(z, th, wts):
   return hess_th_log_prior(th) + (wts[:, np.newaxis, np.newaxis, np.newaxis]*hess_th_log_likelihood(z, th)).sum(axis=0)
   
+#change to just "code" as title
 poisson_code = """
 data {
   int<lower=0> n; // number of observations
