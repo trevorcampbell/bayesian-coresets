@@ -55,20 +55,20 @@ else:
 
 print('running ' + str(dnm)+ ' ' + str(alg)+ ' ' + str(ID))
 
-if not os.path.exists('results/'):
-  os.mkdir('results')
+if not os.path.exists('caching/'):
+  os.mkdir('caching')
 
-if not os.path.exists('results/'+dnm+'_samples.npy'):
+if not os.path.exists('caching/'+dnm+'_samples.npy'):
   print('No MCMC samples found -- running STAN')
   #run sampler
   N_samples = 10000
-  sampler(dnm, dnm in lrdnms, '../data/', 'results/', N_samples)
+  sampler(dnm, dnm in lrdnms, '../data/', 'caching/', N_samples)
 
 
 print('Loading dataset '+dnm)
 Z, Zt, D = load_data('../data/'+dnm+'.npz')
 print('Loading posterior samples for '+dnm)
-samples = np.load('results/'+dnm+'_samples.npy')
+samples = np.load('caching/'+dnm+'_samples.npy')
 #TODO FIX SAMPLER TO NOT HAVE TO DO THIS
 samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
 
@@ -195,6 +195,8 @@ for m in range(M+1):
   fkls_laplace[m] = model.gaussian_KL(mup, Sigp, mul, LSiglInv.dot(LSiglInv.T))
 
 #save results
+if not os.path.exists('results/'):
+  os.mkdir('results')
 f = open('results/'+dnm+'_'+alg+'_results_' +str(ID)+'.pk', 'wb')
 res = (cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace, fkls_laplace)
 pk.dump(res, f)
