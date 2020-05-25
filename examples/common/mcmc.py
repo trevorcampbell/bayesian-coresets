@@ -41,9 +41,9 @@ def sampler(dnm, lr, datafldr, resfldr, N_samples):
 
   print('STAN: building/loading model')
   if lr:
-    sm = build_model(resfldr, 'pystan_model_logistic.pk', logistic_code)
+    sm = build_model("caching", 'pystan_model_logistic.pk', logistic_code)
   else:
-    sm = build_model(resfldr, 'pystan_model_poisson.pk', poisson_code)
+    sm = build_model("caching", 'pystan_model_poisson.pk', poisson_code)
 
   print('STAN: sampling posterior: ' + dnm)
   t0 = time.process_time()
