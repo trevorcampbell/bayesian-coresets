@@ -62,7 +62,7 @@ if not os.path.exists('caching/'+dnm+'_samples.npy'):
   print('No MCMC samples found -- running STAN')
   #run sampler
   N_samples = 10000
-  sampler(dnm, dnm in lrdnms, '../data/', 'caching/', N_samples)
+  sampler(dnm, '../data/', 'caching/', N_samples, stan_representation)
 
 
 print('Loading dataset '+dnm)

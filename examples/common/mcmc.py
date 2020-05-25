@@ -32,19 +32,7 @@ def build_model(resfldr, modelName, model_code):
       sm = pk.load(f)
       f.close()
   return sm
-def sampler(dnm, lr, datafldr, resfldr, N_samples):
-  print('STAN: loading data')
-  X, Y = load_data(os.path.join(datafldr,dnm+'.npz'))
-  Y[Y == -1] = 0 #convert to Stan LR label style if necessary
-
-  sampler_data = {'x': X, 'y': Y.astype(int), 'd': X.shape[1], 'n': X.shape[0]}
-
-  print('STAN: building/loading model')
-  if lr:
-    sm = build_model(resfldr, 'pystan_model_logistic.pk', logistic_code)
-  else:
-    sm = build_model(resfldr, 'pystan_model_poisson.pk', poisson_code)
-# def sampler(dnm, datafldr, resfldr, N_samples, model_code):
+# def sampler(dnm, lr, datafldr, resfldr, N_samples):
 #   print('STAN: loading data')
 #   X, Y = load_data(os.path.join(datafldr,dnm+'.npz'))
 #   Y[Y == -1] = 0 #convert to Stan LR label style if necessary
@@ -52,11 +40,24 @@ def sampler(dnm, lr, datafldr, resfldr, N_samples):
 #   sampler_data = {'x': X, 'y': Y.astype(int), 'd': X.shape[1], 'n': X.shape[0]}
 
 #   print('STAN: building/loading model')
-#   sm = build_model(resfldr, 'pystan_model_logistic.pk', model_code)
+#   if lr:
+#     sm = build_model(resfldr, 'pystan_model_logistic.pk', logistic_code)
+#   else:
+#     sm = build_model(resfldr, 'pystan_model_poisson.pk', poisson_code)
+def sampler(dnm, datafldr, resfldr, N_samples, stan_representation):
+  print('STAN: loading data')
+  X, Y = load_data(os.path.join(datafldr,dnm+'.npz'))
+  Y[Y == -1] = 0 #convert to Stan LR label style if necessary
 
-#   #'pystan_model_logistic.pk'
-#   #'pystan_model_poisson.pk'
-#   #logistic_code
+  sampler_data = {'x': X, 'y': Y.astype(int), 'd': X.shape[1], 'n': X.shape[0]}
+
+  print('STAN: building/loading model')
+  name, code = stan_representation
+  sm = build_model(resfldr, name, code)
+
+  #'pystan_model_logistic.pk'
+  #'pystan_model_poisson.pk'
+  #logistic_code
 
   print('STAN: sampling posterior: ' + dnm)
   t0 = time.process_time()
