@@ -3,6 +3,7 @@ import numpy as np
 def load_data(dnm):
   data = np.load(dnm)
   X = data['X']
+  Y = data['Y']
   #Xt = data['Xt']
   #standardize the covariates; last col is intercept, so no stdization there
   m = X[:, :-1].mean(axis=0)
@@ -12,7 +13,7 @@ def load_data(dnm):
   Z = data['y'][:, np.newaxis]*X
   #Zt = data['yt'][:, np.newaxis]*Xt
   data.close()
-  return X[:, :-1], data['y'], Z, None, Z.shape[1]
+  return X[:, :-1], Y, Z, None, Z.shape[1]
 
 def gen_synthetic(n):
   mu = np.array([0, 0])

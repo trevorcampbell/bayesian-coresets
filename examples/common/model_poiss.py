@@ -4,6 +4,7 @@ from scipy.special import gammaln
 def load_data(dnm):
   data = np.load(dnm)
   X = data['X']
+  Y = data['y']
   Xt = data['Xt']
   #standardize the covariates; last col is intercept, so no stdization there
   m = X[:, :-1].mean(axis=0)
@@ -13,7 +14,7 @@ def load_data(dnm):
   Z = np.hstack((X, data['y'][:, np.newaxis]))
   Zt = np.hstack((Xt, data['yt'][:, np.newaxis]))
   data.close()
-  return X[:, :-1], data['y'], Z, Zt, Z.shape[1]-1
+  return X[:, :-1], Y, Z, Zt, Z.shape[1]-1
 
 def gen_synthetic(n):
   X = np.random.randn(n)
