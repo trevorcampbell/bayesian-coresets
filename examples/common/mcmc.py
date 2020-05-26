@@ -48,6 +48,3 @@ def sampler(dnm, X, Y, N_samples, stan_representation, chains=1, control={'adapt
     tf = time.process_time()
     np.save(os.path.join(cache_folder, dnm+'_mcmc_time.npy'), tf-t0)
     return samples
-
-  #if not cached, run sampler.
-  #else return with message "using cached data" - this is definitely something mcmc should do, not individual examples
