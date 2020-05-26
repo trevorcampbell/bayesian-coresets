@@ -4,19 +4,6 @@ import os
 import pickle as pk
 import time
 
-def load_data(dnm):
-  data = np.load(dnm)
-  X = data['X']
-  Y = data['y']
-  Xt = data['Xt']
-  #standardize the covariates; last col is intercept, so no stdization there
-  m = X[:, :-1].mean(axis=0)
-  V = np.cov(X[:, :-1], rowvar=False)+1e-12*np.eye(X.shape[1]-1)
-  X[:, :-1] = np.linalg.solve(np.linalg.cholesky(V), (X[:, :-1] - m).T).T
-  Xt[:, :-1] = np.linalg.solve(np.linalg.cholesky(V), (Xt[:, :-1] - m).T).T
-  data.close()
-  return X[:, :-1], Y
-
 def build_model(resfldr, modelName, model_code):
   if not os.path.exists(os.path.join(resfldr, modelName)): 
       print('STAN: building model')
@@ -31,7 +18,7 @@ def build_model(resfldr, modelName, model_code):
       f.close()
   return sm
 
-def sampler(dnm, datafldr, resfldr, N_samples, stan_representation):
+def sampler(dnm, X, Y, resfldr, N_samples, stan_representation):
 
   if not os.path.exists('caching/'):
     os.mkdir('caching')
@@ -42,7 +29,6 @@ def sampler(dnm, datafldr, resfldr, N_samples, stan_representation):
   else:
     print('No MCMC samples found -- running STAN')
     print('STAN: loading data')
-    X, Y = load_data(os.path.join(datafldr,dnm+'.npz'))
     Y[Y == -1] = 0 #convert to Stan LR label style if necessary
 
     sampler_data = {'x': X, 'y': Y.astype(int), 'd': X.shape[1], 'n': X.shape[0]}

@@ -55,14 +55,14 @@ else:
 
 print('running ' + str(dnm)+ ' ' + str(alg)+ ' ' + str(ID))
 
+print('Loading dataset '+dnm)
+data_X, data_Y, Z, Zt, D = load_data('../data/'+dnm+'.npz')
+
 #run sampler
 N_samples = 10000
-samples = sampler(dnm, '../data/', 'caching/', N_samples, stan_representation) #adjusting so I don't have to first call sampler and then call samples = np.load('caching/'+dnm+'_samples.npy')
+samples = sampler(dnm, data_X, data_Y, 'caching/', N_samples, stan_representation) #adjusting so I don't have to first call sampler and then call samples = np.load('caching/'+dnm+'_samples.npy')
 #TODO FIX SAMPLER TO NOT HAVE TO DO THIS
 samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis])) #TODO: verify that this is as simple as moving this code into the sampler function
-
-print('Loading dataset '+dnm)
-Z, Zt, D = load_data('../data/'+dnm+'.npz')
 
 #fit a gaussian to the posterior samples 
 #used for pihat computation for Hilbert coresets with noise to simulate uncertainty in a good pihat

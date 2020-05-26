@@ -12,7 +12,7 @@ def load_data(dnm):
   Z = data['y'][:, np.newaxis]*X
   #Zt = data['yt'][:, np.newaxis]*Xt
   data.close()
-  return Z, None, Z.shape[1]
+  return X[:, :-1], data['y'], Z, None, Z.shape[1]
 
 def gen_synthetic(n):
   mu = np.array([0, 0])
