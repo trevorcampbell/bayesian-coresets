@@ -4,28 +4,30 @@ import os
 import pickle as pk
 import time
 
-def build_model(resfldr, modelName, model_code):
-  if not os.path.exists(os.path.join(resfldr, modelName)): 
+cache_folder = "caching/"
+
+def build_model(modelName, model_code):
+  if not os.path.exists(os.path.join(cache_folder, modelName)): 
       print('STAN: building model')
       sm = pystan.StanModel(model_code=model_code)
-      f = open(os.path.join(resfldr, modelName),'wb')
+      f = open(os.path.join(cache_folder, modelName),'wb')
       pk.dump(sm, f)
       f.close()
   else:
       print("do we ever call this? like ever?")
-      f = open(os.path.join(resfldr, modelName),'rb')
+      f = open(os.path.join(cache_folder, modelName),'rb')
       sm = pk.load(f)
       f.close()
   return sm
 
-def sampler(dnm, X, Y, resfldr, N_samples, stan_representation):
+def sampler(dnm, X, Y, N_samples, stan_representation):
 
-  if not os.path.exists('caching/'):
-    os.mkdir('caching')
+  if not os.path.exists(cache_folder):
+    os.mkdir(cache_folder)
 
-  if os.path.exists('caching/'+dnm+'_samples.npy'):
+  if os.path.exists(cache_folder+dnm+'_samples.npy'):
     print("Using cached samples for " + dnm)
-    return np.load('caching/'+dnm+'_samples.npy')
+    return np.load(cache_folder+dnm+'_samples.npy')
   else:
     print('No MCMC samples found -- running STAN')
     print('STAN: loading data')
@@ -35,16 +37,16 @@ def sampler(dnm, X, Y, resfldr, N_samples, stan_representation):
 
     print('STAN: building/loading model')
     name, code = stan_representation
-    sm = build_model(resfldr, name, code)
+    sm = build_model(name, code)
 
     print('STAN: sampling posterior: ' + dnm)
     t0 = time.process_time()
     thd = sampler_data['d']+1
     fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
     samples = fit.extract(permuted=False)[:, 0, :thd]
-    np.save(os.path.join(resfldr, dnm+'_samples.npy'), samples) 
+    np.save(os.path.join(cache_folder, dnm+'_samples.npy'), samples) 
     tf = time.process_time()
-    np.save(os.path.join(resfldr, dnm+'_mcmc_time.npy'), tf-t0)
+    np.save(os.path.join(cache_folder, dnm+'_mcmc_time.npy'), tf-t0)
     return samples
 
   #if not cached, run sampler.
