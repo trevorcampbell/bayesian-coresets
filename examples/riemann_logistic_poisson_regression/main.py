@@ -60,7 +60,8 @@ data_X, data_Y, Z, Zt, D = load_data('../data/'+dnm+'.npz')
 
 #run sampler
 N_samples = 10000
-samples = sampler(dnm, data_X, data_Y, N_samples, stan_representation) #adjusting so I don't have to first call sampler and then call samples = np.load('caching/'+dnm+'_samples.npy')
+caching_folder = "caching/"
+samples = sampler(dnm, caching_folder, data_X, data_Y, N_samples, stan_representation) #adjusting so I don't have to first call sampler and then call samples = np.load('caching/'+dnm+'_samples.npy')
 #TODO FIX SAMPLER TO NOT HAVE TO DO THIS
 samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis])) #TODO: verify that this is as simple as moving this code into the sampler function
 
