@@ -20,7 +20,7 @@ def build_model(modelName, model_code):
       f.close()
   return sm
 
-def sampler(dnm, X, Y, N_samples, stan_representation):
+def sampler(dnm, X, Y, N_samples, stan_representation, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True):
 
   if not os.path.exists(cache_folder):
     os.mkdir(cache_folder)
@@ -42,7 +42,7 @@ def sampler(dnm, X, Y, N_samples, stan_representation):
     print('STAN: sampling posterior: ' + dnm)
     t0 = time.process_time()
     thd = sampler_data['d']+1
-    fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True)
+    fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=chains, control=control, verbose=verbose)
     samples = fit.extract(permuted=False)[:, 0, :thd]
     np.save(os.path.join(cache_folder, dnm+'_samples.npy'), samples) 
     tf = time.process_time()
