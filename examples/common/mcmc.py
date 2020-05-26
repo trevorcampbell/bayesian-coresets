@@ -34,7 +34,7 @@ def build_model(resfldr, modelName, model_code):
 def sampler(dnm, datafldr, resfldr, N_samples, stan_representation):
 
   if not os.path.exists('caching/'):
-  os.mkdir('caching')
+    os.mkdir('caching')
 
   if os.path.exists('caching/'+dnm+'_samples.npy'):
     print("Using cached samples for " + dnm)
