@@ -3,7 +3,7 @@ import numpy as np
 def load_data(dnm):
   data = np.load(dnm)
   X = data['X']
-  Y = data['Y']
+  Y = data['y']
   #Xt = data['Xt']
   #standardize the covariates; last col is intercept, so no stdization there
   m = X[:, :-1].mean(axis=0)
