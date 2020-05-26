@@ -91,7 +91,7 @@ def hess_th_log_joint(z, th, wts):
   return hess_th_log_prior(th) + (wts[:, np.newaxis, np.newaxis, np.newaxis]*hess_th_log_likelihood(z, th)).sum(axis=0)
   
 #this line follows the format "model title, model code"  
-stan_representation = {'pystan_model_poisson', """
+stan_representation = ('pystan_model_poisson', """
 data {
   int<lower=0> n; // number of observations
   int<lower=0> d; // number of predictors
@@ -111,5 +111,5 @@ model {
   theta ~ normal(0, 1);
   y ~ poisson(f);
 }
-"""}
+""")
 
