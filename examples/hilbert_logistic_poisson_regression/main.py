@@ -62,22 +62,26 @@ else:
 sampler = lambda sz, w, pts : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 projector = bc.BlackBoxProjector(sampler, projection_dim, log_likelihood)
 
-if not os.path.exists('results/'+dnm+'_posterior_samples.npz'):
-  print('Running MCMC on the full dataset '+ dnm)
-  logpZ = lambda th : log_joint(Z, th, np.ones(Z.shape[0]))[0]
-  glogpZ = lambda th : grad_th_log_joint(Z, th, np.ones(Z.shape[0]))[0,:]
-  mcmc_param_init = np.random.multivariate_normal(mu, cov)
-  t0 = time.process_time()
-  full_samples = mcmc_alg(logp = logpZ, gradlogp = glogpZ, 
-                   x0 = mcmc_param_init, sample_steps=mcmc_steps, burn_steps=mcmc_burn, adapt_steps=mcmc_burn, 
-                   n_leapfrogs = n_leap, scale=np.ones(mu.shape[0]), progress_bar=pbar, step_size=step_size_init, target_accept=target_a) 
-  t_full = time.process_time()-t0
-  np.savez('results/'+dnm+'_posterior_samples.npz', full_samples=full_samples, t_full=t_full)
-else:
-  print('Loading full MCMC samples for '+ dnm)
-  full = np.load('results/'+dnm+'_posterior_samples.npz')
-  full_samples = full['full_samples']
-  t_full = full['t_full']
+full_samples = mcmc.sampler(dnm, X, Y, mcmc_steps, stan_representation, cache_folder = "caching/")
+#TODO FIX SAMPLER TO NOT HAVE TO DO THIS
+full_samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis])) #TODO: verify that this is as simple as moving this code into the sampler function
+
+# if not os.path.exists('results/'+dnm+'_posterior_samples.npz'):
+#   print('Running MCMC on the full dataset '+ dnm)
+#   logpZ = lambda th : log_joint(Z, th, np.ones(Z.shape[0]))[0]
+#   glogpZ = lambda th : grad_th_log_joint(Z, th, np.ones(Z.shape[0]))[0,:]
+#   mcmc_param_init = np.random.multivariate_normal(mu, cov)
+#   t0 = time.process_time()
+#   full_samples = mcmc_alg(logp = logpZ, gradlogp = glogpZ, 
+#                    x0 = mcmc_param_init, sample_steps=mcmc_steps, burn_steps=mcmc_burn, adapt_steps=mcmc_burn, 
+#                    n_leapfrogs = n_leap, scale=np.ones(mu.shape[0]), progress_bar=pbar, step_size=step_size_init, target_accept=target_a) 
+#   t_full = time.process_time()-t0
+#   np.savez('results/'+dnm+'_posterior_samples.npz', full_samples=full_samples, t_full=t_full)
+# else:
+#   print('Loading full MCMC samples for '+ dnm)
+#   full = np.load('results/'+dnm+'_posterior_samples.npz')
+#   full_samples = full['full_samples']
+#   t_full = full['t_full']
 
 cputs = np.zeros(Ms.shape[0])
 csizes = np.zeros(Ms.shape[0])
