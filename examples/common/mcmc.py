@@ -5,16 +5,19 @@ import pickle as pk
 import time
 
 def build_model(cache_folder, modelName, model_code):
-  if not os.path.exists(os.path.join(cache_folder, modelName)): 
-      print('STAN: building model')
-      sm = pystan.StanModel(model_code=model_code)
+  if cache_folder and os.path.exists(os.path.join(cache_folder, modelName)):
+    f = open(os.path.join(cache_folder, modelName),'rb')
+    sm = pk.load(f)
+    f.close()
+  else: 
+    print('STAN: building model')
+    sm = pystan.StanModel(model_code=model_code)
+
+    if cache_folder: 
       f = open(os.path.join(cache_folder, modelName),'wb')
       pk.dump(sm, f)
       f.close()
-  else:
-      f = open(os.path.join(cache_folder, modelName),'rb')
-      sm = pk.load(f)
-      f.close()
+      
   return sm
 
 def sampler(dnm, X, Y, N_samples, stan_representation, cache_folder = None, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True):
