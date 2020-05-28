@@ -3,6 +3,7 @@ import numpy as np
 import scipy.linalg as sl
 import pickle as pk 
 import os, sys
+import argparse
 hpc = True
 if hpc:  sys.path.insert(1, os.path.join(sys.path[0], '/home/dm754/bayesian-coresets-private'))
 import bayesiancoresets as bc
@@ -40,11 +41,17 @@ def get_laplace(wts, Z, mu0, diag = False):
     LSig = sl.solve_triangular(LSigInv, np.eye(LSigInv.shape[0]), lower=True, overwrite_b = True, check_finite = False)
   return mu, LSig, LSigInv
 
-dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips / airportdelays
-alg = sys.argv[2] #should be GIGAO / GIGAR / RAND / PRIOR / SVI
-ID = sys.argv[3] #just a number to denote trial #, any nonnegative integer
+parser = argparse.ArgumentParser(description="Runs Riemannian logistic or poisson regression (employing coreset contruction) on the specified dataset")
+parser.add_argument('dnm', type=str, help="the name of the dataset on which to run regression")
+parser.add_argument('alg', type=str, help="The algorithm to use for regression - should be one of GIGAO / GIGAR / RAND / PRIOR / SVI") #TODO: find way to make this help message autoupdate with new methods
+parser.add_argument('ID', type=int, help="The trial number - used to initialize random number generation (for replicability)")
 
-np.random.seed(int(ID))
+arguments = parser.parse_args()
+dnm = arguments.dnm
+alg = arguments.alg
+ID = arguments.ID
+
+np.random.seed(ID)
 
 lrdnms = ['synth_lr', 'phishing', 'ds1', 'synth_lr_large', 'phishing_large', 'ds1_large']
 prdnms = ['synth_poiss', 'biketrips', 'airportdelays', 'synth_poiss_large', 'biketrips_large', 'airportdelays_large']
