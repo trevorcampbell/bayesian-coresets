@@ -5,10 +5,10 @@ from scipy.optimize import minimize
 from inference import nuts, rhat, hmc
 import time
 import sys, os
+from mcmc import sampler
 
 #TODO use PyStan for inference
 #TODO copy riemann_logistic_poisson_regression example
-
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 
@@ -78,7 +78,6 @@ else:
   full = np.load('results/'+dnm+'_posterior_samples.npz')
   full_samples = full['full_samples']
   t_full = full['t_full']
-
 
 cputs = np.zeros(Ms.shape[0])
 csizes = np.zeros(Ms.shape[0])

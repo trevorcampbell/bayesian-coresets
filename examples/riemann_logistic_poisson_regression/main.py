@@ -4,8 +4,6 @@ import scipy.linalg as sl
 import pickle as pk 
 import os, sys
 import argparse
-hpc = True
-if hpc:  sys.path.insert(1, os.path.join(sys.path[0], '/home/dm754/bayesian-coresets-private'))
 import bayesiancoresets as bc
 from scipy.optimize import minimize, nnls
 import time
