@@ -5,12 +5,12 @@ from scipy.optimize import minimize
 from inference import nuts, rhat, hmc
 import time
 import sys, os
-from mcmc import sampler
 
 #TODO use PyStan for inference
 #TODO copy riemann_logistic_poisson_regression example
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
+from mcmc import sampler
 
 dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips / airportdelays
 anm = sys.argv[2] #should be hilbert / hilbert_corr / riemann / riemann_corr / uniform 
