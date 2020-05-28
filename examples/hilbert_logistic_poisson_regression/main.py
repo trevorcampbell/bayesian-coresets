@@ -10,7 +10,7 @@ import sys, os
 #TODO copy riemann_logistic_poisson_regression example
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
-#from mcmc import sampler
+import mcmc
 
 dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips / airportdelays
 anm = sys.argv[2] #should be GIGA / FW / RND

@@ -17,12 +17,12 @@ def build_model(cache_folder, modelName, model_code):
       f.close()
   return sm
 
-def sampler(dnm, cache_folder, X, Y, N_samples, stan_representation, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True):
+def sampler(dnm, X, Y, N_samples, stan_representation, cache_folder = None, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True):
 
-  if not os.path.exists(cache_folder):
+  if cache_folder and not os.path.exists(cache_folder):
     os.mkdir(cache_folder)
 
-  if os.path.exists(cache_folder+dnm+'_samples.npy'):
+  if cache_folder and os.path.exists(cache_folder+dnm+'_samples.npy'):
     print("Using cached samples for " + dnm)
     return np.load(cache_folder+dnm+'_samples.npy')
   else:
