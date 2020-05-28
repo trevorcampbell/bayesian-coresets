@@ -84,7 +84,7 @@ for m in range(Ms.shape[0]):
   t_alg += time.process_time()-t0
   wts, pts, idcs = alg.get()
 
-  curX = X[idcs]
+  curX = X[idcs, :] * wts
   curY = Y[idcs]
   print('M = ' + str(Ms[m]) + ': MCMC')
   t0 = time.process_time()
