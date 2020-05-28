@@ -10,10 +10,10 @@ import sys, os
 #TODO copy riemann_logistic_poisson_regression example
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
-from mcmc import sampler
+#from mcmc import sampler
 
 dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips / airportdelays
-anm = sys.argv[2] #should be hilbert / hilbert_corr / riemann / riemann_corr / uniform 
+anm = sys.argv[2] #should be GIGA / FW / RND
 ID = sys.argv[3] #just a number to denote trial #, any nonnegative integer
 
 algdict = {'GIGA':bc.snnls.GIGA, 'FW':bc.snnls.FrankWolfe, 'RND':bc.snnls.UniformSampling}
@@ -38,7 +38,7 @@ target_a = 0.8
 mcmc_alg = hmc #nuts
 
 print('Loading dataset '+dnm)
-Z, Zt, D = load_data('../data/'+dnm+'.npz')
+X,Y,Z, Zt, D = load_data('../data/'+dnm+'.npz')
 
 if not os.path.exists('results/'):
   os.mkdir('results')  
