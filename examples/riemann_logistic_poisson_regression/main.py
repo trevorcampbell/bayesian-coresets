@@ -68,7 +68,7 @@ N_samples = 10000
 caching_folder = "caching/"
 samples = sampler(dnm, data_X, data_Y, N_samples, stan_representation, cache_folder = caching_folder)
 #TODO FIX SAMPLER TO NOT HAVE TO DO THIS
-samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis])) #TODO: verify that this is as simple as moving this code into the sampler function
+samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
 
 #fit a gaussian to the posterior samples 
 #used for pihat computation for Hilbert coresets with noise to simulate uncertainty in a good pihat
