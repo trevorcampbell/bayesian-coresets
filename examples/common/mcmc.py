@@ -17,7 +17,7 @@ def build_model(cache_folder, modelName, model_code):
       f = open(os.path.join(cache_folder, modelName),'wb')
       pk.dump(sm, f)
       f.close()
-      
+
   return sm
 
 def sampler(dnm, X, Y, N_samples, stan_representation, cache_folder = None, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True):
@@ -45,7 +45,8 @@ def sampler(dnm, X, Y, N_samples, stan_representation, cache_folder = None, chai
     #call sampling with N_samples actual iterations, and some number of burn iterations
     fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=chains, control=control, verbose=verbose)
     samples = fit.extract(permuted=False)[:, 0, :thd]
-    np.save(os.path.join(cache_folder, dnm+'_samples.npy'), samples) 
-    tf = time.process_time()
-    np.save(os.path.join(cache_folder, dnm+'_mcmc_time.npy'), tf-t0)
+    if cache_folder:
+      np.save(os.path.join(cache_folder, dnm+'_samples.npy'), samples) 
+      tf = time.process_time()
+      np.save(os.path.join(cache_folder, dnm+'_mcmc_time.npy'), tf-t0)
     return samples
