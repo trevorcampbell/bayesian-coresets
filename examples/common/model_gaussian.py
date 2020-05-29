@@ -1,9 +1,6 @@
 import numpy as np
 import scipy.linalg as sl
 
-def potentials(Siginv, xSiginvx, xSiginv, logdetSig, x, samples):
-  return -x.shape[1]/2*np.log(2*np.pi) - 1./2.*logdetSig - 1./2.*(xSiginvx[:, np.newaxis] - 2.*np.dot(xSiginv, samples.T) + (np.dot(samples, Siginv)*samples).sum(axis=1))
-
 def log_likelihood(x, th, Siginv, logdetSig):
   x = np.atleast_2d(x)
   th = np.atleast_2d(th)
@@ -27,7 +24,5 @@ def weighted_post(th0, Sig0inv, Siginv, x, w):
   LSigpInv = np.linalg.cholesky(Sig0inv + w.sum()*Siginv)
   LSigp = sl.solve_triangular(LSigpInv, np.eye(LSigpInv.shape[0]), lower=True, overwrite_b=True, check_finite=False)
   mup = np.dot(LSigp.dot(LSigp.T),  np.dot(Sig0inv,th0) + np.dot(Siginv, (w[:, np.newaxis]*x).sum(axis=0)))
-  #Sigp = np.linalg.inv(Sig0inv + w.sum()*Siginv)
-  #mup = np.dot(Sigp,  np.dot(Sig0inv,th0) + np.dot(Siginv, (w[:, np.newaxis]*x).sum(axis=0)))
   return mup, LSigp, LSigpInv
-
+  
