@@ -10,8 +10,6 @@ sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import model_gaussian as gaussian
 
 #TODO: make these optional command line args, and also incorporate into the names and saved data of experiment result files
-M = 200
-N = 1000
 SVI_opt_itrs = 500
 BPSVI_opt_itrs = 500
 n_subsample_opt = None # 100
@@ -23,12 +21,17 @@ SVI_step_sched = lambda i : 1./(1+i)
 parser = argparse.ArgumentParser(description="Runs Riemannian linear regression (employing coreset contruction) on the specified dataset")
 parser.add_argument('tr', type=int, help="The trial number - used to initialize random number generation (for replicability)")
 parser.add_argument('nm', type=str, help="The name of the coreset construction algorithm to use (examples: BPSVI / SVI / GIGAO / GIGAR / RAND)")
-parser.add_argument('d', type=int, help="The dimension of the multivariate normal distribution to use for this experiment (must exceed 100)")#TODO: verify explanation
+parser.add_argument('d', type=int, help="The dimension of the multivariate normal distribution to use for this experiment (should exceed 100)")#TODO: verify explanation
+
+parser.add_argument('M', type=int, default='200', help='Desired maximum coreset size')
+parser.add_argument('N', type=int, default='1000', help='Dataset size/number of examples')
 
 arguments = parser.parse_args()
+M = arguments.M
+N = arguments.N
 nm = arguments.nm
 tr = arguments.tr
-d = arguments.d
+d = max(arguments.d, proj_dim)
 
 mu0 = np.zeros(d)
 Sig0 = np.eye(d)
