@@ -3,13 +3,13 @@ import scipy.linalg as sl
 import pickle as pk
 import os, sys
 from scipy.stats import multivariate_normal
+import argparse
 #make it so we can import models/etc from parent folder
-hpc=True
-if hpc: sys.path.insert(1, os.path.join(sys.path[0], '/home/dm754/bayesian-coresets-private'))
 import bayesiancoresets as bc
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import model_gaussian as gaussian
 
+#TODO: make these optional command line args, and also incorporate into the names and saved data of experiment result files
 M = 200
 N = 1000
 SVI_opt_itrs = 500
@@ -20,25 +20,15 @@ pihat_noise =0.75
 BPSVI_step_sched = lambda m: lambda i : (-0.005*m+1.005)/(1+i) # linear interpolaton giving i0=1 at m=1 and i0=0.005 at m=200 
 SVI_step_sched = lambda i : 1./(1+i)
 
-def linearize():
-  args_dict = dict()
-  c = -1
-  for tr in range(0,10): # trial number
-    for nm in ["BPSVI"]: # ["RAND", "BPSVI", "SVI", "GIGAO", "GIGAR"]: # coreset method
-      for d in [200]: # [200, 500]: # data dimension
-          #for i0 in [5., 1.5, 0.5, 0.1]: # initial learning rate
-          c += 1
-          args_dict[c] = (tr, nm, d) #(tr, nm, d, i0)
-  return args_dict
+parser = argparse.ArgumentParser(description="Runs Riemannian linear regression (employing coreset contruction) on the specified dataset")
+parser.add_argument('tr', type=int, help="The trial number - used to initialize random number generation (for replicability)")
+parser.add_argument('nm', type=str, help="The name of the coreset construction algorithm to use (examples: BPSVI / SVI / GIGAO / GIGAR / RAND)")
+parser.add_argument('d', type=int, help="The dimension of the multivariate normal distribution to use for this experiment (must exceed 100)")#TODO: verify explanation
 
-mapping = linearize()
-
-#print('mapping : ', len(mapping))
-#print( 'mapping at 0 : ', mapping[0] )
-#exit()
-tr, nm, d = mapping[int(sys.argv[1])]
-#tr, nm, d = mapping[0]
-
+arguments = parser.parse_args()
+nm = arguments.nm
+tr = arguments.tr
+d = arguments.d
 
 mu0 = np.zeros(d)
 Sig0 = np.eye(d)

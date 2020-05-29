@@ -5,13 +5,18 @@ hpc = True
 if hpc:  sys.path.insert(1, os.path.join(sys.path[0], '/home/dm754/bayesian-coresets-private'))
 import bayesiancoresets as bc
 from scipy.stats import multivariate_normal
+import argparse
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import model_linreg
 
+parser = argparse.ArgumentParser(description="Runs Riemannian linear regression (employing coreset contruction) on the specified dataset")
+parser.add_argument('dnm', type=str, help="the name of the dataset on which to run regression")
+parser.add_argument('tr', type=int, help="The trial number - used to initialize random number generation (for replicability)")
 
-nm = sys.argv[1]
-tr = sys.argv[2]
+arguments = parser.parse_args()
+dnm = arguments.dnm
+tr = arguments.tr
 
 #np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+tr])) % 2**32) #use this if need a seed depending on alg name and trial num
 #use the trial # as seed

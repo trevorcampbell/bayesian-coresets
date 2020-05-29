@@ -5,6 +5,7 @@ from scipy.optimize import minimize
 from inference import nuts, rhat, hmc
 import time
 import sys, os
+import argparse
 
 #TODO use PyStan for inference
 #TODO copy riemann_logistic_poisson_regression example
@@ -12,9 +13,15 @@ import sys, os
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import mcmc
 
-dnm = sys.argv[1] #should be synth_lr / phishing / ds1 / synth_poiss / biketrips / airportdelays
-anm = sys.argv[2] #should be GIGA / FW / RND
-ID = sys.argv[3] #just a number to denote trial #, any nonnegative integer
+parser = argparse.ArgumentParser(description="Runs Hilbert logistic or poisson regression (employing coreset contruction) on the specified dataset")
+parser.add_argument('dnm', type=str, help="the name of the dataset on which to run regression")
+parser.add_argument('anm', type=str, help="The algorithm to use for solving sparse non-negative least squares as part of Hilbert coreset construction - should be one of GIGA / FW / RND") #TODO: find way to make this help message autoupdate with new methods
+parser.add_argument('ID', type=int, help="The trial number - used to initialize random number generation (for replicability)")
+
+arguments = parser.parse_args()
+dnm = arguments.dnm
+anm = arguments.anm
+ID = arguments.ID
 
 algdict = {'GIGA':bc.snnls.GIGA, 'FW':bc.snnls.FrankWolfe, 'RND':bc.snnls.UniformSampling}
 lrdnms = ['synth_lr', 'phishing', 'ds1', 'synth_lr_large', 'phishing_large', 'ds1_large']
@@ -24,7 +31,7 @@ if dnm in lrdnms:
 else:
   from model_poiss import *
 
-np.random.seed(int(ID))
+np.random.seed(ID)
 
 mcmc_steps = 5000 #total number of MH steps
 mcmc_burn = 1000
