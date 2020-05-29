@@ -51,9 +51,9 @@ pal = pl
 
 
 
-def plot_gaussian(plot, mup, Sigp, Sig, color, dotsize, linewidth, dotalpha, linealpha, line_dash, name):
+def plot_gaussian(plot, mup, Sigp, Sig, color, dotsize, linewidth, dotalpha, linealpha, line_dash, name, num_pts_for_circle_approx = 100):
   plot.circle(mup[0], mup[1], color=color, size=dotsize, alpha=dotalpha)
-  t = np.linspace(0., 2*np.pi, 100)
+  t = np.linspace(0., 2*np.pi, num_pts_for_circle_approx)
   t = np.array([np.cos(t), np.sin(t)])
   t = 3*np.linalg.cholesky(Sigp+Sig).dot(t) + mup[:, np.newaxis]
   plot.line(t[0, :], t[1, :], color=color, line_width=linewidth, alpha=linealpha, line_dash=line_dash, legend=name)
@@ -71,8 +71,9 @@ def plot_medianquartiles(plot, x, ys, color, linewidth, alpha, line_dash, name):
   plot.line(x, ys75, color=color, line_width=linewidth, line_dash=line_dash, legend=nm)
   #plot.patch(np.hstack((x, x[::-1])), np.hstack(( ys25, ys75[::-1] )), color=color, line_width=linewidth/2, line_dash=line_dash, alpha=alpha, legend=nm)
 
-def randomly_project_gaussian(dim, mu, sig, plot,
-                              color=pal[7], dotsize=20, linewidth=10, dotalpha=1, linealpha=1, line_dash='solid', name="POST", seed = 1):
+def plot_gaussian_projected2d(dim, mu, sig, plot,
+                              color=pal[7], dotsize=20, linewidth=10, dotalpha=1, linealpha=1, line_dash='solid', name="POST", 
+                              num_pts_for_circle_approx = 10,seed = 1):
   #set seed:
   np.random.seed(int(seed))
 
@@ -92,8 +93,8 @@ def randomly_project_gaussian(dim, mu, sig, plot,
   sig = A.T@sig@A 
 
   #plot the result
-  plot_gaussian(plot,mu,sig,0,color=color,dotsize=dotsize,linewidth=linewidth,dotalpha=dotalpha,linealpha=linealpha,line_dash=line_dash,name=name)
-  #note: we may need to add a few more parameters to plot_gaussian, because it makes a much finer linspace than I was using before (by a factor of 10)
+  plot_gaussian(plot,mu,sig,0,color=color,dotsize=dotsize,linewidth=linewidth,dotalpha=dotalpha,linealpha=linealpha,
+  line_dash=line_dash,name=name, num_pts_for_circle_approx=num_pts_for_circle_approx)
 
 def preprocess_plot(fig, axis_font_size, log_scale_x, log_scale_y):
   fig.xaxis.axis_label_text_font_size= axis_font_size
