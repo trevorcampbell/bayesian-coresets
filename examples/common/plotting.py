@@ -71,6 +71,29 @@ def plot_medianquartiles(plot, x, ys, color, linewidth, alpha, line_dash, name):
   plot.line(x, ys75, color=color, line_width=linewidth, line_dash=line_dash, legend=nm)
   #plot.patch(np.hstack((x, x[::-1])), np.hstack(( ys25, ys75[::-1] )), color=color, line_width=linewidth/2, line_dash=line_dash, alpha=alpha, legend=nm)
 
+def randomly_project_gaussian(dim, mu, sig, plot,
+                              color=pal[7], dotsize=20, linewidth=10, dotalpha=1, linealpha=1, line_dash='solid', name="POST", seed = 1):
+  #set seed:
+  np.random.seed(int(seed))
+
+  #get two vectors that form an orthonormal basis: 
+  x = np.random.randn(dim,1)
+  x = x/np.linalg.norm(x)
+  
+  y = np.random.randn(dim,1)
+  y = y-x@x.T@y
+  y = y/np.linalg.norm(y)
+  
+  #make the orthonormal basis (as a matrix)
+  A = np.append(x,y, axis=1)
+  
+  #project the mean mu and variance sig onto this basis
+  mu = A.T@mu
+  sig = A.T@sig@A 
+
+  #plot the result
+  plot_gaussian(plot,mu,sig,0,color=color,dotsize=dotsize,linewidth=linewidth,dotalpha=dotalpha,linealpha=linealpha,line_dash=line_dash,name=name)
+  #note: we may need to add a few more parameters to plot_gaussian, because it makes a much finer linspace than I was using before (by a factor of 10)
 
 def preprocess_plot(fig, axis_font_size, log_scale_x, log_scale_y):
   fig.xaxis.axis_label_text_font_size= axis_font_size
