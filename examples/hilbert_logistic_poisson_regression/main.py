@@ -33,6 +33,7 @@ else:
 
 np.random.seed(ID)
 
+#should be command line arguments - and also need to be saved in results file name!
 mcmc_steps = 5000 #total number of MH steps
 mcmc_burn = 1000
 projection_dim = 500 #random projection dimension
@@ -91,17 +92,20 @@ for m in range(Ms.shape[0]):
   t_alg += time.process_time()-t0
   wts, pts, idcs = alg.get()
 
-  curX = X[idcs, :] * wts
-  curY = Y[idcs]
+
   print('M = ' + str(Ms[m]) + ': MCMC')
-  t0 = time.process_time()
-  th_samples = mcmc.sampler(dnm, curX, curY, mcmc_steps, stan_representation)
-  #TODO FIX SAMPLER TO NOT HAVE TO DO THIS
-  th_samples = np.hstack((th_samples[:, 1:], th_samples[:, 0][:,np.newaxis]))
-  t_alg_mcmc = time.process_time()-t0    
+  # Here we would like to measure the time it would take to run mcmc on our coreset.
+  # however, this is particularly challenging - stan's mcmc implementation doesn't work on 
+  # the weighted likelihoods we use in our coresets. And our inference.py nuts implementation
+  # (which does work on weighted likelihoods) is not as efficient or reliable as stan.
+  # curX = X[idcs, :]
+  # curY = Y[idcs]
+  # t0 = time.process_time()
+  # mcmc.sampler(dnm, curX, curY, mcmc_steps, stan_representation)
+  # t_alg_mcmc = time.process_time()-t0 /numsteps   
 
   print('M = ' + str(Ms[m]) + ': CPU times')
-  cputs[m] = t_laplace + t_setup + t_alg + t_alg_mcmc
+  cputs[m] = t_laplace + t_setup + t_alg #+ t_alg_mcmc
   print('M = ' + str(Ms[m]) + ': coreset sizes')
   csizes[m] = wts.shape[0]
   print('M = ' + str(Ms[m]) + ': F norms')
