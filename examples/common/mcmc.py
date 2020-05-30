@@ -20,7 +20,7 @@ def build_model(cache_folder, modelName, model_code):
 
   return sm
 
-def sampler(dnm, X, Y, N_samples, stan_representation, cache_folder = None, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True):
+def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_folder = None, chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True):
 
   if cache_folder and not os.path.exists(cache_folder):
     os.mkdir(cache_folder)
@@ -33,11 +33,15 @@ def sampler(dnm, X, Y, N_samples, stan_representation, cache_folder = None, chai
     print('STAN: loading data')
     Y[Y == -1] = 0 #convert to Stan LR label style if necessary
 
-    sampler_data = {'x': X, 'y': Y.astype(int), 'd': X.shape[1], 'n': X.shape[0]}
+    sampler_data = {'x': X, 'y': Y.astype(int), 'w': weights, 'd': X.shape[1], 'n': X.shape[0]}
 
     print('STAN: building/loading model')
     name, code = stan_representation
     sm = build_model(cache_folder, name, code)
+
+    if weights != None:
+      print('Altering cpp code used by stan to allow weighted data')
+      sm.model_cppcode = load_modified_cpp_code(cache_folder, modelName, model_code)
 
     print('STAN: sampling posterior: ' + dnm)
     t0 = time.process_time()
@@ -50,3 +54,16 @@ def sampler(dnm, X, Y, N_samples, stan_representation, cache_folder = None, chai
       tf = time.process_time()
       np.save(os.path.join(cache_folder, dnm+'_mcmc_time.npy'), tf-t0)
     return samples
+
+#Takes in the name of and code for a statistical model that allows for stan to run MCMC, and returns cpp code that stan can use to 
+#perform MCMC on a coreset.  
+#TODO: throw error if cach_folder is none, or find another way to handle this case
+#TODO: modify this to use hashes
+def load_modified_cpp_code(cache_folder, modelName, model_code):
+  codeHash = 'cppCode'#this will eventually refer to the actual hash of the model code, but for now I just want to make sure this framework is valid
+  if os.path.exists(os.path.join(cache_folder, modelName, 'cppCode')):
+    f = open(os.path.join(cache_folder, modelName, 'cppCode'),'rb')
+    modified_code = pk.load(f)
+    return modified_code
+  else: 
+    return EnvironmentError("No modified code to handle weighted data present - unable to use stan for MCMC sampling")
