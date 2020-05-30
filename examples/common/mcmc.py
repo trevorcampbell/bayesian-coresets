@@ -33,7 +33,7 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
     print('STAN: loading data')
     Y[Y == -1] = 0 #convert to Stan LR label style if necessary
 
-    sampler_data = {'x': X, 'y': Y.astype(int), 'w': weights, 'd': X.shape[1], 'n': X.shape[0]}
+    sampler_data = {'x': X, 'y': Y.astype(int), 'w': weights if weights != None else [], 'd': X.shape[1], 'n': X.shape[0]}
 
     print('STAN: building/loading model')
     name, code = stan_representation
@@ -61,8 +61,8 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
 #TODO: modify this to use hashes
 def load_modified_cpp_code(cache_folder, modelName, model_code):
   codeHash = 'cppCode'#this will eventually refer to the actual hash of the model code, but for now I just want to make sure this framework is valid
-  if os.path.exists(os.path.join(cache_folder, modelName, 'cppCode')):
-    f = open(os.path.join(cache_folder, modelName, 'cppCode'),'rb')
+  if os.path.exists(os.path.join(cache_folder, modelName+ '_cppCode')):
+    f = open(os.path.join(cache_folder, modelName+'_cppCode'),'rb')
     modified_code = pk.load(f)
     return modified_code
   else: 
