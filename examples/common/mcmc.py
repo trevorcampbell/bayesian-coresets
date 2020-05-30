@@ -61,8 +61,9 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
 #TODO: modify this to use hashes
 def load_modified_cpp_code(cache_folder, modelName, model_code):
   codeHash = 'cppCode'#this will eventually refer to the actual hash of the model code, but for now I just want to make sure this framework is valid
-  if os.path.exists(os.path.join(cache_folder, modelName+ '_cppCode')):
-    f = open(os.path.join(cache_folder, modelName+'_cppCode'),'rb')
+  fileToFind = str(modelName) + '_cppCode'
+  if os.path.exists(os.path.join(cache_folder, fileToFind)):
+    f = open(os.path.join(cache_folder, fileToFind),'rb')
     modified_code = pk.load(f)
     return modified_code
   else: 
