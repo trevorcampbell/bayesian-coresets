@@ -78,13 +78,13 @@ cputs = np.zeros(Ms.shape[0])
 csizes = np.zeros(Ms.shape[0])
 Fs = np.zeros(Ms.shape[0])
 
-print('Running coreset construction / MCMC for ' + dnm + ' ' + anm + ' ' + ID)
+print('Running coreset construction / MCMC for ' + dnm + ' ' + anm + ' ' + str(ID))
 t0 = time.process_time()
 alg = bc.HilbertCoreset(Z, projector, snnls = algdict[anm])
 t_setup = time.process_time() - t0
 t_alg = 0.
 for m in range(Ms.shape[0]):
-  print('M = ' + str(Ms[m]) + ': coreset construction, '+ anm + ' ' + dnm + ' ' + ID)
+  print('M = ' + str(Ms[m]) + ': coreset construction, '+ anm + ' ' + dnm + ' ' + str(ID))
   #this runs alg up to a level of M; on the next iteration, it will continue from where it left off
   t0 = time.process_time()
   itrs = (Ms[m] if m == 0 else Ms[m] - Ms[m-1])
@@ -112,4 +112,4 @@ for m in range(Ms.shape[0]):
   gcs = np.array([ grad_th_log_joint(Z[idcs, :], full_samples[i, :], wts) for i in range(full_samples.shape[0]) ])
   gfs = np.array([ grad_th_log_joint(Z, full_samples[i, :], np.ones(Z.shape[0])) for i in range(full_samples.shape[0]) ])
   Fs[m] = (((gcs - gfs)**2).sum(axis=1)).mean()
-np.savez_compressed('results/'+dnm+'_'+anm+'_results_'+ID+'.npz', Ms=Ms, Fs=Fs, cputs=cputs, csizes=csizes)
+np.savez_compressed('results/'+dnm+'_'+anm+'_results_'+str(ID)+'.npz', Ms=Ms, Fs=Fs, cputs=cputs, csizes=csizes)
