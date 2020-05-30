@@ -34,7 +34,7 @@ else:
 np.random.seed(ID)
 
 #should be command line arguments - and also need to be saved in results file name!
-mcmc_steps = 5000 #total number of MH steps
+mcmc_steps = 10000 #total number of MH steps
 mcmc_burn = 1000
 projection_dim = 500 #random projection dimension
 Ms = np.unique(np.logspace(0, 3, 10, dtype=int))
@@ -98,11 +98,11 @@ for m in range(Ms.shape[0]):
   # however, this is particularly challenging - stan's mcmc implementation doesn't work on 
   # the weighted likelihoods we use in our coresets. And our inference.py nuts implementation
   # (which does work on weighted likelihoods) is not as efficient or reliable as stan.
-  # curX = X[idcs, :]
-  # curY = Y[idcs]
-  # t0 = time.process_time()
-  # mcmc.sampler(dnm, curX, curY, mcmc_steps, stan_representation)
-  # t_alg_mcmc = time.process_time()-t0 /numsteps   
+  curX = X[idcs, :]
+  curY = Y[idcs]
+  t0 = time.process_time()
+  mcmc.sampler(dnm, curX, curY, mcmc_steps, stan_representation, weights=wts)
+  t_alg_mcmc = time.process_time()-t0 /numsteps   
 
   print('M = ' + str(Ms[m]) + ': CPU times')
   cputs[m] = t_laplace + t_setup + t_alg #+ t_alg_mcmc
