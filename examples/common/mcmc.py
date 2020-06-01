@@ -34,7 +34,7 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
     print('STAN: loading data')
     Y[Y == -1] = 0 #convert to Stan LR label style if necessary
 
-    sampler_data = {'x': X, 'y': Y.astype(int), 'w': weights if weights else [], 'd': X.shape[1], 'n': X.shape[0]}
+    sampler_data = {'x': X, 'y': Y.astype(int), 'w': weights if weights is not None else [], 'd': X.shape[1], 'n': X.shape[0]}
 
     print('STAN: building/loading model')
     name, code = stan_representation
