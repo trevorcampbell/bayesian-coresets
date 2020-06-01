@@ -102,7 +102,7 @@ for m in range(Ms.shape[0]):
   curY = Y[idcs]
   t0 = time.process_time()
   mcmc.sampler(dnm, curX, curY, mcmc_steps, stan_representation, weights=wts)
-  t_alg_mcmc = time.process_time()-t0 /numsteps   
+  t_alg_mcmc = time.process_time()-t0   
 
   print('M = ' + str(Ms[m]) + ': CPU times')
   cputs[m] = t_laplace + t_setup + t_alg #+ t_alg_mcmc
