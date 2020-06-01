@@ -11,8 +11,8 @@ import os, sys
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
 
-dnames = ['synth_lr', 'biketrips', 'airportdelays', 'synth_poiss', 'ds1', 'phishing']
-algs = [('RND', 'Uniform', pal[7]),  ('FW', 'Frank Wolfe', pal[2]),('GIGA','GIGA', pal[1])]
+dnames = ['synth_poiss']#['synth_lr', 'biketrips', 'airportdelays', 'synth_poiss', 'ds1', 'phishing']
+algs = [('RND', 'Uniform', pal[7]), ('GIGA','GIGA', pal[1])]
 
 fig_cput = bkp.figure(y_axis_type='log', y_axis_label='Normalized Fisher Information Distance', x_axis_type='log', x_axis_label='Relative Total CPU Time', x_range=(.05, 1.1), plot_width=1250, plot_height=1250)
 fig_csz = bkp.figure(y_axis_type='log', y_axis_label='Normalized Fisher Information Distance', x_axis_type='log', x_axis_label='Coreset Size', plot_width=1250, plot_height=1250)
@@ -37,7 +37,7 @@ for didx, dnm in enumerate(dnames):
     Fs.append(res['Fs'])
     NMs = res['Ms'].shape[0]
   std_Fs[dnm] = np.percentile(np.array(Fs), 50)
-  std_ts[dnm] = np.load('results/'+dnm+'_posterior_samples.npz')['t_full']
+  std_ts[dnm] = np.load('caching/'+dnm+'_samples.npz')['t_full']
 
 for idx, zppd in enumerate(dnmsalgs):
   dnm, alg = zppd

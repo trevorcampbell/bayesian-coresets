@@ -73,6 +73,7 @@ projector = bc.BlackBoxProjector(sampler, projection_dim, log_likelihood)
 full_samples = mcmc.sampler(dnm, X, Y, mcmc_steps, stan_representation, cache_folder = "caching/")
 #TODO FIX SAMPLER TO NOT HAVE TO DO THIS
 full_samples = np.hstack((full_samples[:, 1:], full_samples[:, 0][:,np.newaxis]))
+np.savez('results/'+dnm+'_posterior_samples.npz', full_samples=full_samples)
 
 cputs = np.zeros(Ms.shape[0])
 csizes = np.zeros(Ms.shape[0])
