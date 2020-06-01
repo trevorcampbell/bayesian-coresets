@@ -40,7 +40,7 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
     name, code = stan_representation
     sm = build_model(cache_folder, name, code)
 
-    if weights != None: #presumably weights is only ever None in the case where we're using the full dataset - this code may need to be adjusted to handle the case of a coreset of size 0
+    if weights is not None: #presumably weights is only ever None in the case where we're using the full dataset - this code may need to be adjusted to handle the case of a coreset of size 0
       print('Altering cpp code used by stan to allow weighted data')
       sm.model_cppcode = load_modified_cpp_code(code_folder, name, code)
 
