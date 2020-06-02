@@ -37,7 +37,7 @@ for didx, dnm in enumerate(dnames):
     Fs.append(res['Fs'])
     NMs = res['Ms'].shape[0]
   std_Fs[dnm] = np.percentile(np.array(Fs), 50)
-  std_ts[dnm] = np.load('caching/'+dnm+'_samples.npz')['t_full']
+  std_ts[dnm] = np.load('caching/'+dnm+'_mcmc_time.npy')
 
 for idx, zppd in enumerate(dnmsalgs):
   dnm, alg = zppd

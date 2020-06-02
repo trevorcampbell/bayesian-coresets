@@ -17,6 +17,8 @@ parser = argparse.ArgumentParser(description="Runs Hilbert logistic or poisson r
 parser.add_argument('dnm', type=str, help="the name of the dataset on which to run regression")
 parser.add_argument('anm', type=str, help="The algorithm to use for solving sparse non-negative least squares as part of Hilbert coreset construction - should be one of GIGA / FW / RND") #TODO: find way to make this help message autoupdate with new methods
 parser.add_argument('ID', type=int, help="The trial number - used to initialize random number generation (for replicability)")
+parser.add_argument('extractCppCode', type=bool, default=False, help='command flag to determine code used by stan for mcmc sampling. if set to True, then instead of running the experiment, this code will save the cppCode object stan uses for mcmc with the specified paramters and dataset according to the hash of that code, allowing the user to adjust that code to work for coresets (see ReadMe for further information)')
+#TODO: make mcmc params command-line args
 
 arguments = parser.parse_args()
 dnm = arguments.dnm
@@ -73,7 +75,6 @@ projector = bc.BlackBoxProjector(sampler, projection_dim, log_likelihood)
 full_samples = mcmc.sampler(dnm, X, Y, mcmc_steps, stan_representation, cache_folder = "caching/")
 #TODO FIX SAMPLER TO NOT HAVE TO DO THIS
 full_samples = np.hstack((full_samples[:, 1:], full_samples[:, 0][:,np.newaxis]))
-np.savez('results/'+dnm+'_posterior_samples.npz', full_samples=full_samples)
 
 cputs = np.zeros(Ms.shape[0])
 csizes = np.zeros(Ms.shape[0])
