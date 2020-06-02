@@ -73,7 +73,7 @@ def load_modified_cpp_code(code_folder, modelName, model_code):
 
 def find_default_cpp_code(dest_folder, stan_representation):
     name, code = stan_representation
-    encoding = hashlib.sha1(code)
+    encoding = hashlib.sha1(code.encode('utf-8')).hexdigest()
 
     if not os.path.exists(dest_folder):
       os.mkdir(dest_folder)
