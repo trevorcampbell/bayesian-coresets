@@ -3,6 +3,7 @@ import pystan
 import os
 import pickle as pk
 import time
+import hashlib
 
 def build_model(cache_folder, modelName, model_code):
   if cache_folder and os.path.exists(os.path.join(cache_folder, modelName)):
@@ -72,7 +73,7 @@ def load_modified_cpp_code(code_folder, modelName, model_code):
 
 def find_default_cpp_code(dest_folder, stan_representation):
     name, code = stan_representation
-    encoding = hash(code)
+    encoding = hashlib.sha1(code)
 
     if not os.path.exists(dest_folder):
       os.mkdir(dest_folder)
