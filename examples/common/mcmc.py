@@ -69,3 +69,15 @@ def load_modified_cpp_code(code_folder, modelName, model_code):
     return modified_code
   else: 
     return EnvironmentError("No modified code to handle weighted data present - unable to use stan for MCMC sampling. See the ReadMe for more information.")
+
+def find_default_cpp_code(dest_folder, stan_representation):
+    name, code = stan_representation
+    encoding = hash(code)
+
+    if not os.path.exists(dest_folder):
+      os.mkdir(dest_folder)
+
+    if not os.path.exists(dest_folder+str(encoding)+'_cppCode.npy'):
+      sm = build_model(dest_folder, name, code)
+      np.save(os.path.join(dest_folder, str(encoding) +'_cppCode.npy'),sm.model_cppcode)
+

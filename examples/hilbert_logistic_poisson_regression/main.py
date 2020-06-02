@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser(description="Runs Hilbert logistic or poisson r
 parser.add_argument('dnm', type=str, help="the name of the dataset on which to run regression")
 parser.add_argument('anm', type=str, help="The algorithm to use for solving sparse non-negative least squares as part of Hilbert coreset construction - should be one of GIGA / FW / RND") #TODO: find way to make this help message autoupdate with new methods
 parser.add_argument('ID', type=int, help="The trial number - used to initialize random number generation (for replicability)")
-parser.add_argument('extractCppCode', type=bool, default=False, help='Command flag to determine code used by stan for mcmc sampling. If set to True, then instead of running the experiment, this code will save the cppCode object stan would uses for mcmc with the specified paramaters according to the hash of that code, allowing the user to adjust that code to work for coresets (see ReadMe for further information)')
+parser.add_argument('extractCppCode', type=bool, nargs='?',default=False, help='Command flag to determine code used by stan for mcmc sampling. If set to True, then instead of running the experiment, this code will save the cppCode object stan would uses for mcmc with the specified paramaters according to the hash of that code, allowing the user to adjust that code to work for coresets (see ReadMe for further information)')
 #TODO: make mcmc params command-line args
 
 arguments = parser.parse_args()
