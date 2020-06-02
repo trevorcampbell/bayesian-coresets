@@ -62,8 +62,8 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
 #TODO: make the naming system we use to store/load stanCppCode more accessible
 #TODO: modify this to use hashes
 def load_modified_cpp_code(code_folder, modelName, model_code):
-  codeHash = 'cppCode'#this will eventually refer to the actual hash of the model code, but for now I just want to make sure this framework is valid
-  fileToFind = str(modelName) + '_' + codeHash + '.npz'
+  codeHash = hashlib.sha1(model_code.encode('utf-8')).hexdigest()#this will eventually refer to the actual hash of the model code, but for now I just want to make sure this framework is valid
+  fileToFind = "weighted_coreset_version_" + codeHash + '_cppCode.npz'
   if os.path.exists(os.path.join(code_folder, codeHash)):
     f = open(os.path.join(code_folder, fileToFind),'rb')
     modified_code = pk.load(f)
