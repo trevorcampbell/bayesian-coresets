@@ -81,4 +81,7 @@ def find_default_cpp_code(dest_folder, stan_representation):
     if not os.path.exists(dest_folder+str(encoding)+'_cppCode.npz'):
       sm = build_model(dest_folder, name, code)
       np.savez(os.path.join(dest_folder, str(encoding) +'_cppCode.npz'),sm.model_cppcode)
+      file = open(os.path.join(dest_folder, str(encoding) + '_cppCode.txt'), "w")
+      file.write(sm.model_cppcode)      
+      file.close()
 
