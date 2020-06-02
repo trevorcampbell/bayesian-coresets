@@ -35,7 +35,7 @@ else:
   from model_poiss import *
 
 if extractCppCode:
-  mcmc.find_default_cpp_code('cppCode/', stan_representation)
+  mcmc.find_default_cpp_code('stanCppCode/', stan_representation)
 else:
 
 
