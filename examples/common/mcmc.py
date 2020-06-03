@@ -49,7 +49,10 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
     t0 = time.process_time()
     thd = sampler_data['d']+1
     #call sampling with N_samples actual iterations, and some number of burn iterations
-    fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=chains, control=control, verbose=verbose)
+    try:
+      fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=chains, control=control, verbose=verbose)
+    except:
+      print("error encountered in sampling - likely the specified dataset is not compatible with the specified model")
     samples = fit.extract(permuted=False)[:, 0, :thd]
     if cache_folder:
       np.save(os.path.join(cache_folder, dnm+'_samples.npy'), samples) 
