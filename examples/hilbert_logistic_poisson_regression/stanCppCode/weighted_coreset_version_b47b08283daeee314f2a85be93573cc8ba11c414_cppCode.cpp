@@ -29,7 +29,7 @@ private:
         std::vector<int> y;
         //
         //WEIGHTS MODIFICATION
-        std::vector<int> w;
+        std::vector<double> w;
         //
         //
         matrix_d x;
@@ -277,7 +277,6 @@ public:
             current_statement_begin__ = 18;
             lp_accum__.add(normal_log<propto__>(theta, 0, 1));
             current_statement_begin__ = 19;
-            lp_accum__.add(bernoulli_logit_log<propto__>(y, f));
             //
             //WEIGHTS MODIFICATION 
             //we loop over data individually here to give them weights

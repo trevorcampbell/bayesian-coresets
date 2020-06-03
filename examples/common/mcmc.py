@@ -6,7 +6,7 @@ import time
 import hashlib
 
 def build_model(cache_folder, modelName, model_code):
-  if cache_folder and os.path.exists(os.path.join(cache_folder, modelName)):
+  if cache_folder and os.path.exists(os.path.join(cache_folder, modelName)): #hash the model_code as a validation step?
     f = open(os.path.join(cache_folder, modelName),'rb')
     sm = pk.load(f)
     f.close()
@@ -65,7 +65,7 @@ def load_modified_cpp_code(code_folder, modelName, model_code):
   codeHash = hashlib.sha1(model_code.encode('utf-8')).hexdigest()#this will eventually refer to the actual hash of the model code, but for now I just want to make sure this framework is valid
   fileToFind = "weighted_coreset_version_" + codeHash + '_cppCode.npz'
   if os.path.exists(os.path.join(code_folder, codeHash)):
-    f = open(os.path.join(code_folder, fileToFind),'rb')
+    f = open(os.path.join(code_folder, fileToFind),'r')
     modified_code = pk.load(f)
     return modified_code
   else: 
