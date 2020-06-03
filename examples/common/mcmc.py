@@ -5,9 +5,11 @@ import pickle as pk
 import time
 import hashlib
 
-def build_model(cache_folder, modelName, model_code):
-  if cache_folder and os.path.exists(os.path.join(cache_folder, modelName)): #hash the model_code as a validation step?
-    f = open(os.path.join(cache_folder, modelName),'rb')
+def build_model(cache_folder, model_name, model_code):
+  if cache_folder:
+    cachingSpot = os.path.join(cache_folder, model_name + "_" + hashlib.sha1(model_code.encode('utf-8')).hexdigest())
+  if cache_folder and os.path.exists(cachingSpot):
+    f = open(cachingSpot,'r')
     sm = pk.load(f)
     f.close()
   else: 
@@ -15,7 +17,7 @@ def build_model(cache_folder, modelName, model_code):
     sm = pystan.StanModel(model_code=model_code)
 
     if cache_folder: 
-      f = open(os.path.join(cache_folder, modelName),'wb')
+      f = open(cachingSpot,'w')
       pk.dump(sm, f)
       f.close()
 
@@ -52,7 +54,8 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
     try:
       fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=chains, control=control, verbose=verbose)
     except:
-      return EnvironmentError("error encountered in sampling - likely the specified dataset is not compatible with the specified model")
+      print("error encountered in sampling - likely the specified dataset is not compatible with the specified model")
+      raise EnvironmentError("error encountered in sampling - likely the specified dataset is not compatible with the specified model")
     samples = fit.extract(permuted=False)[:, 0, :thd]
     if cache_folder:
       np.save(os.path.join(cache_folder, dnm+'_samples.npy'), samples) 
@@ -64,27 +67,22 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
 #perform MCMC on a coreset.  
 #TODO: make the naming system we use to store/load stanCppCode more accessible
 #TODO: modify this to use hashes
-def load_modified_cpp_code(code_folder, modelName, model_code):
+def load_modified_cpp_code(code_folder, model_name, model_code):
   codeHash = hashlib.sha1(model_code.encode('utf-8')).hexdigest()#this will eventually refer to the actual hash of the model code, but for now I just want to make sure this framework is valid
-  fileToFind = "weighted_coreset_version_" + codeHash + '_cppCode.npz'
-  if os.path.exists(os.path.join(code_folder, codeHash)):
-    f = open(os.path.join(code_folder, fileToFind),'r')
+  file_to_find = model_name + "_weighted_coreset_version_" + codeHash + ".cpp"
+  file_to_find = os.path.join(code_folder, file_to_find)
+  if os.path.exists(file_to_find):
+    f = open(file_to_find,'r')
     modified_code = pk.load(f)
     return modified_code
   else: 
-    return EnvironmentError("No modified code to handle weighted data present - unable to use stan for MCMC sampling. See the ReadMe for more information.")
+    if not os.path.exists(code_folder):
+      os.mkdir(code_folder)
 
-def find_default_cpp_code(dest_folder, stan_representation):
-    name, code = stan_representation
-    encoding = hashlib.sha1(code.encode('utf-8')).hexdigest()
-
-    if not os.path.exists(dest_folder):
-      os.mkdir(dest_folder)
-
-    if not os.path.exists(dest_folder+str(encoding)+'_cppCode.npz'):
-      sm = build_model(dest_folder, name, code)
-      np.savez(os.path.join(dest_folder, str(encoding) +'_cppCode.npz'),sm.model_cppcode)
-      file = open(os.path.join(dest_folder, str(encoding) + '_cppCode.txt'), "w")
-      file.write(sm.model_cppcode)      
-      file.close()
+    sm = build_model(code_folder, model_name, model_code)
+    file = open(file_to_find, "w")
+    file.write("Remove this statement once you have modified the code below to handle weighted coresets. See ReadMe for more information.\n")
+    file.write(sm.model_cppcode)      
+    file.close()
+    raise EnvironmentError("No modified code to handle weighted data present - unable to use stan for MCMC sampling. Please modify the file "+str(file_to_find)+" to handle weighted data. See the ReadMe for more information.")
 
