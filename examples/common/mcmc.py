@@ -52,7 +52,7 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
     try:
       fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=chains, control=control, verbose=verbose)
     except:
-      print("error encountered in sampling - likely the specified dataset is not compatible with the specified model")
+      return EnvironmentError("error encountered in sampling - likely the specified dataset is not compatible with the specified model")
     samples = fit.extract(permuted=False)[:, 0, :thd]
     if cache_folder:
       np.save(os.path.join(cache_folder, dnm+'_samples.npy'), samples) 
