@@ -10,7 +10,7 @@ def build_model(cache_folder, model_name, model_code):
     cachingSpot = os.path.join(cache_folder, model_name + "_" + hashlib.sha1(model_code.encode('utf-8')).hexdigest())
   if cache_folder and os.path.exists(cachingSpot):
     f = open(cachingSpot,'r')
-    sm = pk.load(f)
+    sm = f.read() 
     f.close()
   else: 
     print('STAN: building model')
@@ -18,7 +18,7 @@ def build_model(cache_folder, model_name, model_code):
 
     if cache_folder: 
       f = open(cachingSpot,'w')
-      pk.dump(sm, f)
+      f.write(sm)
       f.close()
 
   return sm
@@ -73,7 +73,8 @@ def load_modified_cpp_code(code_folder, model_name, model_code):
   file_to_find = os.path.join(code_folder, file_to_find)
   if os.path.exists(file_to_find):
     f = open(file_to_find,'r')
-    modified_code = pk.load(f)
+    modified_code = f.read()
+    f.close()
     return modified_code
   else: 
     if not os.path.exists(code_folder):
