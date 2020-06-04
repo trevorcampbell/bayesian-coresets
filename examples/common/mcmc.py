@@ -5,16 +5,23 @@ import pickle as pk
 import time
 import hashlib
 
-def build_model(cache_folder, model_name, model_code):
+def build_model(cache_folder, model_name, model_code, use_weighted_coresets = False, code_folder = 'stanCppCode/'):
   if cache_folder:
-    cachingSpot = os.path.join(cache_folder, model_name + "_" + hashlib.sha1(model_code.encode('utf-8')).hexdigest())
+    weights_tag = "weighted_coreset_version_" if use_weighted_coresets else ""
+    cachingSpot = os.path.join(cache_folder, model_name + "_" + weights_tag + hashlib.sha1(model_code.encode('utf-8')).hexdigest())
   if cache_folder and os.path.exists(cachingSpot):
     f = open(cachingSpot,'r')
     sm = f.read() 
     f.close()
   else: 
     print('STAN: building model')
-    sm = pystan.StanModel(model_code=model_code)
+    if use_weighted_coresets:
+      print('Altering cpp code used by stan to allow weighted data')
+      stanc_ret = pystan.stanc(model_code=model_code)
+      stanc_ret['cppcode'] = load_modified_cpp_code(code_folder, model_name, model_code)
+      sm = pystan.StanModel(stanc_ret=stanc_ret)
+    else: 
+      sm = pystan.StanModel(model_code=model_code)
 
     if cache_folder: 
       f = open(cachingSpot,'w')
@@ -41,11 +48,7 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
 
     print('STAN: building/loading model')
     name, code = stan_representation
-    sm = build_model(cache_folder, name, code)
-
-    if weights is not None: #presumably weights is only ever None in the case where we're using the full dataset - this code may need to be adjusted to handle the case of a coreset of size 0
-      print('Altering cpp code used by stan to allow weighted data')
-      sm.model_cppcode = load_modified_cpp_code(code_folder, name, code)
+    sm = build_model(cache_folder, name, code, use_weighted_coresets = weights is not None, code_folder=code_folder)
 
     print('STAN: sampling posterior: ' + dnm)
     t0 = time.process_time()
