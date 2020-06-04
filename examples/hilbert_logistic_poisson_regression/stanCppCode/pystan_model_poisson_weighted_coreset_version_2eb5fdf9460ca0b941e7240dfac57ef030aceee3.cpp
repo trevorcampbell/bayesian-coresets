@@ -23,7 +23,7 @@ private:
         std::vector<int> y;
         //
         //WEIGHTS MODIFICATION
-        std::vector<int> w;
+        std::vector<double> w;
         //
         //
         matrix_d x;
