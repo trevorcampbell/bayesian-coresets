@@ -31,7 +31,7 @@ def build_model(cache_folder, model_name, model_code, use_weighted_coresets = Fa
   return sm
 
 #TODO: make code_folder something specified by each example
-def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_folder = None, code_folder = 'stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True):
+def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_folder = None, model_caching_folder = 'models', code_folder = 'stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True):
 
   if cache_folder and not os.path.exists(cache_folder):
     os.mkdir(cache_folder)
@@ -48,7 +48,7 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
 
     print('STAN: building/loading model')
     name, code = stan_representation
-    sm = build_model(cache_folder, name, code, use_weighted_coresets = weights is not None, code_folder=code_folder)
+    sm = build_model(model_caching_folder, name, code, use_weighted_coresets = weights is not None, code_folder=code_folder)
 
     print('STAN: sampling posterior: ' + dnm)
     t0 = time.process_time()
