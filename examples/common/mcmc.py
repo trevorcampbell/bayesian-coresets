@@ -10,8 +10,8 @@ def build_model(cache_folder, model_name, model_code, use_weighted_coresets = Fa
     weights_tag = "weighted_coreset_version_" if use_weighted_coresets else ""
     cachingSpot = os.path.join(cache_folder, model_name + "_" + weights_tag + hashlib.sha1(model_code.encode('utf-8')).hexdigest())
   if cache_folder and os.path.exists(cachingSpot):
-    f = open(cachingSpot,'r')
-    sm = f.read() 
+    f = open(cachingSpot,'rb')
+    sm = pk.load(f) 
     f.close()
   else: 
     print('STAN: building model')
@@ -24,8 +24,8 @@ def build_model(cache_folder, model_name, model_code, use_weighted_coresets = Fa
       sm = pystan.StanModel(model_code=model_code)
 
     if cache_folder: 
-      f = open(cachingSpot,'w')
-      f.write(sm)
+      f = open(cachingSpot,'wb')
+      pk.dump(sm,f)
       f.close()
 
   return sm
