@@ -85,7 +85,7 @@ def load_modified_cpp_code(code_folder, model_name, model_code):
 
     sm = build_model(code_folder, model_name, model_code)
     file = open(file_to_find, "w")
-    file.write("Remove this statement once you have modified the code below to handle weighted coresets. See ReadMe for more information.\n")
+    file.write("Remove this line once you have modified the code below to handle weighted coresets. See ReadMe for more information.\n")
     file.write(sm.model_cppcode)      
     file.close()
     raise EnvironmentError("No modified code to handle weighted data present - unable to use stan for MCMC sampling. Please modify the file "+str(file_to_find)+" to handle weighted data. See the ReadMe for more information.")
