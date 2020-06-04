@@ -40,6 +40,8 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
     print("Using cached samples for " + dnm)
     return np.load(cache_folder+dnm+'_samples.npy')
   else:
+    if model_caching_folder and not os.path.exists(model_caching_folder):
+      os.mkdir(model_caching_folder)
     print('No MCMC samples found -- running STAN')
     print('STAN: loading data')
     Y[Y == -1] = 0 #convert to Stan LR label style if necessary
