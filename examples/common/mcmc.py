@@ -31,14 +31,14 @@ def build_model(cache_folder, model_name, model_code, use_weighted_coresets = Fa
   return sm
 
 #TODO: make code_folder something specified by each example
-def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_folder = None, model_caching_folder = 'models', code_folder = 'stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True):
+def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_caching_folder = None, model_caching_folder = 'models', code_folder = 'stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True):
+#TODO: adjust name of cache_folder to sample_caching_folder, and code_caching_folder should have a ../common
+  if sample_caching_folder and not os.path.exists(sample_caching_folder):
+    os.mkdir(sample_caching_folder)
 
-  if cache_folder and not os.path.exists(cache_folder):
-    os.mkdir(cache_folder)
-
-  if cache_folder and os.path.exists(cache_folder+dnm+'_samples.npy'):
+  if sample_caching_folder and os.path.exists(sample_caching_folder+dnm+'_samples.npy'):
     print("Using cached samples for " + dnm)
-    return np.load(cache_folder+dnm+'_samples.npy')
+    return np.load(sample_caching_folder+dnm+'_samples.npy')
   else:
     if model_caching_folder and not os.path.exists(model_caching_folder):
       os.mkdir(model_caching_folder)
@@ -62,8 +62,8 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, cache_fol
       print("error encountered in sampling - likely the specified dataset is not compatible with the specified model")
       raise EnvironmentError("error encountered in sampling - likely the specified dataset is not compatible with the specified model")
     samples = fit.extract(permuted=False)[:, 0, :thd]
-    if cache_folder:
-      np.save(os.path.join(cache_folder, dnm+'_samples.npy'), samples) 
+    if sample_caching_folder:
+      np.save(os.path.join(sample_caching_folder, dnm+'_samples.npy'), samples) 
       tf = time.process_time()
       np.save(os.path.join(cache_folder, dnm+'_mcmc_time.npy'), tf-t0)
     return samples

@@ -2,7 +2,6 @@ from __future__ import print_function
 import numpy as np
 import bayesiancoresets as bc
 from scipy.optimize import minimize
-from inference import nuts, rhat, hmc
 import time
 import sys, os
 import argparse
