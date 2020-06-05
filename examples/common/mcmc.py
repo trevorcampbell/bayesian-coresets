@@ -31,7 +31,7 @@ def build_model(cache_folder, model_name, model_code, use_weighted_coresets = Fa
   return sm
 
 #TODO: make code_folder something specified by each example
-def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_caching_folder = None, model_caching_folder = 'models', code_folder = 'stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True):
+def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_caching_folder = None, model_caching_folder = 'models', code_folder = 'stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True, seed = 0):
 #TODO: adjust name of cache_folder to sample_caching_folder, and code_caching_folder should have a ../common
   if sample_caching_folder and not os.path.exists(sample_caching_folder):
     os.mkdir(sample_caching_folder)
@@ -57,7 +57,7 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_ca
     thd = sampler_data['d']+1
     #call sampling with N_samples actual iterations, and some number of burn iterations
     try:
-      fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=chains, control=control, verbose=verbose)
+      fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=chains, control=control, verbose=verbose, seed=seed)
     except:
       print("error encountered in sampling - likely the specified dataset is not compatible with the specified model")
       raise EnvironmentError("error encountered in sampling - likely the specified dataset is not compatible with the specified model")
