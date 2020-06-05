@@ -54,13 +54,13 @@ weights = np.random.randint(1,10,numIdcs)
 curX = X[idcs, :]
 curY = Y[idcs]
 #run the weighted version of sampler
-samples_using_code_for_weights = mcmc.sampler(dnm, curX, curY, mcmc_steps, stan_representation, weights=weights) 
+samples_using_code_for_weights = mcmc.sampler(dnm, curX, curY, mcmc_steps, stan_representation, weights=weights, seed = ID) 
 #build the modified dataset so that we can run the unweighted version of sampler
 for i in range(len(idcs)):
     toAdd = np.ones(weights[i],dtype=int) * i #list i a number of times equal to the weight of the ith index
     curX = np.append(curX, curX[toAdd], axis=0)
     curY = np.append(curY, curY[toAdd])
-samples_using_standard_stan_code = mcmc.sampler(dnm, curX, curY, mcmc_steps, stan_representation)
+samples_using_standard_stan_code = mcmc.sampler(dnm, curX, curY, mcmc_steps, stan_representation, seed = ID)
 #samples_using_code_for_weights = mcmc.sampler(dnm, curX, curY, mcmc_steps, stan_representation)
 print("largest difference between samples using code for weights and samples using standard stan code (should be 0): ")
 print(np.max(samples_using_code_for_weights - samples_using_standard_stan_code))
