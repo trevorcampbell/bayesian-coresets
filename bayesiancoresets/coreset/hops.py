@@ -17,6 +17,7 @@ class HOPSCoreset(Coreset):
     self.n_subsample_opt = None if n_subsample_opt is None else min(data.shape[0], n_subsample_opt)
     self.step_sched = step_sched
     self.opt_itrs = opt_itrs
+    self.cur_itrs = 1
     super().__init__(**kw)
 
   def _build(self, itrs):
@@ -24,7 +25,8 @@ class HOPSCoreset(Coreset):
       #search for the next best point
       self._select()
       #update the weights (using a faster heuristic rather than a full optimization)
-      self._hop(i) 
+      self._hop(self.cur_itrs)
+      self.cur_itrs += 1 
 
   def _get_projection(self, n_subsample, w, p):
     #update the projector
