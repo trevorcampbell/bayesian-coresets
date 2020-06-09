@@ -25,9 +25,6 @@ class HOPSCoreset(Coreset):
       self._select()
       #update the weights (using a faster heuristic rather than a full optimization)
       self._hop(i) 
-    print("finished selecting points, optimizing coreset weights")
-    #at the very end, do a more rigorous optimization step
-    self.optimize()
 
   def _get_projection(self, n_subsample, w, p):
     #update the projector
@@ -86,6 +83,7 @@ class HOPSCoreset(Coreset):
     tempered_posterior = iter/self.data.shape[0] * sum_scaling *vecs.sum(axis=0)
     self.wts = nnls(corevecs.T, tempered_posterior.T, maxiter = 100*vecs.shape[1])[0]
 
+  #at the very end, after having selected all our coreset points, we can do a more rigorous optimization step for the weights
   def _optimize(self):
     def grd(w):
       vecs, sum_scaling, sub_idcs, corevecs = self._get_projection(self.n_subsample_opt, w, self.pts)
