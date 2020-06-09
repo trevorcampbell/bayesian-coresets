@@ -19,7 +19,7 @@ def build_model(cache_folder, model_name, model_code, use_weighted_coresets = Fa
       print('Altering cpp code used by stan to allow weighted data')
       stanc_ret = pystan.stanc(model_code=model_code)
       stanc_ret['cppcode'] = load_modified_cpp_code(code_folder, model_name, model_code)
-      sm = pystan.StanModel(stanc_ret=stanc_ret)
+      sm = pystan.StanModel(stanc_ret=stanc_ret, verbose=True)
     else: 
       sm = pystan.StanModel(model_code=model_code)
 

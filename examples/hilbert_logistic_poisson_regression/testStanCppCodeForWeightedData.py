@@ -31,13 +31,13 @@ elif model=="poiss":
 np.random.seed(ID)
 
 #should be command line arguments 
-mcmc_steps = 10000 #total number of MH steps
+mcmc_steps = 5#10000 #total number of MH steps
 
 print('Loading dataset '+dnm)
 X,Y,Z, Zt, D = load_data('../data/'+dnm+'.npz')
 
 idcs = np.random.choice(X.shape[0],numIdcs, replace=True) #random.choice is a bit slower without replacement, but may still be worth trying
-weights = np.random.randint(2,3,numIdcs)
+weights = np.random.randint(1,10,numIdcs)
 curX = X[idcs, :]
 curY = Y[idcs]
 #run the weighted version of sampler
