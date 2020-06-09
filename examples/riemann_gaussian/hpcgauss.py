@@ -20,7 +20,7 @@ SVI_step_sched = lambda i : 1./(1+i)
 
 parser = argparse.ArgumentParser(description="Runs Riemannian linear regression (employing coreset contruction) on the specified dataset")
 parser.add_argument('tr', type=int, help="The trial number - used to initialize random number generation (for replicability)")
-parser.add_argument('nm', type=str, help="The name of the coreset construction algorithm to use (examples: BPSVI / SVI / GIGAO / GIGAR / RAND)")
+parser.add_argument('nm', type=str, help="The name of the coreset construction algorithm to use (examples: SVI / GIGAO / GIGAR / RAND / HOPS)")
 parser.add_argument('d', type=int, help="The dimension of the multivariate normal distribution to use for this experiment (should exceed 100)")#TODO: verify explanation
 
 parser.add_argument('M', type=int, default='200', help='Desired maximum coreset size')
@@ -58,10 +58,10 @@ np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+str(tr)])) % 2**32)
 
 #create the log_likelihood function
 print('Creating log-likelihood function')
-log_likelihood = lambda x, th : gaussian.gaussian_loglikelihood(x, th, Siginv, logdetSig)
+log_likelihood = lambda x, th : gaussian.log_likelihood(x, th, Siginv, logdetSig)
 
 print('Creating gradient log-likelihood function')
-grad_log_likelihood = lambda x, th : gaussian.gaussian_gradx_loglikelihood(x, th, Siginv)
+grad_log_likelihood = lambda x, th : gaussian.gradx_log_likelihood(x, th, Siginv)
 
 print('Creating tuned projector for Hilbert coreset construction')
 #create the sampler for the "optimally-tuned" Hilbert coreset
@@ -116,19 +116,21 @@ prj_exact_realistic.update(2.*np.random.rand(x.shape[0]), x)
 ##############################
 print('Creating coreset construction objects')
 #create coreset construction objects
-bpsvi = bc.BatchPSVICoreset(x, GaussianProjector(), opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
+#bpsvi = bc.BatchPSVICoreset(x, GaussianProjector(), opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
 sparsevi = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
 giga_optimal = bc.HilbertCoreset(x, prj_optimal)
 giga_optimal_exact = bc.HilbertCoreset(x,prj_exact_optimal)
 giga_realistic = bc.HilbertCoreset(x,prj_realistic)
 giga_realistic_exact = bc.HilbertCoreset(x,prj_exact_realistic)
 unif = bc.UniformSamplingCoreset(x)
+hops = bc.HOPSCoreset(x, GaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
 
-algs = {'BPSVI' : bpsvi,
+algs = {#'BPSVI' : bpsvi,
         'SVI': sparsevi, 
         'GIGAO': giga_optimal, 
         'GIGAR': giga_realistic, 
-        'RAND': unif}
+        'RAND': unif, 
+        'HOPS': hops}
 alg = algs[nm]
 
 print('Building coreset')
@@ -150,7 +152,7 @@ if nm=="BPSVI": #parallelize over batch pseudocoreset sizes
 else:
   for m in range(1, M+1):
     print('trial: ' + str(tr) +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
-    alg.build(1, m)
+    alg.build(1)
     #store weights/pts
     wts, pts, _ = alg.get()
     w.append(wts)
@@ -164,8 +166,8 @@ fklw = np.zeros(M+1)
 for m in range(M+1):
   muw[m, :], LSigw, LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, p[m], w[m])
   Sigw[m, :, :] = LSigw.dot(LSigw.T)
-  rklw[m] = gaussian.gaussian_KL(muw[m,:], Sigw[m,:,:], mup, SigpInv)
-  fklw[m] = gaussian.gaussian_KL(mup, Sigp, muw[m,:], LSigwInv.dot(LSigwInv.T))
+  rklw[m] = gaussian.KL(muw[m,:], Sigw[m,:,:], mup, SigpInv)
+  fklw[m] = gaussian.KL(mup, Sigp, muw[m,:], LSigwInv.dot(LSigwInv.T))
 
 if not os.path.exists('results/'):
   os.mkdir('results')

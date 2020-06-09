@@ -84,7 +84,7 @@ class HOPSCoreset(Coreset):
     #currently, our idea is to target a tempered version of the true posterior, and solve this problem via sparse non-negative least squares
     vecs, sum_scaling, sub_idcs, corevecs = self._get_projection(self.n_subsample_opt, self.wts, self.pts) #alternatively, we could use the same projection as we used in select
     tempered_posterior = iter/self.data.shape[0] * sum_scaling *vecs.sum(axis=0)
-    self.wts = nnls(corevecs, tempered_posterior, maxiter = 100*self.vecs.shape[1])[0]
+    self.wts = nnls(corevecs.T, tempered_posterior.T, maxiter = 100*vecs.shape[1])[0]
 
   def _optimize(self):
     def grd(w):
