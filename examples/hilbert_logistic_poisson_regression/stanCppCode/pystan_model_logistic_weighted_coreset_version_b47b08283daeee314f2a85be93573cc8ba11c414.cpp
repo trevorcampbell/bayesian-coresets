@@ -283,9 +283,11 @@ public:
             //the bernoulli_logit_log function may not easily allow this when calling using vectors/matrices
             //this is the original code: lp_accum__.add(bernoulli_logit_log<propto__>(y, f));;
             //this is the modified code:
+            T__ sum = 0.0; 
             for (size_t j_1__ = 0; j_1__ < f_j_1_max__; ++j_1__) {
-                lp_accum__.add(w[j_1__] * bernoulli_logit_log<propto__>(y[j_1__], f(j_1__)));
+                sum += (w[j_1__] * bernoulli_logit_log<propto__>(y[j_1__], f(j_1__)));
             }
+            lp_accum__.add(sum);
             //
 
         } catch (const std::exception& e) {

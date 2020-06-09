@@ -31,7 +31,7 @@ elif model=="poiss":
 np.random.seed(ID)
 
 #should be command line arguments 
-mcmc_steps = 5#10000 #total number of MH steps
+mcmc_steps = 10000#10000 #total number of MH steps
 
 print('Loading dataset '+dnm)
 X,Y,Z, Zt, D = load_data('../data/'+dnm+'.npz')
@@ -51,3 +51,6 @@ samples_using_standard_stan_code = mcmc.sampler(dnm, curX, curY, mcmc_steps, sta
 #samples_using_code_for_weights = mcmc.sampler(dnm, curX, curY, mcmc_steps, stan_representation, weights=np.ones(curX.shape[0], dtype=int), seed=ID)
 print("largest difference between samples using code for weights and samples using standard stan code (should be 0): ")
 print(np.max(samples_using_code_for_weights - samples_using_standard_stan_code))
+print("largest sample using standard stan code (if the previous value was not 0, our implementation may still be valid - just with minor numerical differences - if the value here is much bigger): ")
+print(np.max(samples_using_standard_stan_code))
+
