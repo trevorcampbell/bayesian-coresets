@@ -9,29 +9,33 @@ import bayesiancoresets as bc
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import model_gaussian as gaussian
 
-#TODO: make these optional command line args, and also incorporate into the names and saved data of experiment result files
-SVI_opt_itrs = 500
+#TODO: make these optional command line args, and also incorporate into the names and saved data of experiment result files 
 BPSVI_opt_itrs = 500
 n_subsample_opt = None # 100
-proj_dim = 100
 pihat_noise =0.75
-BPSVI_step_sched = lambda m: lambda i : (-0.005*m+1.005)/(1+i) # linear interpolaton giving i0=1 at m=1 and i0=0.005 at m=200 
+BPSVI_step_sched = lambda m: lambda i : (-0.005*m+1.005)/(1+i) # linear interpolation giving i0=1 at m=1 and i0=0.005 at m=200 
 SVI_step_sched = lambda i : 1./(1+i)
 
 parser = argparse.ArgumentParser(description="Runs Riemannian linear regression (employing coreset contruction) on the specified dataset")
 parser.add_argument('tr', type=int, help="The trial number - used to initialize random number generation (for replicability)")
 parser.add_argument('nm', type=str, help="The name of the coreset construction algorithm to use (examples: SVI / GIGAO / GIGAR / RAND / HOPS)")
-parser.add_argument('d', type=int, help="The dimension of the multivariate normal distribution to use for this experiment (should exceed 100)")#TODO: verify explanation
 
-parser.add_argument('M', type=int, default='200', help='Desired maximum coreset size')
-parser.add_argument('N', type=int, default='1000', help='Dataset size/number of examples')
+parser.add_argument('--d', type=int, default = '200', help="The dimension of the multivariate normal distribution to use for this experiment")
+parser.add_argument('--M', type=int, default='200', help='Desired maximum coreset size')
+parser.add_argument('--N', type=int, default='1000', help='Dataset size/number of examples')
+
+parser.add_argument('--SVI_opt_itrs', type=int, default = '500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
+parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples to take when discretizing log likelihoods")
 
 arguments = parser.parse_args()
 M = arguments.M
 N = arguments.N
 nm = arguments.nm
 tr = arguments.tr
-d = max(arguments.d, proj_dim)
+d = arguments.d
+
+proj_dim = arguments.proj_dim
+SVI_opt_itrs =  arguments.SVI_opt_itrs
 
 mu0 = np.zeros(d)
 Sig0 = np.eye(d)
