@@ -23,17 +23,15 @@ parser.add_argument('nm', type=str, help="The name of the coreset construction a
 parser.add_argument('--d', type=int, default = '200', help="The dimension of the multivariate normal distribution to use for this experiment")
 parser.add_argument('--M', type=int, default='200', help='Desired maximum coreset size')
 parser.add_argument('--N', type=int, default='1000', help='Dataset size/number of examples')
-
-parser.add_argument('--SVI_opt_itrs', type=int, default = '500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
 parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples to take when discretizing log likelihoods")
+parser.add_argument('--SVI_opt_itrs', type=int, default = '500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
 
 arguments = parser.parse_args()
-M = arguments.M
-N = arguments.N
 nm = arguments.nm
 tr = arguments.tr
+M = arguments.M
+N = arguments.N
 d = arguments.d
-
 proj_dim = arguments.proj_dim
 SVI_opt_itrs =  arguments.SVI_opt_itrs
 
