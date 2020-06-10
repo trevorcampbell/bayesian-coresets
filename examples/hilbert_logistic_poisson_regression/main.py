@@ -17,13 +17,14 @@ parser.add_argument('model', type=str, choices=["lr","poiss"], help="The regress
 parser.add_argument('dnm', type=str, help="The name of the dataset on which to run regression")
 parser.add_argument('anm', type=str, help="The algorithm to use for solving sparse non-negative least squares as part of Hilbert coreset construction - should be one of GIGA / FW / RND") #TODO: find way to make this help message autoupdate with new methods
 parser.add_argument('ID', type=int, help="The trial number - used to initialize random number generation (for replicability)")
-#TODO: make mcmc params command-line args
+parser.add_argument("mcmc_samples", type=int, help="number of MCMC samples to take (we also take this many warmup steps before sampling)")
 
 arguments = parser.parse_args()
 dnm = arguments.dnm
 anm = arguments.anm
 ID = arguments.ID
 model = arguments.model
+mcmc_samples = arguments.mcmc_samples
 
 algdict = {'GIGA':bc.snnls.GIGA, 'FW':bc.snnls.FrankWolfe, 'RND':bc.snnls.UniformSampling}
 lrdnms = ['synth_lr', 'phishing', 'ds1', 'synth_lr_large', 'phishing_large', 'ds1_large']
@@ -35,17 +36,8 @@ elif model=="poiss":
 
 np.random.seed(ID)
 
-#should be command line arguments - and also need to be saved in results file name!
-mcmc_steps = 10000 #total number of MH steps
-mcmc_burn = 1000
 projection_dim = 500 #random projection dimension
 Ms = np.unique(np.logspace(0, 3, 10, dtype=int))
-
-pbar = True #progress bar display flag
-step_size_init = 0.001
-n_leap = 15
-target_a = 0.8
-mcmc_alg = hmc #nuts
 
 print('Loading dataset '+dnm)
 X,Y,Z, Zt, D = load_data('../data/'+dnm+'.npz')
@@ -72,7 +64,7 @@ else:
 sampler = lambda sz, w, pts : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 projector = bc.BlackBoxProjector(sampler, projection_dim, log_likelihood)
 
-full_samples = mcmc.sampler(dnm, X, Y, mcmc_steps, stan_representation, cache_folder = "caching/")
+full_samples = mcmc.sampler(dnm, X, Y, mcmc_samples, stan_representation, cache_folder = "caching/")
 #TODO FIX SAMPLER TO NOT HAVE TO DO THIS
 full_samples = np.hstack((full_samples[:, 1:], full_samples[:, 0][:,np.newaxis]))
 
@@ -103,7 +95,7 @@ for m in range(Ms.shape[0]):
   curX = X[idcs, :]
   curY = Y[idcs]
   t0 = time.process_time()
-  mcmc.sampler(dnm, curX, curY, mcmc_steps, stan_representation, weights=wts)
+  mcmc.sampler(dnm, curX, curY, mcmc_samples, stan_representation, weights=wts)
   t_alg_mcmc = time.process_time()-t0   
 
   print('M = ' + str(Ms[m]) + ': CPU times')
