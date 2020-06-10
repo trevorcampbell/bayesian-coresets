@@ -2,15 +2,30 @@ import bokeh.plotting as bkp
 from bokeh.io import export_png, export_svgs
 import numpy as np
 import sys, os
+import argparse
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
 
-n_trials=int(sys.argv[1])
-plot_every=int(sys.argv[2])
-d=sys.argv[3]
-N=sys.argv[4]
-fldr=sys.argv[5]
+parser = argparse.ArgumentParser(description="Plots Riemannian linear regression experiments")
+parser.add_argument('n_trials', type=int, help="This script will look for & plot experiments with trial IDs 1 through n_trials (inclusive)")
+parser.add_argument('--fldr', type=str, default="results/", help="This script will look for & plot experiments in this folder")
+parser.add_argument('--plot_every', type=int, default='1', help="Coarseness of the graph - will skip (plot_every-1) points between each plotted point")
+parser.add_argument('--d', type=int, default = '200', help="The dimension of the multivariate normal distribution used for these experiments")
+parser.add_argument('--M', type=int, default='200', help='The desired maximum coreset size specified for these experiments')
+parser.add_argument('--N', type=int, default='1000', help='Dataset size/number of examples for these experiments')
+parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples taken when discretizing log likelihoods for these experiments")
+parser.add_argument('--SVI_opt_itrs', type=int, default = '500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
+
+arguments = parser.parse_args()
+n_trials = arguments.n_trials
+fldr = arguments.fldr
+plot_every = arguments.plot_every
+M = arguments.M
+N = arguments.N
+d = arguments.d
+proj_dim = arguments.proj_dim
+SVI_opt_itrs =  arguments.SVI_opt_itrs
 
 plot_reverse_kl = True
 trials = np.arange(1, n_trials + 1)
@@ -25,7 +40,7 @@ for i, nm in enumerate(nms):
   kl = []
   sz = []
   for tr in trials:
-    numTuple = (nm[0], str(d), str(tr))
+    numTuple = (nm[0], str(d), str(tr), str(N), str(proj_dim), str(SVI_opt_itrs))
     print(os.path.join(fldr, '_'.join(numTuple)+'.pk'))
     x_, mu0_, Sig0_, Sig_, mup_, Sigp_, w_, p_, muw_, Sigw_, rklw_, fklw_ = np.load(os.path.join(fldr, '_'.join(numTuple)+'.pk'), allow_pickle=True)
     if plot_reverse_kl:
