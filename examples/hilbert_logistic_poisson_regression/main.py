@@ -14,7 +14,7 @@ import mcmc
 
 parser = argparse.ArgumentParser(description="Runs Hilbert logistic or poisson regression (employing coreset contruction) on the specified dataset")
 parser.add_argument('model', type=str, choices=["lr","poiss"], help="The regression model to use. lr refers to logistic regression, and poiss refers to poisson regression.") #must be one of linear regression or poisson regression
-parser.add_argument('dnm', type=str, help="The name of the dataset on which to run regression")
+parser.add_argument('dnm', type=str, help="The name of the dataset on which to run regression") #examples: synth_lr, phishing, ds1, synth_poiss, biketrips, airportdelays, synth_poiss_large, biketrips_large, airportdelays_large
 parser.add_argument('anm', type=str, help="The algorithm to use for solving sparse non-negative least squares as part of Hilbert coreset construction - should be one of GIGA / FW / RND") #TODO: find way to make this help message autoupdate with new methods
 parser.add_argument('ID', type=int, help="The trial number - used to initialize random number generation (for replicability)")
 parser.add_argument("mcmc_samples", type=int, help="number of MCMC samples to take (we also take this many warmup steps before sampling)")
@@ -27,8 +27,6 @@ model = arguments.model
 mcmc_samples = arguments.mcmc_samples
 
 algdict = {'GIGA':bc.snnls.GIGA, 'FW':bc.snnls.FrankWolfe, 'RND':bc.snnls.UniformSampling}
-lrdnms = ['synth_lr', 'phishing', 'ds1', 'synth_lr_large', 'phishing_large', 'ds1_large']
-prdnms = ['synth_poiss', 'biketrips', 'airportdelays', 'synth_poiss_large', 'biketrips_large', 'airportdelays_large']
 if model=="lr":
   from model_lr import *
 elif model=="poiss":
