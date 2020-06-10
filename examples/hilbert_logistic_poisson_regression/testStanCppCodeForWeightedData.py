@@ -48,7 +48,7 @@ for i in range(len(idcs)):
     curX = np.append(curX, curX[toAdd], axis=0)
     curY = np.append(curY, curY[toAdd])
 samples_using_standard_stan_code = mcmc.sampler(dnm, curX, curY, mcmc_samples, stan_representation, seed = ID)
-#samples_using_code_for_weights = mcmc.sampler(dnm, curX, curY, mcmc_steps, stan_representation, weights=np.ones(curX.shape[0], dtype=int), seed=ID)
+
 relative_err = np.abs(np.linalg.norm(samples_using_code_for_weights - samples_using_standard_stan_code, axis=1)/np.linalg.norm(samples_using_standard_stan_code,axis=1))
 print("largest relative error between samples using code for weights and samples using standard stan code (should be 0): ")
 print(np.max(relative_err))
@@ -60,6 +60,4 @@ print("first quartile relative error")
 print(np.quantile(relative_err,.25))
 print("third quartile relative error")
 print(np.quantile(relative_err,.75))
-#print("largest sample using standard stan code (if the previous value was not 0, our implementation may still be valid - just with minor numerical differences - if the value here is much bigger): ")
-#print(np.max(samples_using_standard_stan_code))
 
