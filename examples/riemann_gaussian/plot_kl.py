@@ -11,7 +11,6 @@ plot_every=int(sys.argv[2])
 d=sys.argv[3]
 N=sys.argv[4]
 fldr=sys.argv[5]
-prfx=sys.argv[6]
 
 plot_reverse_kl = True
 trials = np.arange(1, n_trials + 1)
@@ -26,7 +25,7 @@ for i, nm in enumerate(nms):
   kl = []
   sz = []
   for tr in trials:
-    numTuple = (prfx, nm[0], str(d), str(tr))
+    numTuple = (nm[0], str(d), str(tr))
     print(os.path.join(fldr, '_'.join(numTuple)+'.pk'))
     x_, mu0_, Sig0_, Sig_, mup_, Sigp_, w_, p_, muw_, Sigw_, rklw_, fklw_ = np.load(os.path.join(fldr, '_'.join(numTuple)+'.pk'), allow_pickle=True)
     if plot_reverse_kl:

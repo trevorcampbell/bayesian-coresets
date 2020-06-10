@@ -174,7 +174,7 @@ for m in range(M+1):
 if not os.path.exists('results/'):
   os.mkdir('results')
 #f = open('results/results_'+nm+'_'+str(d)+'_'+'lr'+'_'+str(i0)+'_'+str(tr)+'.pk', 'wb')
-f = open('results/results_adaptr_'+nm+'_'+str(d)+'_'+str(tr)+'.pk', 'wb')
+f = open('results/'+nm+'_'+str(d)+'_'+str(tr)+'.pk', 'wb')
 res = (x, mu0, Sig0, Sig, mup, Sigp, w, p, muw, Sigw, rklw, fklw)
 pk.dump(res, f)
 f.close()
