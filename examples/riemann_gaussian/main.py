@@ -9,6 +9,12 @@ import bayesiancoresets as bc
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import model_gaussian as gaussian
 
+###########################################################
+###########################################################
+## Step 0: Define Parameters/Process Command Line arguments
+###########################################################
+###########################################################
+
 #TODO: make these optional command line args, and also incorporate into the names and saved data of experiment result files 
 BPSVI_opt_itrs = 500
 n_subsample_opt = None # 100
@@ -35,6 +41,12 @@ d = arguments.d
 proj_dim = arguments.proj_dim
 SVI_opt_itrs =  arguments.SVI_opt_itrs
 
+#######################################
+#######################################
+## Step 1: Generate a Synthetic Dataset
+#######################################
+#######################################
+
 mu0 = np.zeros(d)
 Sig0 = np.eye(d)
 Sig = np.eye(d)
@@ -55,8 +67,15 @@ mup, LSigp, LSigpInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x
 Sigp = LSigp.dot(LSigp.T)
 SigpInv = LSigpInv.dot(LSigpInv.T)
 
-#for the algorithm, use the trial # and name as seed
-np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+str(tr)])) % 2**32)
+#######################################
+#######################################
+## Step 2: Calculate Likelihoods/Projectors
+#######################################
+#######################################
+
+# for the algorithm, we could use the trial # and name as seed, but currently we do NOT do this 
+# (so that similar algorithms with the same trial num are more easily comparable)
+# np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+str(tr)])) % 2**32)
 
 #create the log_likelihood function
 print('Creating log-likelihood function')
@@ -115,24 +134,49 @@ rlst_w[rlst_idcs] = 2.*x.shape[0]/rlst_idcs.shape[0]*np.random.rand(rlst_idcs.sh
 prj_exact_realistic = GaussianProjector()
 prj_exact_realistic.update(2.*np.random.rand(x.shape[0]), x)
 
+print("Creating approximate projector for fairer evaluation of SVI-like approaches")
+#approximate log likelihood projection (TODO: add gradient)
+class ApproximateGaussianProjector(bc.Projector):
+  def project(self, pts, grad=False):
+    samples = np.random.multivariate_normal(self.muw, self.LSigw.dot(self.LSigw.T), d)
+    return log_likelihood(pts, samples)
+  def update(self, wts = None, pts = None):
+    if wts is None or pts is None or pts.shape[0] == 0:
+      wts = np.zeros(1)
+      pts = np.zeros((1, mu0.shape[0]))
+    self.muw, self.LSigw, self.LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
+
+prj_exact_approx = ApproximateGaussianProjector()
+prj_exact_approx.update(np.ones(x.shape[0]), x)
+
+#######################################
+#######################################
+## Step 3: Construct Coreset
+#######################################
+#######################################
+
 ##############################
 print('Creating coreset construction objects')
 #create coreset construction objects
 #bpsvi = bc.BatchPSVICoreset(x, GaussianProjector(), opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
-sparsevi = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
+sparsevi_exact = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
+sparsevi = bc.SparseVICoreset(x, ApproximateGaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
 giga_optimal = bc.HilbertCoreset(x, prj_optimal)
 giga_optimal_exact = bc.HilbertCoreset(x,prj_exact_optimal)
 giga_realistic = bc.HilbertCoreset(x,prj_realistic)
 giga_realistic_exact = bc.HilbertCoreset(x,prj_exact_realistic)
 unif = bc.UniformSamplingCoreset(x)
-hops = bc.HOPSCoreset(x, GaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
+hops_exact = bc.HOPSCoreset(x, GaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
+hops = bc.HOPSCoreset(x, ApproximateGaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
 
 algs = {#'BPSVI' : bpsvi,
+        'SVIEXACT': sparsevi_exact,
         'SVI': sparsevi, 
         'GIGAO': giga_optimal, 
         'GIGAR': giga_realistic, 
         'RAND': unif, 
-        'HOPS': hops}
+        'HOPS': hops,
+        'HOPSEXACT': hops_exact}
 alg = algs[nm]
 
 print('Building coreset')
@@ -159,6 +203,12 @@ else:
     wts, pts, _ = alg.get()
     w.append(wts)
     p.append(pts)
+
+##############################
+##############################
+## Step 4: Evaluate coreset
+##############################
+##############################
 
 # computing kld and saving results
 muw = np.zeros((M+1, mu0.shape[0]))

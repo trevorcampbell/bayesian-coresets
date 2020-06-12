@@ -29,7 +29,7 @@ SVI_opt_itrs =  arguments.SVI_opt_itrs
 
 plot_reverse_kl = True
 trials = np.arange(1, n_trials + 1)
-nms = [('RAND', 'Uniform'), ('GIGAO', 'GIGA(Optimal)'), ('GIGAR', "GIGA(Realistic)"), ("HOPS", "HOPS(No Optimize Call)")]#('SVI', 'SparseVI'),   ('RAND', 'Uniform'), ('GIGAO', 'GIGA (Optimal)'), ('GIGAR', 'GIGA (Realistic)')]
+nms = [('SVI', 'Sparse VI'), ('SVIEXACT', 'Sparse VI (Exact TSF)')]#, ('RAND', 'Uniform'), ('GIGAO', 'GIGA(Optimal)'), ('GIGAR', "GIGA(Realistic)"), ("HOPS", "HOPS(No Optimize Call)")]#('SVI', 'SparseVI'),   ('RAND', 'Uniform'), ('GIGAO', 'GIGA (Optimal)'), ('GIGAR', 'GIGA (Realistic)')]
 
 #plot the KL figure
 fig = bkp.figure(y_axis_type='log', plot_width=850, plot_height=850, x_axis_label='Coreset Size',
