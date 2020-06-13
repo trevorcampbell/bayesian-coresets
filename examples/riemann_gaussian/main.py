@@ -64,7 +64,7 @@ np.random.seed(int(tr))
 print('Computing true posterior')
 x = np.random.multivariate_normal(th, Sig, N)
 mup, LSigp, LSigpInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
-Sigp = LSigp.dot(LSigp.T)
+Sigp = LSigp.dot(LSigp.T) #TODO: if LSigp isn't symmetric for some parameter settings, verify this shouldn't be L.T.dot(L) instead of L.dot(L.T)
 SigpInv = LSigpInv.dot(LSigpInv.T)
 
 #######################################
@@ -138,16 +138,22 @@ print("Creating approximate projector for fairer evaluation of SVI-like approach
 #approximate log likelihood projection (TODO: add gradient)
 class ApproximateGaussianProjector(bc.Projector):
   def project(self, pts, grad=False):
-    samples = np.random.multivariate_normal(self.muw, self.LSigw.dot(self.LSigw.T), d)
-    return log_likelihood(pts, samples)
+    #TODO: find error in this approach
+    #take the likelihood of our pts according to our samples, using SigwInv and the pre-calculated log determinant of LSigw
+    return gaussian.log_likelihood(pts, self.samples, self.LSigwInv@self.LsigWinv.T, self.Ldet)
   def update(self, wts = None, pts = None):
     if wts is None or pts is None or pts.shape[0] == 0:
       wts = np.zeros(1)
       pts = np.zeros((1, mu0.shape[0]))
+    # TODO: find error in this reasoning
+    #calculate the mean and (cholesky decomposed) variance of pi hat, based on the weights we have and our original Sig0inv, Siginv
     self.muw, self.LSigw, self.LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
+    #pre-compute the log determinant of Lsigw (necessary for the likelihood calculation)
+    self.Ldet = np.sum(np.log(np.diag(self.LSigw)))
+    #use the same samples for all projections after a given update (so that we can compare projected coreset points log likelihoods with projected data point log likelihoods across the same set of samples)
+    self.samples = np.random.multivariate_normal(self.muw, self.Sigw.T @ self.Sigw, proj_dim) #not sure about sigw.T@sigw vs sigw @ sigw.T, but some empirical tests on small, non-diagonal examples encourage the former for sigw and the latter for sigwinv (and for this case, I think we're usually just dealing with diagonal matrices, where both choices are equivalent)
 
 prj_exact_approx = ApproximateGaussianProjector()
-prj_exact_approx.update(np.ones(x.shape[0]), x)
 
 #######################################
 #######################################

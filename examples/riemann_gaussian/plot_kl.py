@@ -9,6 +9,7 @@ from plotting import *
 
 parser = argparse.ArgumentParser(description="Plots Riemannian linear regression experiments")
 parser.add_argument('n_trials', type=int, help="This script will look for & plot experiments with trial IDs 1 through n_trials (inclusive)")
+parser.add_argument('names', type = str, nargs = '+', default = ["SVI", "RAND", "GIGAO", "GIGAR"], help = "a list of which algorithm names to plot results for (Examples: SVI / GIGAO / GIGAR / RAND)")
 parser.add_argument('--fldr', type=str, default="results/", help="This script will look for & plot experiments in this folder")
 parser.add_argument('--plot_every', type=int, default='1', help="Coarseness of the graph - will skip (plot_every-1) points between each plotted point")
 parser.add_argument('--d', type=int, default = '200', help="The dimension of the multivariate normal distribution used for these experiments")
@@ -16,9 +17,12 @@ parser.add_argument('--M', type=int, default='200', help='The desired maximum co
 parser.add_argument('--N', type=int, default='1000', help='Dataset size/number of examples for these experiments')
 parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples taken when discretizing log likelihoods for these experiments")
 parser.add_argument('--SVI_opt_itrs', type=int, default = '500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
+parser.add_argument('--fwd', action='store_const', const=True, default = False, help = 'If this flag is provided, will plot forward KL divergence instead of reverse KL divergence')
+
 
 arguments = parser.parse_args()
 n_trials = arguments.n_trials
+names = arguments.names
 fldr = arguments.fldr
 plot_every = arguments.plot_every
 M = arguments.M
@@ -27,9 +31,19 @@ d = arguments.d
 proj_dim = arguments.proj_dim
 SVI_opt_itrs =  arguments.SVI_opt_itrs
 
-plot_reverse_kl = True
+algs = {'SVIEXACT': 'Sparse VI (Exact TSF)',
+        'SVI': 'Sparse VI', 
+        'GIGAO': 'GIGA(Optimal)', 
+        'GIGAR': "GIGA(Realistic)", 
+        'RAND': "Uniform", 
+        'HOPS': "HOPS(No Optimize Call)",
+        'HOPSEXACT': "HHOPS (Exact tsf, no Optimize call)"}
+nms = []
+for name in names:
+  nms.append((name, algs[name]))
+
+plot_reverse_kl = not arguments.fwd
 trials = np.arange(1, n_trials + 1)
-nms = [('SVI', 'Sparse VI'), ('SVIEXACT', 'Sparse VI (Exact TSF)')]#, ('RAND', 'Uniform'), ('GIGAO', 'GIGA(Optimal)'), ('GIGAR', "GIGA(Realistic)"), ("HOPS", "HOPS(No Optimize Call)")]#('SVI', 'SparseVI'),   ('RAND', 'Uniform'), ('GIGAO', 'GIGA (Optimal)'), ('GIGAR', 'GIGA (Realistic)')]
 
 #plot the KL figure
 fig = bkp.figure(y_axis_type='log', plot_width=850, plot_height=850, x_axis_label='Coreset Size',
@@ -61,7 +75,7 @@ fig.legend.visible = True
 
 bkp.show(fig)
 #fig.output_backend = "svg"
-fldr_figs = 'figs'
-if not os.path.exists(fldr_figs):
-  os.mkdir(fldr_figs)
-export_png(fig, filename=os.path.join(fldr_figs, "d"+str(d)+"_KLDvsCstSize.png"), height=1500, width=1500)
+#fldr_figs = 'figs'
+#if not os.path.exists(fldr_figs):
+#  os.mkdir(fldr_figs)
+#export_png(fig, filename=os.path.join(fldr_figs, "d"+str(d)+"_KLDvsCstSize.png"), height=1500, width=1500)
