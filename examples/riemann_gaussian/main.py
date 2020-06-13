@@ -139,19 +139,23 @@ print("Creating approximate projector for fairer evaluation of SVI-like approach
 class ApproximateGaussianProjector(bc.Projector):
   def project(self, pts, grad=False):
     #TODO: find error in this approach
-    #take the likelihood of our pts according to our samples, using SigwInv and the pre-calculated log determinant of LSigw
-    return gaussian.log_likelihood(pts, self.samples, self.LSigwInv@self.LsigWinv.T, self.Ldet)
+    #take the likelihood of our pts according to our samples, using the log likelihood function established earlier
+    return log_likelihood(pts, self.samples)
   def update(self, wts = None, pts = None):
     if wts is None or pts is None or pts.shape[0] == 0:
       wts = np.zeros(1)
       pts = np.zeros((1, mu0.shape[0]))
     # TODO: find error in this reasoning
-    #calculate the mean and (cholesky decomposed) variance of pi hat, based on the weights we have and our original Sig0inv, Siginv
+    #[same as exact case] calculate the mean and (cholesky decomposed) variance of pi hat, based on the weights we have and our original Sig0inv, Siginv
     self.muw, self.LSigw, self.LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
-    #pre-compute the log determinant of Lsigw (necessary for the likelihood calculation)
-    self.Ldet = np.sum(np.log(np.diag(self.LSigw)))
-    #use the same samples for all projections after a given update (so that we can compare projected coreset points log likelihoods with projected data point log likelihoods across the same set of samples)
-    self.samples = np.random.multivariate_normal(self.muw, self.Sigw.T @ self.Sigw, proj_dim) #not sure about sigw.T@sigw vs sigw @ sigw.T, but some empirical tests on small, non-diagonal examples encourage the former for sigw and the latter for sigwinv (and for this case, I think we're usually just dealing with diagonal matrices, where both choices are equivalent)
+    #use the same samples for all projections after a given update (so that we can compare projected coreset point log likelihoods with projected data point log likelihoods across the same set of samples)
+    self.samples = np.random.multivariate_normal(self.muw, self.LSigw.T @ self.LSigw, proj_dim) #There may be a significant difference between using sigw.T@sigw vs sigw @ sigw.T, but some empirical tests on small, non-diagonal examples encourage the former for sigw and the latter for sigwinv (and for this case, We may just dealing with diagonal matrices, where both choices are equivalent)
+
+#list of what's been tried already (and documented to be unsuccessful - the KL divergence of approximate projection SVI approaches flattens by ~iteration 30) :
+# sampling using self.samples = np.random.multivariate_normal(self.muw, self.LSigw.T @ self.LSigw, proj_dim), with projection...
+#    1) using the log_likelihood function defined earlier
+#    2) using pi hat's variance for the log liklihood: gaussian.log_likelihood(pts, self.samples, self.LSigwInv@self.LsigWinv.T, self.Ldet) where self.Ldet = np.sum(np.log(np.diag(self.LSigw)))
+
 
 prj_exact_approx = ApproximateGaussianProjector()
 
