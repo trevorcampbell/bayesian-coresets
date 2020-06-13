@@ -26,7 +26,7 @@ private:
         std::vector<int> y;
         //
         //WEIGHTS MODIFICATION
-        std::vector<int> w;
+        std::vector<double> w;
         //
         //
         matrix_d x;
@@ -90,10 +90,8 @@ public:
             }
             //
             //WEIGHTS MODIFICATION
-            current_statement_begin__ = 6;
-            context__.validate_dims("data initialization", "w", "int", context__.to_vec(n));
-            //for this specific example, this is how w should behave (and doing this instead of the commented out code seems to give us the same error, so at least in this case this block of code seems to be performing properly
-            w = std::vector<int>(n, int(2));
+            context__.validate_dims("data initialization", "w", "double", context__.to_vec(n));
+            w = std::vector<double>(n, int(0));
             vals_r__ = context__.vals_r("w");
             pos__ = 0;
             size_t w_k_0_max__ = n;
@@ -106,7 +104,7 @@ public:
             }
             //
             //
-            current_statement_begin__ = 7;//6;
+            current_statement_begin__ = 6;
             validate_non_negative_index("x", "n", n);
             validate_non_negative_index("x", "d", d);
             context__.validate_dims("data initialization", "x", "matrix_d", context__.to_vec(n,d));
