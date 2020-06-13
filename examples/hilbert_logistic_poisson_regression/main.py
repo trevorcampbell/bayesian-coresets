@@ -67,6 +67,7 @@ full_samples = mcmc.sampler(dnm, X, Y, mcmc_samples, stan_representation, cache_
 full_samples = np.hstack((full_samples[:, 1:], full_samples[:, 0][:,np.newaxis]))
 
 cputs = np.zeros(Ms.shape[0])
+mcmc_time_per_itr = np.zeros(Ms.shape[0])
 csizes = np.zeros(Ms.shape[0])
 Fs = np.zeros(Ms.shape[0])
 
@@ -94,14 +95,16 @@ for m in range(Ms.shape[0]):
   curY = Y[idcs]
   t0 = time.process_time()
   mcmc.sampler(dnm, curX, curY, mcmc_samples, stan_representation, weights=wts)
-  t_alg_mcmc = time.process_time()-t0   
+  t_alg_mcmc = time.process_time()-t0 
+  t_alg_mcmc_per_iter = t_alg_mcmc/(mcmc_samples*2) #if we change the number of burn_in steps to differ from the number of actual samples we take, we might need to reconsider this line  
 
   print('M = ' + str(Ms[m]) + ': CPU times')
-  cputs[m] = t_laplace + t_setup + t_alg #+ t_alg_mcmc
+  cputs[m] = t_laplace + t_setup + t_alg
+  mcmc_time_per_itr[m] = t_alg_mcmc_per_iter
   print('M = ' + str(Ms[m]) + ': coreset sizes')
   csizes[m] = wts.shape[0]
   print('M = ' + str(Ms[m]) + ': F norms')
   gcs = np.array([ grad_th_log_joint(Z[idcs, :], full_samples[i, :], wts) for i in range(full_samples.shape[0]) ])
   gfs = np.array([ grad_th_log_joint(Z, full_samples[i, :], np.ones(Z.shape[0])) for i in range(full_samples.shape[0]) ])
   Fs[m] = (((gcs - gfs)**2).sum(axis=1)).mean()
-np.savez_compressed('results/'+dnm+'_'+anm+'_results_'+str(ID)+'.npz', Ms=Ms, Fs=Fs, cputs=cputs, csizes=csizes)
+np.savez_compressed('results/'+dnm+'_'+anm+'_results_'+str(ID)+'.npz', Ms=Ms, Fs=Fs, cputs=cputs, mcmc_time_per_itr = mcmc_time_per_itr, csizes=csizes)
