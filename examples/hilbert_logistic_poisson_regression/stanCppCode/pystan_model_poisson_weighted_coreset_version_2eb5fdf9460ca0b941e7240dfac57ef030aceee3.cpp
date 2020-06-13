@@ -249,11 +249,9 @@ public:
             //this is the original code:
             //T__ a = poisson_log<propto__>(y, f);
             //This is the modified code:
-            T__ sum = 0.0;
             for (size_t j_1__ = 0; j_1__ < f_j_1_max__ ; ++j_1__) {
-               sum += w[j_1__]*poisson_log<propto__>(y[j_1__], f(j_1__));
+               lp_accum__.add(w[j_1__]*poisson_log<propto__>(y[j_1__], f(j_1__)));
             }
-            lp_accum__.add(sum);
             //
             //std::cout << "you can place a debugging message using this format, but it will be printed repeatedly because this function is called many times";
             //
