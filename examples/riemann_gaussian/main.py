@@ -149,7 +149,7 @@ class ApproximateGaussianProjector(bc.Projector):
     #[same as exact case] calculate the mean and (cholesky decomposed) variance of pi hat, based on the weights we have and our original Sig0inv, Siginv
     self.muw, self.LSigw, self.LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
     #use the same samples for all projections after a given update (so that we can compare projected coreset point log likelihoods with projected data point log likelihoods across the same set of samples)
-    self.samples = np.random.multivariate_normal(self.muw, self.LSigw.T @ self.LSigw, proj_dim) #There may be a significant difference between using sigw.T@sigw vs sigw @ sigw.T, but some empirical tests on small, non-diagonal examples encourage the former for sigw and the latter for sigwinv (and for this case, We may just dealing with diagonal matrices, where both choices are equivalent)
+    self.samples = np.random.multivariate_normal(self.muw, self.LSigw @ self.LSigw.T, proj_dim) #There may be a significant difference between using sigw.T@sigw vs sigw @ sigw.T, but some empirical tests on small, non-diagonal examples encourage the former for sigw and the latter for sigwinv (and for this case, We may just dealing with diagonal matrices, where both choices are equivalent)
 
 #list of what's been tried already (and documented to be unsuccessful - the KL divergence of approximate projection SVI approaches flattens by ~iteration 30) :
 # sampling using self.samples = np.random.multivariate_normal(self.muw, self.LSigw.T @ self.LSigw, proj_dim), with projection...
