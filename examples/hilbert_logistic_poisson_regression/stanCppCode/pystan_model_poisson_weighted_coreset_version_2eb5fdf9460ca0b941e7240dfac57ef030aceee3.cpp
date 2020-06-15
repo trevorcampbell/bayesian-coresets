@@ -26,7 +26,7 @@ private:
         std::vector<int> y;
         //
         //WEIGHTS MODIFICATION
-        std::vector<int> w;
+        std::vector<double> w;
         //
         //
         matrix_d x;
@@ -90,10 +90,8 @@ public:
             }
             //
             //WEIGHTS MODIFICATION
-            current_statement_begin__ = 6;
-            context__.validate_dims("data initialization", "w", "int", context__.to_vec(n));
-            //for this specific example, this is how w should behave (and doing this instead of the commented out code seems to give us the same error, so at least in this case this block of code seems to be performing properly
-            w = std::vector<int>(n, int(2));
+            context__.validate_dims("data initialization", "w", "double", context__.to_vec(n));
+            w = std::vector<double>(n, int(0));
             vals_r__ = context__.vals_r("w");
             pos__ = 0;
             size_t w_k_0_max__ = n;
@@ -106,7 +104,7 @@ public:
             }
             //
             //
-            current_statement_begin__ = 7;//6;
+            current_statement_begin__ = 6;
             validate_non_negative_index("x", "n", n);
             validate_non_negative_index("x", "d", d);
             context__.validate_dims("data initialization", "x", "matrix_d", context__.to_vec(n,d));
@@ -251,11 +249,9 @@ public:
             //this is the original code:
             //T__ a = poisson_log<propto__>(y, f);
             //This is the modified code:
-            T__ sum = 0.0;
             for (size_t j_1__ = 0; j_1__ < f_j_1_max__ ; ++j_1__) {
-               sum += w[j_1__]*poisson_log<propto__>(y[j_1__], f(j_1__));
+               lp_accum__.add(w[j_1__]*poisson_log<propto__>(y[j_1__], f(j_1__)));
             }
-            lp_accum__.add(sum);
             //
             //std::cout << "you can place a debugging message using this format, but it will be printed repeatedly because this function is called many times";
             //
