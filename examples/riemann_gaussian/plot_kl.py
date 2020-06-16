@@ -31,13 +31,13 @@ d = arguments.d
 proj_dim = arguments.proj_dim
 SVI_opt_itrs =  arguments.SVI_opt_itrs
 
-algs = {'SVIEXACT': 'Sparse VI (Exact TSF)',
+algs = {'SVIEXACT': 'Sparse VI (Exact Tangent Space)',
         'SVI': 'Sparse VI', 
         'GIGAO': 'GIGA(Optimal)', 
         'GIGAR': "GIGA(Realistic)", 
         'RAND': "Uniform", 
-        'HOPS': "HOPS(No Optimize Call)",
-        'HOPSEXACT': "HHOPS (Exact tsf, no Optimize call)"}
+        'HOPS': "HOPS",
+        'HOPSEXACT': "HOPS (Exact Tangent Space)"}
 nms = []
 for name in names:
   nms.append((name, algs[name]))

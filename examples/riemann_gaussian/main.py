@@ -4,6 +4,7 @@ import pickle as pk
 import os, sys
 from scipy.stats import multivariate_normal
 import argparse
+import copy
 #make it so we can import models/etc from parent folder
 import bayesiancoresets as bc
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
@@ -180,7 +181,7 @@ unif = bc.UniformSamplingCoreset(x)
 hops_exact = bc.HOPSCoreset(x, GaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
 hops = bc.HOPSCoreset(x, ApproximateGaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
 
-algs = {#'BPSVI' : bpsvi,
+algs = {
         'SVIEXACT': sparsevi_exact,
         'SVI': sparsevi, 
         'GIGAO': giga_optimal, 
@@ -211,7 +212,23 @@ else:
     print('trial: ' + str(tr) +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
     alg.build(1)
     #store weights/pts
-    wts, pts, _ = alg.get()
+    if (nm=="HOPSEXACT" or nm=="HOPS"):
+      print("simulating results if we optimize after this iteration")
+      algCopy = copy.deepcopy(alg)
+      algCopy.optimize()
+      wts, pts, _ = algCopy.get()
+    else:
+      if nm=="RAND":
+        print("simulating results if the random subsample were optimized with the same rigour as SVI")
+        polishingAlg = algs["SVI"]
+        polishingAlg.wts = alg.wts
+        polishingAlg.pts = alg.pts
+        polishingAlg.idcs = alg.idcs
+        polishingAlg.optimize()
+        wts,pts, _ = polishingAlg.get()
+      else :
+        wts, pts, _ = alg.get()
+
     w.append(wts)
     p.append(pts)
 
