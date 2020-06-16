@@ -140,7 +140,8 @@ class ApproximateGaussianProjector(bc.Projector):
   def project(self, pts, grad=False):
     #TODO: find error in this approach
     #take the likelihood of our pts according to our samples, using the log likelihood function established earlier
-    return log_likelihood(pts, self.samples)
+    ll = log_likelihood(pts, self.samples)
+    return ll - ll.mean(axis= 1)[:, np.newaxis]
   def update(self, wts = None, pts = None):
     if wts is None or pts is None or pts.shape[0] == 0:
       wts = np.zeros(1)
