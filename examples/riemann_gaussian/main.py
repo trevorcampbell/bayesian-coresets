@@ -64,8 +64,8 @@ np.random.seed(int(tr))
 print('Computing true posterior')
 x = np.random.multivariate_normal(th, Sig, N)
 mup, LSigp, LSigpInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
-Sigp = LSigp.dot(LSigp.T) #TODO: if LSigp isn't symmetric for some parameter settings, verify this shouldn't be L.T.dot(L) instead of L.dot(L.T)
-SigpInv = LSigpInv.dot(LSigpInv.T)
+Sigp = LSigp.dot(LSigp.T)
+SigpInv = LSigpInv.T.dot(LSigpInv)
 
 #######################################
 #######################################
@@ -230,7 +230,7 @@ for m in range(M+1):
   muw[m, :], LSigw, LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, p[m], w[m])
   Sigw[m, :, :] = LSigw.dot(LSigw.T)
   rklw[m] = gaussian.KL(muw[m,:], Sigw[m,:,:], mup, SigpInv)
-  fklw[m] = gaussian.KL(mup, Sigp, muw[m,:], LSigwInv.dot(LSigwInv.T))
+  fklw[m] = gaussian.KL(mup, Sigp, muw[m,:], LSigwInv.T.dot(LSigwInv))
 
 if not os.path.exists('results/'):
   os.mkdir('results')
