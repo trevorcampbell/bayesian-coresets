@@ -208,7 +208,7 @@ t_build = 0
 
 for m in range(1, M+1):
   print('trial: ' + str(tr) +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
-  if nm == "HOPS_full_scaling" or "HOPS_full_scaling_exact":
+  if nm == "HOPS_full_scaling" or nm == "HOPS_full_scaling_exact":
     alg.reset()
     t_prebuild = time.process_time()
     alg.build(m)
@@ -219,13 +219,12 @@ for m in range(1, M+1):
     t_build += time.process_time() - t_prebuild
   #store weights/pts
   if (nm=="HOPSEXACT" or nm=="HOPS" or nm == "HOPS_full_scaling" or nm == "HOPS_full_scaling_exact"):
-    # print("simulating results if we optimize after this iteration")
-    # algCopy = copy.deepcopy(alg)
+    print("simulating results if we optimize after this iteration")
+    algCopy = copy.deepcopy(alg)
     t_pre_opt = time.process_time()
-    # algCopy.optimize()
+    algCopy.optimize()
     t_opt = time.process_time() - t_pre_opt
-    wts, pts, _ = alg.get()
-    # wts, pts, _ = algCopy.get()
+    wts, pts, _ = algCopy.get()
   else:
     if optimizing:
       print("simulating results if the coreset were optimized with the same rigour as SVI")
