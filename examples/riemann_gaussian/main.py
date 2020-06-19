@@ -261,7 +261,7 @@ for m in range(M+1):
 if not os.path.exists('results/'):
   os.mkdir('results')
 #f = open('results/results_'+nm+'_'+str(d)+'_'+'lr'+'_'+str(i0)+'_'+str(tr)+'.pk', 'wb')
-f = open('results/'+nm+'_'+str(d)+'_'+str(tr)+'_'+str(N)+'_'+str(proj_dim)+'_'+str(SVI_opt_itrs)+str(optimizing)+'.pk', 'wb')
+f = open('results/'+nm+'_'+str(d)+'_'+str(tr)+'_'+str(N)+'_'+str(proj_dim)+'_'+str(SVI_opt_itrs)+'_' + str(optimizing)+'.pk', 'wb')
 res = (x, mu0, Sig0, Sig, mup, Sigp, w, p, muw, Sigw, rklw, fklw, cputs)
 pk.dump(res, f)
 f.close()
