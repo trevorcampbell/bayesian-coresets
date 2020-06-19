@@ -24,14 +24,15 @@ BPSVI_step_sched = lambda m: lambda i : (-0.005*m+1.005)/(1+i) # linear interpol
 SVI_step_sched = lambda i : 1./(1+i)
 
 parser = argparse.ArgumentParser(description="Runs Riemannian linear regression (employing coreset contruction) on the specified dataset")
-parser.add_argument('tr', type=int, help="The trial number - used to initialize random number generation (for replicability)")
 parser.add_argument('nm', type=str, help="The name of the coreset construction algorithm to use (examples: SVI / GIGAO / GIGAR / RAND / HOPS)")
+parser.add_argument('tr', type=int, help="The trial number - used to initialize random number generation (for replicability)")
 
 parser.add_argument('--d', type=int, default = '200', help="The dimension of the multivariate normal distribution to use for this experiment")
 parser.add_argument('--M', type=int, default='200', help='Desired maximum coreset size')
 parser.add_argument('--N', type=int, default='1000', help='Dataset size/number of examples')
 parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples to take when discretizing log likelihoods")
 parser.add_argument('--SVI_opt_itrs', type=int, default = '500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
+parser.add_argument('--optimizing', default = False, action = 'store_const', const = True, help = "If this flag is present, records the KL divergence after running SVI's optimization method on the coreset, instead of using the KL divergence on the coreset as is")
 
 arguments = parser.parse_args()
 nm = arguments.nm
@@ -41,6 +42,7 @@ N = arguments.N
 d = arguments.d
 proj_dim = arguments.proj_dim
 SVI_opt_itrs =  arguments.SVI_opt_itrs
+optimizing = arguments.optimizing
 
 #######################################
 #######################################
@@ -180,6 +182,8 @@ giga_realistic_exact = bc.HilbertCoreset(x,prj_exact_realistic)
 unif = bc.UniformSamplingCoreset(x)
 hops_exact = bc.HOPSCoreset(x, GaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
 hops = bc.HOPSCoreset(x, ApproximateGaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
+hops_full_scaling = bc.HOPSCoreset(x, ApproximateGaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched, scale_tempering_from_0_to_1=True)
+hops_full_scaling_exact = bc.HOPSCoreset(x, GaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched, scale_tempering_from_0_to_1=True)
 
 algs = {
         'SVIEXACT': sparsevi_exact,
@@ -188,7 +192,9 @@ algs = {
         'GIGAR': giga_realistic, 
         'RAND': unif, 
         'HOPS': hops,
-        'HOPSEXACT': hops_exact}
+        'HOPSEXACT': hops_exact,
+        'HOPS_full_scaling': hops_full_scaling,
+        'HOPS_full_scaling_exact': hops_full_scaling_exact}
 alg = algs[nm]
 
 print('Building coreset')
@@ -200,37 +206,34 @@ def build_for_m(m): # auxiliary function for parallelizing BPSVI experiment
   alg.build(1, m)
   return alg.get()
 
-if nm=="BPSVI": #parallelize over batch pseudocoreset sizes
-  from multiprocessing import Pool
-  pool = Pool(processes=64)
-  res = pool.map(build_for_m, range(1, M+1))
-  for wts, pts, _ in res:
-    w.append(wts)
-    p.append(pts)
-else:
-  for m in range(1, M+1):
-    print('trial: ' + str(tr) +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
-    alg.build(1)
-    #store weights/pts
-    if (nm=="HOPSEXACT" or nm=="HOPS"):
-      print("simulating results if we optimize after this iteration")
-      algCopy = copy.deepcopy(alg)
-      algCopy.optimize()
-      wts, pts, _ = algCopy.get()
-    else:
-      if nm=="RAND":
-        print("simulating results if the random subsample were optimized with the same rigour as SVI")
-        polishingAlg = algs["SVI"]
-        polishingAlg.wts = alg.wts
-        polishingAlg.pts = alg.pts
-        polishingAlg.idcs = alg.idcs
-        polishingAlg.optimize()
-        wts,pts, _ = polishingAlg.get()
-      else :
-        wts, pts, _ = alg.get()
 
-    w.append(wts)
-    p.append(pts)
+for m in range(1, M+1):
+  print('trial: ' + str(tr) +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
+  if nm == "HOPS_full_scaling" or "HOPS_full_scaling_exact":
+    alg.reset()
+    alg.build(m)
+  else:
+    alg.build(1)
+  #store weights/pts
+  if (nm=="HOPSEXACT" or nm=="HOPS" or nm == "HOPS_full_scaling" or nm == "HOPS_full_scaling_exact"):
+    print("simulating results if we optimize after this iteration")
+    algCopy = copy.deepcopy(alg)
+    algCopy.optimize()
+    wts, pts, _ = algCopy.get()
+  else:
+    if optimizing:
+      print("simulating results if the coreset were optimized with the same rigour as SVI")
+      polishingAlg = algs["SVI"]
+      polishingAlg.wts = alg.wts
+      polishingAlg.pts = alg.pts
+      polishingAlg.idcs = alg.idcs
+      polishingAlg.optimize()
+      wts,pts, _ = polishingAlg.get()
+    else :
+      wts, pts, _ = alg.get()
+
+  w.append(wts)
+  p.append(pts)
 
 ##############################
 ##############################

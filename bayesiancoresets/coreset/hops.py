@@ -10,14 +10,15 @@ from ..util.opt import nn_opt
 from .coreset import Coreset
 
 class HOPSCoreset(Coreset):
-  def __init__(self, data, ll_projector, n_subsample_select=None, n_subsample_opt=None, opt_itrs=100, step_sched=lambda i : 1./(1.+i), **kw): 
+  def __init__(self, data, ll_projector, n_subsample_select=None, n_subsample_opt=None, opt_itrs=100, step_sched=lambda i : 1./(1.+i), scale_tempering_from_0_to_1 = False, **kw): 
     self.data = data
     self.ll_projector = ll_projector
     self.n_subsample_select = None if n_subsample_select is None else min(data.shape[0], n_subsample_select)
     self.n_subsample_opt = None if n_subsample_opt is None else min(data.shape[0], n_subsample_opt)
     self.step_sched = step_sched
     self.opt_itrs = opt_itrs
-    self.cur_itrs = 1
+    self.iteration_number = 1 #(if scale_tempering_from_0_to_1 is False) tracks how many iterations have been performed, to appropriately scale the tempering
+    self.scale_tempering_from_0_to_1 = scale_tempering_from_0_to_1
     super().__init__(**kw)
 
   def _build(self, itrs):
@@ -25,8 +26,15 @@ class HOPSCoreset(Coreset):
       #search for the next best point
       self._select()
       #update the weights (using a faster heuristic rather than a full optimization)
-      self._hop(self.cur_itrs)
-      self.cur_itrs += 1 
+      if self.scale_tempering_from_0_to_1:
+        #(assumes that _build is only called once, with "itrs" equal to the maximum allowable coreset size)
+        #we want to target linearly scaling temperings of our coreset (up to 1, skipping a scaling of 0)
+        tempering = np.linspace(0,1,itrs+1)[i+1]
+      else:
+        # scale the next hop by the current iteration count relative to the full dataset (but make sure we end at 1)
+        tempering = self.iteration_number/self.data.shape[0]
+        self.iteration_number += 1 
+      self._hop(tempering)
 
   def _get_projection(self, n_subsample, w, p):
     #update the projector
@@ -79,10 +87,10 @@ class HOPSCoreset(Coreset):
   # Coreset weights determine the distribution from which we sample when approximating the difference between the true posterior and our current coreset, 
   # and also determine the difference between the true posterior and our current coreset (obviously). We want something reasonably accurate to the true posterior, as well as to the global optimum we could get with just these weights,
   # but also we want to calculate this quickly and with stability (we don't want our coreset weights to be too sensitive to future changes)
-  def _hop(self, iter):
+  def _hop(self, tempering):
     #currently, our idea is to target a tempered version of the true posterior, and solve this problem via sparse non-negative least squares
     vecs, sum_scaling, sub_idcs, corevecs = self._get_projection(self.n_subsample_opt, self.wts, self.pts) #alternatively, we could use the same projection as we used in select
-    tempered_posterior = iter/self.data.shape[0] * sum_scaling *vecs.sum(axis=0)
+    tempered_posterior = tempering * sum_scaling *vecs.sum(axis=0)
     self.wts = nnls(corevecs.T, tempered_posterior.T, maxiter = 100*vecs.shape[1])[0]
 
   #at the very end, after having selected all our coreset points, we can do a more rigorous optimization step for the weights
