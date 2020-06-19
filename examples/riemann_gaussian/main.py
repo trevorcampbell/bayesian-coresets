@@ -18,10 +18,7 @@ import model_gaussian as gaussian
 ###########################################################
 
 #TODO: make these optional command line args, and also incorporate into the names and saved data of experiment result files 
-BPSVI_opt_itrs = 500
-n_subsample_opt = None # 100
 pihat_noise =0.75
-BPSVI_step_sched = lambda m: lambda i : (-0.005*m+1.005)/(1+i) # linear interpolation giving i0=1 at m=1 and i0=0.005 at m=200 
 SVI_step_sched = lambda i : 1./(1+i)
 
 parser = argparse.ArgumentParser(description="Runs Riemannian linear regression (employing coreset contruction) on the specified dataset")
@@ -33,7 +30,7 @@ parser.add_argument('--M', type=int, default='200', help='Desired maximum corese
 parser.add_argument('--N', type=int, default='1000', help='Dataset size/number of examples')
 parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples to take when discretizing log likelihoods")
 parser.add_argument('--SVI_opt_itrs', type=int, default = '500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
-parser.add_argument('--optimizing', default = False, action = 'store_const', const = True, help = "If this flag is present, records the KL divergence after running SVI's optimization method on the coreset, instead of using the KL divergence on the coreset as is")
+parser.add_argument('--optimizing', default = False, action = 'store_const', const = True, help = "If this flag is present, records the KL divergence after running HOP's optimization method on the coreset, instead of using the KL divergence on the coreset as is.")
 
 arguments = parser.parse_args()
 nm = arguments.nm
@@ -173,7 +170,6 @@ prj_exact_approx = ApproximateGaussianProjector()
 ##############################
 print('Creating coreset construction objects')
 #create coreset construction objects
-#bpsvi = bc.BatchPSVICoreset(x, GaussianProjector(), opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
 sparsevi_exact = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
 sparsevi = bc.SparseVICoreset(x, ApproximateGaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
 giga_optimal = bc.HilbertCoreset(x, prj_optimal)
@@ -186,8 +182,7 @@ hops = bc.HOPSCoreset(x, ApproximateGaussianProjector(), opt_itrs = SVI_opt_itrs
 hops_full_scaling = bc.HOPSCoreset(x, ApproximateGaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched, scale_tempering_from_0_to_1=True)
 hops_full_scaling_exact = bc.HOPSCoreset(x, GaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched, scale_tempering_from_0_to_1=True)
 
-algs = {
-        'SVIEXACT': sparsevi_exact,
+algs = {'SVIEXACT': sparsevi_exact,
         'SVI': sparsevi, 
         'GIGAO': giga_optimal, 
         'GIGAR': giga_realistic, 
@@ -217,18 +212,19 @@ for m in range(1, M+1):
     t_prebuild = time.process_time()
     alg.build(1)
     t_build += time.process_time() - t_prebuild
-  #store weights/pts
-  if (nm=="HOPSEXACT" or nm=="HOPS" or nm == "HOPS_full_scaling" or nm == "HOPS_full_scaling_exact"):
-    print("simulating results if we optimize after this iteration")
-    algCopy = copy.deepcopy(alg)
-    t_pre_opt = time.process_time()
-    algCopy.optimize()
-    t_opt = time.process_time() - t_pre_opt
-    wts, pts, _ = algCopy.get()
-  else:
-    if optimizing:
-      print("simulating results if the coreset were optimized with the same rigour as SVI")
-      polishingAlg = algs["SVI"]
+  if optimizing:
+    #if algorithm is in the HOPS family, we should optimize using the algorithm's own optimize() method (making sure that we don't alter the state of the coreset for the next iteration)
+    if (nm=="HOPSEXACT" or nm=="HOPS" or nm == "HOPS_full_scaling" or nm == "HOPS_full_scaling_exact"):
+      print("simulating results if we optimize after this iteration")
+      algCopy = copy.deepcopy(alg)
+      t_pre_opt = time.process_time()
+      algCopy.optimize()
+      t_opt = time.process_time() - t_pre_opt
+      wts, pts, _ = algCopy.get()
+    else:
+      #otherwise, create a HOPS algorithm, copy over the coreset information, and run optimize with that algorithm
+      print("simulating results if the coreset were optimized with the HOPS optimization function")
+      polishingAlg = algs["HOPS"]
       polishingAlg.wts = alg.wts
       polishingAlg.pts = alg.pts
       polishingAlg.idcs = alg.idcs
@@ -236,10 +232,11 @@ for m in range(1, M+1):
       polishingAlg.optimize()
       t_opt = time.process_time() - t_pre_opt
       wts,pts, _ = polishingAlg.get()
-    else :
-      wts, pts, _ = alg.get()
-      t_opt = 0
+  else:
+    wts, pts, _ = alg.get()
+    t_opt = 0
 
+  #store weights/pts/runtime
   w.append(wts)
   p.append(pts)
   cputs.append(t_build + t_opt)
@@ -264,7 +261,7 @@ for m in range(M+1):
 if not os.path.exists('results/'):
   os.mkdir('results')
 #f = open('results/results_'+nm+'_'+str(d)+'_'+'lr'+'_'+str(i0)+'_'+str(tr)+'.pk', 'wb')
-f = open('results/'+nm+'_'+str(d)+'_'+str(tr)+'_'+str(N)+'_'+str(proj_dim)+'_'+str(SVI_opt_itrs)+'.pk', 'wb')
+f = open('results/'+nm+'_'+str(d)+'_'+str(tr)+'_'+str(N)+'_'+str(proj_dim)+'_'+str(SVI_opt_itrs)+str(optimizing)'.pk', 'wb')
 res = (x, mu0, Sig0, Sig, mup, Sigp, w, p, muw, Sigw, rklw, fklw, cputs)
 pk.dump(res, f)
 f.close()

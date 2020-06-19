@@ -22,6 +22,7 @@ parser.add_argument('--N', type=int, default='1000', help='Dataset size/number o
 parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples taken when discretizing log likelihoods for these experiments")
 parser.add_argument('--SVI_opt_itrs', type=int, default = '500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
 parser.add_argument('--fwd', action='store_const', const=True, default = False, help = 'If this flag is provided, will plot forward KL divergence instead of reverse KL divergence')
+parser.add_argument('--optimizing', action='store_const', const = True, default= False, help = 'If this flag is provided, plots results for algorithms that have been optimized by the HOPS optimize() function after the coreset was constructed')
 
 arguments = parser.parse_args()
 trials = np.arange(1, arguments.n_trials + 1) if arguments.n_trials else arguments.seeds
@@ -34,6 +35,7 @@ d = arguments.d
 proj_dim = arguments.proj_dim
 SVI_opt_itrs =  arguments.SVI_opt_itrs
 fwd = arguments.fwd
+optimizing = arguments.optimizing
 
 algs = {'SVIEXACT': 'Sparse VI (Exact Tangent Space)',
         'SVI': 'Sparse VI', 
@@ -57,7 +59,7 @@ for i, nm in enumerate(nms):
   kl = []
   sz = []
   for tr in trials:
-    numTuple = (nm[0], str(d), str(tr), str(N), str(proj_dim), str(SVI_opt_itrs))
+    numTuple = (nm[0], str(d), str(tr), str(N), str(proj_dim), str(SVI_opt_itrs), str(optimizing))
     print(os.path.join(fldr, '_'.join(numTuple)+'.pk'))
     x_, mu0_, Sig0_, Sig_, mup_, Sigp_, w_, p_, muw_, Sigw_, rklw_, fklw_, cputs_ = np.load(os.path.join(fldr, '_'.join(numTuple)+'.pk'), allow_pickle=True)
     if fwd:
