@@ -59,9 +59,9 @@ for i, nm in enumerate(nms):
   kl = []
   sz = []
   for tr in trials:
-    numTuple = (nm[0], str(d), str(tr), str(N), str(proj_dim), str(SVI_opt_itrs), str(optimizing))
+    numTuple = (nm[0], "tr="+str(tr), "N="+str(N), "d="+str(d), "proj_dim="+str(proj_dim), "optimizing="+str(optimizing), "SVI_opt_itrs="+str(SVI_opt_itrs))
     print(os.path.join(fldr, '_'.join(numTuple)+'.pk'))
-    x_, mu0_, Sig0_, Sig_, mup_, Sigp_, w_, p_, muw_, Sigw_, rklw_, fklw_, cputs_ = np.load(os.path.join(fldr, '_'.join(numTuple)+'.pk'), allow_pickle=True)
+    x_, mu0_, Sig0_, Sig_, mup_, Sigp_, w_, p_, muw_, Sigw_, rklw_, fklw_, cputs_, tr_, N_, d_, proj_dim_, optimizing_, SVI_opt_itrs_, SVI_step_sched_, pihat_noise_ = np.load(os.path.join(fldr, '_'.join(numTuple)+'.pk'), allow_pickle=True)
     if fwd:
       kl.append(fklw_[::plot_every])
     else:
