@@ -10,6 +10,7 @@ import time
 import bayesiancoresets as bc
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import model_gaussian as gaussian
+import hashlib
 
 ###########################################################
 ###########################################################
@@ -262,8 +263,9 @@ for m in range(M+1):
 
 if not os.path.exists('results/'):
   os.mkdir('results')
-#f = open('results/results_'+nm+'_'+str(d)+'_'+'lr'+'_'+str(i0)+'_'+str(tr)+'.pk', 'wb')
-f = open('results/'+nm+'_tr='+str(tr)+'_N='+str(N)+'_d='+str(d)+'_proj_dim='+str(proj_dim)+'_optimizing='+str(optimizing)+'_SVI_opt_itrs='+str(SVI_opt_itrs)+'.pk', 'wb')
+#make hash of step schedule so it can be encoded in the file name:
+SVI_step_sched_hash_sha1 = hashlib.sha1(arguments.SVI_step_sched.encode('utf-8')).hexdigest()
+f = open('results/'+nm+'_tr='+str(tr)+'_N='+str(N)+'_d='+str(d)+'_proj_dim='+str(proj_dim)+'_optimizing='+str(optimizing)+'_SVI_opt_itrs='+str(SVI_opt_itrs)+'_'+'SVI_step_sched_hash_sha1='+SVI_step_sched_hash_sha1+'_pihat_noise='+str(pihat_noise)+'.pk', 'wb')
 res = (x, mu0, Sig0, Sig, mup, Sigp, w, p, muw, Sigw, rklw, fklw, cputs, tr, N, d, proj_dim, optimizing, SVI_opt_itrs, arguments.SVI_step_sched, pihat_noise)
 pk.dump(res, f)
 f.close()

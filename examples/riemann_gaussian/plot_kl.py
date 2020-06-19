@@ -3,6 +3,7 @@ from bokeh.io import export_png, export_svgs
 import numpy as np
 import sys, os
 import argparse
+import hashlib
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
@@ -23,6 +24,8 @@ parser.add_argument('--proj_dim', type=int, default = '100', help = "The number 
 parser.add_argument('--SVI_opt_itrs', type=int, default = '500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
 parser.add_argument('--fwd', action='store_const', const=True, default = False, help = 'If this flag is provided, will plot forward KL divergence instead of reverse KL divergence')
 parser.add_argument('--optimizing', action='store_const', const = True, default= False, help = 'If this flag is provided, plots results for algorithms that have been optimized by the HOPS optimize() function after the coreset was constructed')
+parser.add_argument('--SVI_step_sched', type=str, default = "lambda i : 1./(1+i)", help="Plots code with the associated step schedule (tuning rate) for SVI & HOPS. Default is \"lambda i : 1./(1+i)\", with the quotation marks.")
+parser.add_argument('--pihat_noise', type=float, default=.75, help = "(If plotting GIGAR or simulating another realistically tuned Hilbert Coreset) - plots data corresponding to this much noise being introduced to the smoothed pi-hat to make the sampler")
 
 arguments = parser.parse_args()
 trials = np.arange(1, arguments.n_trials + 1) if arguments.n_trials else arguments.seeds
@@ -36,6 +39,7 @@ proj_dim = arguments.proj_dim
 SVI_opt_itrs =  arguments.SVI_opt_itrs
 fwd = arguments.fwd
 optimizing = arguments.optimizing
+pihat_noise = arguments.pihat_noise
 
 algs = {'SVIEXACT': 'Sparse VI (Exact Tangent Space)',
         'SVI': 'Sparse VI', 
@@ -59,7 +63,7 @@ for i, nm in enumerate(nms):
   kl = []
   sz = []
   for tr in trials:
-    numTuple = (nm[0], "tr="+str(tr), "N="+str(N), "d="+str(d), "proj_dim="+str(proj_dim), "optimizing="+str(optimizing), "SVI_opt_itrs="+str(SVI_opt_itrs))
+    numTuple = (nm[0], "tr="+str(tr), "N="+str(N), "d="+str(d), "proj_dim="+str(proj_dim), "optimizing="+str(optimizing), "SVI_opt_itrs="+str(SVI_opt_itrs), 'SVI_step_sched_hash_sha1='+hashlib.sha1(arguments.SVI_step_sched.encode('utf-8')).hexdigest(), 'pihat_noise='+str(pihat_noise))
     print(os.path.join(fldr, '_'.join(numTuple)+'.pk'))
     x_, mu0_, Sig0_, Sig_, mup_, Sigp_, w_, p_, muw_, Sigw_, rklw_, fklw_, cputs_, tr_, N_, d_, proj_dim_, optimizing_, SVI_opt_itrs_, SVI_step_sched_, pihat_noise_ = np.load(os.path.join(fldr, '_'.join(numTuple)+'.pk'), allow_pickle=True)
     if fwd:
