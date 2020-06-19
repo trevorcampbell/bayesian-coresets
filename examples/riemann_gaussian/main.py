@@ -5,6 +5,7 @@ import os, sys
 from scipy.stats import multivariate_normal
 import argparse
 import copy
+import time
 #make it so we can import models/etc from parent folder
 import bayesiancoresets as bc
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
@@ -200,26 +201,31 @@ alg = algs[nm]
 print('Building coreset')
 w = [np.array([0.])]
 p = [np.zeros((1, x.shape[1]))]
+cputs = [0]
 
-def build_for_m(m): # auxiliary function for parallelizing BPSVI experiment
-  print('trial: ' + str(tr) +' alg: BPSVI ' + str(m) +'/'+str(M))
-  alg.build(1, m)
-  return alg.get()
-
+t0 = time.process_time()
+t_build = 0
 
 for m in range(1, M+1):
   print('trial: ' + str(tr) +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
   if nm == "HOPS_full_scaling" or "HOPS_full_scaling_exact":
     alg.reset()
+    t_prebuild = time.process_time()
     alg.build(m)
+    t_build = time.process_time() - t_prebuild
   else:
+    t_prebuild = time.process_time()
     alg.build(1)
+    t_build += time.process_time() - t_prebuild
   #store weights/pts
   if (nm=="HOPSEXACT" or nm=="HOPS" or nm == "HOPS_full_scaling" or nm == "HOPS_full_scaling_exact"):
-    print("simulating results if we optimize after this iteration")
-    algCopy = copy.deepcopy(alg)
-    algCopy.optimize()
-    wts, pts, _ = algCopy.get()
+    # print("simulating results if we optimize after this iteration")
+    # algCopy = copy.deepcopy(alg)
+    t_pre_opt = time.process_time()
+    # algCopy.optimize()
+    t_opt = time.process_time() - t_pre_opt
+    wts, pts, _ = alg.get()
+    # wts, pts, _ = algCopy.get()
   else:
     if optimizing:
       print("simulating results if the coreset were optimized with the same rigour as SVI")
@@ -227,13 +233,17 @@ for m in range(1, M+1):
       polishingAlg.wts = alg.wts
       polishingAlg.pts = alg.pts
       polishingAlg.idcs = alg.idcs
+      t_pre_opt = time.process_time()
       polishingAlg.optimize()
+      t_opt = time.process_time() - t_pre_opt
       wts,pts, _ = polishingAlg.get()
     else :
       wts, pts, _ = alg.get()
+      t_opt = 0
 
   w.append(wts)
   p.append(pts)
+  cputs.append(t_build + t_opt)
 
 ##############################
 ##############################
@@ -256,6 +266,6 @@ if not os.path.exists('results/'):
   os.mkdir('results')
 #f = open('results/results_'+nm+'_'+str(d)+'_'+'lr'+'_'+str(i0)+'_'+str(tr)+'.pk', 'wb')
 f = open('results/'+nm+'_'+str(d)+'_'+str(tr)+'_'+str(N)+'_'+str(proj_dim)+'_'+str(SVI_opt_itrs)+'.pk', 'wb')
-res = (x, mu0, Sig0, Sig, mup, Sigp, w, p, muw, Sigw, rklw, fklw)
+res = (x, mu0, Sig0, Sig, mup, Sigp, w, p, muw, Sigw, rklw, fklw, cputs)
 pk.dump(res, f)
 f.close()

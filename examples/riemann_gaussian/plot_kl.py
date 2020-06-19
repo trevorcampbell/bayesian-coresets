@@ -59,7 +59,7 @@ for i, nm in enumerate(nms):
   for tr in trials:
     numTuple = (nm[0], str(d), str(tr), str(N), str(proj_dim), str(SVI_opt_itrs))
     print(os.path.join(fldr, '_'.join(numTuple)+'.pk'))
-    x_, mu0_, Sig0_, Sig_, mup_, Sigp_, w_, p_, muw_, Sigw_, rklw_, fklw_ = np.load(os.path.join(fldr, '_'.join(numTuple)+'.pk'), allow_pickle=True)
+    x_, mu0_, Sig0_, Sig_, mup_, Sigp_, w_, p_, muw_, Sigw_, rklw_, fklw_, cputs_ = np.load(os.path.join(fldr, '_'.join(numTuple)+'.pk'), allow_pickle=True)
     if fwd:
       kl.append(fklw_[::plot_every])
     else:
@@ -72,7 +72,7 @@ for i, nm in enumerate(nms):
   fig.line(x, np.percentile(kl, 50, axis=0), color=pal[i-1], line_width=5, legend=nm[1])
   fig.patch(x = np.hstack((x, x[::-1])), y = np.hstack((np.percentile(kl, 75, axis=0), np.percentile(kl, 25, axis=0)[::-1])), color=pal[i-1], fill_alpha=0.4, legend=nm[1])
 
-postprocess_plot(fig, '12pt', location='bottom_right', glyph_width=40)
+postprocess_plot(fig, '12pt', location='bottom_left', glyph_width=40)
 fig.legend.background_fill_alpha=0.
 fig.legend.border_line_alpha=0.
 fig.legend.visible = True
