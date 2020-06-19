@@ -18,8 +18,6 @@ import model_gaussian as gaussian
 ###########################################################
 
 #TODO: make these optional command line args, and also incorporate into the names and saved data of experiment result files 
-pihat_noise =0.75
-SVI_step_sched = lambda i : 1./(1+i)
 
 parser = argparse.ArgumentParser(description="Runs Riemannian linear regression (employing coreset contruction) on the specified dataset")
 parser.add_argument('nm', type=str, help="The name of the coreset construction algorithm to use (examples: SVI / GIGAO / GIGAR / RAND / HOPS)")
@@ -31,6 +29,8 @@ parser.add_argument('--N', type=int, default='1000', help='Dataset size/number o
 parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples to take when discretizing log likelihoods")
 parser.add_argument('--SVI_opt_itrs', type=int, default = '500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
 parser.add_argument('--optimizing', default = False, action = 'store_const', const = True, help = "If this flag is present, records the KL divergence after running HOP's optimization method on the coreset, instead of using the KL divergence on the coreset as is.")
+parser.add_argument('--SVI_step_sched', type=str, default = "lambda i : 1./(1+i)", help="Step schedule (tuning rate) for SVI & HOPS, entered as a lambda expression in quotation marks. Default is \"lambda i : 1./(1+i)\"")
+parser.add_argument('--pihat_noise', type=float, default=.75, help = "(If calling GIGAR or simulating another realistically tuned Hilbert Coreset) - a measure of how much noise to introduce to the smoothed pi-hat to make the sampler")
 
 arguments = parser.parse_args()
 nm = arguments.nm
@@ -41,6 +41,8 @@ d = arguments.d
 proj_dim = arguments.proj_dim
 SVI_opt_itrs =  arguments.SVI_opt_itrs
 optimizing = arguments.optimizing
+SVI_step_sched = eval(arguments.SVI_step_sched)
+pihat_noise = arguments.pihat_noise
 
 #######################################
 #######################################
