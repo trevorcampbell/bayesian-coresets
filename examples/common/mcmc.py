@@ -73,10 +73,8 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_ca
 
 #Takes in the name of and code for a statistical model that allows stan to run MCMC, and returns cpp code that stan can use to 
 #perform MCMC on a coreset.  
-#TODO: make the naming system we use to store/load stanCppCode more accessible
-#TODO: modify this to use hashes
 def load_modified_cpp_code(code_folder, model_name, model_code):
-  codeHash = hashlib.sha1(model_code.encode('utf-8')).hexdigest()#this will eventually refer to the actual hash of the model code, but for now I just want to make sure this framework is valid
+  codeHash = hashlib.sha1(model_code.encode('utf-8')).hexdigest()
   file_to_find = model_name + "_weighted_coreset_version_" + codeHash + ".cpp"
   file_to_find = os.path.join(code_folder, file_to_find)
   if os.path.exists(file_to_find):
@@ -92,6 +90,9 @@ def load_modified_cpp_code(code_folder, model_name, model_code):
     file = open(file_to_find, "w")
     file.write("Remove this line once you have modified the code below to handle weighted coresets. See ReadMe for more information.\n")
     file.write(sm.model_cppcode)      
+    file.close()
+    file = open('Unmodified_backup_of_stan_cpp_code_for_'+file_to_find)
+    file.write(sm.model_cppcode) 
     file.close()
     raise EnvironmentError("No modified code to handle weighted data present - unable to use stan for MCMC sampling. Please modify the file "+str(file_to_find)+" to handle weighted data. See the ReadMe for more information.")
 
