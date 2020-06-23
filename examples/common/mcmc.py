@@ -5,11 +5,11 @@ import pickle as pk
 import time
 import hashlib
 
-def build_model(cache_folder, model_name, model_code, use_weighted_coresets = False, code_folder = 'stanCppCode/'):
-  if cache_folder:
+def build_model(model_caching_folder, model_name, model_code, use_weighted_coresets = False, code_caching_folder = 'stanCppCode/'):
+  if model_caching_folder:
     weights_tag = "weighted_coreset_version_" if use_weighted_coresets else ""
-    cachingSpot = os.path.join(cache_folder, model_name + "_" + weights_tag + hashlib.sha1(model_code.encode('utf-8')).hexdigest())
-  if cache_folder and os.path.exists(cachingSpot):
+    cachingSpot = os.path.join(model_caching_folder, model_name + "_" + weights_tag + hashlib.sha1(model_code.encode('utf-8')).hexdigest())
+  if model_caching_folder and os.path.exists(cachingSpot):
     f = open(cachingSpot,'rb')
     sm = pk.load(f) 
     f.close()
@@ -18,21 +18,19 @@ def build_model(cache_folder, model_name, model_code, use_weighted_coresets = Fa
     if use_weighted_coresets:
       print('Altering cpp code used by stan to allow weighted data')
       stanc_ret = pystan.stanc(model_code=model_code)
-      stanc_ret['cppcode'] = load_modified_cpp_code(code_folder, model_name, model_code)
+      stanc_ret['cppcode'] = load_modified_cpp_code(code_caching_folder, model_name, model_code)
       sm = pystan.StanModel(stanc_ret=stanc_ret, verbose=True)
     else: 
       sm = pystan.StanModel(model_code=model_code)
 
-    if cache_folder: 
+    if model_caching_folder: 
       f = open(cachingSpot,'wb')
       pk.dump(sm,f)
       f.close()
 
   return sm
 
-#TODO: make code_folder something specified by each example
-def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_caching_folder = None, model_caching_folder = 'models', code_folder = 'stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True, seed = None):
-#TODO: adjust name of cache_folder to sample_caching_folder, and code_caching_folder should have a ../common
+def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_caching_folder = None, model_caching_folder = 'models', code_caching_folder = '../common/stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True, seed = None):
   if sample_caching_folder and not os.path.exists(sample_caching_folder):
     os.mkdir(sample_caching_folder)
 
@@ -50,7 +48,7 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_ca
 
     print('STAN: building/loading model')
     name, code = stan_representation
-    sm = build_model(model_caching_folder, name, code, use_weighted_coresets = weights is not None, code_folder=code_folder)
+    sm = build_model(model_caching_folder, name, code, use_weighted_coresets = weights is not None, code_caching_folder=code_caching_folder)
 
     print('STAN: sampling posterior: ' + dnm)
     t0 = time.process_time()
@@ -68,7 +66,7 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_ca
     if sample_caching_folder:
       np.save(os.path.join(sample_caching_folder, dnm+'_samples.npy'), samples) 
       tf = time.process_time()
-      np.save(os.path.join(cache_folder, dnm+'_mcmc_time.npy'), tf-t0)
+      np.save(os.path.join(sample_caching_folder, dnm+'_mcmc_time.npy'), tf-t0)
     return samples
 
 #Takes in the name of and code for a statistical model that allows stan to run MCMC, and returns cpp code that stan can use to 
