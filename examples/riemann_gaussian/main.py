@@ -215,7 +215,7 @@ for m in range(1, M+1):
     t_prebuild = time.process_time()
     alg.build(1)
     t_build += time.process_time() - t_prebuild
-  if optimizing:
+  if optimizing and nm != "SVI" and nm != "SVIEXACT": #(SVI approaches don't behave differently in the optimizing case, because their optimization call is the same as their reweight call)
     #if algorithm is in the HOPS family, we should optimize using the algorithm's own optimize() method (making sure that we don't alter the state of the coreset for the next iteration)
     if (nm=="HOPSEXACT" or nm=="HOPS" or nm == "HOPS_full_scaling" or nm == "HOPS_full_scaling_exact"):
       print("simulating results if we optimize after this iteration")
