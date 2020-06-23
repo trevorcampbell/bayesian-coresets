@@ -10,9 +10,12 @@ from plotting import *
 
 parser = argparse.ArgumentParser(description="Plots Riemannian linear regression experiments")
 parser.add_argument('--X', type = str, default="Iterations", help="The X axis of the plot - one of Iterations/Coreset Size/Forward KL/Reverse KL/CPU Time(s)")
-parser.add_argument('--use_log_scale_for_X', action='store_const', const=True, default = False, help = "If this flag is provided, The scale for X will be logarithmic instead of linear")
+parser.add_argument('--X_scale', type=str, default = "linear", help = "Specifies the scale for the X-axis. Default is \"linear\". The most likely argument other than the default is \"log\" (base 10 logarithmic scaling). If the plot doesn't render properly (showing a memory error or failing to load) it may be because this parameter should be \"log\" but is still currently set to default.")
 parser.add_argument('--Y', type = str, default = "Reverse KL", help="The Y axis of the plot - one of Iterations/Coreset Size/Forward KL/Reverse KL/CPU Time(s)")
-parser.add_argument('--use_log_scale_for_Y', action='store_const', const=True, default = False, help = "If this flag is provided, The scale for Y will be logarithmic instead of linear")
+parser.add_argument('--Y_scale', type=str, default = "log", help = "Specifies the scale for the Y-axis. Default is \"log\" (base 10 logarithmic scaling). The most likely argument other than the default is \"linear\".")
+
+parser.add_argument('height', type=int, default=850, help = "Height of the plot's html canvas, default 850")
+parser.add_argument('width', type=int, default=850, help = "Width of the plot's html canvas, default 850")
 
 parser.add_argument('names', type = str, nargs = '+', default = ["SVI", "RAND", "GIGAO", "GIGAR"], help = "a list of which algorithm names to plot results for (Examples: SVI / GIGAO / GIGAR / RAND)")
 trials = parser.add_mutually_exclusive_group(required=True)
@@ -33,9 +36,12 @@ parser.add_argument('--pihat_noise', type=float, default=.75, help = "(If plotti
 
 arguments = parser.parse_args()
 X = arguments.X
-use_log_scale_for_X = arguments.use_log_scale_for_X
+X_scale = arguments.X_scale
 Y = arguments.Y
-use_log_scale_for_Y = arguments.use_log_scale_for_Y
+Y_scale = arguments.Y_scale
+height = arguments.height
+width = arguments.width
+
 names = arguments.names
 trials = np.arange(1, arguments.n_trials + 1) if arguments.n_trials else arguments.seeds
 fldr = arguments.fldr
@@ -62,8 +68,7 @@ for name in names:
   nms.append((name, algs[name]))
 
 #plot the KL figure
-fig = bkp.figure(y_axis_type='log' if use_log_scale_for_Y else 'linear', x_axis_type='log' if use_log_scale_for_X else 'linear',
-       plot_width=850, plot_height=850, x_axis_label=X, y_axis_label=Y, toolbar_location=None )
+fig = bkp.figure(y_axis_type=Y_scale, x_axis_type=X_scale, plot_width=width, plot_height=height, x_axis_label=X, y_axis_label=Y, toolbar_location=None )
 preprocess_plot(fig, '32pt', False, True)
 
 for i, nm in enumerate(nms):
