@@ -62,7 +62,7 @@ else:
 sampler = lambda sz, w, pts : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 projector = bc.BlackBoxProjector(sampler, projection_dim, log_likelihood)
 
-full_samples = mcmc.sampler(dnm, X, Y, mcmc_samples, stan_representation, cache_folder = "caching/")
+full_samples = mcmc.sampler(dnm, X, Y, mcmc_samples, stan_representation, sample_caching_folder = "caching_mcmc_samples/")
 #TODO FIX SAMPLER TO NOT HAVE TO DO THIS
 full_samples = np.hstack((full_samples[:, 1:], full_samples[:, 0][:,np.newaxis]))
 
