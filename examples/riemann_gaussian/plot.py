@@ -14,8 +14,8 @@ parser.add_argument('--X_scale', type=str, default = "linear", help = "Specifies
 parser.add_argument('--Y', type = str, default = "Reverse KL", help="The Y axis of the plot - one of Iterations/Coreset Size/Forward KL/Reverse KL/CPU Time(s)")
 parser.add_argument('--Y_scale', type=str, default = "log", help = "Specifies the scale for the Y-axis. Default is \"log\" (base 10 logarithmic scaling). The most likely argument other than the default is \"linear\".")
 
-parser.add_argument('height', type=int, default=850, help = "Height of the plot's html canvas, default 850")
-parser.add_argument('width', type=int, default=850, help = "Width of the plot's html canvas, default 850")
+parser.add_argument('--height', type=int, default=850, help = "Height of the plot's html canvas, default 850")
+parser.add_argument('--width', type=int, default=850, help = "Width of the plot's html canvas, default 850")
 
 parser.add_argument('names', type = str, nargs = '+', default = ["SVI", "RAND", "GIGAO", "GIGAR"], help = "a list of which algorithm names to plot results for (Examples: SVI / GIGAO / GIGAR / RAND)")
 trials = parser.add_mutually_exclusive_group(required=True)
