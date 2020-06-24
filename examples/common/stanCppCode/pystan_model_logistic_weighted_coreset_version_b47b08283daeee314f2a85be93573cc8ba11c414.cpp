@@ -27,6 +27,11 @@ private:
         int n;
         int d;
         std::vector<int> y;
+        //
+        //WEIGHTS MODIFICATION
+        std::vector<double> w;
+        //
+        //
         matrix_d x;
 public:
     anon_model_d2efce57eba6f9df1b47e99c17bd2e53(stan::io::var_context& context__,
@@ -95,7 +100,21 @@ public:
                 check_greater_or_equal(function__, "y[i_0__]", y[i_0__], 0);
                 check_less_or_equal(function__, "y[i_0__]", y[i_0__], 1);
             }
-
+            //
+            //WEIGHTS MODIFICATION
+            w = std::vector<double>(n, int(0));
+            vals_r__ = context__.vals_r("w");
+            pos__ = 0;
+            size_t w_k_0_max__ = n;
+            for (size_t k_0__ = 0; k_0__ < w_k_0_max__; ++k_0__) {
+                w[k_0__] = vals_r__[pos__++];
+            }
+            size_t w_i_0_max__ = n;
+            for (size_t i_0__ = 0; i_0__ < w_i_0_max__; ++i_0__) {
+                check_greater_or_equal(function__, "w[i_0__]", w[i_0__], 0);
+            }
+            //
+            //
             current_statement_begin__ = 6;
             validate_non_negative_index("x", "n", n);
             validate_non_negative_index("x", "d", d);
@@ -258,7 +277,15 @@ public:
             current_statement_begin__ = 18;
             lp_accum__.add(normal_log<propto__>(theta, 0, 1));
             current_statement_begin__ = 19;
-            lp_accum__.add(bernoulli_logit_log<propto__>(y, f));
+            //
+            //WEIGHTS MODIFICATION 
+            //we loop over data individually here to give them weights
+            //the bernoulli_logit_log function may not easily allow this when calling using vectors/matrices
+            //this is the original code: lp_accum__.add(bernoulli_logit_log<propto__>(y, f));;
+            //this is the modified code:
+            for (size_t j_1__ = 0; j_1__ < f_j_1_max__; ++j_1__) {
+                lp_accum__.add(w[j_1__] * bernoulli_logit_log<propto__>(y[j_1__], f(j_1__)));
+            }
 
         } catch (const std::exception& e) {
             stan::lang::rethrow_located(e, current_statement_begin__, prog_reader__());

@@ -30,7 +30,7 @@ def build_model(model_caching_folder, model_name, model_code, use_weighted_cores
 
   return sm
 
-def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_caching_folder = None, model_caching_folder = 'models', code_caching_folder = '../common/stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True, verbose_compiling = False, seed = None):
+def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_caching_folder = None, model_caching_folder = '../common/models', code_caching_folder = '../common/stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True, verbose_compiling = False, seed = None):
   if sample_caching_folder and not os.path.exists(sample_caching_folder):
     os.mkdir(sample_caching_folder)
 
