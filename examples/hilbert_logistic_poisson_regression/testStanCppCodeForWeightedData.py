@@ -43,8 +43,9 @@ weights = np.random.randint(1,10,numIdcs)
 curX = X[idcs, :]
 curY = Y[idcs]
 #run the weighted version of sampler
-samples_using_code_for_weights = mcmc.sampler(dnm, curX, curY, mcmc_samples, stan_representation, weights=weights, verbose_compiling = verbose_compiling, seed = ID) 
-#build the modified dataset so that we can run the unweighted version of sampler
+# (we want to make sure we use a model based on the current cpp code for weighted coresets, so we don't use any cached models)
+samples_using_code_for_weights = mcmc.sampler(dnm, curX, curY, mcmc_samples, stan_representation, weights=weights, model_caching_folder = None, verbose_compiling = verbose_compiling, seed = ID) 
+# build the modified dataset so that we can run the unweighted version of sampler
 for i in range(len(idcs)):
     toAdd = np.ones(weights[i]-1,dtype=int) * (i) #list i a number of times equal to the weight of the ith index
     curX = np.append(curX, curX[toAdd], axis=0)
