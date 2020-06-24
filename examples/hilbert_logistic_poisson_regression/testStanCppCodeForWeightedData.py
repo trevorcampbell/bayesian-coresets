@@ -14,6 +14,7 @@ parser.add_argument('dnm', type=str, help="The name of the dataset on which to r
 parser.add_argument('ID', type=int, help="The trial number - used to initialize random number generation (for replicability)")
 parser.add_argument('numIdcs', type=int, help="number of indices to use in the weighted coreset")
 parser.add_argument("mcmc_samples", type=int, help="number of MCMC samples to take using the sampler")
+parser.add_argument("--verbose_compiling", action='store_const', const=True, default=False, help="If this flag is provided, prints output from compiling the Cpp code for weighted coresets")
 #TODO: add a parameter for how many steps are warmup steps
 
 arguments = parser.parse_args()
@@ -22,6 +23,7 @@ ID = arguments.ID
 model = arguments.model
 numIdcs = arguments.numIdcs
 mcmc_samples = arguments.mcmc_samples
+verbose_compiling = arguments.verbose_compiling
 
 #lrdnms = ['synth_lr', 'phishing', 'ds1', 'synth_lr_large', 'phishing_large', 'ds1_large']
 #prdnms = ['synth_poiss', 'biketrips', 'airportdelays', 'synth_poiss_large', 'biketrips_large', 'airportdelays_large']
@@ -41,7 +43,7 @@ weights = np.random.randint(1,10,numIdcs)
 curX = X[idcs, :]
 curY = Y[idcs]
 #run the weighted version of sampler
-samples_using_code_for_weights = mcmc.sampler(dnm, curX, curY, mcmc_samples, stan_representation, weights=weights, seed = ID) 
+samples_using_code_for_weights = mcmc.sampler(dnm, curX, curY, mcmc_samples, stan_representation, weights=weights, verbose_compiling = verbose_compiling, seed = ID) 
 #build the modified dataset so that we can run the unweighted version of sampler
 for i in range(len(idcs)):
     toAdd = np.ones(weights[i]-1,dtype=int) * (i) #list i a number of times equal to the weight of the ith index
