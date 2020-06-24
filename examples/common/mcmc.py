@@ -74,9 +74,9 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_ca
 def load_modified_cpp_code(code_folder, model_name, model_code):
   codeHash = hashlib.sha1(model_code.encode('utf-8')).hexdigest()
   file_to_find = model_name + "_weighted_coreset_version_" + codeHash + ".cpp"
-  file_to_find = os.path.join(code_folder, file_to_find)
-  if os.path.exists(file_to_find):
-    f = open(file_to_find,'r')
+  path_to_file_to_find = os.path.join(code_folder, file_to_find)
+  if os.path.exists(path_to_file_to_find):
+    f = open(path_to_file_to_find,'r')
     modified_code = f.read()
     f.close()
     return modified_code
@@ -85,11 +85,12 @@ def load_modified_cpp_code(code_folder, model_name, model_code):
       os.mkdir(code_folder)
 
     sm = build_model(code_folder, model_name, model_code)
-    file = open(file_to_find, "w")
+    file = open(path_to_file_to_find, "w")
     file.write("Remove this line once you have modified the code below to handle weighted coresets. See ReadMe for more information.\n")
     file.write(sm.model_cppcode)      
     file.close()
-    file = open('Unmodified_backup_of_stan_cpp_code_for_'+file_to_find)
+    backup_of_file_to_find = os.path.join(code_folder, 'Unmodified_backup_of_stan_cpp_code_for_' + file_to_find)
+    file = open(backup_of_file_to_find)
     file.write(sm.model_cppcode) 
     file.close()
     raise EnvironmentError("No modified code to handle weighted data present - unable to use stan for MCMC sampling. Please modify the file "+str(file_to_find)+" to handle weighted data. See the ReadMe for more information.")
