@@ -89,7 +89,7 @@ def load_modified_cpp_code(code_folder, model_name, model_code):
     file.write("Remove this line once you have modified the code below to handle weighted coresets. See ReadMe for more information.\n")
     file.write(sm.model_cppcode)      
     file.close()
-    backup_of_file_to_find = os.path.join(code_folder, 'unmodified_backup_of_stan_cpp_code_for_' + file_to_find)
+    backup_of_file_to_find = os.path.join(code_folder, 'unmodified_backup_of_' + model_name + "_weighted_coreset_version_" + codeHash + '_with_Cpp_code_hash_' + hashlib.sha1(sm.model_cppcode.encode('utf-8')).hexdigest() + '.cpp')
     file = open(backup_of_file_to_find, "w")
     file.write(sm.model_cppcode) 
     file.close()
