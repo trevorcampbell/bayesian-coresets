@@ -10,9 +10,9 @@ from plotting import *
 
 parser = argparse.ArgumentParser(description="Plots Riemannian linear regression experiments")
 parser.add_argument('--X', type = str, default="Iterations", help="The X axis of the plot - one of Iterations/Coreset Size/Forward KL/Reverse KL/CPU Time(s)")
-parser.add_argument('--X_scale', type=str, default = "linear", help = "Specifies the scale for the X-axis. Default is \"linear\". The most likely argument other than the default is \"log\" (base 10 logarithmic scaling). If the plot doesn't render properly (showing a memory error or failing to load) it may be because this parameter should be \"log\" but is still currently set to default.")
+parser.add_argument('--X_scale', type=str, choices=["linear","log"], default = "linear", help = "Specifies the scale for the X-axis. Default is \"linear\".")
 parser.add_argument('--Y', type = str, default = "Reverse KL", help="The Y axis of the plot - one of Iterations/Coreset Size/Forward KL/Reverse KL/CPU Time(s)")
-parser.add_argument('--Y_scale', type=str, default = "log", help = "Specifies the scale for the Y-axis. Default is \"log\" (base 10 logarithmic scaling). The most likely argument other than the default is \"linear\".")
+parser.add_argument('--Y_scale', type=str, choices=["linear","log"], default = "log", help = "Specifies the scale for the Y-axis. Default is \"log\".")
 
 parser.add_argument('--height', type=int, default=850, help = "Height of the plot's html canvas, default 850")
 parser.add_argument('--width', type=int, default=850, help = "Width of the plot's html canvas, default 850")
