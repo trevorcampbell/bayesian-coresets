@@ -84,7 +84,7 @@ def load_modified_cpp_code(code_folder, model_name, model_code):
     if not os.path.exists(code_folder):
       os.mkdir(code_folder)
 
-    sm = build_model(code_folder, model_name, model_code)
+    sm = pystan.StanModel(model_code=model_code)
     file = open(path_to_file_to_find, "w")
     file.write("Remove this line once you have modified the code below to handle weighted coresets. See ReadMe for more information.\n")
     file.write(sm.model_cppcode)      
