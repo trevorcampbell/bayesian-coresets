@@ -5,7 +5,7 @@ from scipy.optimize import minimize
 import sys, os
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
-import gaussian
+import model_gaussian
 
 
 np.random.seed(1)
@@ -124,5 +124,5 @@ print('mu, cov = ' + str(mu) + '\n' + str(cov))
 print('Coreset requires ' + str(idcs.shape[0]) + ' data')
 print('muw, covw = ' + str(muw) + '\n' + str(covw))
 
-print('KL(coreset || posterior) = ' + str(gaussian.gaussian_KL(muw, covw, mu, np.linalg.inv(cov))))
+print('KL(coreset || posterior) = ' + str(model_gaussian.KL(muw, covw, mu, np.linalg.inv(cov))))
 
