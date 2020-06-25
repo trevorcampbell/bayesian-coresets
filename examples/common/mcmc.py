@@ -33,10 +33,11 @@ def build_model(model_caching_folder, model_name, model_code, use_weighted_cores
 def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_caching_folder = None, model_caching_folder = '../common/models', code_caching_folder = '../common/stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True, verbose_compiling = False, seed = None):
   if sample_caching_folder and not os.path.exists(sample_caching_folder):
     os.mkdir(sample_caching_folder)
-
-  if sample_caching_folder and os.path.exists(sample_caching_folder+dnm+'_samples.npy'):
+  if sample_caching_folder: 
+    sample_caching_prefix = sample_caching_folder+dnm+("_unseeded" if seed is None else "_seed=" + str(seed))  
+  if sample_caching_folder and os.path.exists(sample_caching_prefix + '_samples.npy'):
     print("Using cached samples for " + dnm)
-    return np.load(sample_caching_folder+dnm+'_samples.npy')
+    return np.load(sample_caching_prefix + '_samples.npy')
   else:
     if model_caching_folder and not os.path.exists(model_caching_folder):
       os.mkdir(model_caching_folder)
@@ -64,9 +65,9 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_ca
       raise EnvironmentError("error encountered in sampling - likely the specified dataset is not compatible with the specified model")
     samples = fit.extract(permuted=False)[:, 0, :thd]
     if sample_caching_folder:
-      np.save(os.path.join(sample_caching_folder, dnm+'_samples.npy'), samples) 
+      np.save(os.path.join(sample_caching_prefix+'_samples.npy'), samples) 
       tf = time.process_time()
-      np.save(os.path.join(sample_caching_folder, dnm+'_mcmc_time.npy'), tf-t0)
+      np.save(os.path.join(sample_caching_prefix+'_mcmc_time.npy'), tf-t0)
     return samples
 
 #Takes in the name of and code for a statistical model that allows stan to run MCMC, and returns cpp code that stan can use to 
