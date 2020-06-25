@@ -69,7 +69,7 @@ for name in names:
 
 #plot the KL figure
 fig = bkp.figure(y_axis_type=Y_scale, x_axis_type=X_scale, plot_width=width, plot_height=height, x_axis_label=X, y_axis_label=Y, toolbar_location=None )
-preprocess_plot(fig, '32pt', False, True)
+preprocess_plot(fig, '32pt', X_scale == 'log', Y_scale == 'log')
 
 for i, nm in enumerate(nms):
   kl = []
