@@ -65,8 +65,8 @@ data_X, data_Y, Z, Zt, D = load_data('../data/'+dnm+'.npz')
 
 #run sampler
 N_samples = 10000
-caching_folder = "caching/"
-samples = sampler(dnm, data_X, data_Y, N_samples, stan_representation, cache_folder = caching_folder)
+sample_caching_folder = "caching/"
+samples = sampler(dnm, data_X, data_Y, N_samples, stan_representation, sample_caching_folder = sample_caching_folder)
 #TODO FIX SAMPLER TO NOT HAVE TO DO THIS
 samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
 
