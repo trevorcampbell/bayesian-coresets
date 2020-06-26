@@ -141,18 +141,14 @@ sparsevi = bc.SparseVICoreset(Z, prj_w, opt_itrs=SVI_opt_itrs, n_subsample_opt =
 sparsevi_t_setup = time.perf_counter()-t0
 
 #t0 = time.perf_counter()
-#bpsvi = bc.BatchPSVICoreset(Z, prj_w, opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
-#bpsvi_t_setup = time.perf_counter()-t0
 
-algs = {'SVI': sparsevi, 
-        #'BPSVI': bpsvi, 
+algs = {'SVI': sparsevi,
         'GIGAO': giga_optimal, 
         'GIGAR': giga_realistic, 
         'RAND': unif,
         'PRIOR': None}
 coreset = algs[alg]
 t0s = {'SVI' : sparsevi_t_setup,
-       #'BPSVI' : bpsvi_t_setup,
        'GIGAO' : gigao_t_setup,
        'GIGAR' : gigar_t_setup,
        'RAND' : unif_t_setup,
