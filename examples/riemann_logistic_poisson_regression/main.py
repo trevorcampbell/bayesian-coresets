@@ -11,7 +11,7 @@ import time
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from mcmc import sampler
-import model_gaussian as model
+import model_gaussian
 
 #computes the Laplace approximation N(mu, Sig) to the posterior with weights wts
 def get_laplace(wts, Z, mu0, diag = False):
@@ -231,8 +231,8 @@ for m in range(M+1):
   mul, LSigl, LSiglInv = get_laplace(w[m], p[m], Z.mean(axis=0)[:D])
   mus_laplace[m,:] = mul
   Sigs_laplace[m,:,:] = LSigl.dot(LSigl.T)
-  rkls_laplace[m] = model.KL(mul, Sigs_laplace[m,:,:], mup, LSigpInv.dot(LSigpInv.T))
-  fkls_laplace[m] = model.KL(mup, Sigp, mul, LSiglInv.dot(LSiglInv.T))
+  rkls_laplace[m] = model_gaussian.KL(mul, Sigs_laplace[m,:,:], mup, LSigpInv.dot(LSigpInv.T))
+  fkls_laplace[m] = model_gaussian.KL(mup, Sigp, mul, LSiglInv.dot(LSiglInv.T))
 
 #save results
 if not os.path.exists(fldr):
