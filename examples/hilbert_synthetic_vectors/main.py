@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('tr', type=int, help='The trial number (used to seed random number generation)')
 parser.add_argument('alg_nm', type=str, choices=['FW', 'GIGA', 'OMP', 'IS', 'US'], help="The sparse non negative least squares algorithm to use: one of FW (Frank Wolfe), GIGA (Greedy Iterative Geodeic Ascent), OMP (Orthogonal Matching Pursuit), IS (Importance Sampling), US (Uniform Sampling)")
 parser.add_argument('--N', type=int, default=10000, help="The number of synthetic data points (only if the --diag flag is not provided)")
-parser.add_argument('--d', type=int, default=100, help="The dimension of the synthetic data points (if the --diag flag is provided, this is also the number of synthetic data points")
+parser.add_argument('--d', type=int, default=100, help="The dimension of the synthetic data points (if the --diag flag is provided, this is also the number of synthetic data points)")
 parser.add_argument('--diag', action='store_const', default=False, const=True, help="If this flag is provided, uses an axis-aligned diagonal dataset (dxd) instead of the usual random Nxd matrix")
 parser.add_argument('--fldr', type=str, default="results/", help="This script will save results in this folder. Default \"results/\"")
 
