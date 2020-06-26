@@ -231,8 +231,8 @@ for m in range(M+1):
   mul, LSigl, LSiglInv = get_laplace(w[m], p[m], Z.mean(axis=0)[:D])
   mus_laplace[m,:] = mul
   Sigs_laplace[m,:,:] = LSigl.dot(LSigl.T)
-  rkls_laplace[m] = model.gaussian_KL(mul, Sigs_laplace[m,:,:], mup, LSigpInv.dot(LSigpInv.T))
-  fkls_laplace[m] = model.gaussian_KL(mup, Sigp, mul, LSiglInv.dot(LSiglInv.T))
+  rkls_laplace[m] = model.KL(mul, Sigs_laplace[m,:,:], mup, LSigpInv.dot(LSigpInv.T))
+  fkls_laplace[m] = model.KL(mup, Sigp, mul, LSiglInv.dot(LSiglInv.T))
 
 #save results
 if not os.path.exists(fldr):
