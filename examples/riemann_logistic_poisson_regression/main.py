@@ -56,7 +56,7 @@ parser.add_argument('--M', type=int, default=20, help="Maximum allowable coreset
 parser.add_argument('--SVI_opt_itrs', type=int, default = '1500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
 parser.add_argument('--SVI_step_sched', type=str, default = "lambda i : 1./(1+i)", help="Step schedule (tuning rate) for SVI & HOPS, entered as a lambda expression in quotation marks. Default is \"lambda i : 1./(1+i)\"")
 parser.add_argument('--n_subsample_opt', type=int, default=400, help="(If using Sparse VI/HOPS) the size of the random subsample to use when optimizing the coreset weights in each reweight step")
-parser.add_argument('--n_susample_select', type=int, default=1000, help="(If using Sparse VI/HOPS) the size of the random subsample to use when determining which point to add to the coreset in each select step")
+parser.add_argument('--n_subsample_select', type=int, default=1000, help="(If using Sparse VI/HOPS) the size of the random subsample to use when determining which point to add to the coreset in each select step")
 parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples to take when discretizing log likelihoods")
 parser.add_argument('--pihat_noise', type=float, default=.75, help = "(If calling GIGAR or simulating another realistically tuned Hilbert Coreset) - a measure of how much noise to introduce to the smoothed pi-hat to make the sampler")
 parser.add_argument("--mcmc_samples", type=int, default=10000, help="number of MCMC samples to take (we also take this many warmup steps before sampling)")
@@ -86,23 +86,23 @@ print('running ' + str(dnm)+ ' ' + str(alg)+ ' ' + str(ID))
 
 #######################################
 #######################################
-## Step 1: Load Dataset
+## Step 1: Define Model
 #######################################
 #######################################
-
-print('Loading dataset '+dnm)
-data_X, data_Y, Z, Zt, D = load_data('../data/'+dnm+'.npz')
-
-###########################
-###########################
-## Step 2: Define the model
-###########################
-###########################
 
 if model=='lr':
   from model_lr import *
 else:
   from model_poiss import *
+
+#######################################
+#######################################
+## Step 2: Load Dataset
+#######################################
+#######################################
+
+print('Loading dataset '+dnm)
+data_X, data_Y, Z, Zt, D = load_data('../data/'+dnm+'.npz')
 
 ##########################################################################
 ##########################################################################
