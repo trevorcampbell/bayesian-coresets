@@ -29,7 +29,7 @@ trials.add_argument('--seeds', type = int, nargs = '+', help="Plot experiments a
 
 parser.add_argument('--fldr', type=str, default="results/", help="This script will look for & plot experiments in this folder")
 parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples taken when discretizing log likelihoods for these experiments")
-parser.add_argument('--SVI_opt_itrs', type=int, default = '500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
+parser.add_argument('--SVI_opt_itrs', type=int, default = '1500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
 parser.add_argument('--SVI_step_sched', type=str, default = "lambda i : 1./(1+i)", help="Plots code with the associated step schedule (tuning rate) for SVI & HOPS. Default is \"lambda i : 1./(1+i)\", with the quotation marks.")
 parser.add_argument('--pihat_noise', type=float, default=.75, help = "(If plotting GIGAR or simulating another realistically tuned Hilbert Coreset) - plots data corresponding to this much noise being introduced to the smoothed pi-hat to make the sampler")
 
@@ -80,12 +80,12 @@ for i, nm in enumerate(nms):
   sz = []
   for tr in trials:
     numTuple = (dnm, model, nm[0], "results", "id="+str(tr), "mcmc_samples="+str(N_samples), "use_diag_laplace_w="+str(use_diag_laplace_w), "proj_dim="+str(proj_dim), "SVI_opt_itrs="+str(SVI_opt_itrs), 'n_subsample_opt='+str(n_subsample_opt), "n_subsample_select="+str(n_subsample_select), 'SVI_step_sched_hash_sha1='+str(SVI_step_sched_hash_sha1), 'pihat_noise='+str(pihat_noise))
-    print(os.path.join(fldr, '_'.join(numTuple)+'.pk'))
-    res = np.load(os.path.join(fldr, '_'.join(numTuple)+'.pk'), allow_pickle=True)
-    data = { 'Iterations': [np.arange(1,len(res['rklw'])+1,plot_every)],
+    print(os.path.join(fldr, '_'.join(numTuple)+'.npz'))
+    res = np.load(os.path.join(fldr, '_'.join(numTuple)+'.npz'), allow_pickle = True)
+    data = { 'Iterations': [np.arange(1,len(res['rkls_laplace'])+1,plot_every)],
              'Coreset Size': [[np.count_nonzero(a) for a in res['w'][::plot_every]]],
-             'Forward KL': [res['fklw'][::plot_every]],
-             'Reverse KL': [res['rklw'][::plot_every]],
+             'Forward KL': [res['fkls_laplace'][::plot_every]],
+             'Reverse KL': [res['rkls_laplace'][::plot_every]],
              'CPU Time(s)': [res['cputs'][::plot_every]]}
              
   x = np.percentile(data[X], 50, axis=0)
