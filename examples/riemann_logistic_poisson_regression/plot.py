@@ -1,115 +1,100 @@
-import numpy as np
-import pickle as pk
 import bokeh.plotting as bkp
-import bokeh.layouts as bkl
-import time
-import os, sys
+from bokeh.io import export_png, export_svgs
+import numpy as np
+import sys, os
+import argparse
+import hashlib
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
 
+parser = argparse.ArgumentParser(description="Plots Riemannian linear regression experiments")
+parser.add_argument('--X', type = str, default="Iterations", help="The X axis of the plot - one of Iterations/Coreset Size/Forward KL/Reverse KL/CPU Time(s)")
+parser.add_argument('--X_scale', type=str, choices=["linear","log"], default = "linear", help = "Specifies the scale for the X-axis. Default is \"linear\".")
+parser.add_argument('--Y', type = str, default = "Reverse KL", help="The Y axis of the plot - one of Iterations/Coreset Size/Forward KL/Reverse KL/CPU Time(s)")
+parser.add_argument('--Y_scale', type=str, choices=["linear","log"], default = "log", help = "Specifies the scale for the Y-axis. Default is \"log\".")
 
-dnames = ['synth_lr', 'ds1', 'phishing'] #, 'synth_poiss', 'biketrips', 'airportdelays']
-algs = [('RAND', 'Uniform', pal[3]),  ('SVI', 'SparseVI', pal[0]), ('BPSVI', 'BPSVI', pal[4]), ('GIGAR','GIGA (Realistic)', pal[2]),('GIGAO','GIGA (Optimal)', pal[1]), ('PRIOR','Prior', 'black')]
+parser.add_argument('--height', type=int, default=850, help = "Height of the plot's html canvas, default 850")
+parser.add_argument('--width', type=int, default=850, help = "Width of the plot's html canvas, default 850")
+parser.add_argument('--plot_every', type=int, default='1', help="Coarseness of the graph - will skip (plot_every-1) points between each plotted point")
 
-figs = []
-for dnm in dnames:
-  print('Plotting ' + dnm)
-  fig = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL',  x_axis_label='# Iterations', width=2400, height=800)
-  preprocess_plot(fig, '72pt', False, True)
-  fig2 = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL', x_axis_type='log', x_axis_label='CPU Time (s)', width=2400, height=800)
-  preprocess_plot(fig2, '72pt', True, True)
-  fig3 = bkp.figure(y_axis_type='log', y_axis_label='Reverse KL',  x_axis_label='Coreset Size', width=2400, height=800)
-  preprocess_plot(fig3, '72pt', False, True)
+parser.add_argument('dnm', type=str, help="the name of the dataset for which to plot results")
+parser.add_argument('model', type=str, choices=["lr","poiss"], help="The regression model used. lr refers to logistic regression, and poiss refers to poisson regression.")
 
-  figs.append([fig, fig2, fig3])
-  
-  #get normalizations based on the prior
-  std_kls = {}
-  trials = [fn for fn in os.listdir('results/') if dnm+'_PRIOR_results_' in fn]
-  if len(trials) == 0: 
-    print('Need to run prior to establish baseline first')
-    quit()
-  kltot = 0.
-  M = 0
-  for tridx, fn in enumerate(trials):
-    f = open('results/'+fn, 'rb')
-    res = pk.load(f) #(cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace, fkls_laplace)
-    f.close()
-    assert np.all(res[5] == res[5][0]) #make sure prior doesn't change...
-    kltot += res[5][0]
-    M = res[0].shape[0]
-  std_kls[dnm] = kltot / len(trials)
-  
-  for alg in algs:
-    trials = [fn for fn in os.listdir('results/') if dnm+'_'+alg[0]+'_results_' in fn]
-    if len(trials) == 0: continue
-    kls = np.zeros((len(trials), M))
-    cputs = np.zeros((len(trials), M))
-    cszs = np.zeros((len(trials), M))
-    kl0 = std_kls[dnm] 
-    for tridx, fn in enumerate(trials):
-      f = open('results/'+fn, 'rb')
-      res = pk.load(f) #(cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace, fkls_laplace)
-      f.close()
-      cputs[tridx, :] = res[0]
-      wts = res[1]
-      mu = res[3]
-      Sig = res[4]
-      kl = res[5]
-      cszs[tridx, :] = np.array([w.shape[0] for w in wts])
-      kls[tridx, :] = kl/kl0
-      if 'PRIOR' in fn:
-        kls[tridx, :] = np.median(kls[tridx,:])
+parser.add_argument('names', type = str, nargs = '+', default = ["SVI", "RAND", "GIGAO", "GIGAR"], help = "a list of which algorithm names to plot results for (Examples: SVI / GIGAO / GIGAR / RAND)")
+trials = parser.add_mutually_exclusive_group(required=True)
 
-    #cputs[0] is setup time
-    #cputs[i] is time for iteration i in 1:M
-    # for BPSVI, since each iter runs independently, need to add cputs[0] to all scputs[i]
-    # for all others, since iters build up on each other, need to cumulative sum
-    if alg[0] == 'BPSVI':
-      cputs[:, 1:] += cputs[:, 0][:,np.newaxis]
-    else:
-      cputs = np.cumsum(cputs, axis=1)
-  
-    cput50 = np.percentile(cputs, 50, axis=0)
-    cput25 = np.percentile(cputs, 25, axis=0)
-    cput75 = np.percentile(cputs, 75, axis=0)
-  
-    csz50 = np.percentile(cszs, 50, axis=0)
-    csz25 = np.percentile(cszs, 25, axis=0)
-    csz75 = np.percentile(cszs, 75, axis=0)
-  
-    kl50 = np.percentile(kls, 50, axis=0)
-    kl25 = np.percentile(kls, 25, axis=0)
-    kl75 = np.percentile(kls, 75, axis=0)
-  
-    fig.line(np.arange(kl50.shape[0]), kl50, color=alg[2], legend=alg[1], line_width=10)
-    fig.line(np.arange(kl25.shape[0]), kl25, color=alg[2], legend=alg[1], line_width=10, line_dash='dashed')
-    fig.line(np.arange(kl75.shape[0]), kl75, color=alg[2], legend=alg[1], line_width=10, line_dash='dashed')
-  
-    # for computation time, don't show the coreset size 0 step since it's really really fast for all algs 
-    fig2.line(cput50[1:], kl50[1:], color=alg[2], legend=alg[1], line_width=10)
-    fig2.patch(np.hstack((cput50[1:], cput50[1:][::-1])), np.hstack((kl75[1:], kl25[1:][::-1])), fill_color=alg[2], legend=alg[1], alpha=0.3)
-  
-    #fig2.circle(cput50, kl50, color=alg[2], legend=alg[1], size=15)
-    #fig2.segment(x0=cput25, x1 = cput75, y0 = kl50, y1 = kl50, color=alg[2], legend=alg[1], line_width=4)
-    #fig2.segment(y0=kl25, y1 = kl75, x0 = cput50, x1 = cput50, color=alg[2], legend=alg[1], line_width=4)
+trials.add_argument('--n_trials', type=int, help="Look for & plot experiments with trial IDs 1 through n_trials (inclusive)")
+trials.add_argument('--seeds', type = int, nargs = '+', help="Plot experiments associated with the provided trial numbers (seeds)")
 
-  
-    if dnm != 'PRIOR':
-      fig3.line(csz50, kl50, color=alg[2], legend=alg[1], line_width=10)
-      fig3.patch(np.hstack((csz50, csz50[::-1])), np.hstack((kl75, kl25[::-1])), fill_color=alg[2], legend=alg[1], alpha=0.3)
+parser.add_argument('--fldr', type=str, default="results/", help="This script will look for & plot experiments in this folder")
+parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples taken when discretizing log likelihoods for these experiments")
+parser.add_argument('--SVI_opt_itrs', type=int, default = '500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
+parser.add_argument('--SVI_step_sched', type=str, default = "lambda i : 1./(1+i)", help="Plots code with the associated step schedule (tuning rate) for SVI & HOPS. Default is \"lambda i : 1./(1+i)\", with the quotation marks.")
+parser.add_argument('--pihat_noise', type=float, default=.75, help = "(If plotting GIGAR or simulating another realistically tuned Hilbert Coreset) - plots data corresponding to this much noise being introduced to the smoothed pi-hat to make the sampler")
 
-      #fig3.circle(csz50, kl50, color=alg[2], legend=alg[1], size=15)
-      #fig3.segment(x0=csz25, x1 = csz75, y0 = kl50, y1 = kl50, color=alg[2], legend=alg[1], line_width=4)
-      #fig3.segment(y0=kl25, y1 = kl75, x0 = csz50, x1 = csz50, color=alg[2], legend=alg[1], line_width=4)
-  
-     
-  for f in [fig, fig2, fig3]:
-    f.legend.label_text_font_size= '72pt'
-    f.legend.glyph_width=80
-    f.legend.glyph_height=80
-    f.legend.spacing=20
-    f.legend.visible = False
+parser.add_argument('--use_diag_laplace_w', action='store_const', default = False, const=True, help="")
+parser.add_argument('--n_subsample_opt', type=int, default=400, help="(If using Sparse VI/HOPS) the size of the random subsample used when optimizing the coreset weights in each reweight step")
+parser.add_argument('--n_subsample_select', type=int, default=1000, help="(If using Sparse VI/HOPS) the size of the random subsample used when determining which point to add to the coreset in each select step")
+parser.add_argument("--mcmc_samples", type=int, default=10000, help="number of MCMC samples taken (we also took this many warmup steps before sampling)")
 
-bkp.show(bkl.gridplot(figs))
+arguments = parser.parse_args()
+X = arguments.X
+X_scale = arguments.X_scale
+Y = arguments.Y
+Y_scale = arguments.Y_scale
+height = arguments.height
+width = arguments.width
+plot_every = arguments.plot_every
+
+names = arguments.names
+trials = np.arange(1, arguments.n_trials + 1) if arguments.n_trials else arguments.seeds
+model = arguments.model
+dnm = arguments.dnm
+fldr = arguments.fldr
+
+proj_dim = arguments.proj_dim
+SVI_opt_itrs =  arguments.SVI_opt_itrs
+SVI_step_sched_hash_sha1 = hashlib.sha1(arguments.SVI_step_sched.encode('utf-8')).hexdigest()
+pihat_noise = arguments.pihat_noise
+use_diag_laplace_w = arguments.use_diag_laplace_w
+n_subsample_opt = arguments.n_subsample_opt
+n_subsample_select = arguments.n_subsample_select
+N_samples = arguments.mcmc_samples
+
+algs = {'SVIEXACT': 'Sparse VI (Exact Tangent Space)',
+        'SVI': 'Sparse VI', 
+        'GIGAO': 'GIGA(Optimal)', 
+        'GIGAR': "GIGA(Realistic)", 
+        'RAND': "Uniform"}
+nms = []
+for name in names:
+  nms.append((name, algs[name]))
+
+#plot the KL figure
+fig = bkp.figure(y_axis_type=Y_scale, x_axis_type=X_scale, plot_width=width, plot_height=height, x_axis_label=X, y_axis_label=Y, toolbar_location=None )
+preprocess_plot(fig, '32pt', X_scale == 'log', Y_scale == 'log')
+
+for i, nm in enumerate(nms):
+  kl = []
+  sz = []
+  for tr in trials:
+    numTuple = (dnm, model, nm[0], "results","id="+str(tr), "mcmc_samples="+str(N_samples), "use_diag_laplace_w="+str(use_diag_laplace_w), "proj_dim="+str(proj_dim), "SVI_opt_itrs="+str(SVI_opt_itrs), 'n_subsample_opt='+str(n_subsample_opt), "n_subsample_select="+str(n_subsample_select), 'SVI_step_sched_hash_sha1='SVI_step_sched_hash_sha1, 'pihat_noise='+str(pihat_noise))
+    print(os.path.join(fldr, '_'.join(numTuple)+'.pk'))
+    res = np.load(os.path.join(fldr, '_'.join(numTuple)+'.pk'), allow_pickle=True)
+    data = { 'Iterations': [np.arange(1,len(res['rklw'])+1,plot_every)],
+             'Coreset Size': [[np.count_nonzero(a) for a in res['w'][::plot_every]]],
+             'Forward KL': [res['fklw'][::plot_every]],
+             'Reverse KL': [res['rklw'][::plot_every]],
+             'CPU Time(s)': [res['cputs'][::plot_every]]}
+             
+  x = np.percentile(data[X], 50, axis=0)
+  fig.line(x, np.percentile(data[Y], 50, axis=0), color=pal[i-1], line_width=5, legend=nm[1])
+  fig.patch(x = np.hstack((x, x[::-1])), y = np.hstack((np.percentile(data[Y], 75, axis=0), np.percentile(data[Y], 25, axis=0)[::-1])), color=pal[i-1], fill_alpha=0.4, legend=nm[1])
+
+postprocess_plot(fig, '12pt', location='bottom_left', glyph_width=40)
+fig.legend.background_fill_alpha=0.
+fig.legend.border_line_alpha=0.
+fig.legend.visible = True
+
+bkp.show(fig)
