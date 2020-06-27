@@ -79,7 +79,7 @@ for i, nm in enumerate(nms):
   kl = []
   sz = []
   for tr in trials:
-    numTuple = (dnm, model, nm[0], "results","id="+str(tr), "mcmc_samples="+str(N_samples), "use_diag_laplace_w="+str(use_diag_laplace_w), "proj_dim="+str(proj_dim), "SVI_opt_itrs="+str(SVI_opt_itrs), 'n_subsample_opt='+str(n_subsample_opt), "n_subsample_select="+str(n_subsample_select), 'SVI_step_sched_hash_sha1='SVI_step_sched_hash_sha1, 'pihat_noise='+str(pihat_noise))
+    numTuple = (dnm, model, nm[0], "results", "id="+str(tr), "mcmc_samples="+str(N_samples), "use_diag_laplace_w="+str(use_diag_laplace_w), "proj_dim="+str(proj_dim), "SVI_opt_itrs="+str(SVI_opt_itrs), 'n_subsample_opt='+str(n_subsample_opt), "n_subsample_select="+str(n_subsample_select), 'SVI_step_sched_hash_sha1='+str(SVI_step_sched_hash_sha1), 'pihat_noise='+str(pihat_noise))
     print(os.path.join(fldr, '_'.join(numTuple)+'.pk'))
     res = np.load(os.path.join(fldr, '_'.join(numTuple)+'.pk'), allow_pickle=True)
     data = { 'Iterations': [np.arange(1,len(res['rklw'])+1,plot_every)],
