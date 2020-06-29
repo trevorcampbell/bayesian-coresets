@@ -6,12 +6,15 @@ import time
 import sys, os
 import argparse
 
-#TODO use PyStan for inference
-#TODO copy riemann_logistic_poisson_regression example
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import mcmc
 
+#######################################
+#######################################
+## Step 0: Parse Command Line Arguments
+#######################################
+#######################################
 parser = argparse.ArgumentParser(description="Runs Hilbert logistic or poisson regression (employing coreset contruction) on the specified dataset")
 parser.add_argument('model', type=str, choices=["lr","poiss"], help="The regression model to use. lr refers to logistic regression, and poiss refers to poisson regression.") #must be one of linear regression or poisson regression
 parser.add_argument('dnm', type=str, help="The name of the dataset on which to run regression") #examples: synth_lr, phishing, ds1, synth_poiss, biketrips, airportdelays, synth_poiss_large, biketrips_large, airportdelays_large
@@ -36,15 +39,33 @@ projection_dim = arguments.proj_dim
 Ms = arguments.Ms if arguments.Ms is not None else np.unique(np.logspace(0, np.log10(arguments.M_max), arguments.num_Ms, dtype=int))
 
 algdict = {'GIGA':bc.snnls.GIGA, 'FW':bc.snnls.FrankWolfe, 'RND':bc.snnls.UniformSampling}
+#######################################
+#######################################
+## Step 1: Define Mode
+#######################################
+#######################################
+
 if model=="lr":
   from model_lr import *
 elif model=="poiss":
   from model_poiss import *
 
-np.random.seed(ID)
+#######################################
+#######################################
+## Step 2: Load Dataset
+#######################################
+#######################################
 
 print('Loading dataset '+dnm)
 X,Y,Z, Zt, D = load_data('../data/'+dnm+'.npz')
+
+#############################################################################
+#############################################################################
+## Step 3: Make a Laplace Approximation to Inform the Coreset Tangent Space
+#############################################################################
+#############################################################################
+
+np.random.seed(ID)
 
 if not os.path.exists('results/'):
   os.mkdir('results')  
@@ -64,13 +85,31 @@ else:
   cov = lplc['cov']
   t_laplace = lplc['t_laplace']
 
+##########################################################################
+##########################################################################
+## Step 3: Compute a random finite projection of the tangent space  
+##########################################################################
+##########################################################################
+
 #generate a sampler based on the laplace approx 
 sampler = lambda sz, w, pts : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
 projector = bc.BlackBoxProjector(sampler, projection_dim, log_likelihood)
 
+#########################################################################
+#########################################################################
+## Step 4: Run MCMC on full dataset (important for coreset evaluation)
+#########################################################################
+#########################################################################
+
 full_samples = mcmc.sampler(dnm, X, Y, mcmc_samples_full, stan_representation, sample_caching_folder = "caching_mcmc_samples/")
 #TODO FIX SAMPLER TO NOT HAVE TO DO THIS
 full_samples = np.hstack((full_samples[:, 1:], full_samples[:, 0][:,np.newaxis]))
+
+######################################
+######################################
+## Step 5: Build/Evaluate the Coreset
+######################################
+######################################
 
 cputs = np.zeros(Ms.shape[0])
 mcmc_time_per_itr = np.zeros(Ms.shape[0])
