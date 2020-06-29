@@ -24,14 +24,12 @@ np.random.seed(int(tr))
 
 M = 20
 SVI_opt_itrs = 2000
-BPSVI_opt_itrs = 2000
 n_subsample_opt = 500
 n_subsample_select = 2000
 proj_dim = 100
 pihat_noise =0.75
 n_bases_per_scale = 50
 beta_dim = 20
-BPSVI_step_sched = lambda i : 0.1/(1+i)
 SVI_step_sched = lambda i : 1.e5/(1+i)
 
 
@@ -168,15 +166,13 @@ prj_w = bc.BlackBoxProjector(sampler_w, proj_dim, log_likelihood, grad_log_likel
 #create coreset construction objects
 print('Creating coreset construction objects')
 sparsevi = bc.SparseVICoreset(Z, prj_w, opt_itrs = SVI_opt_itrs, n_subsample_opt = n_subsample_opt,  n_subsample_select = n_subsample_select, step_sched = SVI_step_sched)
-bpsvi = bc.BatchPSVICoreset(Z, prj_w, opt_itrs = BPSVI_opt_itrs, n_subsample_opt = n_subsample_opt, step_sched = BPSVI_step_sched)
 giga_optimal = bc.HilbertCoreset(Z, prj_optimal)
 #giga_optimal_exact = bc.HilbertCoreset(Z, prj_exact_optimal)
 giga_realistic = bc.HilbertCoreset(Z, prj_realistic)
 #giga_realistic_exact = bc.HilbertCoreset(Z, prj_exact_realistic)
 unif = bc.UniformSamplingCoreset(Z)
 
-algs = {'BPSVI': bpsvi, 
-        'SVI': sparsevi, 
+algs = {'SVI': sparsevi, 
         'GIGAO': giga_optimal, 
         #'GIGAOE': giga_optimal_exact, 
         'GIGAR': giga_realistic, 
