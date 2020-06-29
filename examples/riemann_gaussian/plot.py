@@ -16,6 +16,7 @@ parser.add_argument('--Y_scale', type=str, choices=["linear","log"], default = "
 
 parser.add_argument('--height', type=int, default=850, help = "Height of the plot's html canvas, default 850")
 parser.add_argument('--width', type=int, default=850, help = "Width of the plot's html canvas, default 850")
+parser.add_argument('--plot_every', type=int, default='1', help="Coarseness of the graph - will skip (plot_every-1) points between each plotted point")
 
 parser.add_argument('names', type = str, nargs = '+', default = ["SVI", "RAND", "GIGAO", "GIGAR"], help = "a list of which algorithm names to plot results for (Examples: SVI / GIGAO / GIGAR / RAND)")
 trials = parser.add_mutually_exclusive_group(required=True)
@@ -24,9 +25,7 @@ trials.add_argument('--n_trials', type=int, help="Look for & plot experiments wi
 trials.add_argument('--seeds', type = int, nargs = '+', help="Plot experiments associated with the provided trial numbers (seeds)")
 
 parser.add_argument('--fldr', type=str, default="results/", help="This script will look for & plot experiments in this folder")
-parser.add_argument('--plot_every', type=int, default='1', help="Coarseness of the graph - will skip (plot_every-1) points between each plotted point")
 parser.add_argument('--d', type=int, default = '200', help="The dimension of the multivariate normal distribution used for these experiments")
-parser.add_argument('--M', type=int, default='200', help='The desired maximum coreset size specified for these experiments')
 parser.add_argument('--N', type=int, default='1000', help='Dataset size/number of examples for these experiments')
 parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples taken when discretizing log likelihoods for these experiments")
 parser.add_argument('--SVI_opt_itrs', type=int, default = '500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
@@ -41,12 +40,11 @@ Y = arguments.Y
 Y_scale = arguments.Y_scale
 height = arguments.height
 width = arguments.width
+plot_every = arguments.plot_every
 
 names = arguments.names
 trials = np.arange(1, arguments.n_trials + 1) if arguments.n_trials else arguments.seeds
 fldr = arguments.fldr
-plot_every = arguments.plot_every
-M = arguments.M
 N = arguments.N
 d = arguments.d
 proj_dim = arguments.proj_dim
