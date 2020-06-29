@@ -242,7 +242,4 @@ if not os.path.exists(fldr):
 #make hash of step schedule so it can be encoded in the file name:
 SVI_step_sched_hash_sha1 = hashlib.sha1(arguments.SVI_step_sched.encode('utf-8')).hexdigest()
 
-f = open(os.path.join(fldr, dnm+'_'+model+'_'+alg+'_results_'+'id='+str(ID)+'_mcmc_samples='+str(N_samples)+'_use_diag_laplace_w='+str(use_diag_laplace_w)+'_proj_dim='+str(projection_dim)+'_SVI_opt_itrs='+str(SVI_opt_itrs)+'_n_subsample_opt='+str(n_subsample_opt)+'_n_subsample_select='+str(n_subsample_select)+'_'+'SVI_step_sched_hash_sha1='+SVI_step_sched_hash_sha1+'_pihat_noise='+str(pihat_noise)+'.pk'), 'wb')
-res = (cputs, w, p, mus_laplace, Sigs_laplace, rkls_laplace, fkls_laplace, dnm, model, alg, ID, N_samples, use_diag_laplace_w, projection_dim, SVI_opt_itrs, n_subsample_opt, n_subsample_select, arguments.SVI_step_sched, pihat_noise)
-pk.dump(res, f)
-f.close()
+np.savez_compressed(os.path.join(fldr, dnm+'_'+model+'_'+alg+'_results_'+'id='+str(ID)+'_mcmc_samples='+str(N_samples)+'_use_diag_laplace_w='+str(use_diag_laplace_w)+'_proj_dim='+str(projection_dim)+'_SVI_opt_itrs='+str(SVI_opt_itrs)+'_n_subsample_opt='+str(n_subsample_opt)+'_n_subsample_select='+str(n_subsample_select)+'_'+'SVI_step_sched_hash_sha1='+SVI_step_sched_hash_sha1+'_pihat_noise='+str(pihat_noise)+'.npz'), cputs=cputs, w=w, p=p, mus_laplace=mus_laplace, Sigs_laplace=Sigs_laplace, rkls_laplace=rkls_laplace, fkls_laplace=fkls_laplace, dnm=dnm, model=model, alg=alg, ID=ID, N_samples=N_samples, use_diag_laplace_w=use_diag_laplace_w, projection_dim=projection_dim, SVI_opt_itrs=SVI_opt_itrs, n_subsample_opt=n_subsample_opt, n_subsample_select=n_subsample_select, SVI_step_sched=arguments.SVI_step_sched, pihat_noise=pihat_noise)
