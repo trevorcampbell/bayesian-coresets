@@ -113,4 +113,4 @@ for m in range(Ms.shape[0]):
   gcs = np.array([ grad_th_log_joint(Z[idcs, :], full_samples[i, :], wts) for i in range(full_samples.shape[0]) ])
   gfs = np.array([ grad_th_log_joint(Z, full_samples[i, :], np.ones(Z.shape[0])) for i in range(full_samples.shape[0]) ])
   Fs[m] = (((gcs - gfs)**2).sum(axis=1)).mean()
-np.savez_compressed('results/'+dnm+'_'+model+'_'+anm+'_results_'+'_id='str(ID)+"_mcmc_samples_coreset="+str(mcmc_samples_coreset)+"_mcmc_samples_full="+str(mcmc_samples_full) + "_proj_dim="+str(projection_dim)+'_Ms='+str(Ms)+'.npz', Ms=Ms, Fs=Fs, cputs=cputs, mcmc_time_per_itr = mcmc_time_per_itr, csizes=csizes, mcmc_samples_coreset=mcmc_samples_coreset, mcmc_samples_full=mcmc_samples_full, proj_dim=projection_dim)
+np.savez_compressed('results/'+dnm+'_'+model+'_'+anm+'_results_'+'id='+str(ID)+"_mcmc_samples_coreset="+str(mcmc_samples_coreset)+"_mcmc_samples_full="+str(mcmc_samples_full) + "_proj_dim="+str(projection_dim)+'_Ms='+str(Ms)+'.npz', Ms=Ms, Fs=Fs, cputs=cputs, mcmc_time_per_itr = mcmc_time_per_itr, csizes=csizes, mcmc_samples_coreset=mcmc_samples_coreset, mcmc_samples_full=mcmc_samples_full, proj_dim=projection_dim)

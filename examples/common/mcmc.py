@@ -34,7 +34,7 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_ca
   if sample_caching_folder and not os.path.exists(sample_caching_folder):
     os.mkdir(sample_caching_folder)
   if sample_caching_folder: 
-    sample_caching_prefix = sample_caching_folder+dnm+("_unseeded" if seed is None else "_seed=" + str(seed)+'_N_samples='+str(N_samples)+'_weights='+str(weights)+'_chains='+str(chains)+'control_hash_sha1='+hashlib.sha1(str(control).encode('utf-8')).hexdigest()+'_stan_rep_hash_sha1='+hashlib.sha1(str(stan_representation).encode('utf-8')).hexdigest())  
+    sample_caching_prefix = sample_caching_folder+dnm+("_unseeded" if seed is None else "_seed=" + str(seed))+'_N_samples='+str(N_samples)+'_weights='+str(weights)+'_chains='+str(chains)+'control_hash_sha1='+hashlib.sha1(str(control).encode('utf-8')).hexdigest()+'_stan_rep_hash_sha1='+hashlib.sha1(str(stan_representation).encode('utf-8')).hexdigest()  
   if sample_caching_folder and os.path.exists(sample_caching_prefix + '_samples.npy'):
     print("Using cached samples for " + dnm)
     return np.load(sample_caching_prefix + '_samples.npy')

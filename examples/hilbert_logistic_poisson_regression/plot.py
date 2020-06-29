@@ -9,18 +9,18 @@ sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from plotting import *
 
 parser = argparse.ArgumentParser(description="Plots Riemannian linear regression experiments")
-parser.add_argument('--X', type = str, default="Iterations", help="The X axis of the plot - one of Iterations/Coreset Size/Forward KL/CPU Time(s)")
+parser.add_argument('--X', type = str, default="Iterations", help="The X axis of the plot - one of Iterations/Coreset Size/F Norms/CPU Time(s)")
 parser.add_argument('--X_scale', type=str, choices=["linear","log"], default = "linear", help = "Specifies the scale for the X-axis. Default is \"linear\".")
-parser.add_argument('--Y', type = str, default = "Forward KL", help="The Y axis of the plot - one of Iterations/Coreset Size/Forward KL/CPU Time(s)")
+parser.add_argument('--Y', type = str, default = "F Norms", help="The Y axis of the plot - one of Iterations/Coreset Size/F Norms/CPU Time(s)")
 parser.add_argument('--Y_scale', type=str, choices=["linear","log"], default = "log", help = "Specifies the scale for the Y-axis. Default is \"log\".")
 
 parser.add_argument('--height', type=int, default=850, help = "Height of the plot's html canvas, default 850")
 parser.add_argument('--width', type=int, default=850, help = "Width of the plot's html canvas, default 850")
 
-parser.add_argument('dnm', type=str, help="the name of the dataset for which to plot results")
 parser.add_argument('model', type=str, choices=["lr","poiss"], help="The regression model used. lr refers to logistic regression, and poiss refers to poisson regression.")
+parser.add_argument('dnm', type=str, help="the name of the dataset for which to plot results")
 
-parser.add_argument('names', type = str, nargs = '+', default = ["SVI", "RAND", "GIGAO", "GIGAR"], help = "a list of which algorithm names to plot results for (Examples: SVI / GIGAO / GIGAR / RAND)")
+parser.add_argument('names', type = str, nargs = '+', default = ["FW", "RND", "GIGA"], help = "a list of which algorithm names to plot results for")
 trials = parser.add_mutually_exclusive_group(required=True)
 
 trials.add_argument('--n_trials', type=int, help="Look for & plot experiments with trial IDs 1 through n_trials (inclusive)")
@@ -51,15 +51,13 @@ fldr = arguments.fldr
 
 mcmc_samples_full = arguments.mcmc_samples_full
 mcmc_samples_coreset = arguments.mcmc_samples_coreset
-projection_dim = arguments.proj_dim
+proj_dim = arguments.proj_dim
 
 Ms = arguments.Ms if arguments.Ms is not None else np.unique(np.logspace(0, np.log10(arguments.M_max), arguments.num_Ms, dtype=int))
 
-algs = {'SVIEXACT': 'Sparse VI (Exact Tangent Space)',
-        'SVI': 'Sparse VI', 
-        'GIGAO': 'GIGA(Optimal)', 
-        'GIGAR': "GIGA(Realistic)", 
-        'RAND': "Uniform"}
+algs = {'FW': 'Frank-Wolfe',
+        'GIGA': "GIGA", 
+        'RND': "Uniform"}
 nms = []
 for name in names:
   nms.append((name, algs[name]))
@@ -77,12 +75,10 @@ for i, nm in enumerate(nms):
     res = np.load(os.path.join(fldr, '_'.join(numTuple)+'.npz'), allow_pickle = True)
     data = { 'Iterations': res['Ms'],
              'Coreset Size': res['csizes'],
-             'Forward KL': res['Fs']
+             'F Norms': res['Fs'],
              'CPU Time(s)': res['cputs']}
              
-  x = np.percentile(data[X], 50, axis=0)
-  fig.line(x, np.percentile(data[Y], 50, axis=0), color=pal[i-1], line_width=5, legend=nm[1])
-  fig.patch(x = np.hstack((x, x[::-1])), y = np.hstack((np.percentile(data[Y], 75, axis=0), np.percentile(data[Y], 25, axis=0)[::-1])), color=pal[i-1], fill_alpha=0.4, legend=nm[1])
+  fig.line(data[X], data[Y], color=pal[i-1], line_width=5, legend=nm[1])
 
 postprocess_plot(fig, '12pt', location='bottom_left', glyph_width=40)
 fig.legend.background_fill_alpha=0.
