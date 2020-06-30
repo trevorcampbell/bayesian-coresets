@@ -102,7 +102,7 @@ projector = bc.BlackBoxProjector(sampler, projection_dim, log_likelihood)
 #########################################################################
 
 full_samples = mcmc.sampler(dnm, X, Y, mcmc_samples_full, stan_representation, sample_caching_folder = "caching_mcmc_samples/")
-#TODO FIX SAMPLER TO NOT HAVE TO DO THIS
+#adjusting the format of samples returned by stan to match our expected format (see https://github.com/trevorcampbell/bayesian-coresets-private/issues/57)
 full_samples = np.hstack((full_samples[:, 1:], full_samples[:, 0][:,np.newaxis]))
 
 ######################################
