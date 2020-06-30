@@ -89,7 +89,6 @@ for i, nm in enumerate(nms):
              
     
   x = np.percentile(x_all, 50, axis=0)
-  print(x)
   if scatter:
     fig.scatter(x, np.percentile(y_all, 50, axis=0), color=pal[i-1], line_width=5, legend=nm[1])
     #plot (quartile) error bars (from https://stackoverflow.com/questions/29166353/how-do-you-add-error-bars-to-bokeh-plots-in-python):
