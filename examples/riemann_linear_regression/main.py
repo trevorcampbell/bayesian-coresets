@@ -224,9 +224,10 @@ if not os.path.exists('results/'):
 print('Saving result for trial: ' + str(tr) +' alg: ' + nm)
 SVI_step_sched_hash_sha1 = hashlib.sha1(arguments.SVI_step_sched.encode('utf-8')).hexdigest()
 
-np.savez_compressed(os.path.join('results/', nm+'_'+'tr='+str(tr)+'_n_subsample_opt='+str(n_subsample_opt)+
-'_n_subsample_select='+str(n_subsample_select)+'_'+'SVI_step_sched_hash_sha1='+SVI_step_sched_hash_sha1+
-'_pihat_noise='+str(pihat_noise)+'.npz'),cputs=cputs, mu0= mu0, Sig0=Sig0, mup=mup, Sigp=Sigp, w=w, p=p, muw=muw, Sigw=Sigw,
-rklw=rklw, fklw=fklw, basis_scales = basis_scales, basis_locs=basis_locs, datastd=datastd, nm=nm, tr=tr,
-n_bases_per_scale=n_bases_per_scale, proj_dim=proj_dim, SVI_opt_itrs=SVI_opt_itrs, n_subsample_opt=n_subsample_opt, 
-n_subsample_select=n_subsample_select, SVI_step_sched=arguments.SVI_step_sched, pihat_noise=pihat_noise)
+np.savez_compressed(os.path.join('results/', nm+'_'+'tr='+str(tr)+'_n_bases_per_scale='+str(n_bases_per_scale)+'_proj_dim='+str(proj_dim)+
+'_SVI_opt_itrs='+str(SVI_opt_itrs)+'_n_sub_opt='+str(n_subsample_opt)+'_n_sub_sel='+str(n_subsample_select)+
+'_SVI_step_sched_hash_sha1_truncated='+SVI_step_sched_hash_sha1[:10]+'_pihat_noise='+str(pihat_noise)+'.npz'),
+cputs=cputs, mu0= mu0, Sig0=Sig0, mup=mup, Sigp=Sigp, w=w, p=p, muw=muw, Sigw=Sigw, rklw=rklw, fklw=fklw, 
+basis_scales = basis_scales, basis_locs=basis_locs, datastd=datastd, nm=nm, tr=tr, n_bases_per_scale=n_bases_per_scale, 
+proj_dim=proj_dim, SVI_opt_itrs=SVI_opt_itrs, n_subsample_opt=n_subsample_opt, n_subsample_select=n_subsample_select, 
+SVI_step_sched=arguments.SVI_step_sched, pihat_noise=pihat_noise)
