@@ -14,6 +14,8 @@ parser.add_argument('--X_scale', type=str, choices=["linear","log"], default = "
 parser.add_argument('--Y', type = str, default = "Reverse KL", help="The Y axis of the plot - one of Iterations/Coreset Size/Forward KL/Reverse KL/CPU Time(s)")
 parser.add_argument('--Y_scale', type=str, choices=["linear","log"], default = "log", help = "Specifies the scale for the Y-axis. Default is \"log\".")
 
+parser.add_argument('--scatter', default=False, action='store_const', const=True, help="If provided, plots results as a scatterplot instead of a line plot")
+
 parser.add_argument('--height', type=int, default=850, help = "Height of the plot's html canvas, default 850")
 parser.add_argument('--width', type=int, default=850, help = "Width of the plot's html canvas, default 850")
 parser.add_argument('--plot_every', type=int, default='1', help="Coarseness of the graph - will skip (plot_every-1) points between each plotted point")
@@ -38,6 +40,7 @@ X = arguments.X
 X_scale = arguments.X_scale
 Y = arguments.Y
 Y_scale = arguments.Y_scale
+scatter = arguments.scatter
 height = arguments.height
 width = arguments.width
 plot_every = arguments.plot_every
@@ -70,21 +73,35 @@ fig = bkp.figure(y_axis_type=Y_scale, x_axis_type=X_scale, plot_width=width, plo
 preprocess_plot(fig, '32pt', X_scale == 'log', Y_scale == 'log')
 
 for i, nm in enumerate(nms):
-  kl = []
-  sz = []
+  x_all = []
+  y_all = []
   for tr in trials:
     numTuple = (nm[0], "tr="+str(tr), "N="+str(N), "d="+str(d), "proj_dim="+str(proj_dim), "optimizing="+str(optimizing), "SVI_opt_itrs="+str(SVI_opt_itrs), 'SVI_step_sched_hash_sha1='+hashlib.sha1(arguments.SVI_step_sched.encode('utf-8')).hexdigest(), 'pihat_noise='+str(pihat_noise))
     print(os.path.join(fldr, '_'.join(numTuple)+'.pk'))
     x_, mu0_, Sig0_, Sig_, mup_, Sigp_, w_, p_, muw_, Sigw_, rklw_, fklw_, cputs_, tr_, N_, d_, proj_dim_, optimizing_, SVI_opt_itrs_, SVI_step_sched_, pihat_noise_ = np.load(os.path.join(fldr, '_'.join(numTuple)+'.pk'), allow_pickle=True)
-    data = { 'Iterations': [np.arange(1,len(rklw_)+1,plot_every)],
-             'Coreset Size': [[np.count_nonzero(a) for a in w_[::plot_every]]],
-             'Forward KL': [fklw_[::plot_every]],
-             'Reverse KL': [rklw_[::plot_every]],
-             'CPU Time(s)': [cputs_[::plot_every]]}
+    data = { 'Iterations': np.arange(1,len(rklw_)+1,plot_every),
+             'Coreset Size': [np.count_nonzero(a) for a in w_[::plot_every]],
+             'Forward KL': fklw_[::plot_every],
+             'Reverse KL': rklw_[::plot_every],
+             'CPU Time(s)': cputs_[::plot_every]}
+    x_all.append(data[X])
+    y_all.append(data[Y])
              
-  x = np.percentile(data[X], 50, axis=0)
-  fig.line(x, np.percentile(data[Y], 50, axis=0), color=pal[i-1], line_width=5, legend=nm[1])
-  fig.patch(x = np.hstack((x, x[::-1])), y = np.hstack((np.percentile(data[Y], 75, axis=0), np.percentile(data[Y], 25, axis=0)[::-1])), color=pal[i-1], fill_alpha=0.4, legend=nm[1])
+    
+  x = np.percentile(x_all, 50, axis=0)
+  print(x)
+  if scatter:
+    fig.scatter(x, np.percentile(y_all, 50, axis=0), color=pal[i-1], line_width=5, legend=nm[1])
+    #plot (quartile) error bars (from https://stackoverflow.com/questions/29166353/how-do-you-add-error-bars-to-bokeh-plots-in-python):
+    err_xs = []
+    err_ys = []
+    for j, x_coord in enumerate(x):
+      err_xs.append((x_coord,x_coord))
+      err_ys.append((np.percentile(y_all, 25, axis=0)[j], np.percentile(y_all, 75, axis=0)[j])) 
+    fig.multi_line(err_xs, err_ys, color=pal[i-1])
+  else: 
+    fig.line(x, np.percentile(y_all, 50, axis=0), color=pal[i-1], line_width=5, legend=nm[1])
+    fig.patch(x = np.hstack((x, x[::-1])), y = np.hstack((np.percentile(y_all, 75, axis=0), np.percentile(y_all, 25, axis=0)[::-1])), color=pal[i-1], fill_alpha=0.4, legend=nm[1])
 
 postprocess_plot(fig, '12pt', location='bottom_left', glyph_width=40)
 fig.legend.background_fill_alpha=0.
