@@ -5,32 +5,40 @@ hpc = True
 if hpc:  sys.path.insert(1, os.path.join(sys.path[0], '/home/dm754/bayesian-coresets-private'))
 import bayesiancoresets as bc
 from scipy.stats import multivariate_normal
+import time
+import hashlib
 import argparse
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import model_linreg
 
 parser = argparse.ArgumentParser(description="Runs Riemannian linear regression (employing coreset contruction) on the specified dataset")
-parser.add_argument('dnm', type=str, help="the name of the dataset on which to run regression")
+parser.add_argument('nm', type=str, help="The name of the coreset construction algorithm to use (examples: SVI / GIGAO / GIGAR / RAND)")
 parser.add_argument('tr', type=int, help="The trial number - used to initialize random number generation (for replicability)")
+parser.add_argument('--M', type=int, default='20', help='Desired maximum coreset size')
+parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples to take when discretizing log likelihoods")
+parser.add_argument('--SVI_opt_itrs', type=int, default = '2000', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
+parser.add_argument('--SVI_step_sched', type=str, default = "lambda i : 1.e5/(1+i)", help="Step schedule (tuning rate) for SVI & HOPS, entered as a lambda expression in quotation marks. Default is \"lambda i : 1.e5/(1+i)\"")
+parser.add_argument('--pihat_noise', type=float, default=.75, help = "(If calling GIGAR or simulating another realistically tuned Hilbert Coreset) - a measure of how much noise to introduce to the smoothed pi-hat to make the sampler")
+parser.add_argument('--n_subsample_opt', type=int, default=500, help="(If using Sparse VI/HOPS) the size of the random subsample to use when optimizing the coreset weights in each reweight step")
+parser.add_argument('--n_subsample_select', type=int, default=2000, help="(If using Sparse VI/HOPS) the size of the random subsample to use when determining which point to add to the coreset in each select step")
+parser.add_argument('--n_bases_per_scale', type=int, default=50, help="The number of Radial Basis Functions per scale")#TODO: verify help message
 
 arguments = parser.parse_args()
-dnm = arguments.dnm
+nm = arguments.nm
 tr = arguments.tr
 
-#np.random.seed(int(''.join([ str(ord(ch)) for ch in nm+tr])) % 2**32) #use this if need a seed depending on alg name and trial num
 #use the trial # as seed
 np.random.seed(int(tr))
 
-M = 20
-SVI_opt_itrs = 2000
-n_subsample_opt = 500
-n_subsample_select = 2000
-proj_dim = 100
-pihat_noise =0.75
-n_bases_per_scale = 50
-beta_dim = 20
-SVI_step_sched = lambda i : 1.e5/(1+i)
+M = arguments.M
+SVI_opt_itrs = arguments.SVI_opt_itrs
+n_subsample_opt = arguments.n_subsample_opt
+n_subsample_select = arguments.n_subsample_select
+proj_dim = arguments.proj_dim
+pihat_noise =arguments.pihat_noise
+n_bases_per_scale = arguments.n_bases_per_scale
+SVI_step_sched = eval(arguments.SVI_step_sched)
 
 
 
@@ -66,7 +74,7 @@ Sig0inv = np.linalg.inv(Sig0)
 #SigLInv = np.linalg.inv(SigL)
 
 #generate basis functions by uniformly randomly picking locations in the dataset
-print('Trial ' + tr) 
+print('Trial ' + str(tr)) 
 print('Creating bases')
 basis_scales = np.array([])
 basis_locs = np.zeros((0,2))
@@ -93,10 +101,10 @@ SigpInv = LSigpInv.dot(LSigpInv.T)
 
 #create function to output log_likelihood given param samples
 print('Creating log-likelihood function')
-log_likelihood = lambda z, th : model_linreg.gaussian_loglikelihood(z, th, datastd**2)
+log_likelihood = lambda z, th : model_linreg.log_likelihood(z, th, datastd**2)
 
 print('Creating gradient log-likelihood function')
-grad_log_likelihood = lambda z, th : model_linreg.gaussian_grad_x_loglikelihood(z, th, datastd**2)
+grad_log_likelihood = lambda z, th : model_linreg.grad_x_log_likelihood(z, th, datastd**2)
 
 #create tangent space for well-tuned Hilbert coreset alg
 print('Creating tuned projector for Hilbert coreset construction')
@@ -184,14 +192,18 @@ print('Building coreset')
 #build coresets
 w = [np.array([0.])]
 p = [np.zeros((1, Z.shape[1]))]
+cputs = [0] #TODO: verify that it's fair to think of the time before build calls as effectively 0
+tot_time = 0
 for m in range(1, M+1):
-  print('trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
-
+  print('trial: ' + str(tr) +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
+  t0 = time.process_time()
   alg.build(1)
+  tot_time += time.process_time()-t0
   #store weights
   wts, pts, idcs = alg.get()
   w.append(wts)
   p.append(pts)
+  cputs.append(tot_time)
 
   #printouts for debugging purposes
   #print('reverse KL: ' + str(model_linreg.weighted_post_KL(mu0, Sig0inv, datastd**2, Z, w[m, :], reverse=True)))
@@ -201,16 +213,20 @@ Sigw = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
 rklw = np.zeros(M+1)
 fklw = np.zeros(M+1)
 for m in range(M+1):
-  print('KL divergence computation for trial: ' + tr +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
+  print('KL divergence computation for trial: ' + str(tr) +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
   muw[m, :], LSigw, LSigwInv = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, p[m], w[m])
   Sigw[m, :, :] = LSigw.dot(LSigw.T)
-  rklw[m] = model_linreg.gaussian_KL(muw[m,:], Sigw[m,:,:], mup, SigpInv)
-  fklw[m] = model_linreg.gaussian_KL(mup, Sigp, muw[m,:], LSigwInv.dot(LSigwInv.T))
+  rklw[m] = model_linreg.KL(muw[m,:], Sigw[m,:,:], mup, SigpInv)
+  fklw[m] = model_linreg.KL(mup, Sigp, muw[m,:], LSigwInv.dot(LSigwInv.T))
 
 if not os.path.exists('results/'):
   os.mkdir('results')
-print('Saving result for trial: ' + tr +' alg: ' + nm)
-f = open('results/results_'+nm+'_' + tr+'.pk', 'wb')
-res = (x, mu0, Sig0, mup, Sigp, w, p, muw, Sigw, rklw, fklw, basis_scales, basis_locs, datastd)
-pk.dump(res, f)
-f.close()
+print('Saving result for trial: ' + str(tr) +' alg: ' + nm)
+SVI_step_sched_hash_sha1 = hashlib.sha1(arguments.SVI_step_sched.encode('utf-8')).hexdigest()
+
+np.savez_compressed(os.path.join('results/', nm+'_'+'tr='+str(tr)+'_n_subsample_opt='+str(n_subsample_opt)+
+'_n_subsample_select='+str(n_subsample_select)+'_'+'SVI_step_sched_hash_sha1='+SVI_step_sched_hash_sha1+
+'_pihat_noise='+str(pihat_noise)+'.npz'),cputs=cputs, mu0= mu0, Sig0=Sig0, mup=mup, Sigp=Sigp, w=w, p=p, muw=muw, Sigw=Sigw,
+rklw=rklw, fklw=fklw, basis_scales = basis_scales, basis_locs=basis_locs, datastd=datastd, nm=nm, tr=tr,
+n_bases_per_scale=n_bases_per_scale, proj_dim=proj_dim, SVI_opt_itrs=SVI_opt_itrs, n_subsample_opt=n_subsample_opt, 
+n_subsample_select=n_subsample_select, SVI_step_sched=arguments.SVI_step_sched, pihat_noise=pihat_noise)
