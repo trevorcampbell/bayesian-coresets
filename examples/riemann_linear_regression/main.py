@@ -12,6 +12,8 @@ import argparse
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import model_linreg
 
+###NOTE: This experiment is unstable, and may lead to counterintuitive results###
+
 parser = argparse.ArgumentParser(description="Runs Riemannian linear regression (employing coreset contruction) on the specified dataset")
 parser.add_argument('nm', type=str, help="The name of the coreset construction algorithm to use (examples: SVI / GIGAO / GIGAR / RAND)")
 parser.add_argument('tr', type=int, help="The trial number - used to initialize random number generation (for replicability)")
