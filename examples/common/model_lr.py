@@ -95,7 +95,7 @@ def diag_hess_th_log_prior(th):
 def diag_hess_th_log_joint(z, th, wts):
   return diag_hess_th_log_prior(th) + (wts[:, np.newaxis, np.newaxis]*diag_hess_th_log_likelihood(z, th)).sum(axis=0)
 
-stan_representation = ('pystan_model_logistic', """
+stan_representation = """
 data {
   int<lower=0> n; // number of observations
   int<lower=0> d; // number of predictors
@@ -115,5 +115,5 @@ model {
   theta ~ normal(0, 1);
   y ~ bernoulli_logit(f);
 }
-""")
+"""
 

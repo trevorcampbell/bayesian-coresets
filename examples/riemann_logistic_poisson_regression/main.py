@@ -115,7 +115,7 @@ np.random.seed(ID)
 
 #run sampler
 sample_caching_folder = "caching/"
-samples = sampler(dnm, data_X, data_Y, N_samples, stan_representation, sample_caching_folder = sample_caching_folder)
+samples = sampler(dnm, data_X, data_Y, N_samples, model, stan_representation, sample_caching_folder = sample_caching_folder)
 #adjusting the format of samples returned by stan to match our expected format (see https://github.com/trevorcampbell/bayesian-coresets-private/issues/57)
 samples = np.hstack((samples[:, 1:], samples[:, 0][:,np.newaxis]))
 

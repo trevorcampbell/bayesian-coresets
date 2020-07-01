@@ -101,7 +101,7 @@ projector = bc.BlackBoxProjector(sampler, projection_dim, log_likelihood)
 #########################################################################
 #########################################################################
 
-full_samples = mcmc.sampler(dnm, X, Y, mcmc_samples_full, stan_representation, sample_caching_folder = "caching_mcmc_samples/")
+full_samples = mcmc.sampler(dnm, X, Y, mcmc_samples_full, model, stan_representation, sample_caching_folder = "caching_mcmc_samples/")
 #adjusting the format of samples returned by stan to match our expected format (see https://github.com/trevorcampbell/bayesian-coresets-private/issues/57)
 full_samples = np.hstack((full_samples[:, 1:], full_samples[:, 0][:,np.newaxis]))
 
@@ -139,7 +139,7 @@ for m in range(Ms.shape[0]):
   curX = X[idcs, :]
   curY = Y[idcs]
   t0 = time.process_time()
-  mcmc.sampler(dnm, curX, curY, mcmc_samples_coreset, stan_representation, weights=wts)
+  mcmc.sampler(dnm, curX, curY, mcmc_samples_coreset, model, stan_representation, weights=wts)
   t_alg_mcmc = time.process_time()-t0 
   t_alg_mcmc_per_iter = t_alg_mcmc/(mcmc_samples_coreset*2) #if we change the number of burn_in steps to differ from the number of actual samples we take, we might need to reconsider this line  
 

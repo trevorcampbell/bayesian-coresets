@@ -30,11 +30,11 @@ def build_model(model_caching_folder, model_name, model_code, use_weighted_cores
 
   return sm
 
-def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_caching_folder = None, model_caching_folder = '../common/models', code_caching_folder = '../common/stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True, verbose_compiling = False, seed = None):
+def sampler(dnm, X, Y, N_samples, model_name, model_code, weights = None, sample_caching_folder = None, model_caching_folder = '../common/models', code_caching_folder = '../common/stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True, verbose_compiling = False, seed = None):
   if sample_caching_folder and not os.path.exists(sample_caching_folder):
     os.mkdir(sample_caching_folder)
   if sample_caching_folder: 
-    sample_caching_prefix = sample_caching_folder+dnm+("_unseeded" if seed is None else "_seed=" + str(seed))+'_N_samples='+str(N_samples)+'_weights='+str(weights)+'_chains='+str(chains)+'control_hash_sha1='+hashlib.sha1(str(control).encode('utf-8')).hexdigest()+'_stan_rep_hash_sha1='+hashlib.sha1(str(stan_representation).encode('utf-8')).hexdigest()  
+    sample_caching_prefix = sample_caching_folder+dnm+("_unseeded" if seed is None else "_seed=" + str(seed))+'model_name='+model_name+'_N_samples='+str(N_samples)+'_weights='+str(weights)+'_chains='+str(chains)+'control_hash_sha1='+hashlib.sha1(str(control).encode('utf-8')).hexdigest()+'_model_code_hash_sha1='+hashlib.sha1(model_code.encode('utf-8')).hexdigest()  
   if sample_caching_folder and os.path.exists(sample_caching_prefix + '_samples.npy'):
     print("Using cached samples for " + dnm)
     return np.load(sample_caching_prefix + '_samples.npy')
@@ -48,8 +48,7 @@ def sampler(dnm, X, Y, N_samples, stan_representation, weights = None, sample_ca
     sampler_data = {'x': X, 'y': Y.astype(int), 'w': weights if weights is not None else [], 'd': X.shape[1], 'n': X.shape[0]}
 
     print('STAN: building/loading model')
-    name, code = stan_representation
-    sm = build_model(model_caching_folder, name, code, use_weighted_coresets = weights is not None, code_caching_folder=code_caching_folder, verbose_compiling=verbose_compiling)
+    sm = build_model(model_caching_folder, model_name, model_code, use_weighted_coresets = weights is not None, code_caching_folder=code_caching_folder, verbose_compiling=verbose_compiling)
 
     print('STAN: sampling posterior: ' + dnm)
     t0 = time.process_time()
