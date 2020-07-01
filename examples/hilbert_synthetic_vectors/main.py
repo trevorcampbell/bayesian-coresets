@@ -30,7 +30,7 @@ class IDProjector(bc.Projector):
   def project(self, pts, grad=False):
     return pts
 
-np.random.seed(3)
+np.random.seed(tr)
 
 bc.util.set_verbosity('error')
 

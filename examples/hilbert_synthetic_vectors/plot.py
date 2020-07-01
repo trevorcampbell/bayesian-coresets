@@ -58,8 +58,8 @@ preprocess_plot(fig, '32pt', X_scale == 'log', Y_scale == 'log')
 pal = bokeh.palettes.colorblind['Colorblind'][8]
 pal = [pal[0], pal[1], '#d62728', pal[4], pal[6], pal[3], pal[7], pal[2]]
 for i, nm in enumerate(nms):
-  kl = []
-  sz = []
+  x_all = []
+  y_all = []
   for tr in trials:
     numTuple = ("alg="+nm[0], "tr="+str(tr), "N="+str(N), "d="+str(d))
     print(os.path.join(fldr, 'gauss_results_'+('diag_' if diag else '')+'_'.join(numTuple)+'.npz'))
@@ -69,8 +69,13 @@ for i, nm in enumerate(nms):
              'Error': res['err'],
              'CPU Time(s)': res['cput']
              }
+    x_all.append(data[X])
+    y_all.append(data[Y])
+
+  x = np.percentile(x_all, 50, axis=0)
              
-  fig.line(data[X], data[Y], color=pal[i-1], line_width=5, legend=nm[1])
+  fig.line(x, np.percentile(y_all, 50, axis=0), color=pal[i-1], line_width=5, legend=nm[1])
+  fig.patch(x = np.hstack((x, x[::-1])), y = np.hstack((np.percentile(y_all, 75, axis=0), np.percentile(y_all, 25, axis=0)[::-1])), color=pal[i-1], fill_alpha=0.4, legend=nm[1])
   
 postprocess_plot(fig, '12pt', location='bottom_left', glyph_width=40)
 fig.legend.background_fill_alpha=0.
