@@ -67,8 +67,8 @@ fig = bkp.figure(y_axis_type=Y_scale, x_axis_type=X_scale, plot_width=width, plo
 preprocess_plot(fig, '32pt', X_scale == 'log', Y_scale == 'log')
 
 for i, nm in enumerate(nms):
-  kl = []
-  sz = []
+  x_all = []
+  y_all = []
   for tr in trials:
     numTuple = (dnm, model, nm[0], "results", "id="+str(tr), "mcmc_samples_coreset="+str(mcmc_samples_coreset), "mcmc_samples_full="+str(mcmc_samples_full), "proj_dim="+str(proj_dim), 'Ms='+str(Ms))
     print(os.path.join(fldr, '_'.join(numTuple)+'.npz'))
@@ -77,8 +77,12 @@ for i, nm in enumerate(nms):
              'Coreset Size': res['csizes'],
              'F Norms': res['Fs'],
              'CPU Time(s)': res['cputs']}
-             
-  fig.line(data[X], data[Y], color=pal[i-1], line_width=5, legend=nm[1])
+    x_all.append(data[X])
+    y_all.append(data[Y])
+
+  x = np.percentile(x_all, 50, axis=0)
+  fig.line(x, np.percentile(y_all, 50, axis=0), color=pal[i-1], line_width=5, legend=nm[1])
+  fig.patch(x = np.hstack((x, x[::-1])), y = np.hstack((np.percentile(y_all, 75, axis=0), np.percentile(y_all, 25, axis=0)[::-1])), color=pal[i-1], fill_alpha=0.4, legend=nm[1])
 
 postprocess_plot(fig, '12pt', location='bottom_left', glyph_width=40)
 fig.legend.background_fill_alpha=0.
