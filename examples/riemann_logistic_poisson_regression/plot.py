@@ -76,21 +76,23 @@ fig = bkp.figure(y_axis_type=Y_scale, x_axis_type=X_scale, plot_width=width, plo
 preprocess_plot(fig, '32pt', X_scale == 'log', Y_scale == 'log')
 
 for i, nm in enumerate(nms):
-  kl = []
-  sz = []
+  x_all = []
+  y_all = []
   for tr in trials:
     numTuple = (dnm, model, nm[0], "results", "id="+str(tr), "mcmc_samples="+str(N_samples), "use_diag_laplace_w="+str(use_diag_laplace_w), "proj_dim="+str(proj_dim), "SVI_opt_itrs="+str(SVI_opt_itrs), 'n_subsample_opt='+str(n_subsample_opt), "n_subsample_select="+str(n_subsample_select), 'SVI_step_sched_hash_sha1='+str(SVI_step_sched_hash_sha1), 'pihat_noise='+str(pihat_noise))
     print(os.path.join(fldr, '_'.join(numTuple)+'.npz'))
     res = np.load(os.path.join(fldr, '_'.join(numTuple)+'.npz'), allow_pickle = True)
-    data = { 'Iterations': [np.arange(1,len(res['rkls_laplace'])+1,plot_every)],
-             'Coreset Size': [[np.count_nonzero(a) for a in res['w'][::plot_every]]],
-             'Forward KL': [res['fkls_laplace'][::plot_every]],
-             'Reverse KL': [res['rkls_laplace'][::plot_every]],
-             'CPU Time(s)': [res['cputs'][::plot_every]]}
-             
-  x = np.percentile(data[X], 50, axis=0)
-  fig.line(x, np.percentile(data[Y], 50, axis=0), color=pal[i-1], line_width=5, legend=nm[1])
-  fig.patch(x = np.hstack((x, x[::-1])), y = np.hstack((np.percentile(data[Y], 75, axis=0), np.percentile(data[Y], 25, axis=0)[::-1])), color=pal[i-1], fill_alpha=0.4, legend=nm[1])
+    data = { 'Iterations': np.arange(1,len(res['rkls_laplace'])+1,plot_every),
+             'Coreset Size': [np.count_nonzero(a) for a in res['w'][::plot_every]],
+             'Forward KL': res['fkls_laplace'][::plot_every],
+             'Reverse KL': res['rkls_laplace'][::plot_every],
+             'CPU Time(s)': res['cputs'][::plot_every]}
+    x_all.append(data[X])
+    y_all.append(data[Y])
+
+  x = np.percentile(x_all, 50, axis=0)
+  fig.line(x, np.percentile(y_all, 50, axis=0), color=pal[i-1], line_width=5, legend=nm[1])
+  fig.patch(x = np.hstack((x, x[::-1])), y = np.hstack((np.percentile(y_all, 75, axis=0), np.percentile(y_all, 25, axis=0)[::-1])), color=pal[i-1], fill_alpha=0.4, legend=nm[1])
 
 postprocess_plot(fig, '12pt', location='bottom_left', glyph_width=40)
 fig.legend.background_fill_alpha=0.
