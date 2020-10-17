@@ -5,31 +5,43 @@ import time
 import argparse
 import os
 
-parser = argparse.ArgumentParser()
-parser.add_argument('tr', type=int, help='The trial number (used to seed random number generation)')
-parser.add_argument('alg_nm', type=str, choices=['FW', 'GIGA', 'OMP', 'IS', 'US'], help="The sparse non negative least squares algorithm to use: one of FW (Frank Wolfe), GIGA (Greedy Iterative Geodeic Ascent), OMP (Orthogonal Matching Pursuit), IS (Importance Sampling), US (Uniform Sampling)")
-parser.add_argument('--N', type=int, default=10000, help="The number of synthetic data points (only if the --diag flag is not provided)")
-parser.add_argument('--d', type=int, default=100, help="The dimension of the synthetic data points (if the --diag flag is provided, this is also the number of synthetic data points)")
-parser.add_argument('--diag', action='store_const', default=False, const=True, help="If this flag is provided, uses an axis-aligned diagonal dataset (dxd) instead of the usual random Nxd matrix")
-parser.add_argument('--fldr', type=str, default="results/", help="This script will save results in this folder. Default \"results/\"")
-
-
-arguments = parser.parse_args()
-tr = arguments.tr
-alg_nm = arguments.alg_nm
-N = arguments.N
-d = arguments.d
-diag = arguments.diag
-fldr = arguments.fldr
 
 class IDProjector(bc.Projector):
-
   def update(self, wts, pts):
     pass
 
   def project(self, pts, grad=False):
     return pts
 
+##########################################
+### Setup Argument Parser
+##########################################
+parser = argparse.ArgumentParser()
+
+# example-specific arguments
+parser.add_argument('alg', type=str, choices=['FW', 'GIGA', 'OMP', 'IS', 'US'], help="The sparse non negative least squares algorithm to use: one of FW (Frank Wolfe), GIGA (Greedy Iterative Geodeic Ascent), OMP (Orthogonal Matching Pursuit), IS (Importance Sampling), US (Uniform Sampling)")
+parser.add_argument('--N', type=int, default=10000, help="The number of synthetic data points, if applicable")
+parser.add_argument('--d', type=int, default=100, help="The dimension of the synthetic data points, if applicable")
+parser.add_argument('--data', type=str, default='normal', choices=['normal', 'axis'], help="Specifies the type of synthetic data to generate.")
+
+# common arguments
+parser.add_argument('--trial', type=int, help='The trial number (used to seed random number generation)')
+parser.add_argument('--folder', type=str, default="results/", help="This script will save results in this folder. Default \"results/\"")
+parser.add_argument('--verbosity', type=str, default="error", choices=['error', 'warning', 'critical', 'info', 'debug'], help="The verbosity level.")
+
+#parse
+arguments = parser.parse_args()
+alg = arguments.alg
+tr = arguments.trial
+N = arguments.N
+d = arguments.d
+diag = arguments.data
+fldr = arguments.folder
+vrb = arguments.verbosity
+
+
+
+### Seed RNG
 np.random.seed(tr)
 
 bc.util.set_verbosity('error')
@@ -67,8 +79,8 @@ opt_err = np.zeros(Ms.shape[0])
 csize = np.zeros(Ms.shape[0])
 cput = np.zeros(Ms.shape[0])
 
-print('data: gauss, trial ' + str(tr) + ', alg: ' + alg_nm)
-alg = bc.HilbertCoreset(X, IDProjector(), snnls = algs[alg_nm])
+print('data: gauss, trial ' + str(tr) + ', alg: ' + alg)
+alg = bc.HilbertCoreset(X, IDProjector(), snnls = algs[alg])
 
 for m, M in enumerate(Ms):
   t0 = time.time()
@@ -87,4 +99,4 @@ for m, M in enumerate(Ms):
 ############################
 if not os.path.exists(fldr):
   os.mkdir(fldr)
-np.savez_compressed(os.path.join(fldr, 'gauss_results'+('_diag'if diag else '')+'_alg='+alg_nm+'_tr='+str(tr)+'_N='+str(N)+'_d='+str(d)+'.npz'), err=err, csize=csize, cput=cput, Ms = Ms, alg=alg, tr=tr)
+np.savez_compressed(os.path.join(fldr, 'gauss_results'+('_diag'if diag else '')+'_alg='+alg+'_tr='+str(tr)+'_N='+str(N)+'_d='+str(d)+'.npz'), err=err, csize=csize, cput=cput, Ms = Ms, alg=alg, tr=tr)
