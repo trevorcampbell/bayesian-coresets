@@ -46,5 +46,6 @@ def save(arguments, results_folder = 'results/', **kwargs):
     #save the df
     df = pd.DataFrame(argd)
     df.to_csv(os.path.join(results_folder, arg_hash+'.csv'), index=False)
+    print('Saved result to ' + str(os.path.join(results_folder, arg_hash+'.csv')))
 
 
