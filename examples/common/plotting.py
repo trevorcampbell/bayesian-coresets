@@ -49,7 +49,69 @@ pl.extend(pal[4:8])
 pl.append('#d62728')
 pal = pl
 
+def preprocess_plot(fig, axis_font_size, log_scale_x, log_scale_y):
+  fig.xaxis.axis_label_text_font_size= axis_font_size
+  fig.xaxis.major_label_text_font_size= axis_font_size
+  fig.yaxis.axis_label_text_font_size= axis_font_size
+  fig.yaxis.major_label_text_font_size= axis_font_size
+  if log_scale_y:
+    fig.yaxis.formatter = logFmtr
+  if log_scale_x:
+    fig.xaxis.formatter = logFmtr
 
+def postprocess_plot(fig, legend_font_size, orientation='vertical', location='top_right', glyph_width=80):
+  fig.legend.label_text_font_size= legend_font_size
+  fig.legend.orientation=orientation
+  fig.legend.location=location
+  fig.legend.glyph_width=glyph_width
+  fig.legend.glyph_height=40
+  fig.legend.spacing=5
+  fig.xgrid.grid_line_color=None
+  fig.ygrid.grid_line_color=None
+
+def plot(arguments, df):
+  fig = bkp.figure(y_axis_type=arguments.plot_y_type, 
+                 x_axis_type=arguments.plot_x_type, 
+                 plot_width=arguments.plot_width,
+                 plot_height=arguments.plot_height, 
+                 x_axis_label=arguments.plot_x, 
+                 y_axis_label=arguments.plot_y, 
+                 toolbar_location='right' if arguments.plot_toolbar else None)
+
+  preprocess_plot(fig, '32pt', arguments.plot_x_type == 'log', arguments.plot_y_type == 'log')
+
+  if arguments.plot_type == 'scatter':
+    plotfunc = scatter
+  else:
+    plotfunc = line
+
+  if arguments.plot_legend is not None:
+    #iterate over groups
+    i = 0
+    for nm in resdf[arguments.plot_legend].unique():
+      tmpdf = resdf.loc[resdf[arguments.plot_legend] == nm]
+      plotfunc(fig, tmpdf, arguments, clr = pal[i], legend = nm)
+      i = i+1
+  else:
+    plotfunc(fig, resdf, arguments, clr = pal[0])
+
+  postprocess_plot(fig, '12pt', location='bottom_left', glyph_width=40)
+  fig.legend.background_fill_alpha=0.
+  fig.legend.border_line_alpha=0.
+  fig.legend.visible = True
+  bkp.show(fig)
+
+
+
+def scatter(fig, df, arguments, clr = pal[0], legend = None):
+  #plot all at once
+  xy50 = resdf.groupby(arguments.plot_x).quantile(.5)
+  #xy10 = resdf.groupby(arguments.plot_x).quantile(.1)
+  #xy90 = resdf.groupby(arguments.plot_x).quantile(.9)
+  fig.scatter(xy50[arguments.plot_x], xy50[arguments.plot_y], color=pal[0], line_width=5)
+
+def line(fig, df, arguments, clr = pal[0], legend = None):
+  pass
 
 def plot_gaussian(plot, mup, Sigp, Sig, color, dotsize, linewidth, dotalpha, linealpha, line_dash, name, num_pts_for_circle_approx = 100):
   plot.circle(mup[0], mup[1], color=color, size=dotsize, alpha=dotalpha)
@@ -96,25 +158,4 @@ def plot_gaussian_projected2d(dim, mu, sig, plot,
   plot_gaussian(plot,mu,sig,0,color=color,dotsize=dotsize,linewidth=linewidth,dotalpha=dotalpha,linealpha=linealpha,
   line_dash=line_dash,name=name, num_pts_for_circle_approx=num_pts_for_circle_approx)
 
-def preprocess_plot(fig, axis_font_size, log_scale_x, log_scale_y):
-  fig.xaxis.axis_label_text_font_size= axis_font_size
-  fig.xaxis.major_label_text_font_size= axis_font_size
-  fig.yaxis.axis_label_text_font_size= axis_font_size
-  fig.yaxis.major_label_text_font_size= axis_font_size
-  if log_scale_y:
-    fig.yaxis.formatter = logFmtr
-  if log_scale_x:
-    fig.xaxis.formatter = logFmtr
-  #fig.toolbar.logo = None
-  #fig.toolbar_location = None
-
-def postprocess_plot(fig, legend_font_size, orientation='vertical', location='top_right', glyph_width=80):
-  fig.legend.label_text_font_size= legend_font_size
-  fig.legend.orientation=orientation
-  fig.legend.location=location
-  fig.legend.glyph_width=glyph_width
-  fig.legend.glyph_height=40
-  fig.legend.spacing=5
-  fig.xgrid.grid_line_color=None
-  fig.ygrid.grid_line_color=None
 

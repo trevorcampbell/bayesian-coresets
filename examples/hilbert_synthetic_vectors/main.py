@@ -2,12 +2,11 @@ from __future__ import print_function
 import numpy as np
 import bayesiancoresets as bc
 import time
-import argparse
 import os
 import sys
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import results
-
+import args
 
 class IDProjector(bc.Projector):
   def update(self, wts, pts):
@@ -16,27 +15,7 @@ class IDProjector(bc.Projector):
   def project(self, pts, grad=False):
     return pts
 
-##########################################
-### Setup Argument Parser
-##########################################
-parser = argparse.ArgumentParser()
-
-# example-specific arguments
-parser.add_argument('alg_nm', type=str, choices=['FW', 'GIGA', 'OMP', 'IS', 'US'], help="The sparse non negative least squares algorithm to use: one of FW (Frank Wolfe), GIGA (Greedy Iterative Geodeic Ascent), OMP (Orthogonal Matching Pursuit), IS (Importance Sampling), US (Uniform Sampling)")
-parser.add_argument('--data_num', type=int, default=1000, help="The number of synthetic data points")
-parser.add_argument('--data_dim', type=int, default=100, help="The dimension of the synthetic data points, if applicable")
-parser.add_argument('--data_type', type=str, default='normal', choices=['normal', 'axis'], help="Specifies the type of synthetic data to generate.")
-parser.add_argument('--coreset_size_max', type=int, default=1000, help="The maximum coreset size to evaluate")
-parser.add_argument('--coreset_num_sizes', type=int, default=100, help="The number of coreset sizes to evaluate")
-parser.add_argument('--coreset_size_spacing', type=str, choices=['log', 'linear'], default='log', help="The spacing of coreset sizes to test")
-
-# common arguments
-parser.add_argument('--trial', type=int, help='The trial number (used to seed random number generation)')
-parser.add_argument('--results_folder', type=str, default="results/", help="This script will save results in this folder. Default \"results/\"")
-parser.add_argument('--verbosity', type=str, default="error", choices=['error', 'warning', 'critical', 'info', 'debug'], help="The verbosity level.")
-
-# parse
-arguments = parser.parse_args()
+arguments = args.parser.parse_args()
 
 # check if result already exists for this run, and if so, quit
 if results.check_exists(arguments):
@@ -106,5 +85,5 @@ for m, M in enumerate(Ms):
 ############################
 ############################
 
-results.save_result(arguments, err = err, csize = csize, cput = cput)
+results.save(arguments, err = err, csize = csize, cput = cput)
 
