@@ -92,11 +92,11 @@ def run(arguments):
     #create the sampler for the "realistically-tuned" Hilbert coreset
     xhat = x[np.random.randint(0, x.shape[0], int(np.sqrt(x.shape[0]))), :]
     muhat, LSigHat, LSigHatInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, xhat, np.ones(xhat.shape[0]))
-    sampler_realistic = lambda n, w, pts : muhat + np.random.randn(n, muhat.shape[0]).dot(LSighat.T)
+    sampler_realistic = lambda n, w, pts : muhat + np.random.randn(n, muhat.shape[0]).dot(LSigHat.T)
     prj_realistic = bc.BlackBoxProjector(sampler_realistic, arguments.proj_dim, log_likelihood, grad_log_likelihood)
 
     print('Creating projector for black-box SVI')
-    def sampler_w(n, w, pts):
+    def sampler_w(n, wts, pts):
         if wts is None or pts is None or pts.shape[0] == 0:
           wts = np.zeros(1)
           pts = np.zeros((1, mu0.shape[0]))
@@ -128,7 +128,7 @@ def run(arguments):
     prj_optimal_exact = GaussianProjector()
     prj_optimal_exact.update(np.ones(x.shape[0]), x)
     prj_realistic_exact = GaussianProjector()
-    prj_realistic_exact.update(np.ones(xhat.shape[0], xhat)
+    prj_realistic_exact.update(np.ones(xhat.shape[0]), xhat)
        
     #######################################
     #######################################
