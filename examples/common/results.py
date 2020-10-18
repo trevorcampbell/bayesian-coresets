@@ -6,7 +6,9 @@ import pandas as pd
 import numpy as np
 
 def hash_namespace(ns):
-    return hashlib.md5(json.dumps(vars(ns), sort_keys=True).encode('utf-8')).hexdigest()
+    nsdict = vars(ns)
+    nsdict.pop('func', None) #can't hash function objects
+    return hashlib.md5(json.dumps(nsdict, sort_keys=True).encode('utf-8')).hexdigest()
 
 def check_exists(arguments, results_folder = 'results/'):
     arg_hash = hash_namespace(arguments)
@@ -30,10 +32,12 @@ def load_matching(match_dict, results_folder = 'results/'):
                 df = df.append(resdf)
     return df
 
-def save(arguments, results_folder = 'results/', **kwargs):
+def save(arguments, results_folder = 'results/', log_file = 'manifest.csv', **kwargs):
     #create results filenames/argument hashes/dict
     arg_hash = hash_namespace(arguments)
     argd = vars(arguments)
+
+    manifest_line = arg_hash+': '+ str(argd) + '\n'
 
     #make the results folder if it doesn't exist
     if not os.path.exists(results_folder):
@@ -46,5 +50,11 @@ def save(arguments, results_folder = 'results/', **kwargs):
     #save the df
     df = pd.DataFrame(argd)
     df.to_csv(os.path.join(results_folder, arg_hash+'.csv'), index=False)
+
+    #append to the manifest
+    with open(os.path.join(results_folder, log_file), 'a') as f:
+        f.write(manifest_line)
+
+
 
 
