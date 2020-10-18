@@ -90,17 +90,23 @@ def run(arguments):
     
     print('Loading dataset '+arguments.dataset)
     X, Y, Z, Zt, D = model.load_data('../data/'+arguments.dataset+'.npz')
-
     
-    mu0 = np.zeros(Z.shape[1])
     #NOTE: Sig0 is currently coded as identity in model_lr and model_pr (see log_prior).
     #so if you change Sig0 here things might break.
     #TODO: fix that...
+    mu0 = np.zeros(Z.shape[1])
     Sig0 = np.eye(Z.shape[1])
     LSig0 = np.eye(Z.shape[1])
 
     print('Running full MCMC')
-    full_samples = mcmc.sampler(arguments.dataset, X, Y, arguments.mcmc_samples_full, arguments.model, model.stan_representation, sample_caching_folder = "mcmc_cache/", seed = arguments.trial)
+    #convert Y to Stan LR label format
+    stanY = np.zeros(Y.shape[0])
+    stanY[:] = Y
+    stanY[stanY == -1] = 0
+    sampler_data = {'x': X, 'y': stanY.astype(int), 'w': np.ones(X.shape[0]), 'd': X.shape[1], 'n': X.shape[0]}
+    full_samples, t_sample = mcmc.run(sampler_data, arguments.mcmc_samples_full, arguments.model, model.stan_representation, arguments.trial)
+    print(full_samples)
+    quit()
     #adjusting the format of samples returned by stan to match our expected format (see https://github.com/trevorcampbell/bayesian-coresets-private/issues/57)
     full_samples = np.hstack((full_samples[:, 1:], full_samples[:, 0][:,np.newaxis]))
  
