@@ -5,10 +5,11 @@ from scipy.optimize import minimize
 import time
 import sys, os
 import argparse
-
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import mcmc
+import results
+import plotting
 
 def plot(arguments):
     # load only the results that match (avoid high mem usage)
@@ -56,9 +57,9 @@ def run(arguments):
     #######################################
     
     if arguments.model=="lr":
-      from model_lr import *
+      import model_lr as model
     elif arguments.model=="poiss":
-      from model_poiss import *
+      import model_poiss as model
     
     #######################################
     #######################################
@@ -66,8 +67,8 @@ def run(arguments):
     #######################################
     #######################################
     
-    print('Loading dataset '+dnm)
-    X,Y,Z, Zt, D = load_data('../data/'+dnm+'.npz')
+    print('Loading dataset '+arguments.dataset)
+    X,Y,Z, Zt, D = model.load_data('../data/'+arguments.dataset+'.npz')
     
     #############################################################################
     #############################################################################
@@ -76,20 +77,20 @@ def run(arguments):
     #############################################################################
     
     
-    if not os.path.exists('cache/'):
-      os.mkdir('cache')  
+    if not os.path.exists('laplace_cache/'):
+      os.mkdir('laplace_cache')  
     
-    if not os.path.exists('results/'+dnm+'_laplace.npz'):
-      print('Computing Laplace approximation for '+dnm)
+    if not os.path.exists('laplace_cache/'+arguments.dataset+'_laplace.npz'):
+      print('Computing Laplace approximation for '+arguments.dataset)
       t0 = time.process_time()
-      res = minimize(lambda mu : -log_joint(Z, mu, np.ones(Z.shape[0]))[0], Z.mean(axis=0)[:D], jac=lambda mu : -grad_th_log_joint(Z, mu, np.ones(Z.shape[0]))[0,:])
+      res = minimize(lambda mu : -model.log_joint(Z, mu, np.ones(Z.shape[0]))[0], Z.mean(axis=0)[:D], jac=lambda mu : -model.grad_th_log_joint(Z, mu, np.ones(Z.shape[0]))[0,:])
       mu = res.x
-      cov = -np.linalg.inv(hess_th_log_joint(Z, mu, np.ones(Z.shape[0]))[0,:,:])
+      cov = -np.linalg.inv(model.hess_th_log_joint(Z, mu, np.ones(Z.shape[0]))[0,:,:])
       t_laplace = time.process_time() - t0
-      np.savez('results/'+dnm+'_laplace.npz', mu=mu, cov=cov, t_laplace=t_laplace)
+      np.savez('laplace_cache/'+arguments.dataset+'_laplace.npz', mu=mu, cov=cov, t_laplace=t_laplace)
     else:
-      print('Loading Laplace approximation for '+dnm)
-      lplc = np.load('results/'+dnm+'_laplace.npz')
+      print('Loading Laplace approximation for '+arguments.dataset)
+      lplc = np.load('laplace_cache/'+arguments.dataset+'_laplace.npz')
       mu = lplc['mu']
       cov = lplc['cov']
       t_laplace = lplc['t_laplace']
@@ -102,7 +103,7 @@ def run(arguments):
     
     #generate a sampler based on the laplace approx 
     sampler = lambda sz, w, pts : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
-    projector = bc.BlackBoxProjector(sampler, projection_dim, log_likelihood)
+    projector = bc.BlackBoxProjector(sampler, arguments.proj_dim, model.log_likelihood)
     
     #########################################################################
     #########################################################################
@@ -110,7 +111,7 @@ def run(arguments):
     #########################################################################
     #########################################################################
     
-    full_samples = mcmc.sampler(dnm, X, Y, mcmc_samples_full, model, stan_representation, sample_caching_folder = "mcmc_cache/")
+    full_samples = mcmc.sampler(arguments.dataset, X, Y, arguments.mcmc_samples_full, arguments.model, model.stan_representation, sample_caching_folder = "mcmc_cache/")
     #adjusting the format of samples returned by stan to match our expected format (see https://github.com/trevorcampbell/bayesian-coresets-private/issues/57)
     full_samples = np.hstack((full_samples[:, 1:], full_samples[:, 0][:,np.newaxis]))
     
@@ -125,13 +126,13 @@ def run(arguments):
     csizes = np.zeros(Ms.shape[0])
     Fs = np.zeros(Ms.shape[0])
     
-    print('Running coreset construction / MCMC for ' + dnm + ' ' + anm + ' ' + str(ID))
+    print('Running coreset construction / MCMC for ' + arguments.dataset + ' ' + arguments.alg + ' ' + str(arguments.trial))
     t0 = time.process_time()
-    alg = bc.HilbertCoreset(Z, projector, snnls = algdict[anm])
+    alg = bc.HilbertCoreset(Z, projector, snnls = algs[arguments.alg])
     t_setup = time.process_time() - t0
     t_alg = 0.
     for m in range(Ms.shape[0]):
-      print('M = ' + str(Ms[m]) + ': coreset construction, '+ anm + ' ' + dnm + ' ' + str(ID))
+      print('M = ' + str(Ms[m]) + ': coreset construction, '+ arguments.alg + ' ' + arguments.dataset + ' ' + str(arguments.trial))
       #this runs alg up to a level of M; on the next iteration, it will continue from where it left off
       t0 = time.process_time()
       itrs = (Ms[m] if m == 0 else Ms[m] - Ms[m-1])
@@ -148,9 +149,9 @@ def run(arguments):
       curX = X[idcs, :]
       curY = Y[idcs]
       t0 = time.process_time()
-      mcmc.sampler(dnm, curX, curY, mcmc_samples_coreset, model, stan_representation, weights=wts)
+      mcmc.sampler(arguments.dataset, curX, curY, arguments.mcmc_samples_coreset, arguments.model, model.stan_representation, weights=wts)
       t_alg_mcmc = time.process_time()-t0 
-      t_alg_mcmc_per_iter = t_alg_mcmc/(mcmc_samples_coreset*2) #if we change the number of burn_in steps to differ from the number of actual samples we take, we might need to reconsider this line  
+      t_alg_mcmc_per_iter = t_alg_mcmc/(arguments.mcmc_samples_coreset*2) #if we change the number of burn_in steps to differ from the number of actual samples we take, we might need to reconsider this line  
     
       print('M = ' + str(Ms[m]) + ': CPU times')
       cputs[m] = t_laplace + t_setup + t_alg
@@ -158,12 +159,12 @@ def run(arguments):
       print('M = ' + str(Ms[m]) + ': coreset sizes')
       csizes[m] = wts.shape[0]
       print('M = ' + str(Ms[m]) + ': F norms')
-      gcs = np.array([ grad_th_log_joint(Z[idcs, :], full_samples[i, :], wts) for i in range(full_samples.shape[0]) ])
-      gfs = np.array([ grad_th_log_joint(Z, full_samples[i, :], np.ones(Z.shape[0])) for i in range(full_samples.shape[0]) ])
+      gcs = np.array([ model.grad_th_log_joint(Z[idcs, :], full_samples[i, :], wts) for i in range(full_samples.shape[0]) ])
+      gfs = np.array([ model.grad_th_log_joint(Z, full_samples[i, :], np.ones(Z.shape[0])) for i in range(full_samples.shape[0]) ])
       Fs[m] = (((gcs - gfs)**2).sum(axis=1)).mean()
     
     results.save(arguments, csizes = csizes, Ms = Ms, cputs = cputs, Fs = Fs, mcmc_time_per_itr = mcmc_time_per_itr)
-    #np.savez_compressed('results/'+dnm+'_'+model+'_'+anm+'_results_'+'id='+str(ID)+"_mcmc_samples_coreset="+str(mcmc_samples_coreset)+"_mcmc_samples_full="+str(mcmc_samples_full) + "_proj_dim="+str(projection_dim)+'_Ms='+str(Ms)+'.npz', Ms=Ms, Fs=Fs, cputs=cputs, mcmc_time_per_itr = mcmc_time_per_itr, csizes=csizes, mcmc_samples_coreset=mcmc_samples_coreset, mcmc_samples_full=mcmc_samples_full, proj_dim=projection_dim)
+    #np.savez_compressed('results/'+arguments.dataset+'_'+model+'_'+arguments.alg+'_results_'+'id='+str(ID)+"_mcmc_samples_coreset="+str(mcmc_samples_coreset)+"_mcmc_samples_full="+str(mcmc_samples_full) + "_proj_dim="+str(projection_dim)+'_Ms='+str(Ms)+'.npz', Ms=Ms, Fs=Fs, cputs=cputs, mcmc_time_per_itr = mcmc_time_per_itr, csizes=csizes, mcmc_samples_coreset=mcmc_samples_coreset, mcmc_samples_full=mcmc_samples_full, proj_dim=projection_dim)
     
 
 
@@ -173,7 +174,7 @@ def run(arguments):
 ############################
 ############################
  
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description="Runs Hilbert coreset construction on a model and dataset")
 subparsers = parser.add_subparsers(help='sub-command help')
 run_subparser = subparsers.add_parser('run', help='Runs the main computational code')
 run_subparser.set_defaults(func=run)
@@ -181,10 +182,9 @@ plot_subparser = subparsers.add_parser('plot', help='Plots the results')
 plot_subparser.set_defaults(func=plot)
 
 
-parser = argparse.ArgumentParser(description="Runs Hilbert coreset construction on a model and dataset")
-parser.add_argument('model', type=str, choices=["lr","poiss"], help="The model to use.") #must be one of linear regression or poisson regression
-parser.add_argument('dataset', type=str, help="The name of the dataset") #examples: synth_lr, phishing, ds1, synth_poiss, biketrips, airportdelays, synth_poiss_large, biketrips_large, airportdelays_large
-parser.add_argument('--alg_nm', type=str, default='GIGA', choices['GIGA', 'FW', 'US', 'OMP'], help="The algorithm to use for solving sparse non-negative least squares - should be one of GIGA / FW / US / OMP") #TODO: find way to make this help message autoupdate with new methods
+parser.add_argument('--model', type=str, choices=["lr","poiss"], help="The model to use.") #must be one of linear regression or poisson regression
+parser.add_argument('--dataset', type=str, help="The name of the dataset") #examples: synth_lr, phishing, ds1, synth_poiss, biketrips, airportdelays, synth_poiss_large, biketrips_large, airportdelays_large
+parser.add_argument('--alg', type=str, default='GIGA', choices = ['GIGA', 'FW', 'US', 'OMP'], help="The algorithm to use for solving sparse non-negative least squares - should be one of GIGA / FW / US / OMP") #TODO: find way to make this help message autoupdate with new methods
 parser.add_argument("--mcmc_samples_full", type=int, default=10000, help="number of MCMC samples to take for inference on the full dataset (also take this many warmup steps before sampling)")
 parser.add_argument("--mcmc_samples_coreset", type=int, default=10000, help="number of MCMC samples to take for inference on the coreset (also take this many warmup steps before sampling)")
 parser.add_argument("--proj_dim", type=int, default=500, help="The number of samples taken when discretizing log likelihoods for these experiments")

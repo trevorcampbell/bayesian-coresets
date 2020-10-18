@@ -1,7 +1,17 @@
 #!/bin/bash
 
-python3 main.py plot Ms err --summarize trial --groupby Ms --plot_toolbar --plot_type line --plot_legend alg_nm --plot_x_label "Iterations" --plot_y_label Error
+for dnm in "synth_lr" "phishing" "ds1"
+do
+    python3 main.py --model lr --dataset $dnm plot Ms Fs --summarize trial --groupby Ms --plot_type line --plot_legend alg --plot_x_label "Iterations" --plot_y_label "F-Norm Error"
+    python3 main.py --model lr --dataset $dnm plot csizes Fs --summarize trial --groupby Ms --plot_type line --plot_legend alg --plot_x_label "Coreset Size" --plot_y_label "F-Norm Error"
+    python3 main.py --model lr --dataset $dnm plot cputs Fs --summarize trial --groupby Ms --plot_type line --plot_legend alg --plot_x_label "CPU Time (s)" --plot_y_label "F-Norm Error"
+done
 
-python3 main.py plot csize err --summarize trial --groupby Ms --plot_type line --plot_legend alg_nm --plot_x_label "Coreset Size" --plot_y_label Error
+for dnm in "synth_poiss" "biketrips" "airportdelays"
+do
+    python3 main.py --model poiss --dataset $dnm plot Ms Fs --summarize trial --groupby Ms --plot_type line --plot_legend alg --plot_x_label "Iterations" --plot_y_label "F-Norm Error"
+    python3 main.py --model poiss --dataset $dnm plot csizes Fs --summarize trial --groupby Ms --plot_type line --plot_legend alg --plot_x_label "Coreset Size" --plot_y_label "F-Norm Error"
+    python3 main.py --model poiss --dataset $dnm plot cputs Fs --summarize trial --groupby Ms --plot_type line --plot_legend alg --plot_x_label "CPU Time (s)" --plot_y_label "F-Norm Error"
+done
 
-python3 main.py plot cput err --summarize trial --groupby Ms --plot_type line --plot_legend alg_nm --plot_x_label "CPU Time" --plot_y_label Error
+

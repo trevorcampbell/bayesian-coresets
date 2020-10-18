@@ -89,7 +89,7 @@ def plot(arguments, df):
   if arguments.plot_legend is not None:
     #iterate over groups
     i = 0
-    for nm in df[arguments.plot_legend].unique():
+    for nm in sorted(df[arguments.plot_legend].unique()):
       tmpdf = df.loc[df[arguments.plot_legend] == nm]
       plotfunc(fig, tmpdf, arguments, clr = pal[i], legend = nm)
       i = i+1

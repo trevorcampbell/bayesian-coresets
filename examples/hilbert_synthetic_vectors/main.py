@@ -78,8 +78,8 @@ def run(arguments):
     csize = np.zeros(Ms.shape[0])
     cput = np.zeros(Ms.shape[0])
     
-    print('data: ' + arguments.data_type + ', trial ' + str(arguments.trial) + ', alg: ' + arguments.alg_nm)
-    alg = bc.HilbertCoreset(X, IDProjector(), snnls = algs[arguments.alg_nm])
+    print('data: ' + arguments.data_type + ', trial ' + str(arguments.trial) + ', alg: ' + arguments.alg)
+    alg = bc.HilbertCoreset(X, IDProjector(), snnls = algs[arguments.alg])
     
     for m, M in enumerate(Ms):
       t0 = time.process_time()
@@ -107,7 +107,7 @@ def run(arguments):
 ############################
  
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser('Runs sparse nonnegative regression')
 subparsers = parser.add_subparsers(help='sub-command help')
 run_subparser = subparsers.add_parser('run', help='Runs the main computational code')
 run_subparser.set_defaults(func=run)
@@ -115,7 +115,7 @@ plot_subparser = subparsers.add_parser('plot', help='Plots the results')
 plot_subparser.set_defaults(func=plot)
 
 # example-specific arguments
-parser.add_argument('--alg_nm', type=str, default='GIGA', choices=['FW', 'GIGA', 'OMP', 'US'], help="The sparse non negative least squares algorithm to use")
+parser.add_argument('--alg', type=str, default='GIGA', choices=['FW', 'GIGA', 'OMP', 'US'], help="The sparse non negative least squares algorithm to use")
 parser.add_argument('--data_num', type=int, default=10000, help="The number of synthetic data points")
 parser.add_argument('--data_dim', type=int, default=100, help="The dimension of the synthetic data points, if applicable")
 parser.add_argument('--data_type', type=str, default='normal', choices=['normal', 'axis'], help="Specifies the type of synthetic data to generate.")
