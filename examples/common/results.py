@@ -17,7 +17,7 @@ def check_exists(arguments, results_folder = 'results/'):
     return False
 
 def load_matching(match_dict, results_folder = 'results/', log_file = 'manifest.csv'):
-    resfiles = [fn for fn in os.listdir(results_folder) if fn != log_file]
+    resfiles = [fn for fn in os.listdir(results_folder) if fn != log_file and fn[-4:] == '.csv']
     df = None
     for resfile in resfiles:
         #load the results file

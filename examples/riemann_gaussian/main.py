@@ -64,17 +64,17 @@ def run(arguments):
     SigLInv = np.linalg.inv(SigL)
     logdetSig = np.linalg.slogdet(Sig)[1]
     
-    print('Computing true posterior')
-    x = np.random.multivariate_normal(th, Sig, arguments.data_num)
-    mup, LSigp, LSigpInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
-    Sigp = LSigp.dot(LSigp.T)
-    SigpInv = LSigpInv.T.dot(LSigpInv)
-    
     #######################################
     #######################################
     ## Step 2: Calculate Likelihoods/Projectors
     #######################################
     #######################################
+
+    print('Computing true posterior')
+    x = np.random.multivariate_normal(th, Sig, arguments.data_num)
+    mup, LSigp, LSigpInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
+    Sigp = LSigp.dot(LSigp.T)
+    SigpInv = LSigpInv.T.dot(LSigpInv)
     
     #create the log_likelihood function
     print('Creating log-likelihood function')
@@ -95,13 +95,13 @@ def run(arguments):
     sampler_realistic = lambda n, w, pts : muhat + np.random.randn(n, muhat.shape[0]).dot(LSigHat.T)
     prj_realistic = bc.BlackBoxProjector(sampler_realistic, arguments.proj_dim, log_likelihood, grad_log_likelihood)
 
-    print('Creating projector for black-box SVI')
+    print('Creating black box projector')
     def sampler_w(n, wts, pts):
         if wts is None or pts is None or pts.shape[0] == 0:
           wts = np.zeros(1)
           pts = np.zeros((1, mu0.shape[0]))
         muw, LSigw, _ = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
-        return muw + np.random.randn(arguments.proj_dim, muw.shape[0]).dot(LSigw.T)
+        return muw + np.random.randn(n, muw.shape[0]).dot(LSigw.T)
     prj_bb = bc.BlackBoxProjector(sampler_w, arguments.proj_dim, log_likelihood, grad_log_likelihood)
     
     print('Creating exact projectors')
@@ -217,9 +217,9 @@ plot_subparser.set_defaults(func=plot)
 parser.add_argument('--data_num', type=int, default='1000', help='Dataset size/number of examples')
 parser.add_argument('--data_dim', type=int, default = '200', help="The dimension of the multivariate normal distribution to use for this experiment")
 parser.add_argument('--alg', type=str, default='SVI', choices = ['SVI', 'SVI-EXACT', 'GIGA-OPT', 'GIGA-OPT-EXACT', 'GIGA-REAL', 'GIGA-REAL-EXACT', 'US'], help="The name of the coreset construction algorithm to use")
-parser.add_argument("--proj_dim", type=int, default=500, help="The number of samples taken when discretizing log likelihoods for these experiments")
+parser.add_argument("--proj_dim", type=int, default=100, help="The number of samples taken when discretizing log likelihoods for these experiments")
 
-parser.add_argument('--coreset_size_max', type=int, default=1000, help="The maximum coreset size to evaluate")
+parser.add_argument('--coreset_size_max', type=int, default=200, help="The maximum coreset size to evaluate")
 parser.add_argument('--coreset_num_sizes', type=int, default=7, help="The number of coreset sizes to evaluate")
 parser.add_argument('--coreset_size_spacing', type=str, choices=['log', 'linear'], default='log', help="The spacing of coreset sizes to test")
 
