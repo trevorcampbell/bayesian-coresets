@@ -54,11 +54,11 @@ def run(arguments):
     #######################################
     #######################################
     
-    mu0 = np.zeros(d)
-    Sig0 = np.eye(d)
-    Sig = np.eye(d)
+    mu0 = np.zeros(arguments.data_dim)
+    Sig0 = np.eye(arguments.data_dim)
+    Sig = np.eye(arguments.data_dim)
     SigL = np.linalg.cholesky(Sig)
-    th = np.ones(d)
+    th = np.ones(arguments.data_dim)
     Sig0inv = np.linalg.inv(Sig0)
     Siginv = np.linalg.inv(Sig)
     SigLInv = np.linalg.inv(SigL)
@@ -94,8 +94,8 @@ def run(arguments):
     muhat = U*mup + (1.-U)*mu0
     Sighat = U*Sigp + (1.-U)*Sig0
     #now corrupt the smoothed pihat
-    muhat += pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
-    Sighat *= np.exp(-2*pihat_noise*np.fabs(np.random.randn()))
+    muhat += arguments.pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
+    Sighat *= np.exp(-2*arguments.pihat_noise*np.fabs(np.random.randn()))
     LSighat = np.linalg.cholesky(Sighat)
     
     sampler_realistic = lambda n, w, pts : mup + np.random.randn(n, mup.shape[0]).dot(LSighat.T)
@@ -149,7 +149,7 @@ def run(arguments):
         #[same as exact case] calculate the mean and (cholesky decomposed) variance of pi hat, based on the weights we have and our original Sig0inv, Siginv
         self.muw, self.LSigw, self.LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
         #use the same samples for all projections after a given update (so that we can compare projected coreset point log likelihoods with projected data point log likelihoods across the same set of samples)
-        self.samples = np.random.multivariate_normal(self.muw, self.LSigw @ self.LSigw.T, proj_dim) #There may be a significant difference between using sigw.T@sigw vs sigw @ sigw.T, but some empirical tests on small, non-diagonal examples encourage the former for sigw and the latter for sigwinv (and for this case, We may just dealing with diagonal matrices, where both choices are equivalent)
+        self.samples = np.random.multivariate_normal(self.muw, self.LSigw @ self.LSigw.T, arguments.proj_dim) #There may be a significant difference between using sigw.T@sigw vs sigw @ sigw.T, but some empirical tests on small, non-diagonal examples encourage the former for sigw and the latter for sigwinv (and for this case, We may just dealing with diagonal matrices, where both choices are equivalent)
     
     #list of what's been tried already (and documented to be unsuccessful - the KL divergence of approximate projection SVI approaches flattens by ~iteration 30) :
     # sampling using self.samples = np.random.multivariate_normal(self.muw, self.LSigw.T @ self.LSigw, proj_dim), with projection...
@@ -168,8 +168,8 @@ def run(arguments):
     ##############################
     print('Creating coreset construction objects')
     #create coreset construction objects
-    sparsevi_exact = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
-    sparsevi = bc.SparseVICoreset(x, ApproximateGaussianProjector(), opt_itrs = SVI_opt_itrs, step_sched = SVI_step_sched)
+    sparsevi_exact = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = arguments.svi_opt_itrs, step_sched = eval(arguments.svi_step_sched))
+    sparsevi = bc.SparseVICoreset(x, ApproximateGaussianProjector(), opt_itrs = arguments.svi_opt_itrs, step_sched = eval(arguments.svi_step_sched))
     giga_optimal = bc.HilbertCoreset(x, prj_optimal)
     giga_optimal_exact = bc.HilbertCoreset(x,prj_exact_optimal)
     giga_realistic = bc.HilbertCoreset(x,prj_realistic)
@@ -189,49 +189,19 @@ def run(arguments):
     w = [np.array([0.])]
     p = [np.zeros((1, x.shape[1]))]
     cputs = [0]
-    
-    t0 = time.process_time()
     t_build = 0
-    
-    for m in range(1, M+1):
-      print('trial: ' + str(tr) +' alg: ' + nm + ' ' + str(m) +'/'+str(M))
-      if nm == "HOPS_full_scaling" or nm == "HOPS_full_scaling_exact":
-        alg.reset()
-        t_prebuild = time.process_time()
-        alg.build(m)
-        t_build = time.process_time() - t_prebuild
-      else:
-        t_prebuild = time.process_time()
-        alg.build(1)
-        t_build += time.process_time() - t_prebuild
-      if optimizing and nm != "SVI" and nm != "SVIEXACT": #(SVI approaches don't behave differently in the optimizing case, because their optimization call is the same as their reweight call)
-        #if algorithm is in the HOPS family, we should optimize using the algorithm's own optimize() method (making sure that we don't alter the state of the coreset for the next iteration)
-        if (nm=="HOPSEXACT" or nm=="HOPS" or nm == "HOPS_full_scaling" or nm == "HOPS_full_scaling_exact"):
-          print("simulating results if we optimize after this iteration")
-          algCopy = copy.deepcopy(alg)
-          t_pre_opt = time.process_time()
-          algCopy.optimize()
-          t_opt = time.process_time() - t_pre_opt
-          wts, pts, _ = algCopy.get()
-        else:
-          #otherwise, create a HOPS algorithm, copy over the coreset information, and run optimize with that algorithm
-          print("simulating results if the coreset were optimized with the HOPS optimization function")
-          polishingAlg = algs["HOPS"]
-          polishingAlg.wts = alg.wts
-          polishingAlg.pts = alg.pts
-          polishingAlg.idcs = alg.idcs
-          t_pre_opt = time.process_time()
-          polishingAlg.optimize()
-          t_opt = time.process_time() - t_pre_opt
-          wts,pts, _ = polishingAlg.get()
-      else:
-        wts, pts, _ = alg.get()
-        t_opt = 0
+    for m in range(Ms.shape[0]):
+      print('M = ' + str(Ms[m]) + ': coreset construction, '+ arguments.alg + ' ' + str(arguments.trial))
+      t0 = time.process_time()
+      itrs = (Ms[m] if m == 0 else Ms[m] - Ms[m-1])
+      alg.build(itrs)
+      t_build += time.process_time()-t0
+      wts, pts, idcs = alg.get()
     
       #store weights/pts/runtime
       w.append(wts)
       p.append(pts)
-      cputs.append(t_build + t_opt)
+      cputs.append(t_build)
     
     ##############################
     ##############################
@@ -240,23 +210,24 @@ def run(arguments):
     ##############################
     
     # computing kld and saving results
-    muw = np.zeros((M+1, mu0.shape[0]))
-    Sigw = np.zeros((M+1,mu0.shape[0], mu0.shape[0]))
-    rklw = np.zeros(M+1)
-    fklw = np.zeros(M+1)
-    for m in range(M+1):
+    muw = np.zeros((Ms.shape[0], mu0.shape[0]))
+    Sigw = np.zeros((Ms.shape[0], mu0.shape[0], mu0.shape[0]))
+    rklw = np.zeros(Ms.shape[0])
+    fklw = np.zeros(Ms.shape[0])
+    csizes = np.zeros(Ms.shape[0])
+    for m in range(Ms.shape[0]):
+      csizes[m] = (w[m] > 0).sum()
       muw[m, :], LSigw, LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, p[m], w[m])
       Sigw[m, :, :] = LSigw.dot(LSigw.T)
       rklw[m] = gaussian.KL(muw[m,:], Sigw[m,:,:], mup, SigpInv)
       fklw[m] = gaussian.KL(mup, Sigp, muw[m,:], LSigwInv.T.dot(LSigwInv))
-    
-    if not os.path.exists('results/'):
-      os.mkdir('results')
-    #make hash of step schedule so it can be encoded in the file name:
-    SVI_step_sched_hash_sha1 = hashlib.sha1(arguments.SVI_step_sched.encode('utf-8')).hexdigest()
-    f = open('results/'+nm+'_tr='+str(tr)+'_N='+str(N)+'_d='+str(d)+'_proj_dim='+str(proj_dim)+'_optimizing='+str(optimizing)+'_SVI_opt_itrs='+str(SVI_opt_itrs)+'_'+'SVI_step_sched_hash_sha1='+SVI_step_sched_hash_sha1+'_pihat_noise='+str(pihat_noise)+'.pk', 'wb')
-    res = (x, mu0, Sig0, Sig, mup, Sigp, w, p, muw, Sigw, rklw, fklw, cputs, tr, N, d, proj_dim, optimizing, SVI_opt_itrs, arguments.SVI_step_sched, pihat_noise)
-    pk.dump(res, f)
+
+    results.save(arguments, csizes = csizes, Ms = Ms, cputs = cputs, rklw = rklw, fklw = fklw)
+
+    #also save muw/Sigw/etc for plotting coreset visualizations
+    f = open('results/coreset_data.pk', 'wb')
+    res = (x, mu0, Sig0, Sig, mup, Sigp, w, p, muw, Sigw)
+    pk.dump(res)
     f.close()
 
 ############################
@@ -274,15 +245,16 @@ plot_subparser.set_defaults(func=plot)
 
 parser.add_argument('--data_num', type=int, default='1000', help='Dataset size/number of examples')
 parser.add_argument('--data_dim', type=int, default = '200', help="The dimension of the multivariate normal distribution to use for this experiment")
-parser.add_argument('--alg', type=str, default='SVI', choices = ['SVI-EXACT', 'GIGA-OPT', 'GIGA-REAL', 'US'], help="The name of the coreset construction algorithm to use")
+parser.add_argument('--alg', type=str, default='SVI', choices = ['SVI', 'SVI-EXACT', 'GIGA-OPT', 'GIGA-OPT-EXACT', 'GIGA-REAL', 'GIGA-REAL-EXACT', 'US'], help="The name of the coreset construction algorithm to use")
 parser.add_argument("--proj_dim", type=int, default=500, help="The number of samples taken when discretizing log likelihoods for these experiments")
 
 parser.add_argument('--coreset_size_max', type=int, default=1000, help="The maximum coreset size to evaluate")
 parser.add_argument('--coreset_num_sizes', type=int, default=7, help="The number of coreset sizes to evaluate")
 parser.add_argument('--coreset_size_spacing', type=str, choices=['log', 'linear'], default='log', help="The spacing of coreset sizes to test")
 
+parser.add_argument('--svi_opt_itrs', type=str, default = 100, help="Number of optimization iterations for SVI")
 parser.add_argument('--svi_step_sched', type=str, default = "lambda i : 1./(1+i)", help="Step schedule (tuning rate) for SVI, entered as a lambda expression in quotation marks.")
-parser.add_argument('--gigar_pihat_noise', type=float, default=.75, help = "How much noise to introduce to the smoothed pi-hat in GIGAR")
+parser.add_argument('--pihat_noise', type=float, default=.75, help = "How much noise to introduce to the smoothed pi-hat in GIGAR")
 
 parser.add_argument('--trial', type=int, help="The trial number - used to initialize random number generation (for replicability)")
 parser.add_argument('--results_folder', type=str, default="results/", help="This script will save results in this folder")
