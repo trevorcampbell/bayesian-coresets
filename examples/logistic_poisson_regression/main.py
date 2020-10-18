@@ -11,6 +11,31 @@ import mcmc
 import results
 import plotting
 
+def get_laplace(wts, Z, mu0, diag = False):
+  trials = 5
+  Zw = Z[wts>0, :]
+  ww = wts[wts>0]
+  while True:
+    try:
+      res = minimize(lambda mu : -log_joint(Zw, mu, ww)[0], mu0, jac=lambda mu : -grad_th_log_joint(Zw, mu, ww)[0,:])
+    except:
+      mu0 = mu0.copy()
+      mu0 += np.sqrt((mu0**2).sum())*0.1*np.random.randn(mu0.shape[0])
+      trials -= 1
+      if trials <= 0:
+        print('Tried laplace opt 5 times, failed')
+        break
+      continue
+    break
+  mu = res.x
+  if diag:
+    LSigInv = np.sqrt(-diag_hess_th_log_joint(Zw, mu, ww)[0,:])
+    LSig = 1./LSigInv
+  else:
+    LSigInv = np.linalg.cholesky(-hess_th_log_joint(Zw, mu, ww)[0,:,:])
+    LSig = sl.solve_triangular(LSigInv, np.eye(LSigInv.shape[0]), lower=True, overwrite_b = True, check_finite = False)
+  return mu, LSig, LSigInv
+
 def plot(arguments):
     # load only the results that match (avoid high mem usage)
     to_match = vars(arguments)
@@ -39,11 +64,7 @@ def run(arguments):
     #######################################
 
     np.random.seed(arguments.trial)
-    bc.util.set_verbosity(arguments.verbosity)
-    algs = {'FW': bc.snnls.FrankWolfe, 
-            'GIGA': bc.snnls.GIGA,
-            'OMP': bc.snnls.OrthoPursuit, 
-            'US': bc.snnls.UniformSampling}
+    bc.util.set_verbosity(arguments.verbosity) 
 
     if arguments.coreset_size_spacing == 'log':
         Ms = np.unique(np.logspace(0., np.log10(arguments.coreset_size_max), arguments.coreset_num_sizes, dtype=np.int32))
@@ -60,71 +81,93 @@ def run(arguments):
       import model_lr as model
     elif arguments.model=="poiss":
       import model_poiss as model
-    
+
     #######################################
     #######################################
-    ## Step 2: Load Dataset
+    ## Step 2: Load Dataset & run full MCMC / Laplace
     #######################################
     #######################################
     
     print('Loading dataset '+arguments.dataset)
-    X,Y,Z, Zt, D = model.load_data('../data/'+arguments.dataset+'.npz')
+    X, Y, Z, Zt, D = model.load_data('../data/'+arguments.dataset+'.npz')
+
     
-    #############################################################################
-    #############################################################################
-    ## Step 3: Make a Laplace Approximation to Inform the Coreset Tangent Space
-    #############################################################################
-    #############################################################################
-    
-    
-    if not os.path.exists('laplace_cache/'):
-      os.mkdir('laplace_cache')  
-    
-    if not os.path.exists('laplace_cache/'+arguments.dataset+'_laplace.npz'):
-      print('Computing Laplace approximation for '+arguments.dataset)
-      t0 = time.process_time()
-      res = minimize(lambda mu : -model.log_joint(Z, mu, np.ones(Z.shape[0]))[0], Z.mean(axis=0)[:D], jac=lambda mu : -model.grad_th_log_joint(Z, mu, np.ones(Z.shape[0]))[0,:])
-      mu = res.x
-      cov = -np.linalg.inv(model.hess_th_log_joint(Z, mu, np.ones(Z.shape[0]))[0,:,:])
-      t_laplace = time.process_time() - t0
-      np.savez('laplace_cache/'+arguments.dataset+'_laplace.npz', mu=mu, cov=cov, t_laplace=t_laplace)
-    else:
-      print('Loading Laplace approximation for '+arguments.dataset)
-      lplc = np.load('laplace_cache/'+arguments.dataset+'_laplace.npz')
-      mu = lplc['mu']
-      cov = lplc['cov']
-      t_laplace = lplc['t_laplace']
-    
-    ##########################################################################
-    ##########################################################################
-    ## Step 3: Compute a random finite projection of the tangent space  
-    ##########################################################################
-    ##########################################################################
-    
-    #generate a sampler based on the laplace approx 
-    sampler = lambda sz, w, pts : np.atleast_2d(np.random.multivariate_normal(mu, cov, sz))
-    projector = bc.BlackBoxProjector(sampler, arguments.proj_dim, model.log_likelihood)
-    
-    #########################################################################
-    #########################################################################
-    ## Step 4: Run MCMC on full dataset (important for coreset evaluation)
-    #########################################################################
-    #########################################################################
-    
-    full_samples = mcmc.sampler(arguments.dataset, X, Y, arguments.mcmc_samples_full, arguments.model, model.stan_representation, sample_caching_folder = "mcmc_cache/")
+    mu0 = np.zeros(Z.shape[1])
+    #NOTE: Sig0 is currently coded as identity in model_lr and model_pr (see log_prior).
+    #so if you change Sig0 here things might break.
+    #TODO: fix that...
+    Sig0 = np.eye(Z.shape[1])
+    LSig0 = np.eye(Z.shape[1])
+
+    print('Running full MCMC')
+    full_samples = mcmc.sampler(arguments.dataset, X, Y, arguments.mcmc_samples_full, arguments.model, model.stan_representation, sample_caching_folder = "mcmc_cache/", seed = arguments.trial)
     #adjusting the format of samples returned by stan to match our expected format (see https://github.com/trevorcampbell/bayesian-coresets-private/issues/57)
     full_samples = np.hstack((full_samples[:, 1:], full_samples[:, 0][:,np.newaxis]))
+ 
+    #######################################
+    #######################################
+    ## Step 3: Calculate Likelihoods/Projectors
+    #######################################
+    #######################################
+
+    #get Gaussian approximation to the true posterior
+    print('Approximating true posterior')
+    mup = full_samples.mean(axis=0)
+    Sigp = full_samples.cov(rowvar=False)
+    LSigp = np.linalg.cholesky(Sigp)
+    LSigpInv = sl.solve_triangular(LSigp, np.eye(LSigp.shape[0]), lower=True, overwrite_b=True, check_finite=False)
+
+    #create tangent space for well-tuned Hilbert coreset alg
+    print('Creating tuned projector for Hilbert coreset construction')
+    muHat, LSigHat, LSigHatInv = get_laplace(np.ones(Z.shape[0]), Z, np.zeros(Z.shape[1]), diag = False)
+    sampler_optimal = lambda n, w, pts : muHat + np.random.randn(n, muHat.shape[0]).dot(LSigHat.T)
+    prj_optimal = bc.BlackBoxProjector(sampler_optimal, arguments.proj_dim, log_likelihood, grad_log_likelihood)
     
-    ######################################
-    ######################################
-    ## Step 5: Build/Evaluate the Coreset
-    ######################################
-    ######################################
+    #create tangent space for poorly-tuned Hilbert coreset alg
+    print('Creating untuned projector for Hilbert coreset construction')
+    Zhat = Z[np.random.randint(0, Z.shape[0], int(np.sqrt(Z.shape[0]))), :]
+    muHat2, LSigHat2, LSigHat2Inv = get_laplace(np.ones(Zhat.shape[0]), Zhat, np.zeros(Zhat.shape[1]), diag = False)
+    sampler_realistic = lambda n, w, pts : muHat2 + np.random.randn(n, muHat2.shape[0]).dot(LSigHat2.T)
+    prj_realistic = bc.BlackBoxProjector(sampler_realistic, arguments.proj_dim, log_likelihood, grad_log_likelihood)
+
+    print('Creating black box projector')
+    def sampler_w(n, wts, pts):
+        if wts is None or pts is None or pts.shape[0] == 0:
+            muw = mu0
+            LSigw = LSig0
+        else:
+            muw, LSigw, _ = get_laplace(wts, pts, np.zeros(Z.shape[1]), diag = False)
+        return muw + np.random.randn(n, muw.shape[0]).dot(LSigw.T)
+    prj_bb = bc.BlackBoxProjector(sampler_w, arguments.proj_dim, log_likelihood, grad_log_likelihood)
     
+       
+    #######################################
+    #######################################
+    ## Step 4: Construct Coreset
+    #######################################
+    #######################################
+    
+    print('Creating coreset construction objects')
+    #create coreset construction objects
+    sparsevi = bc.SparseVICoreset(Z, prj_bb, opt_itrs = arguments.svi_opt_itrs, step_sched = eval(arguments.svi_step_sched))
+    giga_optimal = bc.HilbertCoreset(Z, prj_optimal)
+    giga_realistic = bc.HilbertCoreset(Z,prj_realistic)
+    unif = bc.UniformSamplingCoreset(Z)
+    
+    algs = {'SVI': sparsevi, 
+            'GIGA-OPT': giga_optimal, 
+            'GIGA-REAL': giga_realistic, 
+            'US': unif}
+    alg = algs[arguments.alg]
+
     cputs = np.zeros(Ms.shape[0])
     mcmc_time_per_itr = np.zeros(Ms.shape[0])
     csizes = np.zeros(Ms.shape[0])
     Fs = np.zeros(Ms.shape[0])
+    rklw = np.zeros(Ms.shape[0])
+    fklw = np.zeros(Ms.shape[0])
+    mu_errs = np.zeros(Ms.shape[0])
+    Sig_errs = np.zeros(Ms.shape[0])
     
     print('Running coreset construction / MCMC for ' + arguments.dataset + ' ' + arguments.alg + ' ' + str(arguments.trial))
     t0 = time.process_time()
@@ -140,12 +183,8 @@ def run(arguments):
       t_alg += time.process_time()-t0
       wts, pts, idcs = alg.get()
     
-    
       print('M = ' + str(Ms[m]) + ': MCMC')
-      # Here we would like to measure the time it would take to run mcmc on our coreset.
-      # however, this is particularly challenging - stan's mcmc implementation doesn't work on 
-      # the weighted likelihoods we use in our coresets. And our inference.py nuts implementation
-      # (which does work on weighted likelihoods) is not as efficient or reliable as stan.
+      # Use MCMC on the coreset, measure time taken 
       curX = X[idcs, :]
       curY = Y[idcs]
       t0 = time.process_time()
@@ -153,18 +192,19 @@ def run(arguments):
       t_alg_mcmc = time.process_time()-t0 
       t_alg_mcmc_per_iter = t_alg_mcmc/(arguments.mcmc_samples_coreset*2) #if we change the number of burn_in steps to differ from the number of actual samples we take, we might need to reconsider this line  
     
-      print('M = ' + str(Ms[m]) + ': CPU times')
+      print('M = ' + str(Ms[m]) + ': Computing metrics')
       cputs[m] = t_laplace + t_setup + t_alg
       mcmc_time_per_itr[m] = t_alg_mcmc_per_iter
-      print('M = ' + str(Ms[m]) + ': coreset sizes')
-      csizes[m] = wts.shape[0]
-      print('M = ' + str(Ms[m]) + ': F norms')
+      csizes[m] = (wts > 0).sum()
       gcs = np.array([ model.grad_th_log_joint(Z[idcs, :], full_samples[i, :], wts) for i in range(full_samples.shape[0]) ])
       gfs = np.array([ model.grad_th_log_joint(Z, full_samples[i, :], np.ones(Z.shape[0])) for i in range(full_samples.shape[0]) ])
       Fs[m] = (((gcs - gfs)**2).sum(axis=1)).mean()
-    
-    results.save(arguments, csizes = csizes, Ms = Ms, cputs = cputs, Fs = Fs, mcmc_time_per_itr = mcmc_time_per_itr)
-    #np.savez_compressed('results/'+arguments.dataset+'_'+model+'_'+arguments.alg+'_results_'+'id='+str(ID)+"_mcmc_samples_coreset="+str(mcmc_samples_coreset)+"_mcmc_samples_full="+str(mcmc_samples_full) + "_proj_dim="+str(projection_dim)+'_Ms='+str(Ms)+'.npz', Ms=Ms, Fs=Fs, cputs=cputs, mcmc_time_per_itr = mcmc_time_per_itr, csizes=csizes, mcmc_samples_coreset=mcmc_samples_coreset, mcmc_samples_full=mcmc_samples_full, proj_dim=projection_dim)
+      rklw[m] = model_linreg.KL(muw[m,:], Sigw[m,:,:], mup, SigpInv)
+      fklw[m] = model_linreg.KL(mup, Sigp, muw[m,:], LSigwInv.T.dot(LSigwInv))
+      mu_errs[m] = np.sqrt(((mup - muw[m,:])**2).sum()) / np.sqrt((mup**2).sum())
+      Sig_errs[m] = np.sqrt(((Sigp - Sigw[m,:,:])**2).sum()) / np.sqrt((Sigp**2).sum())
+
+    results.save(arguments, csizes = csizes, Ms = Ms, cputs = cputs, Fs = Fs, mcmc_time_per_itr = mcmc_time_per_itr, rklw = rklw, fklw = fklw, mu_errs = mu_errs, Sig_errs = Sig_errs)
     
 
 
@@ -192,6 +232,8 @@ parser.add_argument("--proj_dim", type=int, default=500, help="The number of sam
 parser.add_argument('--coreset_size_max', type=int, default=1000, help="The maximum coreset size to evaluate")
 parser.add_argument('--coreset_num_sizes', type=int, default=7, help="The number of coreset sizes to evaluate")
 parser.add_argument('--coreset_size_spacing', type=str, choices=['log', 'linear'], default='log', help="The spacing of coreset sizes to test")
+parser.add_argument('--svi_opt_itrs', type=str, default = 100, help="Number of optimization iterations for SVI")
+parser.add_argument('--svi_step_sched', type=str, default = "lambda i : 1./(1+i)", help="Step schedule (tuning rate) for SVI, entered as a lambda expression in quotation marks.")
 
 parser.add_argument('--trial', type=int, help="The trial number - used to initialize random number generation (for replicability)")
 parser.add_argument('--results_folder', type=str, default="results/", help="This script will save results in this folder")
