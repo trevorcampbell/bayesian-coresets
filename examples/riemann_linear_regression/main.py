@@ -58,6 +58,9 @@ def run(arguments):
     
     x = np.load('../data/prices2018.npy')
     print('dataset size : ', x.shape)
+
+    print('Subsampling down to '+str(arguments.data_num) + ' points')
+    x = x[np.random.randint(0, x.shape[0], arguments.data_num), :]
     
     #log transform the prices
     x[:, 2] = np.log10(x[:, 2])
@@ -133,9 +136,10 @@ def run(arguments):
     print('Creating black box projector')
     def sampler_w(n, wts, pts):
         if wts is None or pts is None or pts.shape[0] == 0:
-          wts = np.zeros(1)
-          pts = np.zeros((1, mu0.shape[0]))
-        muw, LSigw, _ = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
+            muw = mu0
+            LSigw = np.linalg.cholesky(Sig0)
+        else:
+            muw, LSigw, _ = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
         return muw + np.random.randn(n, muw.shape[0]).dot(LSigw.T)
     prj_bb = bc.BlackBoxProjector(sampler_w, arguments.proj_dim, log_likelihood, grad_log_likelihood)
 
@@ -150,19 +154,25 @@ def run(arguments):
         def project(self, pts, grad=False):
             X = pts[:, :-1]
             Y = pts[:, -1]
-            beta = X.dot(self.V*np.sqrt(np.maximum(self.lmb, 0.)))
+            #beta = X.dot(self.V*np.sqrt(np.maximum(self.lmb, 0.)))
+            beta = X.dot(self.LSigw)
             nu = Y - X.dot(self.muw)
             #approximation to avoid high memory cost: project the matrix term down to bV.shape[1]**2 dimensions
             beta_proj = beta.dot(self.bV)
             return np.hstack((nu[:, np.newaxis]*beta, 1./np.sqrt(2.)*(beta_proj[:, :, np.newaxis]*beta_proj[:, np.newaxis, :]).reshape(beta.shape[0], self.bV.shape[1]**2))) / datastd**2
     
         def update(self, wts, pts):
-            if pts.shape[0] == 0:
+            if wts is None or pts is None or pts.shape[0] == 0:
                 self.muw = mu0
-                self.Sigw = Sig0
+                self.LSigw = np.linalg.cholesky(Sig0)
             else:
-                self.muw, self.Sigw = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
-            self.lmb, self.V = np.linalg.eigh(self.Sigw)
+                self.muw, self.LSigw, _ = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
+            #if pts.shape[0] == 0:
+            #    self.muw = mu0
+            #    self.Sigw = Sig0
+            #else:
+            #    self.muw, self.Sigw = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
+            #self.lmb, self.V = np.linalg.eigh(self.Sigw)
 
     prj_optimal_exact = LinRegProjector(bV)
     prj_optimal_exact.update(np.ones(Z.shape[0]), Z)
@@ -178,13 +188,13 @@ def run(arguments):
     ##############################
     print('Creating coreset construction objects')
     #create coreset construction objects
-    sparsevi_exact = bc.SparseVICoreset(x, LinRegProjector(bV), opt_itrs = arguments.svi_opt_itrs, step_sched = eval(arguments.svi_step_sched))
-    sparsevi = bc.SparseVICoreset(x, prj_bb, opt_itrs = arguments.svi_opt_itrs, step_sched = eval(arguments.svi_step_sched))
-    giga_optimal = bc.HilbertCoreset(x, prj_optimal)
-    giga_optimal_exact = bc.HilbertCoreset(x,prj_optimal_exact)
-    giga_realistic = bc.HilbertCoreset(x,prj_realistic)
-    giga_realistic_exact = bc.HilbertCoreset(x,prj_realistic_exact)
-    unif = bc.UniformSamplingCoreset(x)
+    sparsevi_exact = bc.SparseVICoreset(Z, LinRegProjector(bV), opt_itrs = arguments.svi_opt_itrs, step_sched = eval(arguments.svi_step_sched))
+    sparsevi = bc.SparseVICoreset(Z, prj_bb, opt_itrs = arguments.svi_opt_itrs, step_sched = eval(arguments.svi_step_sched))
+    giga_optimal = bc.HilbertCoreset(Z, prj_optimal)
+    giga_optimal_exact = bc.HilbertCoreset(Z,prj_optimal_exact)
+    giga_realistic = bc.HilbertCoreset(Z,prj_realistic)
+    giga_realistic_exact = bc.HilbertCoreset(Z,prj_realistic_exact)
+    unif = bc.UniformSamplingCoreset(Z)
     
     algs = {'SVI-EXACT': sparsevi_exact,
             'SVI': sparsevi, 
@@ -196,8 +206,8 @@ def run(arguments):
     alg = algs[arguments.alg]
     
     print('Building coreset')
-    w = [np.array([0.])]
-    p = [np.zeros((1, x.shape[1]))]
+    w = []
+    p = []
     cputs = np.zeros(Ms.shape[0])
     t_build = 0
     for m in range(Ms.shape[0]):
@@ -236,7 +246,7 @@ def run(arguments):
 
     #also save muw/Sigw/etc for plotting coreset visualizations
     f = open('results/coreset_data.pk', 'wb')
-    res = (x, mu0, Sig0, Sig, mup, Sigp, w, p, muw, Sigw)
+    res = (x, mu0, Sig0, datastd, mup, Sigp, w, p, muw, Sigw)
     pk.dump(res, f)
     f.close()
 
@@ -253,8 +263,7 @@ run_subparser.set_defaults(func=run)
 plot_subparser = subparsers.add_parser('plot', help='Plots the results')
 plot_subparser.set_defaults(func=plot)
 
-parser.add_argument('--data_num', type=int, default='1000', help='Dataset size/number of examples')
-parser.add_argument('--data_dim', type=int, default = '200', help="The dimension of the multivariate normal distribution to use for this experiment")
+parser.add_argument('--data_num', type=int, default='10000', help='Dataset subsample to use')
 parser.add_argument('--alg', type=str, default='SVI', choices = ['SVI', 'SVI-EXACT', 'GIGA-OPT', 'GIGA-OPT-EXACT', 'GIGA-REAL', 'GIGA-REAL-EXACT', 'US'], help="The name of the coreset construction algorithm to use")
 parser.add_argument("--proj_dim", type=int, default=100, help="The number of samples taken when discretizing log likelihoods for these experiments")
 
