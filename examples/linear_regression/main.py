@@ -234,6 +234,8 @@ def run(arguments):
     Sigw = np.zeros((Ms.shape[0], mu0.shape[0], mu0.shape[0]))
     rklw = np.zeros(Ms.shape[0])
     fklw = np.zeros(Ms.shape[0])
+    mu_errs = np.zeros(Ms.shape[0])
+    Sig_errs = np.zeros(Ms.shape[0])
     csizes = np.zeros(Ms.shape[0])
     for m in range(Ms.shape[0]):
       csizes[m] = (w[m] > 0).sum()
@@ -241,8 +243,10 @@ def run(arguments):
       Sigw[m, :, :] = LSigw.dot(LSigw.T)
       rklw[m] = model_linreg.KL(muw[m,:], Sigw[m,:,:], mup, SigpInv)
       fklw[m] = model_linreg.KL(mup, Sigp, muw[m,:], LSigwInv.T.dot(LSigwInv))
+      mu_errs[m] = np.sqrt(((mup - muw[m,:])**2).sum()) / np.sqrt((mup**2).sum())
+      Sig_errs[m] = np.sqrt(((Sigp - Sigw[m,:,:])**2).sum()) / np.sqrt((Sigp**2).sum())
 
-    results.save(arguments, csizes = csizes, Ms = Ms, cputs = cputs, rklw = rklw, fklw = fklw)
+    results.save(arguments, csizes = csizes, Ms = Ms, cputs = cputs, rklw = rklw, fklw = fklw, mu_errs = mu_errs, Sig_errs = Sig_errs)
 
     #also save muw/Sigw/etc for plotting coreset visualizations
     f = open('results/coreset_data.pk', 'wb')
