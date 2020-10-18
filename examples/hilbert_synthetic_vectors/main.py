@@ -9,13 +9,6 @@ sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import results
 import plotting
 
-class IDProjector(bc.Projector):
-  def update(self, wts, pts):
-    pass
-
-  def project(self, pts, grad=False):
-    return pts
-
 def plot(arguments):
     # load only the results that match (avoid high mem usage)
     to_match = vars(arguments)
@@ -79,6 +72,14 @@ def run(arguments):
     cput = np.zeros(Ms.shape[0])
     
     print('data: ' + arguments.data_type + ', trial ' + str(arguments.trial) + ', alg: ' + arguments.alg)
+
+    class IDProjector(bc.Projector):
+      def update(self, wts, pts):
+        pass
+
+      def project(self, pts, grad=False):
+        return pts
+
     alg = bc.HilbertCoreset(X, IDProjector(), snnls = algs[arguments.alg])
     
     for m, M in enumerate(Ms):
