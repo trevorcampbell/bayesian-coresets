@@ -8,11 +8,9 @@ import hashlib
 import bayesiancoresets as bc
 from scipy.optimize import minimize, nnls
 import time
-
 #make it so we can import models/etc from parent folder
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 from mcmc import sampler
-import model_gaussian
 
 #computes the Laplace approximation N(mu, Sig) to the posterior with weights wts
 def get_laplace(wts, Z, mu0, diag = False):
@@ -39,36 +37,6 @@ def get_laplace(wts, Z, mu0, diag = False):
     LSigInv = np.linalg.cholesky(-hess_th_log_joint(Zw, mu, ww)[0,:,:])
     LSig = sl.solve_triangular(LSigInv, np.eye(LSigInv.shape[0]), lower=True, overwrite_b = True, check_finite = False)
   return mu, LSig, LSigInv
-
-#######################################
-#######################################
-## Step 0: Parse Arguments
-#######################################
-#######################################
-
-parser = argparse.ArgumentParser(description="Runs Riemannian logistic or poisson regression (employing coreset contruction) on the specified dataset")
-parser.add_argument('dnm', type=str, help="the name of the dataset on which to run regression")
-parser.add_argument('model', type=str, choices=["lr","poiss"], help="The regression model to use. lr refers to logistic regression, and poiss refers to poisson regression.")
-parser.add_argument('alg', type=str, help="The algorithm to use for regression - should be one of GIGAO / GIGAR / RAND / PRIOR / SVI") #TODO: find way to make this help message autoupdate with new methods
-parser.add_argument('ID', type=int, help="The trial number - used to initialize random number generation (for replicability)")
-parser.add_argument('--fldr', type=str, default="results/", help="This script will save results in this folder. Default \"results/\"")
-parser.add_argument('--use_diag_laplace_w', action='store_const', default = False, const=True, help="")
-parser.add_argument('--M', type=int, default=20, help="Maximum allowable coreset size")
-parser.add_argument('--SVI_opt_itrs', type=int, default = '1500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
-parser.add_argument('--SVI_step_sched', type=str, default = "lambda i : 1./(1+i)", help="Step schedule (tuning rate) for SVI & HOPS, entered as a lambda expression in quotation marks. Default is \"lambda i : 1./(1+i)\"")
-parser.add_argument('--n_subsample_opt', type=int, default=400, help="(If using Sparse VI/HOPS) the size of the random subsample to use when optimizing the coreset weights in each reweight step")
-parser.add_argument('--n_subsample_select', type=int, default=1000, help="(If using Sparse VI/HOPS) the size of the random subsample to use when determining which point to add to the coreset in each select step")
-parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples to take when discretizing log likelihoods")
-parser.add_argument('--pihat_noise', type=float, default=.75, help = "(If calling GIGAR or simulating another realistically tuned Hilbert Coreset) - a measure of how much noise to introduce to the smoothed pi-hat to make the sampler")
-parser.add_argument("--mcmc_samples", type=int, default=10000, help="number of MCMC samples to take (we also take this many warmup steps before sampling)")
-
-arguments = parser.parse_args()
-model = arguments.model
-dnm = arguments.dnm
-alg = arguments.alg
-ID = arguments.ID
-fldr = arguments.fldr
-N_samples = arguments.mcmc_samples
 
 ###############################
 ## TUNING PARAMETERS ##
@@ -181,7 +149,6 @@ t0 = time.perf_counter()
 sparsevi = bc.SparseVICoreset(Z, prj_w, opt_itrs=SVI_opt_itrs, n_subsample_opt = n_subsample_opt, n_subsample_select = n_subsample_select, step_sched = SVI_step_sched)
 sparsevi_t_setup = time.perf_counter()-t0
 
-#t0 = time.perf_counter()
 
 algs = {'SVI': sparsevi,
         'GIGAO': giga_optimal, 
@@ -243,3 +210,37 @@ if not os.path.exists(fldr):
 SVI_step_sched_hash_sha1 = hashlib.sha1(arguments.SVI_step_sched.encode('utf-8')).hexdigest()
 
 np.savez_compressed(os.path.join(fldr, dnm+'_'+model+'_'+alg+'_results_'+'id='+str(ID)+'_mcmc_samples='+str(N_samples)+'_use_diag_laplace_w='+str(use_diag_laplace_w)+'_proj_dim='+str(projection_dim)+'_SVI_opt_itrs='+str(SVI_opt_itrs)+'_n_subsample_opt='+str(n_subsample_opt)+'_n_subsample_select='+str(n_subsample_select)+'_'+'SVI_step_sched_hash_sha1='+SVI_step_sched_hash_sha1+'_pihat_noise='+str(pihat_noise)+'.npz'), cputs=cputs, w=w, p=p, mus_laplace=mus_laplace, Sigs_laplace=Sigs_laplace, rkls_laplace=rkls_laplace, fkls_laplace=fkls_laplace, dnm=dnm, model=model, alg=alg, ID=ID, N_samples=N_samples, use_diag_laplace_w=use_diag_laplace_w, projection_dim=projection_dim, SVI_opt_itrs=SVI_opt_itrs, n_subsample_opt=n_subsample_opt, n_subsample_select=n_subsample_select, SVI_step_sched=arguments.SVI_step_sched, pihat_noise=pihat_noise)
+
+
+
+#######################################
+#######################################
+## Step 0: Parse Arguments
+#######################################
+#######################################
+
+parser = argparse.ArgumentParser(description="Runs Riemannian logistic or poisson regression (employing coreset contruction) on the specified dataset")
+parser.add_argument('dnm', type=str, help="the name of the dataset on which to run regression")
+parser.add_argument('model', type=str, choices=["lr","poiss"], help="The regression model to use. lr refers to logistic regression, and poiss refers to poisson regression.")
+parser.add_argument('alg', type=str, help="The algorithm to use for regression - should be one of GIGAO / GIGAR / RAND / PRIOR / SVI") #TODO: find way to make this help message autoupdate with new methods
+parser.add_argument('ID', type=int, help="The trial number - used to initialize random number generation (for replicability)")
+parser.add_argument('--fldr', type=str, default="results/", help="This script will save results in this folder. Default \"results/\"")
+parser.add_argument('--use_diag_laplace_w', action='store_const', default = False, const=True, help="")
+parser.add_argument('--M', type=int, default=20, help="Maximum allowable coreset size")
+parser.add_argument('--SVI_opt_itrs', type=int, default = '1500', help = '(If using SVI/HOPS) The number of iterations used when optimizing weights.')
+parser.add_argument('--SVI_step_sched', type=str, default = "lambda i : 1./(1+i)", help="Step schedule (tuning rate) for SVI & HOPS, entered as a lambda expression in quotation marks. Default is \"lambda i : 1./(1+i)\"")
+parser.add_argument('--n_subsample_opt', type=int, default=400, help="(If using Sparse VI/HOPS) the size of the random subsample to use when optimizing the coreset weights in each reweight step")
+parser.add_argument('--n_subsample_select', type=int, default=1000, help="(If using Sparse VI/HOPS) the size of the random subsample to use when determining which point to add to the coreset in each select step")
+parser.add_argument('--proj_dim', type=int, default = '100', help = "The number of samples to take when discretizing log likelihoods")
+parser.add_argument('--pihat_noise', type=float, default=.75, help = "(If calling GIGAR or simulating another realistically tuned Hilbert Coreset) - a measure of how much noise to introduce to the smoothed pi-hat to make the sampler")
+parser.add_argument("--mcmc_samples", type=int, default=10000, help="number of MCMC samples to take (we also take this many warmup steps before sampling)")
+
+arguments = parser.parse_args()
+model = arguments.model
+dnm = arguments.dnm
+alg = arguments.alg
+ID = arguments.ID
+fldr = arguments.fldr
+N_samples = arguments.mcmc_samples
+
+
