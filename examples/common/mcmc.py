@@ -5,95 +5,70 @@ import pickle as pk
 import time
 import hashlib
 
-def build_model(model_caching_folder, model_name, model_code, use_weighted_coresets = False, code_caching_folder = 'stanCppCode/', verbose_compiling = False):
-  if model_caching_folder:
-    weights_tag = "weighted_coreset_version_" if use_weighted_coresets else ""
-    cachingSpot = os.path.join(model_caching_folder, model_name + "_" + weights_tag + hashlib.sha1(model_code.encode('utf-8')).hexdigest())
-  if model_caching_folder and os.path.exists(cachingSpot):
-    f = open(cachingSpot,'rb')
-    sm = pk.load(f) 
-    f.close()
-  else: 
-    print('STAN: building model')
-    if use_weighted_coresets:
-      print('Altering cpp code used by stan to allow weighted data')
-      stanc_ret = pystan.stanc(model_code=model_code)
-      stanc_ret['cppcode'] = load_modified_cpp_code(code_caching_folder, model_name, model_code)
-      sm = pystan.StanModel(stanc_ret=stanc_ret, verbose=verbose_compiling)
-    else: 
-      sm = pystan.StanModel(model_code=model_code)
-
-    if model_caching_folder: 
-      f = open(cachingSpot,'wb')
-      pk.dump(sm,f)
-      f.close()
-
-  return sm
-
-def sampler(dnm, X, Y, N_samples, model_name, model_code, weights = None, sample_caching_folder = None, model_caching_folder = '../common/models', code_caching_folder = '../common/stanCppCode/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True, verbose_compiling = False, seed = None):
-  if sample_caching_folder and not os.path.exists(sample_caching_folder):
-    os.mkdir(sample_caching_folder)
-  if sample_caching_folder: 
-    sample_caching_prefix = sample_caching_folder+dnm+("_unseeded" if seed is None else "_seed=" + str(seed))+'model_name='+model_name+'_N_samples='+str(N_samples)+'_weights='+str(weights)+'_chains='+str(chains)+'control_hash_sha1='+hashlib.sha1(str(control).encode('utf-8')).hexdigest()+'_model_code_hash_sha1='+hashlib.sha1(model_code.encode('utf-8')).hexdigest()  
-  if sample_caching_folder and os.path.exists(sample_caching_prefix + '_samples.npy'):
-    print("Using cached samples for " + dnm)
-    return np.load(sample_caching_prefix + '_samples.npy')
-  else:
-    if model_caching_folder and not os.path.exists(model_caching_folder):
-      os.mkdir(model_caching_folder)
-    print('No MCMC samples found -- running STAN')
-    print('STAN: loading data')
-    Y[Y == -1] = 0 #convert to Stan LR label style if necessary
-
-    sampler_data = {'x': X, 'y': Y.astype(int), 'w': weights if weights is not None else [], 'd': X.shape[1], 'n': X.shape[0]}
-
-    print('STAN: building/loading model')
-    sm = build_model(model_caching_folder, model_name, model_code, use_weighted_coresets = weights is not None, code_caching_folder=code_caching_folder, verbose_compiling=verbose_compiling)
-
-    print('STAN: sampling posterior: ' + dnm)
-    t0 = time.process_time()
-    thd = sampler_data['d']+1
-    #call sampling with N_samples actual iterations, and some number of burn iterations
-    try:
-      if seed is not None:
-        fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=chains, control=control, verbose=verbose, seed=seed)
-      else:
-        fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=chains, control=control, verbose=verbose)
-    except:
-      print("error encountered in sampling - likely the specified dataset is not compatible with the specified model")
-      raise EnvironmentError("error encountered in sampling - likely the specified dataset is not compatible with the specified model")
-    samples = fit.extract(permuted=False)[:, 0, :thd]
-    if sample_caching_folder:
-      np.save(os.path.join(sample_caching_prefix+'_samples.npy'), samples) 
-      tf = time.process_time()
-      np.save(os.path.join(sample_caching_prefix+'_mcmc_time.npy'), tf-t0)
-    return samples
-
-#Takes in the name of and code for a statistical model that allows stan to run MCMC, and returns cpp code that stan can use to 
-#perform MCMC on a coreset.  
-def load_modified_cpp_code(code_folder, model_name, model_code):
-  codeHash = hashlib.sha1(model_code.encode('utf-8')).hexdigest()
-  file_to_find = model_name + "_weighted_coreset_version_" + codeHash + ".cpp"
-  path_to_file_to_find = os.path.join(code_folder, file_to_find)
+#Takes in the name of and code for a statistical model that allows stan to run MCMC, and returns cpp code that stan can use to perform MCMC on a coreset.  
+def load_modified_cpp_code(stan_folder, model_name, model_code):
+  code_hash = hashlib.sha1(model_code.encode('utf-8')).hexdigest()
+  cpp_filename = os.path.join(stan_folder, "weighted_" + model_name + "_" + code_hash + ".cpp")
   if os.path.exists(path_to_file_to_find):
     f = open(path_to_file_to_find,'r')
     modified_code = f.read()
     f.close()
     return modified_code
   else: 
-    if not os.path.exists(code_folder):
-      os.mkdir(code_folder)
+    if not os.path.exists(stan_folder):
+      os.mkdir(stan_folder)
 
     sm = pystan.StanModel(model_code=model_code)
-    file = open(path_to_file_to_find, "w")
-    file.write("Remove this line once you have modified the code below to handle weighted coresets. See ReadMe for more information.\n")
-    file.write(sm.model_cppcode)      
-    file.close()
-    backup_of_file_to_find = os.path.join(code_folder, 'unmodified_backup_of_' + model_name + "_weighted_coreset_version_" + codeHash + '_with_Cpp_code_hash_' + hashlib.sha1(sm.model_cppcode.encode('utf-8')).hexdigest() + '.cpp')
-    file = open(backup_of_file_to_find, "w")
-    file.write(sm.model_cppcode) 
-    file.close()
-    raise EnvironmentError("No modified code to handle weighted data present - unable to use stan for MCMC sampling. Please modify the file "+str(path_to_file_to_find)+" to handle weighted data. See the ReadMe for more information.")
+    f = open(cpp_filename, "w")
+    f.write("This line will create an error. Remove it once you have modified the code below to handle weighted coresets. See ReadMe for more information.\n")
+    f.write(sm.model_cppcode)      
+    f.close()
+    unweighted_cpp_filename = os.path.join(stan_folder, 'unweighted_' + model_name + "_" + code_hash + '.cpp')
+    f = open(unweighted_cpp_filename, "w")
+    f.write(sm.model_cppcode) 
+    f.close()
+    raise EnvironmentError("No modified code to handle weighted data present - unable to use stan for MCMC sampling. Please modify the file "+str(cpp_filename)+" to handle weighted data. See the ReadMe for more information.")
+
+
+def build_model(stan_folder, model_name, model_code, verbose_compile = False):
+  code_hash = hashlib.sha1(model_code.encode('utf-8')).hexdigest()
+  model_filename = os.path.join(stan_folder, model_name + "_" + code_hash)
+  if os.path.exists(model_filename):
+    print('STAN: cached model found; loading')
+    f = open(model_filename, 'rb')
+    sm = pk.load(f)
+    f.close()
+  else: 
+    if not os.path.exists(stan_folder):
+      os.mkdir(stan_folder)
+    print('STAN: no cached model found; building')
+    stanc_ret = pystan.stanc(model_code=model_code)
+    stanc_ret['cppcode'] = load_modified_cpp_code(stan_folder, model_name, model_code)
+    sm = pystan.StanModel(stanc_ret=stanc_ret, verbose=verbose_compile)
+    
+    f = open(model_filename,'wb')
+    pk.dump(sm,f)
+    f.close()
+  return sm
+
+def run(sampler_data, N_samples, model_name, model_code, stan_folder = '../common/stan_cache/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True, verbose_compile = False, seed = None):
+    #TODO need to move Y -1 -> 0 and sampler data and permute thd into main code, not here
+    Y[Y == -1] = 0 #convert to Stan LR label style if necessary
+    sampler_data = {'x': X, 'y': Y.astype(int), 'w': weights if weights is not None else [], 'd': X.shape[1], 'n': X.shape[0]}
+    print('STAN: building/loading model')
+    sm = build_model(stan_folder, model_name, model_code, verbose_compile)
+
+    print('STAN: sampling posterior: ' + dnm)
+    t0 = time.process_time()
+    thd = sampler_data['d']+1
+    #call sampling with N_samples actual iterations, and some number of burn iterations
+    try:
+      fit = sm.sampling(data=sampler_data, iter=N_samples*2, chains=chains, control=control, verbose=verbose, seed=seed)
+    except:
+      raise EnvironmentError("STAN: sampling error. The specified dataset is probably not compatible with the specified model")
+    samples = fit.extract(permuted=False)[:, 0, :thd]
+    t_sample = time.process_time() - t0
+    return samples, t_sample
 
 
 # TODO test weighted CPP using randomly chosen integer weights
