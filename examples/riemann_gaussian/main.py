@@ -90,19 +90,21 @@ def run(arguments):
     
     print('Creating untuned projector for Hilbert coreset construction')
     #create the sampler for the "realistically-tuned" Hilbert coreset
-    U = np.random.rand()
-    muhat = U*mup + (1.-U)*mu0
-    Sighat = U*Sigp + (1.-U)*Sig0
-    #now corrupt the smoothed pihat
-    muhat += arguments.pihat_noise*np.sqrt((muhat**2).sum())*np.random.randn(muhat.shape[0])
-    Sighat *= np.exp(-2*arguments.pihat_noise*np.fabs(np.random.randn()))
-    LSighat = np.linalg.cholesky(Sighat)
-    
-    sampler_realistic = lambda n, w, pts : mup + np.random.randn(n, mup.shape[0]).dot(LSighat.T)
+    xhat = x[np.random.randint(0, x.shape[0], int(np.sqrt(x.shape[0]))), :]
+    muhat, LSigHat, LSigHatInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, xhat, np.ones(xhat.shape[0]))
+    sampler_realistic = lambda n, w, pts : muhat + np.random.randn(n, muhat.shape[0]).dot(LSighat.T)
     prj_realistic = bc.BlackBoxProjector(sampler_realistic, arguments.proj_dim, log_likelihood, grad_log_likelihood)
+
+    print('Creating projector for black-box SVI')
+    def sampler_w(n, w, pts):
+        if wts is None or pts is None or pts.shape[0] == 0:
+          wts = np.zeros(1)
+          pts = np.zeros((1, mu0.shape[0]))
+        muw, LSigw, _ = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
+        return muw + np.random.randn(arguments.proj_dim, muw.shape[0]).dot(LSigw.T)
+    prj_bb = bc.BlackBoxProjector(sampler_w, arguments.proj_dim, log_likelihood, grad_log_likelihood)
     
-    print('Creating exact projector')
-    #exact (gradient) log likelihood projection
+    print('Creating exact projectors')
     class GaussianProjector(bc.Projector):
       def project(self, pts, grad=False):
         nu = (pts - self.muw).dot(SigLInv.T)
@@ -123,42 +125,11 @@ def run(arguments):
           pts = np.zeros((1, mu0.shape[0]))
         self.muw, self.LSigw, self.LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
     
-    prj_exact_optimal = GaussianProjector()
-    prj_exact_optimal.update(np.ones(x.shape[0]), x)
-    rlst_idcs = np.arange(x.shape[0])
-    np.random.shuffle(rlst_idcs)
-    rlst_idcs = rlst_idcs[:int(0.1*rlst_idcs.shape[0])]
-    rlst_w = np.zeros(x.shape[0])
-    rlst_w[rlst_idcs] = 2.*x.shape[0]/rlst_idcs.shape[0]*np.random.rand(rlst_idcs.shape[0])
-    prj_exact_realistic = GaussianProjector()
-    prj_exact_realistic.update(2.*np.random.rand(x.shape[0]), x)
-    
-    print("Creating approximate projector for fairer evaluation of SVI-like approaches")
-    #approximate log likelihood projection (TODO: add gradient)
-    class ApproximateGaussianProjector(bc.Projector):
-      def project(self, pts, grad=False):
-        #TODO: find error in this approach
-        #take the likelihood of our pts according to our samples, using the log likelihood function established earlier
-        ll = log_likelihood(pts, self.samples)
-        return ll - ll.mean(axis= 1)[:, np.newaxis]
-      def update(self, wts = None, pts = None):
-        if wts is None or pts is None or pts.shape[0] == 0:
-          wts = np.zeros(1)
-          pts = np.zeros((1, mu0.shape[0]))
-        # TODO: find error in this reasoning
-        #[same as exact case] calculate the mean and (cholesky decomposed) variance of pi hat, based on the weights we have and our original Sig0inv, Siginv
-        self.muw, self.LSigw, self.LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
-        #use the same samples for all projections after a given update (so that we can compare projected coreset point log likelihoods with projected data point log likelihoods across the same set of samples)
-        self.samples = np.random.multivariate_normal(self.muw, self.LSigw @ self.LSigw.T, arguments.proj_dim) #There may be a significant difference between using sigw.T@sigw vs sigw @ sigw.T, but some empirical tests on small, non-diagonal examples encourage the former for sigw and the latter for sigwinv (and for this case, We may just dealing with diagonal matrices, where both choices are equivalent)
-    
-    #list of what's been tried already (and documented to be unsuccessful - the KL divergence of approximate projection SVI approaches flattens by ~iteration 30) :
-    # sampling using self.samples = np.random.multivariate_normal(self.muw, self.LSigw.T @ self.LSigw, proj_dim), with projection...
-    #    1) using the log_likelihood function defined earlier
-    #    2) using pi hat's variance for the log liklihood: gaussian.log_likelihood(pts, self.samples, self.LSigwInv@self.LsigWinv.T, self.Ldet) where self.Ldet = np.sum(np.log(np.diag(self.LSigw)))
-    
-    
-    prj_exact_approx = ApproximateGaussianProjector()
-    
+    prj_optimal_exact = GaussianProjector()
+    prj_optimal_exact.update(np.ones(x.shape[0]), x)
+    prj_realistic_exact = GaussianProjector()
+    prj_realistic_exact.update(np.ones(xhat.shape[0], xhat)
+       
     #######################################
     #######################################
     ## Step 3: Construct Coreset
@@ -169,11 +140,11 @@ def run(arguments):
     print('Creating coreset construction objects')
     #create coreset construction objects
     sparsevi_exact = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = arguments.svi_opt_itrs, step_sched = eval(arguments.svi_step_sched))
-    sparsevi = bc.SparseVICoreset(x, ApproximateGaussianProjector(), opt_itrs = arguments.svi_opt_itrs, step_sched = eval(arguments.svi_step_sched))
+    sparsevi = bc.SparseVICoreset(x, prj_bb, opt_itrs = arguments.svi_opt_itrs, step_sched = eval(arguments.svi_step_sched))
     giga_optimal = bc.HilbertCoreset(x, prj_optimal)
-    giga_optimal_exact = bc.HilbertCoreset(x,prj_exact_optimal)
+    giga_optimal_exact = bc.HilbertCoreset(x,prj_optimal_exact)
     giga_realistic = bc.HilbertCoreset(x,prj_realistic)
-    giga_realistic_exact = bc.HilbertCoreset(x,prj_exact_realistic)
+    giga_realistic_exact = bc.HilbertCoreset(x,prj_realistic_exact)
     unif = bc.UniformSamplingCoreset(x)
     
     algs = {'SVI-EXACT': sparsevi_exact,
@@ -188,7 +159,7 @@ def run(arguments):
     print('Building coreset')
     w = [np.array([0.])]
     p = [np.zeros((1, x.shape[1]))]
-    cputs = [0]
+    cputs = np.zeros(Ms.shape[0])
     t_build = 0
     for m in range(Ms.shape[0]):
       print('M = ' + str(Ms[m]) + ': coreset construction, '+ arguments.alg + ' ' + str(arguments.trial))
@@ -201,7 +172,7 @@ def run(arguments):
       #store weights/pts/runtime
       w.append(wts)
       p.append(pts)
-      cputs.append(t_build)
+      cputs[m] = t_build
     
     ##############################
     ##############################
@@ -227,7 +198,7 @@ def run(arguments):
     #also save muw/Sigw/etc for plotting coreset visualizations
     f = open('results/coreset_data.pk', 'wb')
     res = (x, mu0, Sig0, Sig, mup, Sigp, w, p, muw, Sigw)
-    pk.dump(res)
+    pk.dump(res, f)
     f.close()
 
 ############################
