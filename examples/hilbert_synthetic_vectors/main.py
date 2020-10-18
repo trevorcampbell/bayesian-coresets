@@ -5,7 +5,6 @@ import time
 import os
 import sys
 import argparse
-import bokeh.plotting as bkp
 sys.path.insert(1, os.path.join(sys.path[0], '../common'))
 import results
 import plotting
@@ -18,12 +17,15 @@ class IDProjector(bc.Projector):
     return pts
 
 def plot(arguments):
-    # extract the non-plotting-related arguments that the user specified (we will use these to match on when loading results)
-    dargs = vars(arguments)
-    matching_dict = {anm : dargs[anm] for anm in args.argnames if dargs[anm] is not None}
     # load only the results that match (avoid high mem usage)
-    resdf = results.load_matching(matching_dict)
-    
+    to_match = vars(arguments)
+    #remove any ignored params
+    for nm in arguments.summarize:
+        to_match.pop(nm, None)
+    #remove any legend param
+    to_match.pop(arguments.plot_legend, None)
+    #load cols from results dfs that match remaining keys
+    resdf = results.load_matching(to_match)
     #call the generic plot function
     plotting.plot(arguments, resdf)
 
@@ -45,7 +47,6 @@ def run(arguments):
     algs = {'FW': bc.snnls.FrankWolfe, 
             'GIGA': bc.snnls.GIGA,
             'OMP': bc.snnls.OrthoPursuit, 
-            'IS': bc.snnls.ImportanceSampling, 
             'US': bc.snnls.UniformSampling}
     
     if arguments.coreset_size_spacing == 'log':
@@ -114,22 +115,24 @@ plot_subparser = subparsers.add_parser('plot', help='Plots the results')
 plot_subparser.set_defaults(func=plot)
 
 # example-specific arguments
-run_subparser.add_argument('--alg_nm', type=str, default='GIGA', choices=['FW', 'GIGA', 'OMP', 'IS', 'US'], help="The sparse non negative least squares algorithm to use")
-run_subparser.add_argument('--data_num', type=int, default=10000, help="The number of synthetic data points")
-run_subparser.add_argument('--data_dim', type=int, default=100, help="The dimension of the synthetic data points, if applicable")
-run_subparser.add_argument('--data_type', type=str, default='normal', choices=['normal', 'axis'], help="Specifies the type of synthetic data to generate.")
-run_subparser.add_argument('--coreset_size_max', type=int, default=1000, help="The maximum coreset size to evaluate")
-run_subparser.add_argument('--coreset_num_sizes', type=int, default=50, help="The number of coreset sizes to evaluate")
-run_subparser.add_argument('--coreset_size_spacing', type=str, choices=['log', 'linear'], default='log', help="The spacing of coreset sizes to test")
+parser.add_argument('--alg_nm', type=str, default='GIGA', choices=['FW', 'GIGA', 'OMP', 'US'], help="The sparse non negative least squares algorithm to use")
+parser.add_argument('--data_num', type=int, default=10000, help="The number of synthetic data points")
+parser.add_argument('--data_dim', type=int, default=100, help="The dimension of the synthetic data points, if applicable")
+parser.add_argument('--data_type', type=str, default='normal', choices=['normal', 'axis'], help="Specifies the type of synthetic data to generate.")
+parser.add_argument('--coreset_size_max', type=int, default=1000, help="The maximum coreset size to evaluate")
+parser.add_argument('--coreset_num_sizes', type=int, default=50, help="The number of coreset sizes to evaluate")
+parser.add_argument('--coreset_size_spacing', type=str, choices=['log', 'linear'], default='log', help="The spacing of coreset sizes to test")
 
 # common arguments
-run_subparser.add_argument('--trial', type=int, help='The trial number (used to seed random number generation)')
-run_subparser.add_argument('--results_folder', type=str, default="results/", help="This script will save results in this folder")
-run_subparser.add_argument('--verbosity', type=str, default="error", choices=['error', 'warning', 'critical', 'info', 'debug'], help="The verbosity level.")
+parser.add_argument('--trial', type=int, help='The trial number (used to seed random number generation)')
+parser.add_argument('--results_folder', type=str, default="results/", help="This script will save results in this folder")
+parser.add_argument('--verbosity', type=str, default="error", choices=['error', 'warning', 'critical', 'info', 'debug'], help="The verbosity level.")
 
 # plotting arguments
 plot_subparser.add_argument('plot_x', type = str, help="The X axis of the plot")
 plot_subparser.add_argument('plot_y', type = str, help="The Y axis of the plot")
+plot_subparser.add_argument('--plot_x_label', type = str, help="The X axis label of the plot")
+plot_subparser.add_argument('--plot_y_label', type = str, help="The Y axis label of the plot")
 plot_subparser.add_argument('--plot_x_type', type=str, choices=["linear","log"], default = "log", help = "Specifies the scale for the X-axis")
 plot_subparser.add_argument('--plot_y_type', type=str, choices=["linear","log"], default = "log", help = "Specifies the scale for the Y-axis.")
 plot_subparser.add_argument('--plot_legend', type=str, help = "Specifies the variable to create a legend for.")
@@ -138,6 +141,8 @@ plot_subparser.add_argument('--plot_width', type=int, default=850, help = "Width
 plot_subparser.add_argument('--plot_type', type=str, choices=['line', 'scatter'], default='scatter', help = "Type of plot to make")
 plot_subparser.add_argument('--plot_fontsize', type=str, default='32pt', help = "Font size for the figure, e.g., 32pt")
 plot_subparser.add_argument('--plot_toolbar', action='store_true', help = "Show the Bokeh toolbar")
+plot_subparser.add_argument('--summarize', type=str, nargs='*', help = 'The command line arguments to ignore value of when matching to plot a subset of data. E.g. --summarize trial data_num will compute result statistics over both trial and number of datapoints')
+plot_subparser.add_argument('--groupby', type=str, help = 'The command line argument group rows by before plotting. No groupby means plotting raw data; groupby will do percentile stats for all data with the same groupby value. E.g. --groupby Ms in a scatter plot will compute result statistics for fixed values of M, i.e., there will be one scatter point per value of M')
 
 arguments = parser.parse_args()
 arguments.func(arguments)

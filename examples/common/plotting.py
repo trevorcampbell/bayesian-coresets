@@ -1,6 +1,7 @@
 from bokeh.models import FuncTickFormatter
 import bokeh.palettes 
 import numpy as np
+import bokeh.plotting as bkp
 
 
 logFmtr = FuncTickFormatter(code="""
@@ -30,13 +31,13 @@ if (tick_power < 0){
   ret += '\u207B';
   tick_power = -tick_power;
 }
-power_digits = []
+var power_digits = [];
 while (tick_power > 9){
   power_digits.push( tick_power - Math.floor(tick_power/10)*10 )
   tick_power = Math.floor(tick_power/10)
 }
 power_digits.push(tick_power)
-for (i = power_digits.length-1; i >= 0; i--){
+for (var i = power_digits.length-1; i >= 0; i--){
   ret += trns[power_digits[i]];
 }
 return ret;
@@ -74,11 +75,11 @@ def plot(arguments, df):
                  x_axis_type=arguments.plot_x_type, 
                  plot_width=arguments.plot_width,
                  plot_height=arguments.plot_height, 
-                 x_axis_label=arguments.plot_x, 
-                 y_axis_label=arguments.plot_y, 
+                 x_axis_label=arguments.plot_x if arguments.plot_x_label is None else arguments.plot_x_label, 
+                 y_axis_label=arguments.plot_y if arguments.plot_y_label is None else arguments.plot_y_label, 
                  toolbar_location='right' if arguments.plot_toolbar else None)
 
-  preprocess_plot(fig, '32pt', arguments.plot_x_type == 'log', arguments.plot_y_type == 'log')
+  preprocess_plot(fig, arguments.plot_fontsize, arguments.plot_x_type == 'log', arguments.plot_y_type == 'log')
 
   if arguments.plot_type == 'scatter':
     plotfunc = scatter
@@ -88,30 +89,52 @@ def plot(arguments, df):
   if arguments.plot_legend is not None:
     #iterate over groups
     i = 0
-    for nm in resdf[arguments.plot_legend].unique():
-      tmpdf = resdf.loc[resdf[arguments.plot_legend] == nm]
+    for nm in df[arguments.plot_legend].unique():
+      tmpdf = df.loc[df[arguments.plot_legend] == nm]
       plotfunc(fig, tmpdf, arguments, clr = pal[i], legend = nm)
       i = i+1
   else:
-    plotfunc(fig, resdf, arguments, clr = pal[0])
+    plotfunc(fig, df, arguments, clr = pal[0])
 
-  postprocess_plot(fig, '12pt', location='bottom_left', glyph_width=40)
+  postprocess_plot(fig, arguments.plot_fontsize, location='bottom_left', glyph_width=40)
   fig.legend.background_fill_alpha=0.
   fig.legend.border_line_alpha=0.
   fig.legend.visible = True
   bkp.show(fig)
 
-
-
 def scatter(fig, df, arguments, clr = pal[0], legend = None):
-  #plot all at once
-  xy50 = resdf.groupby(arguments.plot_x).quantile(.5)
-  #xy10 = resdf.groupby(arguments.plot_x).quantile(.1)
-  #xy90 = resdf.groupby(arguments.plot_x).quantile(.9)
-  fig.scatter(xy50[arguments.plot_x], xy50[arguments.plot_y], color=pal[0], line_width=5)
+  xy50 = df.groupby(arguments.groupby, as_index=False).quantile(.5)
+  xy10 = df.groupby(arguments.groupby, as_index=False).quantile(.1)
+  xy90 = df.groupby(arguments.groupby, as_index=False).quantile(.9)
+  fig.scatter(xy50[arguments.plot_x], xy50[arguments.plot_y], color=clr, line_width=5, legend = legend)
 
+  #err_xs = []
+  #err_ys = []
+  #for j in range(df.shape[0]):
+  #  err_xs.append((xy10.iloc[j, arguments.plot_x], xy10.iloc[j, arguments.plot_x]))
+  #  err_ys.append((xy10.iloc[j, arguments.plot_y], xy10.iloc[j, arguments.plot_x]))
+  #  err_ys.append((np.percentile(y_all, 25, axis=0)[j], np.percentile(y_all, 75, axis=0)[j])) 
+
+  #fig.multi_line(err_xs, err_ys, color=pal[i-1])
+
+  #fig.scatter(xy50[arguments.plot_x], xy50[arguments.plot_y], color=pal[0], line_width=5)
+  
 def line(fig, df, arguments, clr = pal[0], legend = None):
-  pass
+  xy50 = df.groupby(arguments.groupby, as_index=False).quantile(.5)
+  xy10 = df.groupby(arguments.groupby, as_index=False).quantile(.1)
+  xy90 = df.groupby(arguments.groupby, as_index=False).quantile(.9)
+  fig.line(xy50[arguments.plot_x], xy50[arguments.plot_y], color=clr, line_width=5, legend = legend)
+
+  #err_xs = []
+  #err_ys = []
+  #for j in range(df.shape[0]):
+  #  err_xs.append((xy10.iloc[j, arguments.plot_x], xy10.iloc[j, arguments.plot_x]))
+  #  err_ys.append((xy10.iloc[j, arguments.plot_y], xy10.iloc[j, arguments.plot_x]))
+  #  err_ys.append((np.percentile(y_all, 25, axis=0)[j], np.percentile(y_all, 75, axis=0)[j])) 
+
+  #fig.multi_line(err_xs, err_ys, color=pal[i-1])
+
+  #fig.scatter(xy50[arguments.plot_x], xy50[arguments.plot_y], color=pal[0], line_width=5)
 
 def plot_gaussian(plot, mup, Sigp, Sig, color, dotsize, linewidth, dotalpha, linealpha, line_dash, name, num_pts_for_circle_approx = 100):
   plot.circle(mup[0], mup[1], color=color, size=dotsize, alpha=dotalpha)

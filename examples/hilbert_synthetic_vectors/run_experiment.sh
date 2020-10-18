@@ -1,18 +1,18 @@
 #!/bin/bash
 
-for ID in {1..10}
+for ID in {1..5}
 do
     for alg in "GIGA" "FW" "OMP" "IS" "US"
     do
-	python3 main.py run --alg_nm $alg --trial $ID --data_type normal
+	python3 main.py --alg_nm $alg --trial $ID --data_type normal run 
     done
 done
 
-for ID in {1..10}
+for ID in {1..5}
 do
     for alg in "GIGA" "FW" "OMP" "IS" "US"
     do
-	python3 main.py run --alg_nm $alg --trial $ID --data_type axis --data_num 100 --coreset_size_max 100 --coreset_num_sizes 10
+	python3 main.py --alg_nm $alg --trial $ID --data_type axis --data_num 100 --coreset_size_max 100 --coreset_num_sizes 10 run
     done
 done
 

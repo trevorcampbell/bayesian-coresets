@@ -16,20 +16,23 @@ def check_exists(arguments, results_folder = 'results/'):
         return True
     return False
 
-def load_matching(match_dict, results_folder = 'results/'):
-    resfiles = os.listdir(results_folder)
+def load_matching(match_dict, results_folder = 'results/', log_file = 'manifest.csv'):
+    resfiles = [fn for fn in os.listdir(results_folder) if fn != log_file]
     df = None
     for resfile in resfiles:
         #load the results file
         resdf = pd.read_csv(os.path.join(results_folder, resfile))
+        #get the intersection of column names and argnames
+        cols_to_match = list(set(resdf.columns.tolist()).intersection(set(match_dict)))
         #extract the matching rows
-        resdf = resdf.loc[(resdf[list(match_dict)] == pd.Series(match_dict)).all(axis=1)]
+        resdf = resdf.loc[(resdf[cols_to_match] == pd.Series({m:v for m, v in match_dict.items() if m in cols_to_match})).all(axis=1)]
         if resdf.shape[0] > 0:
             #if df hasn't been initialized yet, just use resdf; otherwise, append
             if df is None:
                 df = resdf
             else:
                 df = df.append(resdf)
+
     return df
 
 def save(arguments, results_folder = 'results/', log_file = 'manifest.csv', **kwargs):
