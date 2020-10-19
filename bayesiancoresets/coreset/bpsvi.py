@@ -12,7 +12,7 @@ class BatchPSVICoreset(Coreset):
     self.step_sched = step_sched
     super().__init__(**kw)
 
-  def _build(self, itrs):
+  def _build(self, sz):
     # initialize the points via full dataset subsampling
     init_idcs = np.random.choice(self.data.shape[0], size=sz, replace=False)
     self.pts = self.data[init_idcs]
