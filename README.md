@@ -6,12 +6,16 @@ A **coreset** (i.e. the "core of a dataset") is a small, weighted subset of a da
 
 ### Repository Status
 
-After the recent update (Oct 2020), the repository is **no longer thoroughly tested**. Examples run and generate verified output using Python 3. Python 2 is not tested. Unit tests have not yet been updated. Work is in progress.
+The most recent update (Oct 2020):
+- improves command line argument specification using `argparse`
+- implements pseudocoresets
+- incorporates weighted STAN samplers for MCMC inference
+
+But: the repository is **no longer thoroughly tested**. Examples run and generate verified output using Python 3. Python 2 is not tested. Unit tests have not yet been updated. Work is in progress.
 
 ### Installation and Dependencies
 
-To install with pip, download the repository and run `pip3 install . --user` in the repository's root folder. Note: this package depends on [NumPy](http://www.numpy.org), [SciPy](https://www.scipy.org), and [SciKit Learn](https://scikit-learn.org).
-The examples also depend on [Bokeh](https://bokeh.pydata.org/en/latest) for plotting.
+To install with pip, download the repository and run `pip3 install . --user` in the repository's root folder. 
 
 ### Examples 
 
