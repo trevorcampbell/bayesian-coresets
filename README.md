@@ -17,7 +17,7 @@ But: the repository is **no longer thoroughly tested**. Examples run and generat
 
 To install with pip, download the repository and run `pip3 install . --user` in the repository's root folder. 
 
-### Examples 
+### Algorithms 
 
 #### Sparse Regression
 
