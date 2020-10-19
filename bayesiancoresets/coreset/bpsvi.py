@@ -5,7 +5,6 @@ from .coreset import Coreset
 
 class BatchPSVICoreset(Coreset):
   def __init__(self, data, ll_projector, opt_itrs, n_subsample_opt=None, step_sched=lambda i : 1./(1.+i), **kw): 
-    raise NotImplementedError #need to make this work w/ new build(itrs)
     self.data = data
     self.ll_projector = ll_projector
     self.opt_itrs = opt_itrs
