@@ -104,7 +104,7 @@ def run(arguments):
     stanY[:] = Y
     stanY[stanY == -1] = 0
     sampler_data = {'x': X, 'y': stanY.astype(int), 'w': np.ones(X.shape[0]), 'd': X.shape[1], 'n': X.shape[0]}
-    full_samples, t_sample = mcmc.run(sampler_data, arguments.mcmc_samples_full, arguments.model, model.stan_representation, arguments.trial)
+    full_samples, t_full_mcmc = mcmc.run(sampler_data, arguments.mcmc_samples_full, arguments.model, model.stan_representation, arguments.trial)
     print(full_samples)
     quit()
     #adjusting the format of samples returned by stan to match our expected format (see https://github.com/trevorcampbell/bayesian-coresets-private/issues/57)
