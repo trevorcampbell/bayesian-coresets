@@ -100,15 +100,13 @@ data {
   matrix[n,d] x; // inputs
 }
 parameters {
-  real theta0; // intercept
   vector[d] theta; // auxiliary parameter
 }
 transformed parameters {
   vector[n] f;
-  f = -log_inv_logit(-(theta0 + x*theta));
+  f = -log_inv_logit(-(x*theta));
 }
 model {
-  theta0 ~ normal(0, 1);
   theta ~ normal(0, 1);
   y ~ poisson(f);
 }
