@@ -10,7 +10,7 @@ def load_data(dnm):
   X[:, :-1] = np.linalg.solve(np.linalg.cholesky(V), (X[:, :-1] - m).T).T
   Z = data['y'][:, np.newaxis]*X
   data.close()
-  return X[:, :-1], Y, Z, None, Z.shape[1]
+  return X, Y, Z, None, Z.shape[1]
 
 def gen_synthetic(n):
   mu = np.array([0, 0])
