@@ -139,8 +139,8 @@ def run(arguments):
     ##############################
     print('Creating coreset construction objects')
     #create coreset construction objects
-    sparsevi_exact = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = arguments.svi_opt_itrs, step_sched = eval(arguments.svi_step_sched))
-    sparsevi = bc.SparseVICoreset(x, prj_bb, opt_itrs = arguments.svi_opt_itrs, step_sched = eval(arguments.svi_step_sched))
+    sparsevi_exact = bc.SparseVICoreset(x, GaussianProjector(), opt_itrs = arguments.opt_itrs, step_sched = eval(arguments.step_sched))
+    sparsevi = bc.SparseVICoreset(x, prj_bb, opt_itrs = arguments.opt_itrs, step_sched = eval(arguments.step_sched))
     giga_optimal = bc.HilbertCoreset(x, prj_optimal)
     giga_optimal_exact = bc.HilbertCoreset(x,prj_optimal_exact)
     giga_realistic = bc.HilbertCoreset(x,prj_realistic)
@@ -227,8 +227,8 @@ parser.add_argument('--coreset_size_max', type=int, default=200, help="The maxim
 parser.add_argument('--coreset_num_sizes', type=int, default=7, help="The number of coreset sizes to evaluate")
 parser.add_argument('--coreset_size_spacing', type=str, choices=['log', 'linear'], default='log', help="The spacing of coreset sizes to test")
 
-parser.add_argument('--svi_opt_itrs', type=str, default = 100, help="Number of optimization iterations for SVI")
-parser.add_argument('--svi_step_sched', type=str, default = "lambda i : 1./(1+i)", help="Step schedule (tuning rate) for SVI, entered as a lambda expression in quotation marks.")
+parser.add_argument('--opt_itrs', type=str, default = 100, help="Number of optimization iterations (for methods that use iterative weight refinement)")
+parser.add_argument('--step_sched', type=str, default = "lambda i : 1./(1+i)", help="Optimization step schedule (for methods that use iterative weight refinement); entered as a python lambda expression surrounded by quotes")
 parser.add_argument('--pihat_noise', type=float, default=.75, help = "How much noise to introduce to the smoothed pi-hat in GIGAR")
 
 parser.add_argument('--trial', type=int, help="The trial number - used to initialize random number generation (for replicability)")

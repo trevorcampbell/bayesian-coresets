@@ -170,7 +170,7 @@ def run(arguments):
     
     print('Creating coreset construction objects')
     #create coreset construction objects
-    sparsevi = bc.SparseVICoreset(Z, prj_bb, opt_itrs = arguments.svi_opt_itrs, step_sched = eval(arguments.svi_step_sched))
+    sparsevi = bc.SparseVICoreset(Z, prj_bb, opt_itrs = arguments.opt_itrs, step_sched = eval(arguments.step_sched))
     giga_optimal = bc.HilbertCoreset(Z, prj_optimal)
     giga_realistic = bc.HilbertCoreset(Z,prj_realistic)
     unif = bc.UniformSamplingCoreset(Z)
@@ -258,8 +258,8 @@ parser.add_argument("--proj_dim", type=int, default=500, help="The number of sam
 parser.add_argument('--coreset_size_max', type=int, default=1000, help="The maximum coreset size to evaluate")
 parser.add_argument('--coreset_num_sizes', type=int, default=7, help="The number of coreset sizes to evaluate")
 parser.add_argument('--coreset_size_spacing', type=str, choices=['log', 'linear'], default='log', help="The spacing of coreset sizes to test")
-parser.add_argument('--svi_opt_itrs', type=str, default = 100, help="Number of optimization iterations for SVI")
-parser.add_argument('--svi_step_sched', type=str, default = "lambda i : 1./(1+i)", help="Step schedule (tuning rate) for SVI, entered as a lambda expression in quotation marks.")
+parser.add_argument('--opt_itrs', type=str, default = 100, help="Number of optimization iterations (for methods that use iterative weight refinement)")
+parser.add_argument('--step_sched', type=str, default = "lambda i : 1./(1+i)", help="Optimization step schedule (for methods that use iterative weight refinement); entered as a python lambda expression surrounded by quotes")
 
 parser.add_argument('--trial', type=int, help="The trial number - used to initialize random number generation (for replicability)")
 parser.add_argument('--results_folder', type=str, default="results/", help="This script will save results in this folder")
