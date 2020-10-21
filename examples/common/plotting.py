@@ -106,7 +106,7 @@ def scatter(fig, df, arguments, clr = pal[0], legend = None):
   xy50 = df.groupby(arguments.groupby, as_index=False).quantile(.5)
   xy10 = df.groupby(arguments.groupby, as_index=False).quantile(.1)
   xy90 = df.groupby(arguments.groupby, as_index=False).quantile(.9)
-  fig.scatter(xy50[arguments.plot_x], xy50[arguments.plot_y], color=clr, line_width=5, legend = legend)
+  fig.scatter(xy50[arguments.plot_x], xy50[arguments.plot_y], color=clr, line_width=5, legend_label = legend)
 
   #err_xs = []
   #err_ys = []
@@ -123,7 +123,7 @@ def line(fig, df, arguments, clr = pal[0], legend = None):
   xy50 = df.groupby(arguments.groupby, as_index=False).quantile(.5)
   xy10 = df.groupby(arguments.groupby, as_index=False).quantile(.1)
   xy90 = df.groupby(arguments.groupby, as_index=False).quantile(.9)
-  fig.line(xy50[arguments.plot_x], xy50[arguments.plot_y], color=clr, line_width=5, legend = legend)
+  fig.line(xy50[arguments.plot_x], xy50[arguments.plot_y], color=clr, line_width=5, legend_label = legend)
 
   #err_xs = []
   #err_ys = []

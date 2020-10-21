@@ -19,6 +19,11 @@ def plot(arguments):
     to_match.pop(arguments.plot_legend, None)
     #load cols from results dfs that match remaining keys
     resdf = results.load_matching(to_match)
+
+    if resdf is None:
+        print('No matching results to plot, skipping')
+        return
+
     #call the generic plot function
     plotting.plot(arguments, resdf)
 
