@@ -234,7 +234,6 @@ parser.add_argument('--coreset_size_spacing', type=str, choices=['log', 'linear'
 
 parser.add_argument('--opt_itrs', type=int, default = 100, help="Number of optimization iterations (for methods that use iterative weight refinement)")
 parser.add_argument('--step_sched', type=str, default = "lambda i : 1./(1+i)", help="Optimization step schedule (for methods that use iterative weight refinement); entered as a python lambda expression surrounded by quotes")
-parser.add_argument('--pihat_noise', type=float, default=.75, help = "How much noise to introduce to the smoothed pi-hat in GIGAR")
 
 parser.add_argument('--trial', type=int, help="The trial number - used to initialize random number generation (for replicability)")
 parser.add_argument('--results_folder', type=str, default="results/", help="This script will save results in this folder")
