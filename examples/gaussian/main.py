@@ -16,8 +16,9 @@ def plot(arguments):
     # load only the results that match (avoid high mem usage)
     to_match = vars(arguments)
     #remove any ignored params
-    for nm in arguments.summarize:
-        to_match.pop(nm, None)
+    if arguments.summarize is not None:
+        for nm in arguments.summarize:
+            to_match.pop(nm, None)
     #remove any legend param
     to_match.pop(arguments.plot_legend, None)
     #load cols from results dfs that match remaining keys
@@ -227,7 +228,7 @@ parser.add_argument('--coreset_size_max', type=int, default=200, help="The maxim
 parser.add_argument('--coreset_num_sizes', type=int, default=7, help="The number of coreset sizes to evaluate")
 parser.add_argument('--coreset_size_spacing', type=str, choices=['log', 'linear'], default='log', help="The spacing of coreset sizes to test")
 
-parser.add_argument('--opt_itrs', type=str, default = 100, help="Number of optimization iterations (for methods that use iterative weight refinement)")
+parser.add_argument('--opt_itrs', type=int, default = 100, help="Number of optimization iterations (for methods that use iterative weight refinement)")
 parser.add_argument('--step_sched', type=str, default = "lambda i : 1./(1+i)", help="Optimization step schedule (for methods that use iterative weight refinement); entered as a python lambda expression surrounded by quotes")
 parser.add_argument('--pihat_noise', type=float, default=.75, help = "How much noise to introduce to the smoothed pi-hat in GIGAR")
 

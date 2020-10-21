@@ -44,8 +44,9 @@ def plot(arguments):
     # load only the results that match (avoid high mem usage)
     to_match = vars(arguments)
     #remove any ignored params
-    for nm in arguments.summarize:
-        to_match.pop(nm, None)
+    if arguments.summarize is not None:
+        for nm in arguments.summarize:
+            to_match.pop(nm, None)
     #remove any legend param
     to_match.pop(arguments.plot_legend, None)
     #load cols from results dfs that match remaining keys
