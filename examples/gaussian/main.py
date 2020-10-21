@@ -49,6 +49,10 @@ def run(arguments):
     else:
         Ms = np.unique(np.linspace(1, arguments.coreset_size_max, arguments.coreset_num_sizes, dtype=np.int32))
 
+    #make sure the first size to record is 0
+    if Ms[0] != 0:
+        Ms = np.hstack((0, Ms))
+
     #######################################
     #######################################
     ## Step 1: Generate a Synthetic Dataset
@@ -125,7 +129,7 @@ def run(arguments):
           wts = np.zeros(1)
           pts = np.zeros((1, mu0.shape[0]))
         self.muw, self.LSigw, self.LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
-    
+
     prj_optimal_exact = GaussianProjector()
     prj_optimal_exact.update(np.ones(x.shape[0]), x)
     prj_realistic_exact = GaussianProjector()
@@ -158,8 +162,8 @@ def run(arguments):
     alg = algs[arguments.alg]
     
     print('Building coreset')
-    w = [np.array([0.])]
-    p = [np.zeros((1, x.shape[1]))]
+    w = []
+    p = []
     cputs = np.zeros(Ms.shape[0])
     t_build = 0
     for m in range(Ms.shape[0]):

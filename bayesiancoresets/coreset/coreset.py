@@ -23,6 +23,8 @@ class Coreset(object):
     return (self.wts > 0).sum()
 
   def get(self):
+    if self.wts.shape[0] == 0:
+        return np.array([]), np.array([]), np.array([])
     return self.wts[self.wts > 0], self.pts[self.wts > 0, :], self.idcs[self.wts > 0]
 
   def error(self):
@@ -30,6 +32,9 @@ class Coreset(object):
 
   def build(self, itrs):
     if self.reached_numeric_limit:
+      return
+
+    if itrs <= 0:
       return
 
     self._build(itrs)

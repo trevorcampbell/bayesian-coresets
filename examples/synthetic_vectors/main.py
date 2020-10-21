@@ -52,7 +52,7 @@ def run(arguments):
         Ms = np.unique(np.logspace(0., np.log10(arguments.coreset_size_max), arguments.coreset_num_sizes, dtype=np.int32))
     else:
         Ms = np.unique(np.linspace(1, arguments.coreset_size_max, arguments.coreset_num_sizes, dtype=np.int32))
-    
+
     #######################################
     #######################################
     ## Step 1: Generate a Synthetic Dataset
