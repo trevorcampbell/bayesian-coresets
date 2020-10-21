@@ -23,12 +23,17 @@ def KL(mu0, Sig0, mu1, Sig1inv):
   return 0.5*(t1+t2+t3-mu0.shape[0])
 
 def weighted_post(th0, Sig0inv, sigsq, z, w): 
-  z = np.atleast_2d(z)
-  X = z[:, :-1]
-  Y = z[:, -1]
-  LSigpInv = np.linalg.cholesky(Sig0inv + (w[:, np.newaxis]*X).T.dot(X)/sigsq)
-  LSigp = sl.solve_triangular(LSigpInv, np.eye(LSigpInv.shape[0]), lower=True, overwrite_b = True, check_finite = False)
-  mup = np.dot(LSigp.dot(LSigp.T),  np.dot(Sig0inv,th0) + (w[:, np.newaxis]*Y[:,np.newaxis]*X).sum(axis=0)/sigsq )
+  if w.shape[0] > 0:
+      z = np.atleast_2d(z)
+      X = z[:, :-1]
+      Y = z[:, -1]
+      LSigpInv = np.linalg.cholesky(Sig0inv + (w[:, np.newaxis]*X).T.dot(X)/sigsq)
+      LSigp = sl.solve_triangular(LSigpInv, np.eye(LSigpInv.shape[0]), lower=True, overwrite_b = True, check_finite = False)
+      mup = np.dot(LSigp.dot(LSigp.T),  np.dot(Sig0inv,th0) + (w[:, np.newaxis]*Y[:,np.newaxis]*X).sum(axis=0)/sigsq )
+  else:
+      mup = th0
+      LSigpInv = np.linalg.cholesky(Sig0inv)
+      LSigp = sl.solve_triangular(LSigpInv, np.eye(LSigpInv.shape[0]), lower=True, overwrite_b = True, check_finite = False)
   return mup, LSigp, LSigpInv
 
 
