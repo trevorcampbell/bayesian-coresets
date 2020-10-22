@@ -4,6 +4,7 @@ from scipy.special import gammaln
 def load_data(dnm):
   data = np.load(dnm)
   X = data['X']
+  Y = data['y']
   Xt = data['Xt']
   #standardize the covariates; last col is intercept, so no stdization there
   m = X[:, :-1].mean(axis=0)
@@ -13,7 +14,7 @@ def load_data(dnm):
   Z = np.hstack((X, data['y'][:, np.newaxis]))
   Zt = np.hstack((Xt, data['yt'][:, np.newaxis]))
   data.close()
-  return Z, Zt, Z.shape[1]-1
+  return X[:, :-1], Y, Z, Zt, Z.shape[1]-1
 
 def gen_synthetic(n):
   X = np.random.randn(n)
@@ -21,76 +22,93 @@ def gen_synthetic(n):
   y = np.random.poisson(np.log1p(np.exp(X.dot(np.array([1., 0.])))))
   return np.hstack((X, y[:, np.newaxis])), np.linalg.inv((X.T).dot(X)).dot((X.T).dot(y))
 
-def log_joint(Z, th, wts):
-  ll = log_likelihood(Z, th)
-  if np.any(np.logical_and(np.isinf(ll), wts>0)):
-    return -np.inf
-  return (wts[np.isfinite(ll)]*ll[np.isfinite(ll)]).sum() + log_prior(th)
+def compute_s(th, x):
+  s = x.dot(th.T)
+  idcs = s > -100
+  s[idcs] =  np.log(np.maximum(s[idcs], 0) + np.log1p(np.exp(-np.fabs(s[idcs]))))
+  #for any indices s < -100, then log( log(1+e^s) ) approximately s
+  return s
 
-def compute_m(th, x):
-  m = np.atleast_2d(th*x).sum(axis=1)
-  return np.maximum(m, 0) + np.log1p(np.exp(-np.fabs(m)))
-
-def log_likelihood_2d2d(z, th):
-  lls = np.zeros((z.shape[0], th.shape[0]))
-  for i in range(th.shape[0]):
-    lls[:, i] = log_likelihood(z, th[i,:])
-  return lls
-
-
-def log_likelihood(Z, th):
-  x = Z[:, :-1]
-  y = Z[:, -1]
-  dots = np.atleast_2d(th*x).sum(axis=1)
-  m = np.maximum(dots, 0) + np.log1p(np.exp(-np.fabs(dots)))
-  ll = np.zeros(dots.shape[0])
-  ll[m>0] = y[m>0]*np.log(m[m>0]) - gammaln(y[m>0]+1)-m[m>0]
-  ll[m==0] = y[m==0]*dots[m==0] - gammaln(y[m==0]+1)
-  return ll
+def log_likelihood(z, th):
+  th = np.atleast_2d(th)
+  z = np.atleast_2d(z)
+  x = z[:, :-1]
+  y = np.tile(z[:, -1][:, np.newaxis], (1, th.shape[0]))
+  s = compute_s(th, x)
+  return y*s - gammaln(y+1) - np.exp(s)
 
 def log_prior(th):
-  return -0.5*th.shape[0]*np.log(2.*np.pi) - 0.5*(th**2).sum()
+  th = np.atleast_2d(th)
+  return -0.5*th.shape[1]*np.log(2.*np.pi) - 0.5*(th**2).sum(axis=1)
 
-def grad_log_likelihood(Z, th, idx=None):
-  x = Z[:, :-1]
-  y = Z[:, -1]
-  m = compute_m(th, x)
-  g = np.zeros(y.shape[0])
-  g[:] = y
-  mnz = m[m>1e-100]
-  ynz = y[m>1e-100]
-  g[m > 1e-100] = ((1.-ynz/mnz)*np.expm1(-mnz))
-  if idx is None:
-    return g[:, np.newaxis]*x
-  return g*x[:, idx]
+def log_joint(z, th, wts):
+  return (wts[:, np.newaxis]*log_likelihood(z, th)).sum(axis=0) + log_prior(th)
 
-def grad_log_prior(th):
+def grad_th_log_likelihood(z, th):
+  th = np.atleast_2d(th)
+  z = np.atleast_2d(z)
+  x = z[:, :-1]
+  y = np.tile(z[:, -1][:, np.newaxis], (1, th.shape[0]))
+  s = compute_s(th, x)
+  g = y - np.exp(s)
+  idcs = np.exp(s) > 1e-15
+  g[idcs] = (y[idcs]*np.exp(-s[idcs]) - 1.)*(1. - np.exp(-np.exp(s[idcs])))
+  return g[:, :, np.newaxis]*x[:, np.newaxis, :]
+
+def grad_z_log_likelihood(z, th):
+  th = np.atleast_2d(th)
+  z = np.atleast_2d(z)
+  x = z[:, :-1]
+  y = np.tile(z[:, -1][:, np.newaxis], (1, th.shape[0]))
+  s = compute_s(th, x)
+  g = y - np.exp(s)
+  idcs = np.exp(s) > 1e-15
+  g[idcs] = (y[idcs]*np.exp(-s[idcs]) - 1.)*(1. - np.exp(-np.exp(s[idcs])))
+  return g[:, :, np.newaxis]*th[:, np.newaxis, :]
+
+def grad_th_log_prior(th):
+  th = np.atleast_2d(th)
   return -th
 
-def grad_log_joint(z, th, wts):
-  return grad_log_prior(th) + (wts[:, np.newaxis]*grad_log_likelihood(z, th)).sum(axis=0)
+def grad_th_log_joint(z, th, wts):
+  return grad_th_log_prior(th) + (wts[:, np.newaxis, np.newaxis]*grad_th_log_likelihood(z, th)).sum(axis=0)
 
-def hess_log_joint(Z, th):
-  x = Z[:, :-1]
-  y = Z[:, -1]
-  m = compute_m(th, x)
+def hess_th_log_likelihood(z, th):
+  z = np.atleast_2d(z)
+  th = np.atleast_2d(th)
+  x = z[:, :-1]
+  y = np.tile(z[:, -1][:, np.newaxis], (1, th.shape[0]))
+  s = compute_s(th, x)
+  h = -(1.+y)*np.exp(s)
+  idcs = np.exp(s) > 1e-15
+  h[idcs] = (y[idcs]*np.exp(-s[idcs])*(1.-np.exp(-s[idcs]+np.exp(s[idcs]))+np.exp(-s[idcs])) - 1.)*(np.exp(-np.exp(s[idcs]))-np.exp(-2*np.exp(s[idcs])))
+  return h[:, :, np.newaxis, np.newaxis]*x[:, np.newaxis, :, np.newaxis]*x[:, np.newaxis, np.newaxis, :]
 
-  #todo: instead of +1e-100 use the stabilization from log_likelihood(z,th) (ll[m>0] and ll[m==0])
-  m += 1e-100 #just to prevent zeros
-  H_log_like = (np.exp(np.log((1-np.exp(-m)*(1+m))*y + np.exp(-m)*m**2) - 2*np.log(m))*np.expm1(-m)*x.T).dot(x)
-  H_log_prior = -np.eye(th.shape[0])
-  return H_log_like + H_log_prior
+def hess_th_log_prior(th):
+  th = np.atleast_2d(th)
+  return np.tile(-np.eye(th.shape[1]), (th.shape[0], 1, 1)) 
 
-def hess_log_joint_w(Z, th, wts):
-  x = Z[:, :-1]
-  y = Z[:, -1]
-  m = compute_m(th, x)
-
-  #todo: instead of +1e-100 use the stabilization from log_likelihood(z,th) (ll[m>0] and ll[m==0])
-  m += 1e-100 #just to prevent zeros
-  H_log_like = (wts*(np.exp(np.log((1-np.exp(-m)*(1+m))*y + np.exp(-m)*m**2) - 2*np.log(m))*np.expm1(-m)*x.T)).dot(x)
-  H_log_prior = -np.eye(th.shape[0])
-  return H_log_like + H_log_prior
-
-
+def hess_th_log_joint(z, th, wts):
+  return hess_th_log_prior(th) + (wts[:, np.newaxis, np.newaxis, np.newaxis]*hess_th_log_likelihood(z, th)).sum(axis=0)
+  
+#this line follows the format "model title, model code"  
+stan_representation = """
+data {
+  int<lower=0> n; // number of observations
+  int<lower=0> d; // number of predictors
+  int<lower=0> y[n]; // outputs
+  matrix[n,d] x; // inputs
+}
+parameters {
+  vector[d] theta; // auxiliary parameter
+}
+transformed parameters {
+  vector[n] f;
+  f = -log_inv_logit(-(x*theta));
+}
+model {
+  theta ~ normal(0, 1);
+  y ~ poisson(f);
+}
+"""
 

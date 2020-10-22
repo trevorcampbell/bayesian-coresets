@@ -4,3 +4,8 @@
 *.html
 results/
 __pycache__/
+*.egg-info
+mcmc_cache/
+models/
+laplace_cache/
+stan_cache/

@@ -7,7 +7,6 @@ class GIGA(SparseNNLS):
 
   def __init__(self, A, b):
     super().__init__(A, b)
-
     Anorms = np.sqrt((self.A**2).sum(axis=0))
     if np.any( Anorms == 0):
       raise ValueError(self.alg_name+'.__init__(): A must not have any 0 columns')
