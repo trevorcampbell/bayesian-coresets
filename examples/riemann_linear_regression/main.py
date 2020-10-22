@@ -11,7 +11,7 @@ nm = sys.argv[1]
 tr = sys.argv[2]
 
 #experiment params
-M = 300
+M = 50
 opt_itrs = 100
 proj_dim = 100
 pihat_noise =0.75
