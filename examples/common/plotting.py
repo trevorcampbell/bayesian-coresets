@@ -71,7 +71,8 @@ def postprocess_plot(fig, legend_font_size, orientation='vertical', location='to
   fig.ygrid.grid_line_color=None
 
 def plot(arguments, df):
-  fig = bkp.figure(y_axis_type=arguments.plot_y_type, 
+  fig = bkp.figure(title=arguments.plot_title, 
+                 y_axis_type=arguments.plot_y_type, 
                  x_axis_type=arguments.plot_x_type, 
                  plot_width=arguments.plot_width,
                  plot_height=arguments.plot_height, 

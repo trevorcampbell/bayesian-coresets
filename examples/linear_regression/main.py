@@ -276,8 +276,8 @@ parser.add_argument('--data_num', type=int, default='10000', help='Dataset subsa
 parser.add_argument('--alg', type=str, default='SVI', choices = ['SVI', 'SVI-EXACT', 'GIGA-OPT', 'GIGA-OPT-EXACT', 'GIGA-REAL', 'GIGA-REAL-EXACT', 'US'], help="The name of the coreset construction algorithm to use")
 parser.add_argument("--proj_dim", type=int, default=100, help="The number of samples taken when discretizing log likelihoods for these experiments")
 
-parser.add_argument('--coreset_size_max', type=int, default=1000, help="The maximum coreset size to evaluate")
-parser.add_argument('--coreset_num_sizes', type=int, default=7, help="The number of coreset sizes to evaluate")
+parser.add_argument('--coreset_size_max', type=int, default=300, help="The maximum coreset size to evaluate")
+parser.add_argument('--coreset_num_sizes', type=int, default=6, help="The number of coreset sizes to evaluate")
 parser.add_argument('--coreset_size_spacing', type=str, choices=['log', 'linear'], default='log', help="The spacing of coreset sizes to test")
 
 parser.add_argument('--n_bases_per_scale', type=int, default=50, help="The number of Radial Basis Functions per scale")#TODO: verify help message
@@ -291,6 +291,7 @@ parser.add_argument('--verbosity', type=str, default="error", choices=['error', 
 # plotting arguments
 plot_subparser.add_argument('plot_x', type = str, help="The X axis of the plot")
 plot_subparser.add_argument('plot_y', type = str, help="The Y axis of the plot")
+plot_subparser.add_argument('--plot_title', type = str, help="The title of the plot")
 plot_subparser.add_argument('--plot_x_label', type = str, help="The X axis label of the plot")
 plot_subparser.add_argument('--plot_y_label', type = str, help="The Y axis label of the plot")
 plot_subparser.add_argument('--plot_x_type', type=str, choices=["linear","log"], default = "log", help = "Specifies the scale for the X-axis")

@@ -242,6 +242,7 @@ parser.add_argument('--verbosity', type=str, default="error", choices=['error', 
 # plotting arguments
 plot_subparser.add_argument('plot_x', type = str, help="The X axis of the plot")
 plot_subparser.add_argument('plot_y', type = str, help="The Y axis of the plot")
+plot_subparser.add_argument('--plot_title', type = str, help="The title of the plot")
 plot_subparser.add_argument('--plot_x_label', type = str, help="The X axis label of the plot")
 plot_subparser.add_argument('--plot_y_label', type = str, help="The Y axis label of the plot")
 plot_subparser.add_argument('--plot_x_type', type=str, choices=["linear","log"], default = "log", help = "Specifies the scale for the X-axis")
