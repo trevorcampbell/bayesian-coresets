@@ -65,7 +65,9 @@ def run(arguments):
     print('dataset size : ', x.shape)
 
     print('Subsampling down to '+str(arguments.data_num) + ' points')
-    x = x[np.random.randint(0, x.shape[0], arguments.data_num), :]
+    idcs = np.arange(x.shape[0])
+    np.random.shuffle(idcs)
+    x = x[idcs[:arguments.data_num], :]
     
     #log transform the prices
     x[:, 2] = np.log10(x[:, 2])
@@ -84,7 +86,7 @@ def run(arguments):
     
     #model params
     mu0 = datamn*np.ones(d)
-    Sig0 = 1e-10*(datastd**2+datamn**2)*np.eye(d)
+    Sig0 = (datastd**2+datamn**2)*np.eye(d)
     Sig0inv = np.linalg.inv(Sig0)
     
     #generate basis functions by uniformly randomly picking locations in the dataset
@@ -104,8 +106,8 @@ def run(arguments):
       X[:, i] = np.exp( -((x[:, :2] - basis_locs[i, :])**2).sum(axis=1) / (2*basis_scales[i]**2) )
     Y = x[:, 2]
     Z = np.hstack((X, Y[:,np.newaxis]))
-    _, bV = np.linalg.eigh(X.T.dot(X))
-    bV = bV[:, -arguments.proj_dim:]
+    #_, bV = np.linalg.eigh(X.T.dot(X))
+    #bV = bV[:, -arguments.proj_dim:]
 
     #######################################
     #######################################
@@ -153,18 +155,23 @@ def run(arguments):
     ###Exact projection in SparseVI for gradient computation
     #for this model we can do the tangent space projection exactly
     class LinRegProjector(bc.Projector):
-        def __init__(self, bV):
-            self.bV = bV
+        #def __init__(self, bV):
+            #self.bV = bV
+
+        def __init__(self):
+            pass
     
         def project(self, pts, grad=False):
             X = pts[:, :-1]
             Y = pts[:, -1]
-            #beta = X.dot(self.V*np.sqrt(np.maximum(self.lmb, 0.)))
-            beta = X.dot(self.LSigw)
+            beta = X.dot(self.V*np.sqrt(np.maximum(self.lmb, 0.)))
+            #beta = X.dot(self.LSigw)
             nu = Y - X.dot(self.muw)
             #approximation to avoid high memory cost: project the matrix term down to bV.shape[1]**2 dimensions
-            beta_proj = beta.dot(self.bV)
-            return np.hstack((nu[:, np.newaxis]*beta, 1./np.sqrt(2.)*(beta_proj[:, :, np.newaxis]*beta_proj[:, np.newaxis, :]).reshape(beta.shape[0], self.bV.shape[1]**2))) / datastd**2
+            #beta_proj = beta.dot(self.bV)
+            lmb2, V2 = np.linalg.eigh(beta.T.dot(beta))
+            beta_proj = beta.dot(V2[:, -arguments.proj_dim:])
+            return np.hstack((nu[:, np.newaxis]*beta, 1./np.sqrt(2.)*(beta_proj[:, :, np.newaxis]*beta_proj[:, np.newaxis, :]).reshape(beta.shape[0], arguments.proj_dim**2))) / datastd**2
     
         def update(self, wts, pts):
             if wts is None or pts is None or pts.shape[0] == 0:
@@ -177,11 +184,13 @@ def run(arguments):
             #    self.Sigw = Sig0
             #else:
             #    self.muw, self.Sigw = model_linreg.weighted_post(mu0, Sig0inv, datastd**2, pts, wts)
-            #self.lmb, self.V = np.linalg.eigh(self.Sigw)
+            self.lmb, self.V = np.linalg.eigh(self.LSigw.dot(self.LSigw.T))
 
-    prj_optimal_exact = LinRegProjector(bV)
+    #prj_optimal_exact = LinRegProjector(bV)
+    prj_optimal_exact = LinRegProjector()
     prj_optimal_exact.update(np.ones(Z.shape[0]), Z)
-    prj_realistic_exact = LinRegProjector(bV)
+    #prj_realistic_exact = LinRegProjector(bV)
+    prj_realistic_exact = LinRegProjector()
     prj_realistic_exact.update(np.ones(Zhat.shape[0]), Zhat)
     
     #######################################
@@ -193,7 +202,7 @@ def run(arguments):
     ##############################
     print('Creating coreset construction objects')
     #create coreset construction objects
-    sparsevi_exact = bc.SparseVICoreset(Z, LinRegProjector(bV), opt_itrs = arguments.opt_itrs, step_sched = eval(arguments.step_sched))
+    sparsevi_exact = bc.SparseVICoreset(Z, LinRegProjector(), opt_itrs = arguments.opt_itrs, step_sched = eval(arguments.step_sched))
     sparsevi = bc.SparseVICoreset(Z, prj_bb, opt_itrs = arguments.opt_itrs, step_sched = eval(arguments.step_sched))
     giga_optimal = bc.HilbertCoreset(Z, prj_optimal)
     giga_optimal_exact = bc.HilbertCoreset(Z,prj_optimal_exact)
