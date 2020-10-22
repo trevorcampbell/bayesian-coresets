@@ -159,14 +159,11 @@ def run(arguments):
         def __init__(self, bV):
             self.bV = bV
 
-        def __init__(self):
-            pass
-    
         def project(self, pts, grad=False):
             X = pts[:, :-1]
             Y = pts[:, -1]
             #beta = X.dot(self.V*np.sqrt(np.maximum(self.lmb, 0.)))
-            beta = X.dot(self.LSigw)
+            beta = X.dot(self.USigw)
             nu = Y - X.dot(self.muw)
             #approximation to avoid high memory cost: project the matrix term down to bV.shape[1]**2 dimensions
             beta_proj = beta.dot(self.bV)

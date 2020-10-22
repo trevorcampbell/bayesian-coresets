@@ -59,14 +59,17 @@ def run(arguments):
     #######################################
     #######################################
     
+    #change these to change the prior / likelihood
     mu0 = np.zeros(arguments.data_dim)
     Sig0 = np.eye(arguments.data_dim)
     Sig = np.eye(arguments.data_dim)
-    SigL = np.linalg.cholesky(Sig)
-    th = np.ones(arguments.data_dim)
+
+    #these are computed
     Sig0inv = np.linalg.inv(Sig0)
     Siginv = np.linalg.inv(Sig)
-    SigLInv = np.linalg.inv(SigL)
+    LSigInv = np.linalg.cholesky(Siginv) #Siginv = LL^T, L Lower tri
+    USig = sl.solve_triangular(LSigInv, np.eye(LSigInv.shape[0]), lower=True, overwrite_b=True, check_finite=False).T # Sig = UU^T, U upper tri
+    th = np.ones(arguments.data_dim)
     logdetSig = np.linalg.slogdet(Sig)[1]
     
     #######################################
@@ -77,9 +80,9 @@ def run(arguments):
 
     print('Computing true posterior')
     x = np.random.multivariate_normal(th, Sig, arguments.data_num)
-    mup, LSigp, LSigpInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
-    Sigp = LSigp.dot(LSigp.T)
-    SigpInv = LSigpInv.T.dot(LSigpInv)
+    mup, USigp, LSigpInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, x, np.ones(x.shape[0]))
+    Sigp = USigp.dot(USigp.T)
+    SigpInv = LSigpInv.dot(LSigpInv.T)
     
     #create the log_likelihood function
     print('Creating log-likelihood function')
@@ -90,14 +93,14 @@ def run(arguments):
     
     print('Creating tuned projector for Hilbert coreset construction')
     #create the sampler for the "optimally-tuned" Hilbert coreset
-    sampler_optimal = lambda n, w, pts : mup + np.random.randn(n, mup.shape[0]).dot(LSigp.T)
+    sampler_optimal = lambda n, w, pts : mup + np.random.randn(n, mup.shape[0]).dot(USigp.T)
     prj_optimal = bc.BlackBoxProjector(sampler_optimal, arguments.proj_dim, log_likelihood, grad_log_likelihood)
     
     print('Creating untuned projector for Hilbert coreset construction')
     #create the sampler for the "realistically-tuned" Hilbert coreset
     xhat = x[np.random.randint(0, x.shape[0], int(np.sqrt(x.shape[0]))), :]
-    muhat, LSigHat, LSigHatInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, xhat, np.ones(xhat.shape[0]))
-    sampler_realistic = lambda n, w, pts : muhat + np.random.randn(n, muhat.shape[0]).dot(LSigHat.T)
+    muhat, USigHat, LSigHatInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, xhat, np.ones(xhat.shape[0]))
+    sampler_realistic = lambda n, w, pts : muhat + np.random.randn(n, muhat.shape[0]).dot(USigHat.T)
     prj_realistic = bc.BlackBoxProjector(sampler_realistic, arguments.proj_dim, log_likelihood, grad_log_likelihood)
 
     print('Creating black box projector')
@@ -105,22 +108,23 @@ def run(arguments):
         if wts is None or pts is None or pts.shape[0] == 0:
           wts = np.zeros(1)
           pts = np.zeros((1, mu0.shape[0]))
-        muw, LSigw, _ = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
-        return muw + np.random.randn(n, muw.shape[0]).dot(LSigw.T)
+        muw, USigw, _ = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
+        return muw + np.random.randn(n, muw.shape[0]).dot(USigw.T)
     prj_bb = bc.BlackBoxProjector(sampler_w, arguments.proj_dim, log_likelihood, grad_log_likelihood)
     
     print('Creating exact projectors')
+    #TODO need to fix all the transposes in this...
     class GaussianProjector(bc.Projector):
       def project(self, pts, grad=False):
-        nu = (pts - self.muw).dot(SigLInv.T)
-        PsiL = SigLInv.dot(self.LSigw)
+        nu = (pts - self.muw).dot(LSigInv)
+        PsiL = LSigInv.T.dot(self.USigw)
         Psi = PsiL.dot(PsiL.T)
         nu = np.hstack((nu.dot(PsiL), np.sqrt(0.5*np.trace(np.dot(Psi.T, Psi)))*np.ones(nu.shape[0])[:,np.newaxis]))
         nu *= np.sqrt(nu.shape[1])
         if not grad:
           return nu
         else:
-          gnu = np.hstack((SigLInv.T.dot(PsiL), np.zeros(pts.shape[1])[:,np.newaxis])).T
+          gnu = np.hstack((SigLInv.dot(PsiL), np.zeros(pts.shape[1])[:,np.newaxis])).T
           gnu = np.tile(gnu, (pts.shape[0], 1, 1))
           gnu *= np.sqrt(gnu.shape[1])
           return nu, gnu
@@ -128,7 +132,7 @@ def run(arguments):
         if wts is None or pts is None or pts.shape[0] == 0:
           wts = np.zeros(1)
           pts = np.zeros((1, mu0.shape[0]))
-        self.muw, self.LSigw, self.LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
+        self.muw, self.USigw, self.LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, pts, wts)
 
     prj_optimal_exact = GaussianProjector()
     prj_optimal_exact.update(np.ones(x.shape[0]), x)
@@ -195,10 +199,10 @@ def run(arguments):
     Sig_errs = np.zeros(Ms.shape[0])
     for m in range(Ms.shape[0]):
       csizes[m] = (w[m] > 0).sum()
-      muw[m, :], LSigw, LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, p[m], w[m])
-      Sigw[m, :, :] = LSigw.dot(LSigw.T)
+      muw[m, :], USigw, LSigwInv = gaussian.weighted_post(mu0, Sig0inv, Siginv, p[m], w[m])
+      Sigw[m, :, :] = USigw.dot(USigw.T)
       rklw[m] = gaussian.KL(muw[m,:], Sigw[m,:,:], mup, SigpInv)
-      fklw[m] = gaussian.KL(mup, Sigp, muw[m,:], LSigwInv.T.dot(LSigwInv))
+      fklw[m] = gaussian.KL(mup, Sigp, muw[m,:], LSigwInv.dot(LSigwInv.T))
       mu_errs[m] = np.sqrt(((mup - muw[m,:])**2).sum()) / np.sqrt((mup**2).sum())
       Sig_errs[m] = np.sqrt(((Sigp - Sigw[m,:,:])**2).sum()) / np.sqrt((Sigp**2).sum())
 
