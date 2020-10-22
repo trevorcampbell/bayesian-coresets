@@ -30,13 +30,13 @@ if (tick_power < 0){
   ret += '\u207B';
   tick_power = -tick_power;
 }
-power_digits = [];
+var power_digits = [];
 while (tick_power > 9){
   power_digits.push( tick_power - Math.floor(tick_power/10)*10 );
   tick_power = Math.floor(tick_power/10);
 }
 power_digits.push(tick_power)
-for (i = power_digits.length-1; i >= 0; i--){
+for (var i = power_digits.length-1; i >= 0; i--){
   ret += trns[power_digits[i]];
 }
 return ret;
