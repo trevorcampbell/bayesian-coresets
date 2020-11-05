@@ -6,6 +6,14 @@ from .snnls import SparseNNLS
 class GIGA(SparseNNLS):
 
   def __init__(self, A, b):
+      """
+      Initialize b
+
+      Args:
+          self: (todo): write your description
+          A: (int): write your description
+          b: (int): write your description
+      """
     super().__init__(A, b)
     Anorms = np.sqrt((self.A**2).sum(axis=0))
     if np.any( Anorms == 0):
@@ -18,6 +26,12 @@ class GIGA(SparseNNLS):
     self.bn = self.b / self.bnorm
 
   def _select(self):
+      """
+      Return the best score of the fit.
+
+      Args:
+          self: (todo): write your description
+      """
     xw = self.A.dot(self.w)
     nw = np.sqrt(((xw)**2).sum())
     nw = 1. if nw == 0. else nw
@@ -38,6 +52,13 @@ class GIGA(SparseNNLS):
     return (scorends[:,0]/scorends[:,1]).argmax()
  
   def _reweight(self, f):
+      """
+      R compute the weight function.
+
+      Args:
+          self: (todo): write your description
+          f: (array): write your description
+      """
 
     xw = self.A.dot(self.w)
     nw = np.sqrt((xw**2).sum())

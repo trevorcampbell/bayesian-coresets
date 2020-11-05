@@ -5,6 +5,14 @@ from .snnls import SparseNNLS
 class FrankWolfe(SparseNNLS):
 
   def __init__(self, A, b):
+      """
+      Initialize b
+
+      Args:
+          self: (todo): write your description
+          A: (int): write your description
+          b: (int): write your description
+      """
     super().__init__(A, b)
 
     self.Anorms = np.sqrt((self.A**2).sum(axis=0))
@@ -13,10 +21,23 @@ class FrankWolfe(SparseNNLS):
     self.An = self.A / self.Anorms
 
   def _select(self):
+      """
+      Selects the graph.
+
+      Args:
+          self: (todo): write your description
+      """
     residual = self.b - self.A.dot(self.w)
     return (self.An.T.dot(residual)).argmax()
 
   def _reweight(self, f):
+      """
+      R compute the objective function
+
+      Args:
+          self: (todo): write your description
+          f: (array): write your description
+      """
     if self.size() == 0:
       #special case if this is the first point to add (places iterate on constraint polytope)
       alpha = 0.

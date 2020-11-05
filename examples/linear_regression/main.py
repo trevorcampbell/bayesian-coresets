@@ -12,6 +12,12 @@ import results
 import plotting
 
 def plot(arguments):
+    """
+    Plot arguments. matplotlib.
+
+    Args:
+        arguments: (todo): write your description
+    """
     # load only the results that match (avoid high mem usage)
     to_match = vars(arguments)
     #remove any ignored params
@@ -27,6 +33,12 @@ def plot(arguments):
 
 
 def run(arguments):
+    """
+    Runs the model
+
+    Args:
+        arguments: (todo): write your description
+    """
     # check if result already exists for this run, and if so, quit
     if results.check_exists(arguments):
       print('Results already exist for arguments ' + str(arguments))
@@ -143,6 +155,14 @@ def run(arguments):
 
     print('Creating black box projector')
     def sampler_w(n, wts, pts):
+        """
+        Generate a sampler.
+
+        Args:
+            n: (int): write your description
+            wts: (todo): write your description
+            pts: (todo): write your description
+        """
         if wts is None or pts is None or pts.shape[0] == 0:
             muw = mu0
             USigw = np.linalg.cholesky(Sig0) #Note: USigw is lower triangular here, below is upper tri. Doesn't matter, just need Sigw = MM^T
@@ -157,9 +177,24 @@ def run(arguments):
     #for this model we can do the tangent space projection exactly
     class LinRegProjector(bc.Projector):
         def __init__(self, bV):
+            """
+            Initialize bV
+
+            Args:
+                self: (todo): write your description
+                bV: (int): write your description
+            """
             self.bV = bV
 
         def project(self, pts, grad=False):
+            """
+            R project projection.
+
+            Args:
+                self: (todo): write your description
+                pts: (array): write your description
+                grad: (array): write your description
+            """
             X = pts[:, :-1]
             Y = pts[:, -1]
             #beta = X.dot(self.V*np.sqrt(np.maximum(self.lmb, 0.)))
@@ -172,6 +207,14 @@ def run(arguments):
             return np.hstack((nu[:, np.newaxis]*beta, 1./np.sqrt(2.)*(beta_proj[:, :, np.newaxis]*beta_proj[:, np.newaxis, :]).reshape(beta.shape[0], arguments.proj_dim**2))) / datastd**2
     
         def update(self, wts, pts):
+            """
+            Updates the time step.
+
+            Args:
+                self: (todo): write your description
+                wts: (array): write your description
+                pts: (array): write your description
+            """
             if wts is None or pts is None or pts.shape[0] == 0:
                 self.muw = mu0
                 self.USigw = np.linalg.cholesky(Sig0) #Note: USigw here is lower triangular, but keeping naming convention for below stuff. Doesn't matter, just need Sigw = MM^T

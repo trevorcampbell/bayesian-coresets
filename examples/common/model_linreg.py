@@ -2,6 +2,14 @@ import numpy as np
 import scipy.linalg as sl
 
 def log_likelihood(z, th, sigsq):
+    """
+    R log - likelihood.
+
+    Args:
+        z: (array): write your description
+        th: (array): write your description
+        sigsq: (array): write your description
+    """
   z = np.atleast_2d(z)
   x = z[:, :-1]
   y = z[:, -1]
@@ -10,6 +18,14 @@ def log_likelihood(z, th, sigsq):
   return -1./2.*np.log(2.*np.pi*sigsq) - 1./(2.*sigsq)*(y[:,np.newaxis]**2 - 2*XST*y[:,np.newaxis] + XST**2)
 
 def grad_x_log_likelihood(z, th, sigsq):
+    """
+    Return the log - likelihood of - likelihood
+
+    Args:
+        z: (array): write your description
+        th: (array): write your description
+        sigsq: (todo): write your description
+    """
   z = np.atleast_2d(z)
   x = z[:, :-1]
   y = z[:, -1]
@@ -17,12 +33,31 @@ def grad_x_log_likelihood(z, th, sigsq):
   return 1./sigsq*(y[:, np.newaxis] - x.dot(th.T))[:,:,np.newaxis]*np.hstack((th, np.ones(th.shape[0])[:,np.newaxis]))[np.newaxis, :, :]
 
 def KL(mu0, Sig0, mu1, Sig1inv):
+    """
+    Compute the log - likelihood.
+
+    Args:
+        mu0: (int): write your description
+        Sig0: (todo): write your description
+        mu1: (int): write your description
+        Sig1inv: (todo): write your description
+    """
   t1 = np.dot(Sig1inv, Sig0).trace()
   t2 = np.dot((mu1-mu0),np.dot(Sig1inv, mu1-mu0))
   t3 = -np.linalg.slogdet(Sig1inv)[1] - np.linalg.slogdet(Sig0)[1]
   return 0.5*(t1+t2+t3-mu0.shape[0])
 
 def weighted_post(th0, Sig0inv, sigsq, z, w): 
+    """
+    Weighted post - processing.
+
+    Args:
+        th0: (array): write your description
+        Sig0inv: (array): write your description
+        sigsq: (array): write your description
+        z: (array): write your description
+        w: (array): write your description
+    """
   if w.shape[0] > 0:
       z = np.atleast_2d(z)
       X = z[:, :-1]

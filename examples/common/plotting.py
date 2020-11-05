@@ -51,6 +51,15 @@ pl.append('#d62728')
 pal = pl
 
 def preprocess_plot(fig, axis_font_size, log_scale_x, log_scale_y):
+    """
+    Preprocess a matplot.
+
+    Args:
+        fig: (todo): write your description
+        axis_font_size: (int): write your description
+        log_scale_x: (bool): write your description
+        log_scale_y: (bool): write your description
+    """
   fig.xaxis.axis_label_text_font_size= axis_font_size
   fig.xaxis.major_label_text_font_size= axis_font_size
   fig.yaxis.axis_label_text_font_size= axis_font_size
@@ -61,6 +70,16 @@ def preprocess_plot(fig, axis_font_size, log_scale_x, log_scale_y):
     fig.xaxis.formatter = logFmtr
 
 def postprocess_plot(fig, legend_font_size, orientation='vertical', location='top_right', glyph_width=80):
+    """
+    Postprocess a matplot.
+
+    Args:
+        fig: (todo): write your description
+        legend_font_size: (int): write your description
+        orientation: (todo): write your description
+        location: (str): write your description
+        glyph_width: (int): write your description
+    """
   fig.legend.label_text_font_size= legend_font_size
   fig.legend.orientation=orientation
   fig.legend.location=location
@@ -71,6 +90,13 @@ def postprocess_plot(fig, legend_font_size, orientation='vertical', location='to
   fig.ygrid.grid_line_color=None
 
 def plot(arguments, df):
+    """
+    Plot the data. matplot.
+
+    Args:
+        arguments: (todo): write your description
+        df: (todo): write your description
+    """
   fig = bkp.figure(title=arguments.plot_title, 
                  y_axis_type=arguments.plot_y_type, 
                  x_axis_type=arguments.plot_x_type, 
@@ -104,6 +130,17 @@ def plot(arguments, df):
   bkp.show(fig)
 
 def scatter(fig, df, arguments, clr = pal[0], legend = None):
+    """
+    Plot scatter scatter plot.
+
+    Args:
+        fig: (todo): write your description
+        df: (todo): write your description
+        arguments: (todo): write your description
+        clr: (str): write your description
+        pal: (str): write your description
+        legend: (str): write your description
+    """
   xy50 = df.groupby(arguments.groupby, as_index=False).quantile(.5)
   xy10 = df.groupby(arguments.groupby, as_index=False).quantile(.1)
   xy90 = df.groupby(arguments.groupby, as_index=False).quantile(.9)
@@ -121,6 +158,17 @@ def scatter(fig, df, arguments, clr = pal[0], legend = None):
   #fig.scatter(xy50[arguments.plot_x], xy50[arguments.plot_y], color=pal[0], line_width=5)
   
 def line(fig, df, arguments, clr = pal[0], legend = None):
+    """
+    Draw a scatter plot.
+
+    Args:
+        fig: (todo): write your description
+        df: (todo): write your description
+        arguments: (todo): write your description
+        clr: (int): write your description
+        pal: (int): write your description
+        legend: (int): write your description
+    """
   xy50 = df.groupby(arguments.groupby, as_index=False).quantile(.5)
   xy10 = df.groupby(arguments.groupby, as_index=False).quantile(.1)
   xy90 = df.groupby(arguments.groupby, as_index=False).quantile(.9)
@@ -138,6 +186,23 @@ def line(fig, df, arguments, clr = pal[0], legend = None):
   #fig.scatter(xy50[arguments.plot_x], xy50[arguments.plot_y], color=pal[0], line_width=5)
 
 def plot_gaussian(plot, mup, Sigp, Sig, color, dotsize, linewidth, dotalpha, linealpha, line_dash, name, num_pts_for_circle_approx = 100):
+    """
+    Plot a 2d gaussian.
+
+    Args:
+        plot: (todo): write your description
+        mup: (float): write your description
+        Sigp: (float): write your description
+        Sig: (float): write your description
+        color: (str): write your description
+        dotsize: (int): write your description
+        linewidth: (float): write your description
+        dotalpha: (float): write your description
+        linealpha: (float): write your description
+        line_dash: (bool): write your description
+        name: (str): write your description
+        num_pts_for_circle_approx: (int): write your description
+    """
   plot.circle(mup[0], mup[1], color=color, size=dotsize, alpha=dotalpha)
   t = np.linspace(0., 2*np.pi, num_pts_for_circle_approx)
   t = np.array([np.cos(t), np.sin(t)])
@@ -145,10 +210,36 @@ def plot_gaussian(plot, mup, Sigp, Sig, color, dotsize, linewidth, dotalpha, lin
   plot.line(t[0, :], t[1, :], color=color, line_width=linewidth, alpha=linealpha, line_dash=line_dash, legend=name)
 
 def plot_meanstd(plot, x, ys, color, linewidth, alpha, line_dash, name):
+    """
+    Plot a mean of the mean of the mean.
+
+    Args:
+        plot: (todo): write your description
+        x: (array): write your description
+        ys: (array): write your description
+        color: (str): write your description
+        linewidth: (float): write your description
+        alpha: (float): write your description
+        line_dash: (bool): write your description
+        name: (str): write your description
+    """
   plot.line(x, ys.mean(axis=0), color=color, line_width=linewidth, line_dash=line_dash, legend=nm)
   plot.patch(np.hstack((x, x[::-1])), np.hstack(( ys.mean(axis=0)-ys.std(axis=0), (ys.mean(axis=0)+ys.std(axis=0))[::-1] )), color=color, line_width=linewidth/2, line_dash=line_dash, alpha=alpha, legend=nm)
 
 def plot_medianquartiles(plot, x, ys, color, linewidth, alpha, line_dash, name):
+    """
+    Plot a median plot.
+
+    Args:
+        plot: (todo): write your description
+        x: (array): write your description
+        ys: (array): write your description
+        color: (str): write your description
+        linewidth: (int): write your description
+        alpha: (float): write your description
+        line_dash: (todo): write your description
+        name: (str): write your description
+    """
   ys25 = np.percentile(ys, 49, axis=0)
   ys50 = np.percentile(ys, 50, axis=0)
   ys75 = np.percentile(ys, 51, axis=0)
@@ -160,6 +251,25 @@ def plot_medianquartiles(plot, x, ys, color, linewidth, alpha, line_dash, name):
 def plot_gaussian_projected2d(dim, mu, sig, plot,
                               color=pal[7], dotsize=20, linewidth=10, dotalpha=1, linealpha=1, line_dash='solid', name="POST", 
                               num_pts_for_circle_approx = 10,seed = 1):
+    """
+    Plot a 2d gaussian distribution.
+
+    Args:
+        dim: (int): write your description
+        mu: (todo): write your description
+        sig: (float): write your description
+        plot: (bool): write your description
+        color: (str): write your description
+        pal: (todo): write your description
+        dotsize: (int): write your description
+        linewidth: (float): write your description
+        dotalpha: (float): write your description
+        linealpha: (float): write your description
+        line_dash: (bool): write your description
+        name: (str): write your description
+        num_pts_for_circle_approx: (todo): write your description
+        seed: (int): write your description
+    """
   #set seed:
   np.random.seed(int(seed))
 

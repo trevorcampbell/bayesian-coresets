@@ -2,6 +2,22 @@ import numpy as np
 import sys
 
 def nn_opt(x0, grd, nn_idcs=None, opt_itrs=1000, step_sched=lambda i : 1./(i+1), b1=0.9, b2=0.999, eps=1e-8, verbose=False):
+    """
+    Optimize the optimal optimal optimal optimal in x0.
+
+    Args:
+        x0: (array): write your description
+        grd: (int): write your description
+        nn_idcs: (str): write your description
+        opt_itrs: (int): write your description
+        step_sched: (todo): write your description
+        i: (int): write your description
+        i: (int): write your description
+        b1: (int): write your description
+        b2: (int): write your description
+        eps: (float): write your description
+        verbose: (bool): write your description
+    """
   x = x0.copy()
   m1 = np.zeros(x.shape[0])
   m2 = np.zeros(x.shape[0])

@@ -5,6 +5,21 @@ from .coreset import Coreset
 
 class SparseVICoreset(Coreset):
   def __init__(self, data, ll_projector, n_subsample_select=None, n_subsample_opt=None, opt_itrs=100, step_sched=lambda i : 1./(1.+i), **kw): 
+      """
+      Initialize the next sample.
+
+      Args:
+          self: (todo): write your description
+          data: (todo): write your description
+          ll_projector: (todo): write your description
+          n_subsample_select: (todo): write your description
+          n_subsample_opt: (todo): write your description
+          opt_itrs: (str): write your description
+          step_sched: (todo): write your description
+          i: (int): write your description
+          i: (int): write your description
+          kw: (todo): write your description
+      """
     self.data = data
     self.ll_projector = ll_projector
     self.n_subsample_select = None if n_subsample_select is None else min(data.shape[0], n_subsample_select)
@@ -14,6 +29,13 @@ class SparseVICoreset(Coreset):
     super().__init__(**kw)
 
   def _build(self, itrs):
+      """
+      Builds the optimizer.
+
+      Args:
+          self: (todo): write your description
+          itrs: (todo): write your description
+      """
     for i in range(itrs):
       #search for the next best point
       self._select()
@@ -21,6 +43,15 @@ class SparseVICoreset(Coreset):
       self._optimize() 
 
   def _get_projection(self, n_subsample, w, p):
+      """
+      Get the projection of the data.
+
+      Args:
+          self: (todo): write your description
+          n_subsample: (int): write your description
+          w: (str): write your description
+          p: (str): write your description
+      """
     #update the projector
     self.ll_projector.update(w, p)
 
@@ -42,6 +73,12 @@ class SparseVICoreset(Coreset):
     return vecs, sum_scaling, sub_idcs, corevecs
 
   def _select(self):
+      """
+      Select the sample indices.
+
+      Args:
+          self: (todo): write your description
+      """
     vecs, sum_scaling, sub_idcs, corevecs = self._get_projection(self.n_subsample_select, self.wts, self.pts)
 
     #compute the residual error
@@ -67,7 +104,19 @@ class SparseVICoreset(Coreset):
     return
 
   def _optimize(self):
+      """
+      Optimize the optimizer.
+
+      Args:
+          self: (todo): write your description
+      """
     def grd(w):
+        """
+        Grdetermine the convex hull.
+
+        Args:
+            w: (float): write your description
+        """
       vecs, sum_scaling, sub_idcs, corevecs = self._get_projection(self.n_subsample_opt, w, self.pts)
       resid = sum_scaling*vecs.sum(axis=0) - w.dot(corevecs)
       #output gradient of weights at idcs
@@ -76,4 +125,10 @@ class SparseVICoreset(Coreset):
     self.wts = nn_opt(x0, grd, opt_itrs = self.opt_itrs, step_sched = self.step_sched)
 
   def error(self):
+      """
+      Return the error.
+
+      Args:
+          self: (todo): write your description
+      """
     return 0. #TODO: implement KL estimate
