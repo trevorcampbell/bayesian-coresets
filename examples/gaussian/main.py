@@ -13,6 +13,12 @@ import plotting
 
 
 def plot(arguments):
+    """
+    Plot arguments. matplotlib.
+
+    Args:
+        arguments: (todo): write your description
+    """
     # load only the results that match (avoid high mem usage)
     to_match = vars(arguments)
     #remove any ignored params
@@ -28,6 +34,12 @@ def plot(arguments):
 
 
 def run(arguments):
+    """
+    Run the model
+
+    Args:
+        arguments: (todo): write your description
+    """
 
     # check if result already exists for this run, and if so, quit
     if results.check_exists(arguments):
@@ -105,6 +117,14 @@ def run(arguments):
 
     print('Creating black box projector')
     def sampler_w(n, wts, pts):
+        """
+        Generate n samples.
+
+        Args:
+            n: (int): write your description
+            wts: (todo): write your description
+            pts: (todo): write your description
+        """
         if wts is None or pts is None or pts.shape[0] == 0:
           wts = np.zeros(1)
           pts = np.zeros((1, mu0.shape[0]))
@@ -116,6 +136,14 @@ def run(arguments):
     #TODO need to fix all the transposes in this...
     class GaussianProjector(bc.Projector):
       def project(self, pts, grad=False):
+          """
+          Projects a 3d ( x y ).
+
+          Args:
+              self: (todo): write your description
+              pts: (array): write your description
+              grad: (array): write your description
+          """
         nu = (pts - self.muw).dot(LSigInv)
         PsiL = LSigInv.T.dot(self.USigw)
         Psi = PsiL.dot(PsiL.T)
@@ -129,6 +157,14 @@ def run(arguments):
           gnu *= np.sqrt(gnu.shape[1])
           return nu, gnu
       def update(self, wts = None, pts = None):
+          """
+          Updates the detector.
+
+          Args:
+              self: (todo): write your description
+              wts: (array): write your description
+              pts: (array): write your description
+          """
         if wts is None or pts is None or pts.shape[0] == 0:
           wts = np.zeros(1)
           pts = np.zeros((1, mu0.shape[0]))

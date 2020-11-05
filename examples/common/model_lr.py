@@ -1,6 +1,12 @@
 import numpy as np
 
 def load_data(dnm):
+    """
+    Load data
+
+    Args:
+        dnm: (str): write your description
+    """
   data = np.load(dnm)
   X = data['X']
   Y = data['y']
@@ -13,6 +19,12 @@ def load_data(dnm):
   return X, Y, Z, None, Z.shape[1]
 
 def gen_synthetic(n):
+    """
+    Generate n random mean and variance.
+
+    Args:
+        n: (array): write your description
+    """
   mu = np.array([0, 0])
   cov = np.eye(2)
   th = np.array([3, 3])
@@ -23,6 +35,13 @@ def gen_synthetic(n):
   return y[:, np.newaxis]*X, (y[:, np.newaxis]*X).mean(axis=0)
 
 def log_likelihood(z, th):
+    """
+    Compute the likelihood.
+
+    Args:
+        z: (array): write your description
+        th: (array): write your description
+    """
   z = np.atleast_2d(z)
   th = np.atleast_2d(th)
   m = -z.dot(th.T)
@@ -32,13 +51,34 @@ def log_likelihood(z, th):
   return m
 
 def log_prior(th):
+    """
+    Log prior.
+
+    Args:
+        th: (array): write your description
+    """
   th = np.atleast_2d(th)
   return -0.5*th.shape[1]*np.log(2.*np.pi) - 0.5*(th**2).sum(axis=1)
 
 def log_joint(z, th, wts):
+    """
+    Log - likelihood.
+
+    Args:
+        z: (array): write your description
+        th: (array): write your description
+        wts: (array): write your description
+    """
     return (wts[:, np.newaxis]*log_likelihood(z, th)).sum(axis=0) + log_prior(th)
 
 def grad_th_log_likelihood(z, th):
+    """
+    Return the log likelihood of the log likelihood.
+
+    Args:
+        z: (array): write your description
+        th: (array): write your description
+    """
   z = np.atleast_2d(z)
   th = np.atleast_2d(th)
   m = -z.dot(th.T)
@@ -48,6 +88,13 @@ def grad_th_log_likelihood(z, th):
   return m[:, :, np.newaxis]*z[:, np.newaxis, :]
 
 def grad_z_log_likelihood(z, th):
+    """
+    Return the gradient of - likelihood of z.
+
+    Args:
+        z: (array): write your description
+        th: (array): write your description
+    """
   z = np.atleast_2d(z)
   th = np.atleast_2d(th)
   m = -z.dot(th.T)
@@ -57,13 +104,34 @@ def grad_z_log_likelihood(z, th):
   return m[:, :, np.newaxis]*th[np.newaxis, :, :]
 
 def grad_th_log_prior(th):
+    """
+    Gradient prior
+
+    Args:
+        th: (array): write your description
+    """
   th = np.atleast_2d(th)
   return -th
 
 def grad_th_log_joint(z, th, wts):
+    """
+    Gradient log - likelihood.
+
+    Args:
+        z: (todo): write your description
+        th: (todo): write your description
+        wts: (todo): write your description
+    """
   return grad_th_log_prior(th) + (wts[:, np.newaxis, np.newaxis]*grad_th_log_likelihood(z, th)).sum(axis=0)
 
 def hess_th_log_likelihood(z, th):
+    """
+    Compute the log likelihood.
+
+    Args:
+        z: (array): write your description
+        th: (array): write your description
+    """
   z = np.atleast_2d(z)
   th = np.atleast_2d(th)
   m = -z.dot(th.T)
@@ -73,13 +141,34 @@ def hess_th_log_likelihood(z, th):
   return -m[:, :, np.newaxis, np.newaxis]*z[:, np.newaxis, :, np.newaxis]*z[:, np.newaxis, np.newaxis, :]
 
 def hess_th_log_prior(th):
+    """
+    Computes the probability of the prior.
+
+    Args:
+        th: (array): write your description
+    """
   th = np.atleast_2d(th)
   return np.tile(-np.eye(th.shape[1]), (th.shape[0], 1, 1)) 
 
 def hess_th_log_joint(z, th, wts):
+    """
+    Evaluates the log - likelihood.
+
+    Args:
+        z: (todo): write your description
+        th: (todo): write your description
+        wts: (todo): write your description
+    """
   return hess_th_log_prior(th) + (wts[:, np.newaxis, np.newaxis, np.newaxis]*hess_th_log_likelihood(z, th)).sum(axis=0)
 
 def diag_hess_th_log_likelihood(z, th):
+    """
+    Return the log likelihood of the log - likelihood.
+
+    Args:
+        z: (array): write your description
+        th: (array): write your description
+    """
   z = np.atleast_2d(z)
   th = np.atleast_2d(th)
   m = -z.dot(th.T)
@@ -89,10 +178,24 @@ def diag_hess_th_log_likelihood(z, th):
   return -m[:, :, np.newaxis]*z[:, np.newaxis, :]**2
 
 def diag_hess_th_log_prior(th):
+    """
+    Computes the probability log - likelihood.
+
+    Args:
+        th: (array): write your description
+    """
   th = np.atleast_2d(th)
   return np.tile(-np.ones(th.shape[1]), (th.shape[0], 1)) 
 
 def diag_hess_th_log_joint(z, th, wts):
+    """
+    Computes the log - likelihood.
+
+    Args:
+        z: (todo): write your description
+        th: (todo): write your description
+        wts: (todo): write your description
+    """
   return diag_hess_th_log_prior(th) + (wts[:, np.newaxis, np.newaxis]*diag_hess_th_log_likelihood(z, th)).sum(axis=0)
 
 stan_representation = """

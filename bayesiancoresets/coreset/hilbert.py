@@ -5,6 +5,18 @@ from .coreset import Coreset
 
 class HilbertCoreset(Coreset):
   def __init__(self, data, ll_projector, n_subsample=None, snnls=GIGA, **kw):
+      """
+      Initialize the dataset.
+
+      Args:
+          self: (todo): write your description
+          data: (todo): write your description
+          ll_projector: (todo): write your description
+          n_subsample: (int): write your description
+          snnls: (int): write your description
+          GIGA: (todo): write your description
+          kw: (todo): write your description
+      """
 
     if n_subsample is None:
       #user requested to work with the whole dataset
@@ -27,10 +39,23 @@ class HilbertCoreset(Coreset):
     super().__init__(**kw)
 
   def reset(self):
+      """
+      Reset the internal state.
+
+      Args:
+          self: (todo): write your description
+      """
     self.snnls.reset()
     super().reset()
 
   def _build(self, itrs):
+      """
+      Build the snnls.
+
+      Args:
+          self: (todo): write your description
+          itrs: (todo): write your description
+      """
     self.snnls.build(itrs)
     w = self.snnls.weights()
     self.wts = w[w>0]
@@ -38,6 +63,12 @@ class HilbertCoreset(Coreset):
     self.pts = self.data[self.idcs]
 
   def _optimize(self):
+      """
+      Optimize the model.
+
+      Args:
+          self: (todo): write your description
+      """
     self.snnls.optimize()
     w = self.snnls.weights()
     self.wts = w[w>0]
@@ -45,4 +76,10 @@ class HilbertCoreset(Coreset):
     self.pts = self.data[self.idcs]
 
   def error(self):
+      """
+      Return the error message.
+
+      Args:
+          self: (todo): write your description
+      """
     return self.snnls.error()

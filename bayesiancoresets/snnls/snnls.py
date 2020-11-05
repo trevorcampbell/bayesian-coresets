@@ -7,6 +7,15 @@ from scipy.optimize import nnls
 
 class SparseNNLS(object):
   def __init__(self, A, b, check_error_monotone = True):
+      """
+      Initialize a b
+
+      Args:
+          self: (todo): write your description
+          A: (int): write your description
+          b: (int): write your description
+          check_error_monotone: (todo): write your description
+      """
     self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.log = logging.LoggerAdapter(logging.getLogger(), {"id" : self.alg_name})
     self.A = A
@@ -16,19 +25,50 @@ class SparseNNLS(object):
     self.check_error_monotone = check_error_monotone
 
   def reset(self):
+      """
+      Reset the internal state.
+
+      Args:
+          self: (todo): write your description
+      """
     self.w = np.zeros(self.A.shape[1])
     self.reached_numeric_limit = False
 
   def size(self):
+      """
+      Return the total size of the queue.
+
+      Args:
+          self: (todo): write your description
+      """
     return (self.w > 0).sum()
 
   def weights(self):
+      """
+      Return a copy of the weights.
+
+      Args:
+          self: (todo): write your description
+      """
     return self.w.copy()
 
   def error(self):
+      """
+      Calculate error between two vectors
+
+      Args:
+          self: (todo): write your description
+      """
     return np.sqrt(((self.A.dot(self.w) - self.b)**2).sum())
 
   def build(self, itrs):
+      """
+      Builds the total number of the data.
+
+      Args:
+          self: (todo): write your description
+          itrs: (todo): write your description
+      """
     if self.reached_numeric_limit:
       self.log.warning('the numeric limit was already reached; returning. size = ' + str(self.size()) + ', error = ' +str(self.error()))
       return
@@ -80,6 +120,12 @@ class SparseNNLS(object):
 
   #can run after building coreset to re-solve only the weight opt, not the combinatorial selection problem
   def optimize(self):
+      """
+      Optimize the optimizer.
+
+      Args:
+          self: (todo): write your description
+      """
     try:
       prev_cost = self.error()
       prev_w = self.w.copy()
@@ -97,10 +143,29 @@ class SparseNNLS(object):
       return
 
   def _stabilize(self):
+      """
+      Stabilize the stabilize ().
+
+      Args:
+          self: (todo): write your description
+      """
     pass #implementation optional; try to refresh cache/etc to make _step pass
 
   def _select(self):
+      """
+      Returns the first element of the sequence.
+
+      Args:
+          self: (todo): write your description
+      """
     raise NotImplementedError
 
   def _reweight(self, f):
+      """
+      Reweighted weight.
+
+      Args:
+          self: (todo): write your description
+          f: (array): write your description
+      """
     raise NotImplementedError

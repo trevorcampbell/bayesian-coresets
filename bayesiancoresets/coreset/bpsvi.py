@@ -5,6 +5,20 @@ from .coreset import Coreset
 
 class BatchPSVICoreset(Coreset):
   def __init__(self, data, ll_projector, opt_itrs, n_subsample_opt=None, step_sched=lambda i : 1./(1.+i), **kw): 
+      """
+      Initialize the initializer.
+
+      Args:
+          self: (todo): write your description
+          data: (todo): write your description
+          ll_projector: (todo): write your description
+          opt_itrs: (str): write your description
+          n_subsample_opt: (todo): write your description
+          step_sched: (todo): write your description
+          i: (int): write your description
+          i: (int): write your description
+          kw: (todo): write your description
+      """
     self.data = data
     self.ll_projector = ll_projector
     self.opt_itrs = opt_itrs
@@ -13,6 +27,13 @@ class BatchPSVICoreset(Coreset):
     super().__init__(**kw)
 
   def _build(self, sz):
+      """
+      Builds an image.
+
+      Args:
+          self: (todo): write your description
+          sz: (todo): write your description
+      """
     # initialize the points via full dataset subsampling
     init_idcs = np.random.choice(self.data.shape[0], size=sz, replace=False)
     self.pts = self.data[init_idcs]
@@ -22,6 +43,15 @@ class BatchPSVICoreset(Coreset):
     self._optimize()
 
   def _get_projection(self, n_subsample, w, p):
+      """
+      Get the projection of the projection.
+
+      Args:
+          self: (todo): write your description
+          n_subsample: (int): write your description
+          w: (str): write your description
+          p: (str): write your description
+      """
     #update the projector
     self.ll_projector.update(w, p)
     #construct a tangent space
@@ -40,10 +70,22 @@ class BatchPSVICoreset(Coreset):
     return vecs, sum_scaling, sub_idcs, corevecs, pgrads
 
   def _optimize(self):
+      """
+      Perform a single optimizer
+
+      Args:
+          self: (todo): write your description
+      """
     sz = self.wts.shape[0]
     d = self.pts.shape[1]
 
     def grd(x):
+        """
+        Grdetermine the convex hull
+
+        Args:
+            x: (float): write your description
+        """
       w = x[:sz]
       p = x[sz:].reshape((sz, d))
       vecs, sum_scaling, sub_idcs, corevecs, pgrads = self._get_projection(self.n_subsample_opt, w, p)
@@ -60,5 +102,11 @@ class BatchPSVICoreset(Coreset):
     self.pts = xf[sz:].reshape((sz, d))
 
   def error(self):
+      """
+      Return the error.
+
+      Args:
+          self: (todo): write your description
+      """
     return 0. #TODO: implement KL estimate
 

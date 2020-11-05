@@ -7,6 +7,14 @@ import hashlib
 
 #Takes in the name of and code for a statistical model that allows stan to run MCMC, and returns cpp code that stan can use to perform MCMC on a coreset.  
 def load_modified_cpp_code(stan_folder, model_name, model_code):
+    """
+    Loads a modified modified modified model file.
+
+    Args:
+        stan_folder: (str): write your description
+        model_name: (str): write your description
+        model_code: (todo): write your description
+    """
   code_hash = hashlib.sha1(model_code.encode('utf-8')).hexdigest()
   cpp_filename = os.path.join(stan_folder, "weighted_" + model_name + "_" + code_hash + ".cpp")
   if os.path.exists(cpp_filename):
@@ -31,6 +39,15 @@ def load_modified_cpp_code(stan_folder, model_name, model_code):
 
 
 def build_model(stan_folder, model_name, model_code, verbose_compile):
+    """
+    Build a model from a given model.
+
+    Args:
+        stan_folder: (int): write your description
+        model_name: (str): write your description
+        model_code: (str): write your description
+        verbose_compile: (bool): write your description
+    """
   code_hash = hashlib.sha1(model_code.encode('utf-8')).hexdigest()
   model_filename = os.path.join(stan_folder, model_name + "_" + code_hash)
   if os.path.exists(model_filename):
@@ -56,6 +73,21 @@ def build_model(stan_folder, model_name, model_code, verbose_compile):
   return sm
 
 def run(sampler_data, N_samples, model_name, model_code, seed, stan_folder = '../common/stan_cache/', chains=1, control={'adapt_delta':0.9, 'max_treedepth':15}, verbose=True, verbose_compile = False):
+    """
+    Runs a sampler.
+
+    Args:
+        sampler_data: (int): write your description
+        N_samples: (int): write your description
+        model_name: (str): write your description
+        model_code: (todo): write your description
+        seed: (int): write your description
+        stan_folder: (int): write your description
+        chains: (int): write your description
+        control: (str): write your description
+        verbose: (bool): write your description
+        verbose_compile: (bool): write your description
+    """
     print('STAN: building/loading model ' + model_name)
     sm = build_model(stan_folder, model_name, model_code, verbose_compile)
 

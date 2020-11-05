@@ -6,6 +6,12 @@ from ..util.errors import NumericalPrecisionError
 
 class Coreset(object):
   def __init__(self):
+      """
+      Initialize the data object
+
+      Args:
+          self: (todo): write your description
+      """
     self.alg_name = self.__class__.__name__ + '-'+secrets.token_hex(3)
     self.log = logging.LoggerAdapter(logging.getLogger(), {"id" : self.alg_name})
     self.reached_numeric_limit = False
@@ -14,23 +20,54 @@ class Coreset(object):
     self.pts = np.array([])
 
   def reset(self):
+      """
+      Reset the data.
+
+      Args:
+          self: (todo): write your description
+      """
     self.wts = np.array([])
     self.idcs = np.array([], dtype=np.int64)
     self.pts = np.array([])
     self.reached_numeric_limit = False
 
   def size(self):
+      """
+      Return the total size of the queue.
+
+      Args:
+          self: (todo): write your description
+      """
     return (self.wts > 0).sum()
 
   def get(self):
+      """
+      Return the wts.
+
+      Args:
+          self: (todo): write your description
+      """
     if self.wts.shape[0] == 0:
         return np.array([]), np.array([]), np.array([])
     return self.wts[self.wts > 0], self.pts[self.wts > 0, :], self.idcs[self.wts > 0]
 
   def error(self):
+      """
+      Return the error message.
+
+      Args:
+          self: (todo): write your description
+      """
     raise NotImplementedError()
 
   def build(self, itrs):
+      """
+      Build the number of the number of the total size
+
+      Args:
+          self: (todo): write your description
+          itrs: (todo): write your description
+      """
     if self.reached_numeric_limit:
       return
 
@@ -45,6 +82,12 @@ class Coreset(object):
 
   #can run after building coreset to re-solve only the weight opt, not the combinatorial selection problem
   def optimize(self):
+      """
+      Optimizes the optimization.
+
+      Args:
+          self: (todo): write your description
+      """
     try:
       prev_cost = self.error()
       old_wts = self.wts.copy()
@@ -64,7 +107,20 @@ class Coreset(object):
       return
 
   def _optimize(self):
+      """
+      Optimize the optimizer.
+
+      Args:
+          self: (todo): write your description
+      """
     raise NotImplementedError
 
   def _build(self, itrs):
+      """
+      Builds an iterable.
+
+      Args:
+          self: (todo): write your description
+          itrs: (todo): write your description
+      """
     raise NotImplementedError

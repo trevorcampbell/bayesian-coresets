@@ -14,6 +14,16 @@ import plotting
 from model_gaussian import KL
 
 def get_laplace(wts, Z, mu0, model, diag = False):
+    """
+    Get a laplaceian
+
+    Args:
+        wts: (str): write your description
+        Z: (str): write your description
+        mu0: (array): write your description
+        model: (str): write your description
+        diag: (str): write your description
+    """
   trials = 10
   Zw = Z[wts>0, :]
   ww = wts[wts>0]
@@ -41,6 +51,12 @@ def get_laplace(wts, Z, mu0, model, diag = False):
   return mu, LSig, LSigInv
 
 def plot(arguments):
+    """
+    Plot arguments. matplotlib.
+
+    Args:
+        arguments: (todo): write your description
+    """
     # load only the results that match (avoid high mem usage)
     to_match = vars(arguments)
     #remove any ignored params
@@ -55,6 +71,12 @@ def plot(arguments):
     plotting.plot(arguments, resdf)
 
 def run(arguments):
+    """
+    Run the model
+
+    Args:
+        arguments: (todo): write your description
+    """
 
     # check if result already exists for this run, and if so, quit
     if results.check_exists(arguments):
@@ -154,6 +176,14 @@ def run(arguments):
 
     print('Creating black box projector')
     def sampler_w(n, wts, pts):
+        """
+        Generate ntspler.
+
+        Args:
+            n: (int): write your description
+            wts: (todo): write your description
+            pts: (todo): write your description
+        """
         if wts is None or pts is None or pts.shape[0] == 0:
             muw = mu0
             LSigw = LSig0

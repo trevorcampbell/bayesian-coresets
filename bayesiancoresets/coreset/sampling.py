@@ -4,17 +4,38 @@ from .coreset import Coreset
 
 class UniformSamplingCoreset(Coreset):
   def __init__(self, data, **kw):
+      """
+      Initialize the initialisation.
+
+      Args:
+          self: (todo): write your description
+          data: (todo): write your description
+          kw: (todo): write your description
+      """
     super().__init__(**kw)
     self.data = data
     self.cts = []
     self.ct_idcs = [] 
 
   def reset(self):
+      """
+      Reset the internal state.
+
+      Args:
+          self: (todo): write your description
+      """
     self.cts = []
     self.ct_idcs = []
     super().reset()
 
   def _build(self, itrs):
+      """
+      Builds a set of the : class : c_idcs. array.
+
+      Args:
+          self: (todo): write your description
+          itrs: (todo): write your description
+      """
     for i in range(itrs):
       f = np.random.randint(self.data.shape[0])
       if f in self.ct_idcs:

@@ -10,6 +10,12 @@ import results
 import plotting
 
 def plot(arguments):
+    """
+    Plot the plot.
+
+    Args:
+        arguments: (todo): write your description
+    """
     # load only the results that match (avoid high mem usage)
     to_match = vars(arguments)
     #remove any ignored params
@@ -29,6 +35,12 @@ def plot(arguments):
     plotting.plot(arguments, resdf)
 
 def run(arguments):
+    """
+    Run model.
+
+    Args:
+        arguments: (todo): write your description
+    """
     # check if result already exists for this run, and if so, quit
     if results.check_exists(arguments):
       print('Results already exist for arguments ' + str(arguments))
@@ -81,9 +93,25 @@ def run(arguments):
 
     class IDProjector(bc.Projector):
       def update(self, wts, pts):
+          """
+          Updates the ]
+
+          Args:
+              self: (todo): write your description
+              wts: (array): write your description
+              pts: (array): write your description
+          """
         pass
 
       def project(self, pts, grad=False):
+          """
+          Return a new project.
+
+          Args:
+              self: (todo): write your description
+              pts: (array): write your description
+              grad: (array): write your description
+          """
         return pts
 
     alg = bc.HilbertCoreset(X, IDProjector(), snnls = algs[arguments.alg])
